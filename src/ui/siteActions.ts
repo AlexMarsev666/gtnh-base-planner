@@ -1,6 +1,6 @@
 import { getSiteDef, isSingleBlock, TRANSFORMER_ID } from '../data/generic';
 import { getSingleMachine, singleMachineTiers } from '../data/single-machines';
-import { fallbackColor } from '../import/gtnhplanner';
+import { fallbackColor } from '../model/site/resourceColor';
 import { defaultGroupHatches, IO_KINDS } from '../model/site/group';
 import type { Endpoint, ResourceKind, SiteGroup, SiteState } from '../model/site/types';
 import { effectiveSize } from '../model/resize';

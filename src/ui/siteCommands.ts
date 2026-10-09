@@ -71,13 +71,15 @@ export async function arrange(optimize = false): Promise<void> {
   if (get(site) !== s) return;
   site.set(r.site);
   notify(
-    r.fits && r.optimized
-      ? optimizedNotice(r.optimized)
-      : r.fits
-        ? r.floors > 1
-          ? t.site.arrangedFloors(r.floors)
-          : t.site.arranged
-        : t.site.needs(r.needed[0], r.needed[1]),
+    r.rejected
+      ? t.site.arrangementRejected
+      : r.fits && r.optimized
+        ? optimizedNotice(r.optimized)
+        : r.fits
+          ? r.floors > 1
+            ? t.site.arrangedFloors(r.floors)
+            : t.site.arranged
+          : t.site.needs(r.needed[0], r.needed[1]),
     r.fits ? 6000 : 8000,
     'arrange',
     undoAction(),

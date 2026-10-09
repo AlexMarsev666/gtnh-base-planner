@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
-import { createSiteWorkerController, type SiteResult } from './siteWorkerController';
+import { createSiteWorkerController, type SiteResult, type LocalSiteRuntime } from './siteWorkerController';
 import { latestBuildRequest, sourceRevisionOf } from './buildIdentity';
 
 vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -44,11 +44,11 @@ function setup(worker: () => Worker | null) {
 const named = (name: string) => ({ ...emptySite(), name });
 
 describe('site worker controller', () => {
-  it('builds right here without a worker', () => {
+  it('builds right here without a worker', async () => {
     const { c, builds } = setup(() => null);
     const site = named('a');
     c.submit(site, opts, false);
-    expect(builds).toHaveLength(1);
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
     expect(builds[0].build?.groups).toEqual([]);
     expect(builds[0]).toMatchObject({
       sourceRevision: sourceRevisionOf(site),
@@ -56,7 +56,7 @@ describe('site worker controller', () => {
     });
   });
 
-  it('assigns identities before queueing and retains the newest one through worker failure', () => {
+  it('assigns identities before queueing and retains the newest one through worker failure', async () => {
     const w = fakeWorker();
     const { c, builds } = setup(() => w as unknown as Worker);
     const first = named('a');
@@ -67,16 +67,16 @@ describe('site worker controller', () => {
     expect(requestId).toBeDefined();
     expect(requestId).not.toBe(latestBuildRequest(first));
     w.fail();
-    expect(builds).toHaveLength(1);
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
     expect(builds[0]).toMatchObject({ sourceRevision: sourceRevisionOf(newest), requestId });
   });
 
-  it('builds right here when the worker cannot be created', () => {
+  it('builds right here when the worker cannot be created', async () => {
     const { c, builds, busy } = setup(() => {
       throw new Error('blocked');
     });
     c.submit(named('a'), opts, false);
-    expect(builds).toHaveLength(1);
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
     expect(builds[0].error).toBeNull();
     expect(busy.at(-1)).toBe(false);
   });
@@ -93,17 +93,17 @@ describe('site worker controller', () => {
     expect(w.sent.map((m) => m.type === 'build' && m.site.name)).toEqual(['a', 'c']);
   });
 
-  it('finishes the queued build here when the worker fails', () => {
+  it('finishes the queued build here when the worker fails', async () => {
     const w = fakeWorker();
     const { c, builds } = setup(() => w as unknown as Worker);
     c.submit(named('a'), opts, false);
     c.submit(named('b'), opts, false);
     w.fail();
     expect(w.terminated).toBe(true);
-    expect(builds).toHaveLength(1);
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
     // Later builds skip the worker.
     c.submit(named('c'), opts, false);
-    expect(builds).toHaveLength(2);
+    await vi.waitFor(() => expect(builds).toHaveLength(2));
     expect(w.sent).toHaveLength(1);
   });
 
@@ -167,5 +167,153 @@ describe('site worker controller', () => {
     const first = c2.arrange(named('a'), false);
     void c2.arrange(named('b'), false);
     await expect(first).rejects.toThrow(/replaced/);
+  });
+});
+
+function delayedRuntime() {
+  let resolve!: (runtime: LocalSiteRuntime) => void;
+  const promise = new Promise<LocalSiteRuntime>((r) => {
+    resolve = r;
+  });
+  const runtime = {
+    build: vi.fn(() => ({ groups: [] }) as never),
+    importSite: vi.fn((project) => ({ site: named(project.name), report: {} }) as never),
+    arrange: vi.fn((site) => ({ site, fits: true, needed: [1, 1], floors: 1 }) as never),
+  } satisfies LocalSiteRuntime;
+  const builds: SiteResult[] = [];
+  const load = vi.fn(() => promise);
+  const c = createSiteWorkerController({ onBuild: (r) => builds.push(r), onBusy() {} }, () => null, load);
+  return { c, builds, runtime, load, finish: () => resolve(runtime) };
+}
+
+const project = { name: 'p', recipes: new Map(), nodes: [], storages: [], edges: [], skipped: 0 };
+
+describe('lazy local site runtime', () => {
+  it('runs only the latest build after downloading and reuses the runtime', async () => {
+    const { c, builds, runtime, load, finish } = delayedRuntime();
+    c.submit(named('old'), opts, false);
+    const newest = named('new');
+    c.submit(newest, opts, true);
+    expect(runtime.build).not.toHaveBeenCalled();
+    finish();
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
+    expect(runtime.build).toHaveBeenCalledExactlyOnceWith(newest, opts);
+    expect(builds[0]).toMatchObject({ requestId: latestBuildRequest(newest), pending: true });
+    await c.arrange(newest, false);
+    await c.importSite(project, new Map(), {});
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a superseded import and never executes it after downloading', async () => {
+    const { c, runtime, finish } = delayedRuntime();
+    const first = c.importSite(project, new Map(), {});
+    const rejected = expect(first).rejects.toThrow(/replaced/);
+    const next = c.importSite({ ...project, name: 'new' }, new Map(), {});
+    finish();
+    await rejected;
+    await expect(next).resolves.toMatchObject({ site: { name: 'new' } });
+    expect(runtime.importSite).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a superseded arrangement and drops its result', async () => {
+    const { c, runtime, finish } = delayedRuntime();
+    const first = c.arrange(named('old'), false, true);
+    const rejected = expect(first).rejects.toThrow(/replaced/);
+    const next = c.arrange(named('new'), true);
+    finish();
+    await rejected;
+    await expect(next).resolves.toMatchObject({ site: { name: 'new' } });
+    expect(runtime.arrange).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows a newer import to replace a build while its code is loading', async () => {
+    const { c, builds, runtime, finish } = delayedRuntime();
+    c.submit(named('old'), opts, false);
+    const next = c.importSite(project, new Map(), {});
+    finish();
+    await next;
+    expect(builds).toEqual([]);
+    expect(runtime.build).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed download and retries on the next request', async () => {
+    const { runtime } = delayedRuntime();
+    const load = vi.fn().mockRejectedValueOnce(new Error('download failed')).mockResolvedValue(runtime);
+    const builds: SiteResult[] = [];
+    const c = createSiteWorkerController({ onBuild: (r) => builds.push(r), onBusy() {} }, () => null, load);
+    c.submit(named('a'), opts, false);
+    await vi.waitFor(() => expect(builds[0]?.error).toBe('download failed'));
+    c.submit(named('b'), opts, false);
+    await vi.waitFor(() => expect(builds[1]?.error).toBeNull());
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not load local code when the worker works', () => {
+    const w = fakeWorker();
+    const load = vi.fn();
+    const c = createSiteWorkerController({ onBuild() {}, onBusy() {} }, () => w as unknown as Worker, load);
+    c.submit(named('a'), opts, false);
+    expect(w.sent).toHaveLength(1);
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it('ignores a late error from a replaced worker', async () => {
+    const old = fakeWorker();
+    const fresh = fakeWorker();
+    const workers = [old, fresh];
+    const load = vi.fn();
+    const c = createSiteWorkerController(
+      { onBuild() {}, onBusy() {} },
+      () => workers.shift() as unknown as Worker,
+      load,
+    );
+    const first = c.arrange(named('old'), false);
+    const rejected = expect(first).rejects.toThrow(/replaced/);
+    const next = c.arrange(named('new'), false);
+    old.fail();
+    expect(fresh.terminated).toBe(false);
+    expect(load).not.toHaveBeenCalled();
+    fresh.reply({
+      id: fresh.sent[0].id,
+      arranged: { site: named('new'), fits: true, needed: [1, 1], floors: 1 },
+    });
+    await rejected;
+    await next;
+  });
+});
+
+describe('worker failure while loading the local fallback', () => {
+  it.each(['import', 'arrange'] as const)('finishes an active %s through the real fallback', async (kind) => {
+    const w = fakeWorker();
+    const { c } = setup(() => w as unknown as Worker);
+    const task = kind === 'import' ? c.importSite(project, new Map(), {}) : c.arrange(named('p'), true);
+    w.fail();
+    await expect(task).resolves.toMatchObject({ site: { name: 'p' } });
+    expect(w.terminated).toBe(true);
+    await expect(c.arrange(named('later'), true)).resolves.toMatchObject({ site: { name: 'later' } });
+    expect(w.sent).toHaveLength(1);
+  });
+
+  it('ignores a late reply from the failed worker while fallback code is downloading', async () => {
+    const w = fakeWorker();
+    const { runtime } = delayedRuntime();
+    let finish!: (r: LocalSiteRuntime) => void;
+    const load = () =>
+      new Promise<LocalSiteRuntime>((resolve) => {
+        finish = resolve;
+      });
+    const builds: SiteResult[] = [];
+    const c = createSiteWorkerController(
+      { onBuild: (r) => builds.push(r), onBusy() {} },
+      () => w as unknown as Worker,
+      load,
+    );
+    c.submit(named('p'), opts, false);
+    w.fail();
+    w.reply({ id: w.sent[0].id, error: 'obsolete worker response' });
+    expect(builds).toEqual([]);
+    finish(runtime);
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
+    expect(builds[0].error).toBeNull();
   });
 });

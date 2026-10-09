@@ -93,6 +93,10 @@ export function placeSitePorts(
     let faces: Dir[] = [];
     if (p.pos) {
       cell = [p.pos[0], 0, p.pos[1]];
+      if (blocked(p.pos[0], p.pos[1])) {
+        warnings.push({ type: 'noport', port: p.id });
+        continue;
+      }
       faces = ['north', 'east', 'south', 'west', 'up'];
     } else {
       const cs = linkedCentres.get(p.id);

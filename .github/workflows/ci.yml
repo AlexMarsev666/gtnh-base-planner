@@ -32,6 +32,8 @@ jobs:
         run: npm run check
       - name: Unit tests
         run: npm test
+      - name: Layout invariant
+        run: npm run test:invariant
       - name: Dependency audit
         run: npm audit --omit=dev --audit-level=high
       - name: Build

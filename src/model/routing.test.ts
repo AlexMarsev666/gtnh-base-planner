@@ -414,15 +414,16 @@ describe('routePipes', () => {
     expect(withPipeFaces(hatches, [])).toBe(hatches);
   });
 
-  it('never lays pipes below the build', () => {
-    for (const def of handMade)
-      for (const count of [4, 12]) {
-        const r = createPipeline()({ ...defaultPlan(def.id), count }, true);
-        const ground = Math.min(...r.scene!.voxels.map((v) => v.pos[1]));
-        for (const n of r.pipes ?? [])
-          for (const p of n.paths.flat()) expect(p[1]).toBeGreaterThanOrEqual(ground);
-      }
-  });
+  // Keep the same cases and assertions; each routing job has its own normal timeout.
+  it.each(handMade.flatMap(({ id }) => [4, 12].map((count) => ({ id, count }))))(
+    '$id, count $count: never lays pipes below the build',
+    ({ id, count }) => {
+      const r = createPipeline()({ ...defaultPlan(id), count }, true);
+      const ground = Math.min(...r.scene!.voxels.map((v) => v.pos[1]));
+      for (const n of r.pipes ?? [])
+        for (const p of n.paths.flat()) expect(p[1]).toBeGreaterThanOrEqual(ground);
+    },
+  );
 
   it('lays pipes at most one layer below the build when connections from below are allowed', () => {
     for (const id of ['coke-oven', 'electric-blast-furnace', 'pyrolyse-oven'])

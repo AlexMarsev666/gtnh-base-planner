@@ -2,6 +2,7 @@ import { annealGroups, type AnnealOptions } from './anneal';
 import { localFootprints, localHeights } from './build';
 import type { SiteBuild, SiteBuilder } from './buildTypes';
 import { groupShapes } from './shapes';
+import { layoutViolationCount } from './layoutViolations';
 import type { SiteGroup, SiteState } from './types';
 
 /**
@@ -99,7 +100,7 @@ export function scoreBuild(build: SiteBuild): LayoutScore {
   }
   return {
     // Unrouted nets are counted by `unconnected`, terminal by terminal; `problems` are the rest.
-    problems: build.warnings.filter((w) => w.type !== 'unrouted' && w.type !== 'assignment').length,
+    problems: layoutViolationCount(build),
     unconnected: build.stats.terminals - build.stats.connected,
     blocks: build.stats.pipeBlocks + build.stats.cableBlocks,
     span: x1 > x0 ? x1 - x0 + (z1 - z0) : 0,

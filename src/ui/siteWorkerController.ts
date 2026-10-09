@@ -1,17 +1,14 @@
-import {
-  buildSiteFromGtnh,
-  type GtnhProject,
-  type ImportOptions,
-  type ImportReport,
-  type MachineChoice,
-} from '../import/gtnhplanner';
-import { createSiteBuilder } from '../model/site/build';
+import type { GtnhProject, ImportOptions, ImportReport, MachineChoice } from '../import/gtnhplanner';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
 import { warnOnce } from './notices';
 import { registerBuild } from './buildIdentity';
-import { arrangeHere, type Arranged } from './siteArrange';
+import type { Arranged } from './siteArrange';
+import type { createLocalSiteRuntime } from './siteLocalRuntime';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
+
+export type LocalSiteRuntime = ReturnType<typeof createLocalSiteRuntime>;
+const loadLocalRuntime = async () => (await import('./siteLocalRuntime')).createLocalSiteRuntime();
 
 export interface SiteResult {
   requestId?: number;
@@ -84,6 +81,7 @@ export function defaultSiteWorker(): Worker | null {
 export function createSiteWorkerController(
   events: SiteWorkerEvents,
   createWorker: () => Worker | null = defaultSiteWorker,
+  loadLocal: () => Promise<LocalSiteRuntime> = loadLocalRuntime,
 ): SiteWorkerController {
   let worker: Worker | null = null;
   let workerFailed = false;
@@ -97,43 +95,54 @@ export function createSiteWorkerController(
   /** The newest build not sent yet. */
   let queued: BuildRequest | null = null;
 
-  /** The builder used when there is no worker (shared with imports, so their packs are reused). */
-  let localBuilder: ReturnType<typeof createSiteBuilder> | null = null;
-  const here = () => (localBuilder ??= createSiteBuilder());
+  let localRuntime: Promise<LocalSiteRuntime> | null = null;
 
-  function buildHere(req: BuildRequest): SiteResult {
+  /** The pending import can be replaced while its code is downloading. Never run a stale job. */
+  async function runLocally(job: NonNullable<typeof inFlight>): Promise<void> {
+    inFlight = job;
+    events.onBusy(true);
     try {
-      return {
-        build: here()(req.site, req.opts),
-        error: null,
-        pending: req.pending,
-        requestId: req.requestId,
-        sourceRevision: req.sourceRevision,
-      };
+      const runtime = await (localRuntime ??= loadLocal().catch((err) => {
+        localRuntime = null;
+        throw err;
+      }));
+      if (inFlight !== job) return;
+      if ('build' in job) {
+        // Coalesce edits that arrived during the first download, just as in the worker queue.
+        if (queued) return;
+        const req = job.build;
+        events.onBuild({
+          build: runtime.build(req.site, req.opts),
+          error: null,
+          pending: req.pending,
+          requestId: req.requestId,
+          sourceRevision: req.sourceRevision,
+        });
+      } else if ('import' in job) {
+        const imp = job.import;
+        imp.resolve(runtime.importSite(imp.project, imp.choices, imp.opts));
+      } else {
+        const req = job.arrange;
+        req.resolve(runtime.arrange(req.site, req.below, req.optimize));
+      }
     } catch (err) {
-      warnOnce('buildSite', err);
-      return {
-        build: null,
-        error: err instanceof Error ? err.message : String(err),
-        requestId: req.requestId,
-        sourceRevision: req.sourceRevision,
-      };
-    }
-  }
-
-  function importHere(imp: PendingImport): void {
-    try {
-      imp.resolve(buildSiteFromGtnh(imp.project, imp.choices, imp.opts, here()));
-    } catch (err) {
-      imp.reject(err instanceof Error ? err : new Error(String(err)));
-    }
-  }
-
-  function arrangeLocally(job: PendingArrange): void {
-    try {
-      job.resolve(arrangeHere(job.site, job.below, here(), job.optimize));
-    } catch (err) {
-      job.reject(err instanceof Error ? err : new Error(String(err)));
+      if (inFlight !== job) return;
+      const error = err instanceof Error ? err : new Error(String(err));
+      if ('build' in job) {
+        warnOnce('buildSite', error);
+        events.onBuild({
+          build: null,
+          error: error.message,
+          requestId: job.build.requestId,
+          sourceRevision: job.build.sourceRevision,
+        });
+      } else if ('import' in job) job.import.reject(error);
+      else job.arrange.reject(error);
+    } finally {
+      if (inFlight === job) {
+        inFlight = null;
+        sendQueued();
+      }
     }
   }
 
@@ -145,12 +154,13 @@ export function createSiteWorkerController(
     workerFailed = true;
     const was = inFlight;
     inFlight = null;
-    if (was && 'import' in was) importHere(was.import);
-    if (was && 'arrange' in was) arrangeLocally(was.arrange);
     const req = queued ?? (was && 'build' in was ? was.build : null);
     queued = null;
-    events.onBusy(false);
-    if (req) events.onBuild(buildHere(req));
+    if (was && !('build' in was)) {
+      queued = req;
+      void runLocally(was);
+    } else if (req) void runLocally({ id: req.requestId, build: req });
+    else events.onBusy(false);
   }
 
   /** Drops whatever the worker is doing (its result is no longer wanted). */
@@ -178,6 +188,7 @@ export function createSiteWorkerController(
     }
     worker = w;
     w.onmessage = (e: MessageEvent<SiteWorkerResponse>) => {
+      if (worker !== w) return;
       const msg = e.data;
       const job = inFlight;
       if (!job || msg.id !== job.id) return;
@@ -221,9 +232,12 @@ export function createSiteWorkerController(
     };
     w.onerror = (e) => {
       e.preventDefault();
+      if (worker !== w) return;
       fallBack(e.message || 'Site worker failed');
     };
-    w.onmessageerror = () => fallBack('Site worker message could not be read');
+    w.onmessageerror = () => {
+      if (worker === w) fallBack('Site worker message could not be read');
+    };
     return w;
   }
 
@@ -246,8 +260,7 @@ export function createSiteWorkerController(
     queued = null;
     const w = startWorker();
     if (!w) {
-      events.onBuild(buildHere(req));
-      events.onBusy(false);
+      void runLocally({ id: req.requestId, build: req });
       return;
     }
     inFlight = { id: req.requestId, build: req };
@@ -264,10 +277,6 @@ export function createSiteWorkerController(
     submit(site, opts, pending) {
       const requestId = ++nextId;
       const req = { site, opts, pending, requestId, sourceRevision: registerBuild(site, requestId) };
-      if (workerFailed) {
-        events.onBuild(buildHere(req));
-        return;
-      }
       queued = req;
       events.onBusy(true);
       // The worker is busy with a site that is gone (an import or an opened file replaced it): drop that
@@ -284,7 +293,7 @@ export function createSiteWorkerController(
         if (inFlight) stopWorker();
         const w = workerFailed ? null : startWorker();
         if (!w) {
-          importHere(imp);
+          void runLocally({ id: ++nextId, import: imp });
           return;
         }
         inFlight = { id: ++nextId, import: imp };
@@ -300,7 +309,7 @@ export function createSiteWorkerController(
         if (inFlight) stopWorker();
         const w = workerFailed ? null : startWorker();
         if (!w) {
-          arrangeLocally(job);
+          void runLocally({ id: ++nextId, arrange: job });
           return;
         }
         inFlight = { id: ++nextId, arrange: job };

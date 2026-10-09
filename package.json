@@ -11,8 +11,9 @@
     "preview": "vite preview",
     "size": "node scripts/check-size.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
-    "test": "vitest run",
-    "test:unit": "vitest run",
+    "test": "vitest run --exclude src/model/site/layoutInvariant.test.ts",
+    "test:unit": "vitest run --exclude src/model/site/layoutInvariant.test.ts",
+    "test:invariant": "vitest run src/model/site/layoutInvariant.test.ts",
     "e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

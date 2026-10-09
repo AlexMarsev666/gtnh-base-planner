@@ -418,3 +418,23 @@ describe('better', () => {
     expect(better(base, base)).toBe(false);
   });
 });
+
+it('counts the size of aggregated placement and resource deficits before pipe savings', () => {
+  const base = stub(() => 10)(arranged(), { pipes: true, cables: true });
+  const a = scoreBuild({ ...base, warnings: [{ type: 'unplaced', group: 'g0', count: 1 }] });
+  const b = scoreBuild({
+    ...base,
+    warnings: [{ type: 'unplaced', group: 'g0', count: 5 }],
+    stats: { ...base.stats, pipeBlocks: 0 },
+  });
+  expect(better(b, a)).toBe(false);
+  expect(
+    scoreBuild({
+      ...base,
+      warnings: [
+        { type: 'missing', group: 'g0', resource: 'r', units: 2 },
+        { type: 'fewer', group: 'g1', placed: 1, requested: 4 },
+      ],
+    }).problems,
+  ).toBe(5);
+});

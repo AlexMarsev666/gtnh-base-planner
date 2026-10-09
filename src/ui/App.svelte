@@ -22,7 +22,8 @@
   import { watchDrawerInset, type Inset } from './drawerInset';
   import FlowToggle from './FlowToggle.svelte';
   import Footer from './Footer.svelte';
-  import ImportDialog from './ImportDialog.svelte';
+  import type ImportDialog from './ImportDialog.svelte';
+  import { notify } from './notices';
   import Legend from './Legend.svelte';
   import Notices from './Notices.svelte';
   import Picker from './Picker.svelte';
@@ -61,6 +62,23 @@
   /** The required-blocks drawer (both views); it shares the right edge with Settings and the Template panel. */
   let blocksOpen = $state(false);
   let importOpen = $state(false);
+  let ImportDialogComponent = $state<typeof ImportDialog>();
+  let importDialogLoading = false;
+  $effect(() => {
+    if (!importOpen || ImportDialogComponent || importDialogLoading) return;
+    importDialogLoading = true;
+    void import('./ImportDialog.svelte').then(
+      (module) => {
+        ImportDialogComponent = module.default;
+        importDialogLoading = false;
+      },
+      (err) => {
+        importDialogLoading = false;
+        importOpen = false;
+        notify(String(err));
+      },
+    );
+  });
   /** Site view: what the multiblock picker is open for. */
   let sitePicker = $state<'add' | 'change' | null>(null);
 
@@ -286,8 +304,8 @@
       {/if}
     {/if}
 
-    {#if importOpen}
-      <ImportDialog onclose={() => (importOpen = false)} />
+    {#if importOpen && ImportDialogComponent}
+      <ImportDialogComponent onclose={() => (importOpen = false)} />
     {/if}
   {:else}
     {#if !$build.scene || rendererFailed}

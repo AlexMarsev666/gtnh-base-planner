@@ -335,3 +335,75 @@ test('imports into a size of its own and builds on floors what does not fit', as
   await page.screenshot({ path: 'e2e/screenshots/site-floors.png' });
   expect(errors).toEqual([]);
 });
+
+test('imports, arranges and optimises through the lazy fallback with workers blocked', async ({ page }) => {
+  test.setTimeout(60000);
+  const errors = collectErrors(page);
+  await page.addInitScript(() => {
+    window.Worker = class {
+      constructor() {
+        throw new Error('Worker blocked by test');
+      }
+    } as unknown as typeof Worker;
+  });
+  await page.goto('/');
+  await importFixture(page);
+  const stats = page.getByTestId('site-stats');
+  await expect(stats).toContainText('6 groups');
+  await expect(stats).toContainText(/(\d+)\/\1 connected/);
+  await page.getByTestId('site-panel-toggle').click();
+  const panel = page.getByTestId('site-panel');
+  await panel.getByTestId('site-arrange').click();
+  await expect(stats).toContainText(/(\d+)\/\1 connected/);
+  await panel.getByTestId('site-optimize').click();
+  await expect(page.getByText(/Optimized:|nothing tried beat it/)).toBeVisible({ timeout: 60000 });
+  await expect(stats).toContainText('6 groups');
+  expect(errors).toEqual([]);
+});
+
+test('keeps the original layout when Arrange would cover a pinned port', async ({ page }) => {
+  const errors = collectErrors(page);
+  const document = {
+    v: 2,
+    kind: 'site',
+    size: [32, 32],
+    corridor: 2,
+    colors: {},
+    groups: [
+      {
+        id: 'ebf',
+        multiblockId: 'electric-blast-furnace',
+        count: 1,
+        limits: { x: null, y: null, z: null },
+        enabledHatches: ['itemIn', 'itemOut', 'energy', 'maintenance', 'muffler'],
+        origin: [15, 15],
+        rotation: 0,
+        voltageTier: 'HV',
+        resourceBindings: [{ kind: 'itemIn', resource: 'ore', unitId: 0 }],
+        hatchTiers: { '[0,"itemIn","ore",0]': 'HV' },
+      },
+    ],
+    resources: { ore: { name: 'Ore', kind: 'item', color: '#abcdef' } },
+    // Arrange centres this 3×3 group at [14, 14], putting its corner over the fixed port.
+    ports: [{ id: 'input', dir: 'in', resource: 'ore', pos: [14, 14] }],
+    links: [{ id: 'feed', from: { port: 'input' }, to: { group: 'ebf' }, resource: 'ore' }],
+  };
+  await page.addInitScript((site) => {
+    localStorage.setItem('gtnh-planner:site:v1', JSON.stringify(site));
+    localStorage.setItem('gtnh-planner:mode', 'site');
+  }, document);
+  await page.goto('/');
+  await expect(page.getByTestId('site-stats')).toContainText('1 group');
+  await page.getByTestId('site-panel-toggle').click();
+  await page.getByTestId('site-panel').getByTestId('site-arrange').click();
+  await expect(
+    page.getByText('Kept the original layout: the proposed arrangement introduced build violations.'),
+  ).toBeVisible();
+  await page.screenshot({ path: 'e2e/screenshots/site-arrange-rejected.png' });
+  await expect
+    .poll(async () =>
+      page.evaluate(() => JSON.parse(localStorage.getItem('gtnh-planner:site:v1')!).groups[0]),
+    )
+    .toEqual(document.groups[0]);
+  expect(errors).toEqual([]);
+});
