@@ -1,0 +1,47 @@
+diff --git a/src/model/multiblock/lockedFluidHatches.test.ts b/src/model/multiblock/lockedFluidHatches.test.ts
+index 4e10b07..5ef97da 100644
+--- a/src/model/multiblock/lockedFluidHatches.test.ts
++++ b/src/model/multiblock/lockedFluidHatches.test.ts
+@@ -5,3 +5 @@ import { defaultPlan } from '../../state/store';
+-import { defaultGroupHatches, buildGroup, withDemand } from '../site/group';
+-import { placeHatches } from '../hatches/placement';
+-import type { Unit } from './types';
++import { defaultGroupHatches, buildGroup } from '../site/group';
+@@ -69,7 +67,11 @@ describe('RC2 locked fluid interfaces', () => {
+-      const sized = withDemand(def, demand);
+-      const units: Unit[] = [{ id: 0, origin: [0, 0, 0], rotation: 0 }];
+-      const built = {
+-        ...placeHatches(sized, units, [...def.defaultHatches, 'fluidIn'], undefined, { below: true }),
+-        def: sized,
+-        units,
+-      };
++      // Group demand no longer changes the source minima; exercise the resource placer itself.
++      const built = buildGroup(
++        def,
++        1,
++        { x: 1, y: 1, z: 1 },
++        [...def.defaultHatches, 'fluidIn'],
++        demand,
++        true,
++        {},
++        { voltageTier: 'LV' },
++      );
+diff --git a/src/model/site/build.test.ts b/src/model/site/build.test.ts
+index 5744a97..902995c 100644
+--- a/src/model/site/build.test.ts
++++ b/src/model/site/build.test.ts
+@@ -87 +87 @@ describe('hatch demand', () => {
+-  it('places one hatch per resource on every unit and tags it', () => {
++  it('covers resources across the group without raising per-controller structural minima', () => {
+@@ -89 +89 @@ describe('hatch demand', () => {
+-    expect(def.requiredHatches?.itemIn?.min).toBe(1);
++    expect(def).toBe(ebf);
+@@ -92,5 +92,3 @@ describe('hatch demand', () => {
+-    for (const u of b.units)
+-      for (const r of ['item:dust', 'item:x'])
+-        expect(
+-          b.hatches.some((h) => h.kind === 'itemIn' && h.resource === r && h.unitIds.includes(u.id)),
+-        ).toBe(true);
++    for (const resource of ['item:dust', 'item:x'])
++      expect(b.hatches.some((h) => h.kind === 'itemIn' && h.resource === resource)).toBe(true);
++    expect(b.hatches.filter((h) => h.kind === 'itemIn')).toHaveLength(2);

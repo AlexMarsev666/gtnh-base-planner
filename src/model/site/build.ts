@@ -12,6 +12,7 @@ import { validateResourceHatches } from './resourcePlacement';
 import { isSingleBlock } from '../../data/generic';
 import { hatchTiers } from '../../data/single-machines';
 import { validateHatchAccess } from './hatchAccess';
+import type { HatchKind } from '../multiblock/types';
 
 /**
  * Builds sites. Keeps a per-group cache: moving, rotating or relinking one group only re-packs the groups
@@ -55,7 +56,11 @@ export function createSiteBuilder(): SiteBuilder {
             message: `${hatch.kind} has no ${hatch.tier} variant in RC2 at (${hatch.cell.join(', ')}). Choose a supported individual tier.`,
           });
       }
-      const messages = new Set(validateResourceHatches(pg.def, pg.units, pg.hatches, pg.group, pg.demand));
+      const messages = new Set(
+        validateResourceHatches(pg.def, pg.units, pg.hatches, pg.group, pg.demand, [
+          ...new Set([...pg.group.enabledHatches, ...(Object.keys(pg.demand) as HatchKind[])]),
+        ]),
+      );
       validateAlternativeCounts(pg.def, pg.units, pg.hatches).forEach((message) => messages.add(message));
       for (const message of messages)
         structureWarnings.push({ type: 'error', group: pg.group.id, code: 'structure', message });

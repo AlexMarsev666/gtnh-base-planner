@@ -3,9 +3,10 @@ import type { ResourceBinding } from './types';
 import type { HatchKind, MultiblockDef, Unit } from '../multiblock/types';
 import type { Site } from '../hatches/types';
 import { resourceRegion } from './resourceRoles';
-import { quota } from '../hatches/quota';
+import { alternativeHatchLimits, quota } from '../hatches/quota';
 import { fixedHatchCounts } from '../multiblock/fixedHatches';
 import { hatchCapacity } from '../multiblock/casingConstraints';
+import { unitCells } from '../geometry';
 
 export interface ResourceRequest {
   kind: HatchKind;
@@ -31,7 +32,11 @@ export function groupRequests(def: MultiblockDef, demand: Demand, bindings: read
     const kind = key as HatchKind;
     return [...new Set(list)].flatMap((resource) => {
       const matches = bindings.filter((b) => b.kind === kind && b.resource === resource);
-      return (matches.length ? matches : [undefined]).flatMap((binding, ordinal): ResourceRequest[] => {
+      const slots =
+        matches.length > 1
+          ? [...new Set(matches.map((b) => JSON.stringify([b.role ?? null, b.outputSlot ?? null])))]
+          : [];
+      return (matches.length ? matches : [undefined]).flatMap((binding): ResourceRequest[] => {
         const region = resourceRegion(def, kind, binding);
         return region === null
           ? []
@@ -40,13 +45,77 @@ export function groupRequests(def: MultiblockDef, demand: Demand, bindings: read
                 kind,
                 resource,
                 region,
-                ordinal: matches.length > 1 ? (binding?.outputSlot ?? ordinal) : 0,
+                ordinal:
+                  matches.length > 1
+                    ? (binding?.outputSlot ?? slots.indexOf(JSON.stringify([binding?.role ?? null, null])))
+                    : 0,
                 unitId: binding?.unitId,
               },
             ];
       });
     });
   });
+}
+
+/** Prefer the historical complete set on every controller. Distribution is a fallback for a set
+ * exceeding structural capacity/count limits, never a way to make a feasible ordinary group cheaper.
+ * Manual unitId remains required coverage; it does not forbid copies on other controllers.
+ */
+export function fullResourcePlan(
+  def: MultiblockDef,
+  units: readonly Unit[],
+  enabled: readonly HatchKind[],
+  demand: Demand,
+  requests: readonly ResourceRequest[],
+) {
+  if (!units.length) return;
+  requests = [
+    ...new Map(requests.map((r) => [JSON.stringify([r.kind, r.resource, r.region, r.ordinal]), r])).values(),
+  ];
+  const selectors: { kind: HatchKind; region?: string }[] = [];
+  const counts = new Map(
+    enabled.map((kind) => {
+      const own = requests.filter((r) => r.kind === kind);
+      const missing = (def.requiredHatches?.[kind]?.regions ?? []).filter(
+        (region) => !own.some((r) => r.region === region),
+      );
+      const count = Math.max(resourceMinimum(def, kind, demand), own.length + missing.length);
+      selectors.push(...own, ...missing.map((region) => ({ kind, region })));
+      for (let i = own.length + missing.length; i < count; i++) selectors.push({ kind });
+      return [kind, count] as const;
+    }),
+  );
+  if (
+    [...counts].some(([kind, count]) => count > (def.requiredHatches?.[kind]?.max ?? Infinity)) ||
+    [...counts.values()].reduce((n, count) => n + count, 0) > hatchCapacity(def, units[0]).capacity ||
+    Object.values(alternativeHatchLimits(def))
+      .flat()
+      .some((rule) => rule.anyOf!.reduce((n, kind) => n + (counts.get(kind) ?? 0), 0) > rule.max!)
+  )
+    return;
+  // A necessary matching on one isolated controller also catches kind/role-specific capacity.
+  // Access and shared-cell compatibility are still checked by the real placer on each layout.
+  const cells = unitCells(def, units[0]);
+  const choices = selectors.map(({ kind, region }) =>
+    cells.flatMap((c, i) =>
+      c.hatches?.includes(kind) && (!region || def.legend[c.char]?.region === region) ? [i] : [],
+    ),
+  );
+  const owner = new Map<number, number>();
+  const augment = (i: number, seen: Set<number>): boolean => {
+    for (const cell of choices[i]) {
+      if (seen.has(cell)) continue;
+      seen.add(cell);
+      const previous = owner.get(cell);
+      if (previous === undefined || augment(previous, seen)) {
+        owner.set(cell, i);
+        return true;
+      }
+    }
+    return false;
+  };
+  if (!choices.every((_, i) => augment(i, new Set()))) return;
+  return new Map(units.map((unit) => [unit.id, requests]));
 }
 
 /** Necessary physical bound before packing or exploring any hatch/layout choices. Sharing can only

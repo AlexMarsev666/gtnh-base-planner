@@ -6,7 +6,7 @@ import type { Unit } from '../multiblock/types';
 import { buildGroup } from './group';
 import { createSiteBuilder } from './build';
 import { emptySite } from '../../share/siteCodec';
-import { groupDemandBound } from './resourceAllocation';
+import { fullResourcePlan, groupDemandBound, groupRequests } from './resourceAllocation';
 import { hatchAssignmentKey, placeResourceHatches, validateResourceHatches } from './resourcePlacement';
 
 const def = getMultiblock('oil-cracking-unit')!;
@@ -98,7 +98,7 @@ describe('group resource allocation invariants', () => {
     expect(validateResourceHatches(def, units, result.hatches, options, demand)).toEqual([]);
   });
 
-  it('does not turn an enabled optional resource interface into a per-controller minimum', () => {
+  it('keeps optional-interface source minima unchanged while giving every machine the full set', () => {
     const furnace = getMultiblock('electric-blast-furnace')!;
     const built = buildGroup(
       furnace,
@@ -111,23 +111,119 @@ describe('group resource allocation invariants', () => {
       { voltageTier: 'HV' },
     );
     expect(built.unplaced).toEqual([]);
-    expect(built.hatches.filter((h) => h.kind === 'fluidIn')).toHaveLength(1);
+    expect(built.def.requiredHatches?.fluidIn?.min ?? 0).toBe(0);
+    for (const unit of built.units)
+      expect(
+        built.hatches.some(
+          (h) => h.kind === 'fluidIn' && h.resource === 'nitrogen' && h.unitIds.includes(unit.id),
+        ),
+      ).toBe(true);
     expect(
       validateResourceHatches(furnace, built.units, built.hatches, {}, { fluidIn: ['nitrogen'] }),
     ).toEqual([]);
   });
 
   it('counts a shared resource once even when two machines are explicitly assigned to it', () => {
+    const multiple = [
+      ...bindings,
+      { kind: 'fluidIn' as const, resource: 'hydrogen', role: 'catalyst' as const, unitId: 1 },
+    ];
     const bound = groupDemandBound(
       def,
       2,
       enabled,
       { fluidIn: ['feed-a', 'feed-b', 'hydrogen'], fluidOut: ['out-a', 'out-b'] },
-      [...bindings, { kind: 'fluidIn', resource: 'hydrogen', role: 'catalyst', unitId: 1 }],
+      multiple,
     );
     expect(bound.needed).toBe(9);
     expect(bound.capacity).toBe(14);
     expect(bound.message).toBeUndefined();
+    const units: Unit[] = [
+      { id: 0, origin: [0, 0, 0], rotation: 0 },
+      { id: 1, origin: [0, 2, 0], rotation: 0 },
+    ];
+    const full = fullResourcePlan(def, units, enabled, demand, groupRequests(def, demand, multiple))!;
+    for (const requests of full.values())
+      expect(requests.filter((r) => r.resource === 'hydrogen')).toHaveLength(1);
+    const result = placeResourceHatches(
+      def,
+      units,
+      enabled,
+      demand,
+      { ...settings, resourceBindings: multiple },
+      true,
+      {},
+    );
+    expect(result.unplaced).toEqual([]);
+    expect(
+      validateResourceHatches(
+        def,
+        units,
+        result.hatches,
+        { ...settings, resourceBindings: multiple },
+        demand,
+      ),
+    ).toEqual([]);
+  });
+
+  it('distributes C2 only because the full per-machine set needs 12 hatches but capacity is 7', () => {
+    const inputs = ['f1', 'f2', 'f3', 'f4', 'a1', 'a2'];
+    const flows = { fluidIn: inputs, fluidOut: ['p1', 'p2', 'p3', 'p4'] };
+    const options = {
+      resourceBindings: inputs.map((resource, i) => ({
+        kind: 'fluidIn' as const,
+        resource,
+        role: i < 4 ? ('feed' as const) : ('catalyst' as const),
+      })),
+    };
+    const built = buildGroup(def, 2, { x: null, y: null, z: null }, enabled, flows, true, {}, options);
+    expect(
+      fullResourcePlan(def, built.units, enabled, flows, groupRequests(def, flows, options.resourceBindings)),
+    ).toBeUndefined();
+    expect(built.unplaced).toEqual([]);
+    expect(built.missing).toEqual([]);
+    expect(built.hatches).toHaveLength(14);
+    for (const unit of built.units) {
+      expect(built.hatches.filter((h) => h.unitIds.includes(unit.id))).toHaveLength(7);
+      expect(built.hatches.filter((h) => h.kind === 'fluidIn' && h.unitIds.includes(unit.id))).toHaveLength(
+        3,
+      );
+      expect(built.hatches.filter((h) => h.kind === 'fluidOut' && h.unitIds.includes(unit.id))).toHaveLength(
+        2,
+      );
+    }
+    expect(validateResourceHatches(def, built.units, built.hatches, options, flows)).toEqual([]);
+  });
+
+  it('falls back when total capacity fits but the full set exceeds the cells of one hatch kind', () => {
+    const base = getMultiblock('vacuum-freezer')!;
+    const limited = {
+      ...base,
+      id: 'kind-capacity-test',
+      wallshare: false,
+      requiredHatches: {},
+      layers: base.layers.map((layer, y) =>
+        layer.map((row, z) => (y === 0 && z === 0 ? 'f' + row.slice(1) : row)),
+      ),
+      legend: Object.fromEntries([
+        ...Object.entries(base.legend).map(([char, cell]) => [
+          char,
+          { ...cell, hatches: cell.hatches?.filter((k) => k !== 'fluidOut') },
+        ]),
+        ['f', { blockId: base.legend[base.layers[0][0][0]].blockId, hatches: ['fluidOut' as const] }],
+      ]),
+    };
+    const units: Unit[] = [
+      { id: 0, origin: [0, 0, 0], rotation: 0 },
+      { id: 1, origin: [6, 0, 0], rotation: 0 },
+    ];
+    const flows = { fluidOut: ['out-a', 'out-b'] };
+    const kinds = ['energy', 'maintenance', 'fluidOut'] as const;
+    expect(fullResourcePlan(limited, units, kinds, flows, groupRequests(limited, flows))).toBeUndefined();
+    const result = placeResourceHatches(limited, units, kinds, flows, {}, true, {});
+    expect(result.unplaced).toEqual([]);
+    expect(result.hatches.filter((h) => h.kind === 'fluidOut')).toHaveLength(2);
+    expect(validateResourceHatches(limited, units, result.hatches, {}, flows)).toEqual([]);
   });
 
   it('validates group coverage without depending on the placer assignment keys', () => {

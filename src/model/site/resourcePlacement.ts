@@ -23,6 +23,7 @@ import { resourceRegion } from './resourceRoles';
 import {
   groupRequests,
   groupDemandBound,
+  fullResourcePlan,
   resourceMinimum,
   resourceAllocations,
   type ResourceRequest,
@@ -85,10 +86,30 @@ export function placeResourceHatches(
       structuralDef,
     );
   const requests = groupRequests(def, demand, settings.resourceBindings);
+  const boundImpossible = !!groupDemandBound(
+    structuralDef,
+    units.length,
+    enabled,
+    demand,
+    settings.resourceBindings,
+  ).message;
+  const full = !boundImpossible && fullResourcePlan(def, units, enabled, demand, requests);
+  if (full)
+    return placeAssignedResourceHatches(
+      def,
+      units,
+      enabled,
+      demand,
+      settings,
+      below,
+      toward,
+      avoid,
+      towardPoints,
+      structuralDef,
+      full,
+    );
   const { sites } = findSites(def, units, below);
-  const impossible =
-    !minimumFits(def, units, enabled, demand, sites) ||
-    !!groupDemandBound(structuralDef, units.length, enabled, demand, settings.resourceBindings).message;
+  const impossible = boundImpossible || !minimumFits(def, units, enabled, demand, sites);
   const budget = { remaining: 20_000 };
   let best: ReturnType<typeof placeAssignedResourceHatches> | undefined;
   function complete(result: ReturnType<typeof placeAssignedResourceHatches>) {
@@ -828,6 +849,15 @@ export function validateResourceHatches(
   hatches: readonly SiteHatch[],
   settings?: HatchSettings,
   demand?: Demand,
+  enabled: readonly HatchKind[] = [
+    ...new Set([
+      ...hatches.map((h) => h.kind),
+      ...(Object.keys(demand ?? {}) as HatchKind[]),
+      ...Object.entries(def.requiredHatches ?? {})
+        .filter(([, rule]) => rule.min > 0 || rule.regions?.length)
+        .map(([kind]) => kind as HatchKind),
+    ]),
+  ],
 ): string[] {
   const errors: string[] = [];
   const ordered = hatchOrder(def, units);
@@ -1008,6 +1038,22 @@ export function validateResourceHatches(
       }
     }
   const bindings = settings?.resourceBindings ?? [];
+  const requests = groupRequests(def, demand ?? {}, bindings);
+  if (demand && fullResourcePlan(def, units, enabled, demand, requests))
+    for (const unit of units)
+      for (const request of requests)
+        if (
+          !(hatchesByUnit.get(unit.id) ?? []).some(
+            (h) =>
+              h.kind === request.kind &&
+              h.resource === request.resource &&
+              (!request.region ||
+                def.legend[cellsOf(unit.id).get(h.cell.join())?.char ?? '']?.region === request.region),
+          )
+        )
+          errors.push(
+            `Controller ${unit.id}: ${request.resource} needs an assigned ${request.kind} in the full resource set.`,
+          );
   for (const binding of bindings) {
     const region = resourceRegion(def, binding.kind, binding);
     if (region === null) {
