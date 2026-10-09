@@ -62,6 +62,7 @@ async function importFixture(page: Page, viaPanel = false, optimize = false): Pr
 }
 
 test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
+  test.setTimeout(60000);
   const errors = collectErrors(page);
   await page.goto('/');
   await importFixture(page);
@@ -142,6 +143,94 @@ test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
   await expect(page.getByTestId('site-stats')).toContainText('6 groups');
 
   expect(errors).toEqual([]);
+});
+
+test('shows each completed import before scheduling its automatic optimisation', async ({ page }) => {
+  test.setTimeout(120000);
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+    const trace: {
+      event: string;
+      id: number;
+      revision?: number;
+      name?: string;
+      optimize?: boolean;
+      partial?: boolean;
+    }[] = [];
+    Object.assign(window, { buildTrace: trace });
+    window.Worker = class extends NativeWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        this.addEventListener('message', ({ data }) => {
+          if ('build' in data || 'imported' in data || 'arranged' in data)
+            trace.push({
+              event: 'receive',
+              id: data.id,
+              revision: data.sourceRevision,
+              partial: data.partial,
+            });
+        });
+      }
+      postMessage(data: Parameters<Worker['postMessage']>[0]) {
+        trace.push({
+          event: data.type,
+          id: data.id,
+          revision: data.sourceRevision,
+          name: data.site?.name,
+          optimize: data.optimize,
+        });
+        super.postMessage(data);
+      }
+    };
+  });
+  await page.goto('/');
+  await importFixture(page, false, true);
+  await expect(page.getByText(/Optimized:|nothing tried beat it/)).toBeVisible({ timeout: 60000 });
+  await importFixture(page, false, true);
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(
+          () =>
+            (window as unknown as { buildTrace: { event: string; optimize?: boolean }[] }).buildTrace.filter(
+              (e) => e.event === 'arrange' && e.optimize,
+            ).length,
+        ),
+      { timeout: 60000 },
+    )
+    .toBe(2);
+  const trace = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          buildTrace: {
+            event: string;
+            id: number;
+            revision?: number;
+            optimize?: boolean;
+            partial?: boolean;
+          }[];
+        }
+      ).buildTrace,
+  );
+  const imports = trace.map((e, index) => (e.event === 'import' ? index : -1)).filter((index) => index >= 0);
+  expect(imports).toHaveLength(2);
+  const revisions: number[] = [];
+  for (const start of imports) {
+    const arranged = trace.findIndex((e, i) => i > start && e.event === 'arrange' && e.optimize);
+    const request = trace.slice(start + 1, arranged).find((e) => e.event === 'build');
+    expect(request).toBeDefined();
+    expect(
+      trace
+        .slice(start + 1, arranged)
+        .some(
+          (e) =>
+            e.event === 'receive' && e.id === request!.id && e.revision === request!.revision && !e.partial,
+        ),
+    ).toBe(true);
+    revisions.push(request!.revision!);
+  }
+  expect(revisions[0]).not.toBe(revisions[1]);
 });
 
 test('optimises the template by itself after an import, once it is shown', async ({ page }) => {

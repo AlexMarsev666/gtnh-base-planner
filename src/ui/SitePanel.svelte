@@ -1,9 +1,18 @@
 <script lang="ts">
-  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
+  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, TRANSFORMER_ID, getSiteDef } from '../data/generic';
   import { t } from '../i18n/en';
   import type { Endpoint, ResourceKind } from '../model/site/types';
   import { MAX_CORRIDOR, SITE_MAX_SIZE, SITE_MIN_SIZE } from '../share/siteCodec';
-  import { flowAnimation, isolate, showIcons, site, siteCables, siteGroup, sitePipes } from '../state/site';
+  import {
+    flowAnimation,
+    isolate,
+    showIcons,
+    site,
+    siteCables,
+    siteGroup,
+    sitePipes,
+    undergroundView,
+  } from '../state/site';
   import { connectBelow, xray } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
   import { notify } from './notices';
@@ -170,6 +179,9 @@
       </li>
       <li class="row">
         <button class="link" onclick={() => addGroup(SINGLE_BLOCK_ID)}>{t.site.addSingle}</button>
+        <button class="link" data-testid="add-transformer" onclick={() => addGroup(TRANSFORMER_ID)}
+          >{t.site.transformer}</button
+        >
       </li>
       <li class="row">
         <button class="link" onclick={() => addGroup(PLACEHOLDER_ID)}>{t.site.addPlaceholder}</button>
@@ -365,8 +377,43 @@
 
   <section>
     <h2>{t.view}</h2>
+    <label class="row"
+      >{t.site.routingMode}<select
+        class="field"
+        value={$site.routing?.mode ?? 'compact'}
+        data-testid="routing-mode"
+        onchange={(e) =>
+          updateSite((s) => ({
+            ...s,
+            routing: { mode: e.currentTarget.value as 'compact' | 'neat', depth: s.routing?.depth ?? 3 },
+          }))}
+        ><option value="compact">{t.site.routingCompact}</option><option value="neat"
+          >{t.site.routingNeat}</option
+        ></select
+      ></label
+    >
+    <label class="row"
+      >{t.site.routingDepth}<NumberStepper
+        value={String($site.routing?.depth ?? 3)}
+        label={t.site.routingDepth}
+        min={1}
+        max={6}
+        testid="routing-depth"
+        oncommit={(v) =>
+          updateSite((s) => ({
+            ...s,
+            routing: { mode: s.routing?.mode ?? 'neat', depth: Math.max(1, Math.min(6, Number(v) || 3)) },
+          }))}
+      /></label
+    >
     <ul class="rows">
       <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
+      <ToggleRow
+        on={$undergroundView}
+        label={t.site.undergroundView}
+        testid="underground-view"
+        ontoggle={() => undergroundView.update((v) => !v)}
+      />
       <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
       <ToggleRow
         on={$connectBelow}

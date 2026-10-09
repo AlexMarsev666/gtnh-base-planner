@@ -3,7 +3,8 @@ import { getMultiblock } from '../data/catalog';
 import { key, unitCells } from './geometry';
 import { withPipeFaces } from './routing/attachments';
 import { DEFAULT_TURN_COST, MAX_GRID_CELLS } from './routing/constants';
-import { CABLE_KINDS, PIPE_KINDS } from './routing/kinds';
+import { CABLE_KINDS, PIPE_KINDS, ROUTED_KINDS, ROUTED_MASK } from './routing/kinds';
+import { POPCOUNT } from './routing/grow';
 import { routePipes } from './routing/router';
 import { catalog } from '../data/catalog';
 import { createPipeline } from '../ui/pipeline';
@@ -87,6 +88,34 @@ function shellHatches(): HatchPlacement[] {
 }
 
 describe('routePipes', () => {
+  it('routes all eleven kinds without losing the high bit or changing legacy cable order', () => {
+    expect(ROUTED_KINDS.slice(0, 7)).toEqual([
+      'itemIn',
+      'itemOut',
+      'fluidIn',
+      'fluidOut',
+      'steamIn',
+      'energy',
+      'dynamo',
+    ]);
+    expect(ROUTED_KINDS.slice(7)).toEqual(['cryotheumIn', 'pyrotheumIn', 'electrodeIn', 'electrodeBus']);
+    expect(POPCOUNT[ROUTED_MASK]).toBe(11);
+    const hatches = ROUTED_KINDS.flatMap((kind, i) => [
+      hatch(kind, [4 + i * 2, 1, 0], 'south', [1]),
+      hatch(kind, [4 + i * 2, 1, 8], 'north', [1]),
+    ]);
+    const nets = routePipes(coke, [oven(1, [0, 0, 0])], hatches, { kinds: ROUTED_KINDS });
+    expect(nets.map((n) => n.kind)).toEqual(ROUTED_KINDS);
+    const used = new Set<string>();
+    for (const n of nets) {
+      expect(n.connected).toBe(2);
+      expectContiguous(n);
+      for (const cell of pipeCells(n)) {
+        expect(used.has(cell), `${n.kind} crossed a different network`).toBe(false);
+        used.add(cell);
+      }
+    }
+  });
   it('returns nothing without routed hatches', () => {
     const units = [oven(1, [0, 0, 0])];
     expect(routePipes(coke, units, [])).toEqual([]);

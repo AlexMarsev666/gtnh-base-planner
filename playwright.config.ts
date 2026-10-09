@@ -6,6 +6,9 @@ const port = 4200 + ([...process.cwd()].reduce((h, c) => (h * 31 + c.charCodeAt(
 export default defineConfig({
   testDir: 'e2e',
   outputDir: 'test-results',
+  // Software WebGL and routing workers share the host CPU. Keep frame-budget checks independent
+  // of large imports in other browser contexts without relaxing their acceptance thresholds.
+  workers: 2,
   use: { baseURL: `http://127.0.0.1:${port}/`, ...devices['Desktop Chrome'] },
   webServer: {
     command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port} --strictPort`,

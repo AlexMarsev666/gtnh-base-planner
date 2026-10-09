@@ -7,6 +7,11 @@ import { placeSitePorts } from './ports';
 import type { RouteResult } from './router';
 import { buildSiteScene } from './siteScene';
 import { groupToward } from './toward';
+import { validateAlternativeCounts } from '../multiblock/rules';
+import { validateResourceHatches } from './resourcePlacement';
+import { isSingleBlock } from '../../data/generic';
+import { hatchTiers } from '../../data/single-machines';
+import { validateHatchAccess } from './hatchAccess';
 
 /**
  * Builds sites. Keeps a per-group cache: moving, rotating or relinking one group only re-packs the groups
@@ -16,6 +21,7 @@ export function createSiteBuilder(): SiteBuilder {
   const cache: GroupCache = new Map();
 
   return function buildSite(site, opts) {
+    opts = { ...opts, below: site.routing?.mode === 'neat' || opts.below };
     const demand = deriveSiteDemand(site);
     const placed = placeGroups(
       site,
@@ -29,7 +35,44 @@ export function createSiteBuilder(): SiteBuilder {
     const occupancy = analyzeOccupancy(site, groups);
     const { ports, warnings: portWarnings } = placeSitePorts(site, groups, occupancy);
     const { nets, hatchNet } = buildSiteNetworks(site, groups, ports);
+    const controllerFronts = new Set(occupancy.keepFree.map((pos) => pos.join()));
     const routing = routeSiteNetworks(site, groups, ports, nets, hatchNet, occupancy, opts);
+    const structureWarnings: SiteBuild['warnings'] = validateHatchAccess(
+      groups,
+      occupancy,
+      controllerFronts,
+      ports,
+    );
+    for (const pg of groups) {
+      if (!pg.def || isSingleBlock(pg.def)) continue;
+      for (const hatch of pg.hatches) {
+        const tiers = hatchTiers(hatch.kind);
+        if (hatch.tier && tiers.length && !tiers.includes(hatch.tier))
+          structureWarnings.push({
+            type: 'error',
+            group: pg.group.id,
+            code: 'tier',
+            message: `${hatch.kind} has no ${hatch.tier} variant in RC2 at (${hatch.cell.join(', ')}). Choose a supported individual tier.`,
+          });
+      }
+      const messages = new Set(validateResourceHatches(pg.def, pg.units, pg.hatches, pg.group));
+      validateAlternativeCounts(pg.def, pg.units, pg.hatches).forEach((message) => messages.add(message));
+      for (const message of messages)
+        structureWarnings.push({ type: 'error', group: pg.group.id, code: 'structure', message });
+    }
+    const electricalWarnings: SiteBuild['warnings'] = [];
+    for (const net of nets.filter((n) => n.kind === 'power')) {
+      const tiers = new Set(net.terminals.flatMap((t) => (t.hatch?.tier ? [t.hatch.tier] : [])));
+      if (tiers.size > 1) {
+        for (const group of new Set(net.terminals.flatMap((t) => (t.group ? [t.group] : []))))
+          electricalWarnings.push({
+            type: 'error',
+            group,
+            code: 'electrical',
+            message: `Incompatible electrical tiers in ${net.resource}: ${[...tiers].join(', ')}. Insert a transformer between these networks.`,
+          });
+      }
+    }
     return {
       groups,
       ports,
@@ -41,8 +84,10 @@ export function createSiteBuilder(): SiteBuilder {
         ...occupancy.warnings,
         ...portWarnings,
         ...routing.warnings,
+        ...electricalWarnings,
+        ...structureWarnings,
       ],
-      stats: siteStats(groups, ports, routing.routed),
+      stats: siteStats(groups, ports, routing.routed, site.routing?.mode === 'neat'),
     };
   };
 }
@@ -52,6 +97,7 @@ function siteStats(
   groups: readonly PlacedGroup[],
   ports: readonly PlacedPort[],
   routed: readonly SiteNet[],
+  neat = false,
 ): SiteBuild['stats'] {
   let blocks = ports.length;
   let hatches = 0;
@@ -62,6 +108,36 @@ function siteStats(
   const sum = (list: readonly SiteNet[], f: (r: RouteResult) => number) =>
     list.reduce((s, n) => s + (n.route ? f(n.route) : 0), 0);
   return {
+    ...(neat
+      ? {
+          surfaceBlocks: routed.reduce(
+            (sum, n) =>
+              sum +
+              new Set(
+                (n.route?.paths ?? [])
+                  .flat()
+                  .filter((p) => p[1] >= 0)
+                  .map((p) => p.join()),
+              ).size,
+            0,
+          ),
+          bends: routed.reduce(
+            (sum, n) =>
+              sum +
+              (n.route?.paths ?? []).reduce(
+                (sum, path) =>
+                  sum +
+                  path
+                    .slice(2)
+                    .filter((p, j) =>
+                      p.some((v, axis) => v - path[j + 1][axis] !== path[j + 1][axis] - path[j][axis]),
+                    ).length,
+                0,
+              ),
+            0,
+          ),
+        }
+      : {}),
     groups: groups.length,
     units: groups.reduce((s, g) => s + g.units.length, 0),
     blocks,

@@ -1,0 +1,365 @@
+{
+  "absolute-baryonic-perfection-purification-unit": [
+    {
+      "blocks": ["gregtech:gt.blockcasings10@2"],
+      "min": 300
+    }
+  ],
+  "active-transformer": [
+    {
+      "blocks": ["tectech:gt.blockcasingsTT@0"],
+      "min": 5
+    }
+  ],
+  "algae-farm": [
+    {
+      "blocks": ["gregtech:gt.blockcasings12@15"],
+      "min": 20
+    }
+  ],
+  "alloy-blast-smelter": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@15"],
+      "min": 3
+    }
+  ],
+  "big-barrel-brewery": [
+    {
+      "blocks": ["gt.casing.reinforcedWooden"],
+      "min": 14
+    }
+  ],
+  "bio-vat": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@1"],
+      "min": 19
+    }
+  ],
+  "dangote-distillus": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@1"],
+      "min": 7
+    }
+  ],
+  "density-2": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@0"],
+      "min": 50
+    }
+  ],
+  "digester": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@0"],
+      "min": 40
+    }
+  ],
+  "dissection-apparatus": [
+    {
+      "blocks": ["gt.casing.cleanStainless"],
+      "min": 45
+    }
+  ],
+  "dissolution-tank": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@1"],
+      "min": 30
+    }
+  ],
+  "draconic-evolution-fusion-crafter": [
+    {
+      "blocks": ["kubatech:defc.casing@7"],
+      "min": 19
+    }
+  ],
+  "electric-implosion-compressor": [
+    {
+      "blocks": ["gregtech:gt.blockreinforced@10"],
+      "min": 230
+    }
+  ],
+  "endothermic-fridge": [
+    {
+      "blocks": ["gregtech:gt.blockcasings14@4"],
+      "min": 750
+    }
+  ],
+  "exothermic-hearth": [
+    {
+      "blocks": ["gregtech:gt.blockcasings14@3"],
+      "min": 1800
+    }
+  ],
+  "extreme-entity-crusher": [
+    {
+      "blocks": ["gt.casing.solidSteel"],
+      "min": 35
+    }
+  ],
+  "extreme-heat-exchanger": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@0"],
+      "min": 25
+    }
+  ],
+  "extreme-temperature-fluctuation-purification-unit": [
+    {
+      "blocks": ["gregtech:gt.blockcasings9@11"],
+      "min": 50
+    }
+  ],
+  "flocculation-purification-unit": [
+    {
+      "blocks": ["gregtech:gt.blockcasings9@6"],
+      "min": 56
+    }
+  ],
+  "hot-isostatic-pressurization-unit": [
+    {
+      "blocks": ["gregtech:gt.blockcasings10@4", "gregtech:gt.blockcasings10@5"],
+      "min": 95,
+      "hatchableOnly": true
+    }
+  ],
+  "hyper-intensity-laser-engraver": [
+    {
+      "blocks": ["gregtech:gt.blockcasings10@1"],
+      "min": 35
+    }
+  ],
+  "implosion-compressor": [
+    {
+      "blocks": ["gt.casing.solidSteel"],
+      "min": 16
+    }
+  ],
+  "industrial-3d-copying-machine": [
+    {
+      "blocks": ["miscutils:gtplusplus.blockcasings.5@5"],
+      "min": 40
+    }
+  ],
+  "industrial-arc-furnace": [
+    {
+      "blocks": ["gregtech:gt.blockcasings2@0"],
+      "min": 10
+    }
+  ],
+  "industrial-autoclave": [
+    {
+      "blocks": ["gt.casing.pressureContainment"],
+      "min": 128
+    }
+  ],
+  "industrial-bending-machine": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@4"],
+      "min": 4
+    }
+  ],
+  "industrial-centrifuge": [
+    {
+      "blocks": ["gtpp.casing.centrifuge"],
+      "min": 6
+    }
+  ],
+  "industrial-coke-oven": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@1"],
+      "min": 35
+    }
+  ],
+  "industrial-electrolyzer": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@5"],
+      "min": 6
+    }
+  ],
+  "industrial-extrusion-machine": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@1"],
+      "min": 3
+    },
+    {
+      "blocks": ["gregtech:gt.blockcasings10@3"],
+      "min": 8
+    }
+  ],
+  "industrial-forming-press": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@4"],
+      "min": 5
+    }
+  ],
+  "industrial-mixing-machine": [
+    {
+      "blocks": ["gregtech:gt.blockcasings12@13"],
+      "min": 5
+    }
+  ],
+  "industrial-precision-lathe": [
+    {
+      "blocks": ["gregtech:gt.blockcasings2@0"],
+      "min": 42
+    }
+  ],
+  "industrial-sledgehammer": [
+    {
+      "blocks": ["miscutils:gtplusplus.blockcasings.5@6"],
+      "min": 10,
+      "hatchableOnly": true
+    }
+  ],
+  "industrial-wire-factory": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@6"],
+      "min": 14
+    }
+  ],
+  "infinite-fluid-drilling-rig": [
+    {
+      "blocks": ["gregtech:gt.blockcasings8@2"],
+      "min": 90
+    }
+  ],
+  "l-a-t-e-x": [
+    {
+      "blocks": ["gregtech:gt.blockcasings8@0"],
+      "min": 14
+    }
+  ],
+  "large-chemical-reactor": [
+    {
+      "blocks": ["gt.casing.chemicallyInert"],
+      "min": 8
+    }
+  ],
+  "large-electric-compressor": [
+    {
+      "blocks": ["gregtech:gt.blockcasings10@5", "gregtech:gt.blockcasings10@4"],
+      "min": 95,
+      "hatchableOnly": true
+    }
+  ],
+  "large-molecular-assembler": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@0"],
+      "min": 24
+    }
+  ],
+  "large-naquadah-reactor": [
+    {
+      "blocks": ["gregtech:gt.blockcasings13@15"],
+      "min": 130
+    }
+  ],
+  "matter-fabrication-cpu": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@9"],
+      "min": 35
+    }
+  ],
+  "mega-distillation-tower": [
+    {
+      "blocks": ["gregtech:gt.blockcasings14@5"],
+      "min": 150
+    }
+  ],
+  "mega-oil-cracker": [
+    {
+      "blocks": ["gregtech:gt.blockcasings14@5"],
+      "min": 145
+    }
+  ],
+  "neutron-activator": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@1"],
+      "min": 7
+    }
+  ],
+  "neutronium-compressor": [
+    {
+      "blocks": ["gregtech:gt.blockcasings10@6"],
+      "min": 220
+    }
+  ],
+  "oil-cracking-unit": [
+    {
+      "blocks": ["gt.casing.cleanStainless"],
+      "min": 18
+    }
+  ],
+  "ozonation-purification-unit": [
+    {
+      "blocks": ["gregtech:gt.blockcasings9@10", "gregtech:gt.blockcasings9@9"],
+      "min": 96,
+      "hatchableOnly": true
+    }
+  ],
+  "pseudostable-black-hole-containment-field": [
+    {
+      "blocks": ["gregtech:gt.blockcasings10@12"],
+      "min": 950
+    }
+  ],
+  "pyrolyse-oven": [
+    {
+      "blocks": ["gt.casing.pyrolyseOven"],
+      "min": 60
+    }
+  ],
+  "residual-decontaminant-degasser-purification-unit": [
+    {
+      "blocks": ["gregtech:gt.blockcasings9@11"],
+      "min": 780
+    }
+  ],
+  "sparge-tower-controller": [
+    {
+      "blocks": ["miscutils:gtplusplus.blockcasings.5@4"],
+      "min": 45
+    }
+  ],
+  "thermal-boiler": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@0"],
+      "min": 10
+    }
+  ],
+  "thorium-reactor-lftr": [
+    {
+      "blocks": ["miscutils:miscutils.blockcasings@12"],
+      "min": 27,
+      "hatchableOnly": true
+    }
+  ],
+  "turbocan-pro": [
+    {
+      "blocks": ["gt.casing.solidSteel"],
+      "min": 85
+    }
+  ],
+  "universal-chemical-fuel-engine": [
+    {
+      "blocks": ["gregtech:gt.blockcasings4@2"],
+      "min": 100
+    }
+  ],
+  "utupu-tanuri": [
+    {
+      "blocks": ["miscutils:gtplusplus.blockcasings.4@10"],
+      "min": 4
+    }
+  ],
+  "vacuum-freezer": [
+    {
+      "blocks": ["gt.casing.frostProof"],
+      "min": 16
+    }
+  ],
+  "water-pump": [
+    {
+      "blocks": ["gregtech:gt.blockcasings9@2"],
+      "min": 9
+    }
+  ]
+}

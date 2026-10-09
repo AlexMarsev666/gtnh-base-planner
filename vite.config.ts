@@ -1,6 +1,6 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
 const page = (file: string) => fileURLToPath(new URL(file, import.meta.url));
 
@@ -13,9 +13,26 @@ const harnesses: Record<string, string> = process.env.E2E_HARNESS
     }
   : {};
 
+function catalogOfflineNotes(): Plugin {
+  return {
+    name: 'catalog-offline-notes',
+    apply: 'build',
+    enforce: 'pre',
+    // Catalog transcription notes are retained in the source files for review. No runtime
+    // consumer reads them; exclude this prose from both the client and worker payloads.
+    transform(code, id) {
+      const path = id.split('?')[0].replaceAll('\\', '/');
+      if (!path.includes('/src/data/multiblocks/') || !path.endsWith('.json')) return;
+      const { notes: _notes, ...definition } = JSON.parse(code);
+      return JSON.stringify(definition);
+    },
+  };
+}
+
 export default defineConfig({
   base: './',
-  plugins: [svelte()],
+  plugins: [catalogOfflineNotes(), svelte()],
+  worker: { plugins: () => [catalogOfflineNotes()] },
   build: {
     // three.js alone is ~550 kB minified.
     chunkSizeWarningLimit: 900,

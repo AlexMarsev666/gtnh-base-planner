@@ -34,15 +34,15 @@ describe('encodePlan / decodePlan', () => {
     expect(await decodePlan(encoded)).toEqual(plan);
   });
 
-  it('round-trips a size and snaps it to one the multiblock can take', async () => {
+  it('round-trips sizes without silently changing historical dimensions', async () => {
     const plan = { ...defaultPlan('distillation-tower'), size: 9 };
     expect(await decodePlan(await encodePlan(plan))).toEqual(plan);
     // Old links have no size: the default applies.
     const old = defaultPlan('distillation-tower');
     expect((await decodePlan(await encodePlan(old))).size).toBeUndefined();
-    expect(validatePlanState({ ...old, size: 40 }).size).toBe(12);
+    expect(validatePlanState({ ...old, size: 40 }).size).toBe(40);
     // Fixed-size multiblocks drop it.
-    expect(validatePlanState({ ...defaultPlan(), size: 5 }).size).toBeUndefined();
+    expect(validatePlanState({ ...defaultPlan(), size: 5 }).size).toBe(5);
     expect(() => validatePlanState({ ...old, size: 1.5 })).toThrow(PlanFormatError);
   });
 
@@ -119,12 +119,12 @@ describe('encodePlan / decodePlan', () => {
   });
 
   it('rejects a wrong version', async () => {
-    await expect(decodePlan(await rawLink({ v: 2, m: 'coke-oven' }))).rejects.toThrow(/version 2/);
+    await expect(decodePlan(await rawLink({ v: 3, m: 'coke-oven' }))).rejects.toThrow(/version 3/);
     await expect(decodePlan(await rawLink({ m: 'coke-oven' }))).rejects.toThrow(/version/);
   });
 
-  it('rejects XSS-like and unknown multiblock ids', async () => {
-    for (const m of ['<img src=x onerror=alert(1)>', 'Coke-Oven', 'no-such-machine', 5, '']) {
+  it('rejects XSS-like and malformed multiblock ids', async () => {
+    for (const m of ['<img src=x onerror=alert(1)>', 'Coke-Oven', 5, '']) {
       await expect(decodePlan(await rawLink({ v: 1, m, h: 7 }))).rejects.toThrow(PlanFormatError);
     }
   });
@@ -132,6 +132,8 @@ describe('encodePlan / decodePlan', () => {
   it('accepts a minimal hand-made link and requires the hatch mask', async () => {
     expect(await decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 7 }))).toEqual({
       ...defaultPlan(),
+      rulesVersion: undefined,
+      voltageTier: undefined,
       enabledHatches: ['itemIn', 'itemOut', 'fluidIn'],
     });
     await expect(decodePlan(await rawLink({ v: 1, m: 'coke-oven' }))).rejects.toThrow(/Hatch mask/);
@@ -215,7 +217,7 @@ describe('validatePlanState', () => {
 
   it('rejects wrong types and out-of-range numbers', () => {
     const cases: Record<string, unknown>[] = [
-      { v: 2 },
+      { v: 3 },
       { multiblockId: '../../etc' },
       { multiblockId: 'javascript:alert(1)' },
       { multiblockId: 'x'.repeat(65) },

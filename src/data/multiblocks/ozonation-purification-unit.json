@@ -2,7 +2,7 @@
   "id": "ozonation-purification-unit",
   "name": "Ozonation Purification Unit",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitOzonation.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitOzonation.java",
   "size": [9, 10, 5],
   "layers": [
     [" A~A     ", "AAAAA   B", "AAAAA    ", "AAAAA   B", " AAA     "],
@@ -34,5 +34,5 @@
   "requiredHatches": {},
   "defaultHatches": ["itemOut"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPurificationUnitOzonation (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPurificationUnitOzonation (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

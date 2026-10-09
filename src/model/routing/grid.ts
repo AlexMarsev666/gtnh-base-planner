@@ -52,7 +52,7 @@ export function buildGrid(solids: Vec3[], terminals: Vec3[], ground: number, tre
   const dz = maxZ - minZ + 1 + 2 * pad;
   if (dx * dy * dz > MAX_GRID_CELLS) return null;
   const occ = new Uint8Array(dx * dy * dz);
-  const termMask = new Uint8Array(dx * dy * dz);
+  const termMask = new Uint16Array(dx * dy * dz);
   const wall = new Uint8Array(dx * dy * dz);
   const g: Grid = {
     ox,

@@ -3,6 +3,7 @@ import cokeOvenJson from '../data/multiblocks/coke-oven.json';
 import { DEFAULT_HATCH_COLORS } from './colors';
 import { key } from './geometry';
 import { buildSceneModel } from './scene';
+import { getMultiblock } from '../data/catalog';
 import type { Vec3 } from './core/types';
 import type { MultiblockDef, Unit } from './multiblock/types';
 import type { HatchPlacement, WallStats } from './plan/types';
@@ -28,6 +29,17 @@ function byPos(voxels: ReturnType<typeof buildSceneModel>['voxels']) {
 }
 
 describe('buildSceneModel', () => {
+  for (const [rotation, facing] of ['north', 'east', 'south', 'west'].entries()) {
+    it(`keeps Target Chamber's concrete Beam Input front facing ${facing}`, () => {
+      const def = getMultiblock('target-chamber')!;
+      const unit: Unit = { id: 0, origin: [10, 2, -3], rotation: rotation as Unit['rotation'] };
+      const scene = buildSceneModel(def, [unit], [], stats(), null, DEFAULT_HATCH_COLORS);
+      const beam = scene.voxels.filter((v) => v.blockId === 'gregtech:gt.blockmachines@10503');
+      expect(beam).toHaveLength(1);
+      expect(beam[0].facing).toBe(facing);
+      expect(beam[0].kind).toBe('casing'); // Fixed structural block, not an ordinary resource hatch.
+    });
+  }
   it('builds one voxel per non-air cell of a single coke oven', () => {
     const units: Unit[] = [{ id: 1, origin: [0, 0, 0], rotation: 0 }];
     const m = buildSceneModel(coke, units, [], stats(), null, DEFAULT_HATCH_COLORS);

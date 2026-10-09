@@ -80,6 +80,24 @@ test('detailed mode falls back or loads without console errors', async ({ page }
   expect(errors).toEqual([]);
 });
 
+test('renders the chemical reactor casing normally and preserves the intentional x-ray view', async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await open(page, 'def=large-chemical-reactor&count=1&pipes=0&mode=detailed');
+  await page.evaluate(() => window.__harness!.setViewMode('detailed'));
+  expect(await page.evaluate(() => window.__harness!.renderer.viewMode)).toBe('detailed');
+  expect(await inkRatio(page)).toBeGreaterThan(0.05);
+  await page.screenshot({ path: 'e2e/screenshots/rc2-lcr-opaque.png' });
+  await page.evaluate(async () => {
+    window.__harness!.setXray(true);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
+  expect(await inkRatio(page)).toBeGreaterThan(0.02);
+  await page.screenshot({ path: 'e2e/screenshots/rc2-lcr-xray.png' });
+  expect(errors).toEqual([]);
+});
+
 test('60 coke ovens render within budget', async ({ page }) => {
   const errors = trackErrors(page);
   await open(page, 'count=60');

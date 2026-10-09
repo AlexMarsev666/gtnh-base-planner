@@ -7,7 +7,7 @@ import {
   unitCells,
   type CellKey,
 } from './geometry';
-import type { CellRole, Rotation, Vec3 } from './core/types';
+import type { CellRole, Dir, Rotation, Vec3 } from './core/types';
 import type { MultiblockDef, Unit } from './multiblock/types';
 import type { HatchPlacement, WallStats } from './plan/types';
 
@@ -15,6 +15,7 @@ interface Occupant {
   unitId: number;
   role: CellRole;
   blockId?: string;
+  facing?: Dir;
 }
 
 interface CellEntry {
@@ -61,7 +62,13 @@ function sideCounts(def: MultiblockDef): number[][] {
 
 function compatible(def: MultiblockDef, a: Occupant, b: Occupant): boolean {
   if (a.role === 'air' && b.role === 'air') return true;
-  return def.wallshare && a.role === 'casing' && b.role === 'casing' && a.blockId === b.blockId;
+  return (
+    def.wallshare &&
+    a.role === 'casing' &&
+    b.role === 'casing' &&
+    a.blockId === b.blockId &&
+    a.facing === b.facing
+  );
 }
 
 /** True when the pair's whole overlap is one boundary plane that covers a full side of either unit. */
@@ -141,7 +148,7 @@ export function computeWallStats(def: MultiblockDef, units: Unit[], hatches: Hat
   for (const unit of units) {
     if (!unitById.has(unit.id)) unitById.set(unit.id, unit);
     for (const cell of unitCells(def, unit)) {
-      const occ: Occupant = { unitId: unit.id, role: cell.role, blockId: cell.blockId };
+      const occ: Occupant = { unitId: unit.id, role: cell.role, blockId: cell.blockId, facing: cell.facing };
       const pk = packCell(cell.pos);
       const entry = cells.get(pk);
       if (!entry) {
@@ -166,7 +173,7 @@ export function computeWallStats(def: MultiblockDef, units: Unit[], hatches: Hat
     const pk = packCell(h.cell);
     if (hatchAt.has(pk)) continue;
     if (cells.get(pk)?.occupants.some((o) => o.role === 'controller')) continue;
-    hatchAt.set(pk, def.hatchBlocks[h.kind] ?? `hatch.${h.kind}`);
+    hatchAt.set(pk, (def.hatchBlocks[h.kind] ?? `hatch.${h.kind}`) + (h.tier ? `.${h.tier}` : ''));
   }
 
   const byBlock: Record<string, number> = {};

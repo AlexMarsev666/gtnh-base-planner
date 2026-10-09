@@ -8,7 +8,8 @@ import generatedShapes from './gt-shapes.generated.json';
  * Every hand-made catalog structure, cell by cell, against the StructureLib shape in GT5-Unofficial 5.09.54.133
  * (the version in GT:NH 2.9.0-beta-3). Entries built from the game dump (tools/game-dump) are the game's own
  * placement and are not listed here. Shapes and elements are copied from the Java sources linked in each JSON
- * `source`: which block each character is and which hatches (`buildHatchAdder(...).atLeast(...)`) may replace it.
+ * `source`: which block each character is and which checked adders may replace it. Assembly Line includes
+ * the reviewed RC2 fallback outputs and terminal-centre alternatives; its construction hints differ.
  * The few entries still converted from the sources (tools/gt-source) bring their GT shape along in
  * gt-shapes.generated.json.
  */
@@ -17,6 +18,7 @@ type Cat =
   | { t: 'ctrl' | 'air' | 'any' | 'lavaOrAir' }
   | { t: 'casing'; block: string; hatches: HatchKind[] }
   | { t: 'hatchOnly'; kind: HatchKind }
+  | { t: 'hatchAlternatives'; kinds: HatchKind[] }
   | { t: 'casingOrCoil'; block: string; hatches: HatchKind[] };
 
 const casing = (block: string, ...hatches: HatchKind[]): Cat => ({ t: 'casing', block, hatches });
@@ -44,13 +46,13 @@ const AL_LATER = [
   [' ', 'e', ' '],
   ['d', 'l', 'd'],
   ['g', 'm', 'g'],
-  ['b', 'i', 'b'],
+  ['b', 'I', 'b'],
 ];
 const AL_LAST = [
   [' ', 'e', ' '],
   ['d', 'l', 'd'],
   ['g', 'm', 'g'],
-  ['B', 'i', 'B'],
+  ['B', 'T', 'B'],
 ];
 
 /**
@@ -519,20 +521,24 @@ const GT: Record<string, { transposed: boolean; shape: Shape; el: Record<string,
       Array.from({ length: 4 }, (_, layer) =>
         Array.from({ length: 3 }, (_, z) =>
           [AL_FIRST, ...Array.from({ length: n - 2 }, () => AL_LATER), AL_LAST]
-            .map((s) => s[layer][z])
+            .map((s) =>
+              n === 2 && s === AL_FIRST && layer === 3 ? s[layer][z].replace('b', 'B') : s[layer][z],
+            )
             .join(''),
         ),
       ),
     el: {
       G: casing('gt.casing.grate'),
-      d: casing('gt.casing.grate'),
+      d: casing('gt.casing.grate', 'dataAccess', 'assemblyDataIn', 'wirelessAssemblyDataIn'),
       l: casing('gt.casing.assembler'),
       m: casing('gt.casing.assemblyLine'),
       g: casing('glass'),
       e: casing('gt.casing.solidSteel', EN),
-      b: casing('gt.casing.solidSteel', IH, MA),
-      B: casing('gt.casing.solidSteel', IH, MA, OB),
-      i: casing('gt.hatch.inputBus'),
+      b: casing('gt.casing.solidSteel', IH, OH, MA),
+      B: casing('gt.casing.solidSteel', IH, OH, MA, OB),
+      i: hatchOnly(IB),
+      I: { t: 'hatchAlternatives', kinds: [IB, OH] },
+      T: { t: 'hatchAlternatives', kinds: [IB, OH, OB] },
     },
   },
   'large-fluid-extractor': {
@@ -625,6 +631,7 @@ function ourCat(ch: string, def: MultiblockDef): Cat {
   if (ch === '-') return { t: 'air' };
   if (ch === ' ') return { t: 'any' };
   const e = def.legend[ch];
+  if (e.requiredHatch && (e.hatches?.length ?? 0) > 1) return { t: 'hatchAlternatives', kinds: e.hatches! };
   if (e.blockId.startsWith('gt.hatch.') && e.hatches) return hatchOnly(e.hatches[0]);
   return casing(ALIAS[e.blockId] ?? e.blockId, ...(e.hatches ?? []));
 }
@@ -647,6 +654,8 @@ function sameCell(gt: Cat, ours: Cat): boolean {
       sorted(ours.hatches).join() === sorted(gt.hatches).join()
     );
   if (gt.t === 'hatchOnly') return ours.t === 'hatchOnly' && ours.kind === gt.kind;
+  if (gt.t === 'hatchAlternatives')
+    return ours.t === 'hatchAlternatives' && sorted(ours.kinds).join() === sorted(gt.kinds).join();
   return ours.t === gt.t;
 }
 

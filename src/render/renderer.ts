@@ -10,6 +10,7 @@ import { createSimpleProvider } from './simple';
 export interface RendererOptions {
   /** Called with the unit ids under the pointer on click (empty array = background or a pipe). */
   onPick?: (unitIds: number[]) => void;
+  onPickVoxel?: (voxel: Voxel | null) => void;
   /** Called on click with the id of the net (`RouteNet.id`) under the pointer, or null. */
   onPickNet?: (netId: number | null) => void;
   /** Called after a frame when the camera azimuth (`OrbitControls.theta`, radians) changed. */
@@ -1085,10 +1086,12 @@ export function createRenderer(
       if (!batch) continue;
       const voxel = model.voxels[batch.indices[hit.instanceId]];
       options.onPick([...voxel.unitIds]);
+      options.onPickVoxel?.(voxel);
       options.onPickNet?.(null);
       return;
     }
     options.onPick([]);
+    options.onPickVoxel?.(null);
     options.onPickNet?.(null);
   }
 

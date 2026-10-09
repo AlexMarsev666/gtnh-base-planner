@@ -1,4 +1,5 @@
 import type { CellRole, Dir, HorizontalDir, Rotation, Vec3 } from '../core/types';
+import type { VoltageTier } from '../tiers';
 
 /** Multiblock definitions, the units placed from them, and the hatch kinds they take. */
 
@@ -7,14 +8,42 @@ import type { CellRole, Dir, HorizontalDir, Rotation, Vec3 } from '../core/types
  * steam input hatch of steam multiblocks, kept apart from `fluidIn` because both can be on one machine.
  */
 export type HatchKind =
-  'itemIn' | 'itemOut' | 'fluidIn' | 'fluidOut' | 'energy' | 'dynamo' | 'maintenance' | 'muffler' | 'steamIn';
+  | 'itemIn'
+  | 'itemOut'
+  | 'fluidIn'
+  | 'fluidOut'
+  | 'energy'
+  | 'dynamo'
+  | 'maintenance'
+  | 'muffler'
+  | 'steamIn'
+  | 'cryotheumIn'
+  | 'pyrotheumIn'
+  | 'dataAccess'
+  | 'assemblyDataIn'
+  | 'assemblyDataOut'
+  | 'wirelessAssemblyDataIn'
+  | 'wirelessAssemblyDataOut'
+  | 'electrodeIn'
+  | 'electrodeBus'
+  | 'electrodeDetector'
+  | 'computationIn'
+  | 'computationOut'
+  | 'wirelessComputationIn'
+  | 'wirelessComputationOut'
+  | 'uncertainty'
+  | 'computerRack';
 
 /** One character of a structure drawing. */
 export interface LegendEntry {
   /** Block id from `src/data/blocks.ts`. */
   blockId: string;
+  /** Direction of a fixed block's front, in the structure's local frame. */
+  facing?: Dir;
   /** Hatch kinds that may replace this block. Omitted = no hatches here. */
   hatches?: HatchKind[];
+  /** Source adder has no casing fallback: exactly one of `hatches` must occupy this cell. */
+  requiredHatch?: boolean;
   /**
    * Sides (local frame) a hatch of the given kind must not face here, e.g. GT's `disallowOnly(UP, DOWN)`
    * for Distillation Tower layer outputs.
@@ -38,7 +67,8 @@ export interface HatchRequirement {
  * How a multiblock grows along one local axis (GT `beginVariableStructureBlock`), e.g. Distillation Tower
  * height or Assembly Line length. The JSON holds the smallest form (`size[axis] === min`), with one copy of
  * the repeating slab `[from, to)`; a size of `n` inserts `(n - min) / (to - from)` more copies right after
- * it (see `sizedDef` in `src/model/resize.ts`). A slab cell with a `region` gets a numbered region per copy
+ * it (see `sizedDef` in `src/model/resize.ts`). With `section`, the smallest form has no slab; the source
+ * section is inserted at `from`, keeping the end piece distinct. A slab cell with a `region` gets a numbered region per copy
  * (`layer` -> `layer1`, `layer2`, ...), and `requiredHatches.*.regions` naming it expand to match.
  */
 export interface ResizeRule {
@@ -54,6 +84,8 @@ export interface ResizeRule {
   default: number;
   /** What the size is called in the UI. */
   label: 'height' | 'length';
+  /** Optional source-defined slab absent from the smallest form; insert copies at `from`. */
+  section?: { size: Vec3; layers: string[][] };
 }
 
 /**
@@ -72,6 +104,8 @@ export interface MultiblockDef {
   source?: string;
   /** Set on entries written by tools/gt-source/generate.mjs (converted from the GT sources, not hand-checked). */
   generated?: boolean;
+  /** Direction already applied to a derived Circuit Assembly Line form; survives definition copies. */
+  assemblyGrowth?: 'left' | 'right';
   /** [x, y, z] */
   size: Vec3;
   layers: string[][];
@@ -89,12 +123,44 @@ export interface MultiblockDef {
   shareableHatches: HatchKind[];
   /** Required hatch counts per unit (e.g. EBF muffler min 1 max 1). */
   requiredHatches?: Partial<Record<HatchKind, HatchRequirement>>;
+  /** Recipe fluid output slots, in source dispatch order; differs from mandatory hatch regions. */
+  fluidOutputRegions?: string[];
+  /** Dedicated resource adders, separate from the controller's ordinary input/output lists. */
+  resourceHatchRegions?: Partial<Record<HatchKind, Record<string, string>>>;
+  /** Machine-specific fluid interfaces, identified by their exact registered fluid name. */
+  lockedFluidInputs?: Partial<Record<HatchKind, string>>;
+  /** Dedicated item interfaces accept exact registry/meta IDs. Unknown items need a manual binding. */
+  lockedItemInputs?: Partial<Record<HatchKind, string[]>>;
+  /** First-match adders assign different roles to identical physical hatches in source scan order. */
+  orderedHatchKinds?: { first: HatchKind; later: HatchKind; order: Vec3[] }[];
+  /** Source processing produces only these registered fluids; unknown IDs require an explicit role. */
+  fixedFluidOutputs?: Partial<Record<HatchKind, string>>;
+  /** Repeated sections contain several output slots, dispatched section by section. */
+  interleaveFluidOutputRegions?: boolean;
+  minimumVoltageTier?: VoltageTier;
+  /** RC2 driller checkMachine applies GTUtility.getTier to the sum of standard input voltages. */
+  minimumInputVoltageTier?: VoltageTier;
+  hatchTierLimits?: Partial<Record<HatchKind, { min?: VoltageTier; max?: VoltageTier; reason?: string }>>;
+  /** All hatches of each listed kind must have the same tier within one controller. */
+  uniformHatchTiers?: HatchKind[];
+  /** Source-reviewed tiered glass cells may be selected independently of the energy tier. */
+  selectableGlass?: boolean;
+  /** Only controllers whose standard energy adder/checkMachine imposes this comparison. */
+  glassLimitsEnergy?: boolean;
+  /** Minimum glass in checkMachine; TFFT skips it when every storage field has zero running cost. */
+  minimumStructureGlassTier?: VoltageTier;
   /** Hatch kinds enabled by default in a new plan. */
   defaultHatches: HatchKind[];
   /** Whether casings of two units may overlap (shared walls) when the blocks match. */
   wallshare: boolean;
   /** Present when the structure has a variable size (see `ResizeRule`). */
   resize?: ResizeRule;
+  /** Exact alternative topologies indexed by resize size, instead of repeating a slab. */
+  structureVariants?: Record<
+    number,
+    Pick<MultiblockDef, 'size' | 'layers' | 'legend' | 'controller'> &
+      Partial<Pick<MultiblockDef, 'requiredHatches'>>
+  >;
   notes?: string;
 }
 
@@ -114,6 +180,8 @@ export interface UnitCell {
   char: string;
   /** Block id for casing/controller cells; undefined for air. */
   blockId?: string;
+  /** Fixed block front in world space. */
+  facing?: Dir;
   /** Hatch kinds allowed at this cell (casing only). */
   hatches?: HatchKind[];
 }

@@ -130,6 +130,7 @@ interface LocalCell {
   char: string;
   role: UnitCell['role'];
   blockId?: string;
+  facing?: Dir;
   hatches?: UnitCell['hatches'];
 }
 
@@ -152,7 +153,14 @@ export function localCells(def: MultiblockDef): LocalCell[] {
         else {
           const entry = def.legend[char];
           if (!entry) throw new DefinitionError(`${def.id}: unknown legend char "${char}" at ${key(local)}`);
-          out.push({ local, char, role: 'casing', blockId: entry.blockId, hatches: entry.hatches });
+          out.push({
+            local,
+            char,
+            role: 'casing',
+            blockId: entry.blockId,
+            hatches: entry.hatches,
+            ...(entry.facing ? { facing: entry.facing } : {}),
+          });
         }
       }
   localCache.set(def, out);
@@ -161,7 +169,11 @@ export function localCells(def: MultiblockDef): LocalCell[] {
 
 /** Structure cells of a placed unit in world coords. */
 export function unitCells(def: MultiblockDef, unit: Unit): UnitCell[] {
-  return localCells(def).map((c) => ({ ...c, pos: toWorld(def, unit, c.local) }));
+  return localCells(def).map((c) => ({
+    ...c,
+    pos: toWorld(def, unit, c.local),
+    ...(c.facing ? { facing: rotateDir(c.facing, unit.rotation) } : {}),
+  }));
 }
 
 /** World direction the unit's controller faces. */

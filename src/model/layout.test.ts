@@ -3,6 +3,8 @@ import { getMultiblock } from '../data/catalog';
 import { controllerFacing, key, step, unitBounds, unitCells } from './geometry';
 import { layoutCandidates, packUnits } from './layout/packer';
 import { loosenings } from './layout/variants';
+import { defCache } from './layout/cache';
+import { pairOk } from './layout/shapes';
 import type { Vec3 } from './core/types';
 import type { MultiblockDef, PlanLimits, Unit } from './multiblock/types';
 
@@ -107,6 +109,15 @@ function sharedFaces(def: MultiblockDef, units: Unit[]): number {
 }
 
 describe('packUnits', () => {
+  it('requires matching fixed block fronts on a shared wall before accepting a packing pair', () => {
+    const def = boxDef([3, 1, 3], {
+      controllerPos: [1, 0, 1],
+      legend: { C: { blockId: 'gt.casing.test', facing: 'north' } },
+    });
+    const cache = defCache(def);
+    expect(pairOk(def, cache, 0, 0, [2, 0, 0])).toBe(true);
+    expect(pairOk(def, cache, 0, 2, [2, 0, 0])).toBe(false);
+  });
   it('places a single unit at the origin', () => {
     const r = packUnits(coke, 1, NO_LIMITS);
     expect(r).toMatchObject({ requested: 1, placed: 1 });

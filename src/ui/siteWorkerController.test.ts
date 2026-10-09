@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
 import { createSiteWorkerController, type SiteResult } from './siteWorkerController';
+import { latestBuildRequest, sourceRevisionOf } from './buildIdentity';
 
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -45,9 +46,29 @@ const named = (name: string) => ({ ...emptySite(), name });
 describe('site worker controller', () => {
   it('builds right here without a worker', () => {
     const { c, builds } = setup(() => null);
-    c.submit(named('a'), opts, false);
+    const site = named('a');
+    c.submit(site, opts, false);
     expect(builds).toHaveLength(1);
     expect(builds[0].build?.groups).toEqual([]);
+    expect(builds[0]).toMatchObject({
+      sourceRevision: sourceRevisionOf(site),
+      requestId: latestBuildRequest(site),
+    });
+  });
+
+  it('assigns identities before queueing and retains the newest one through worker failure', () => {
+    const w = fakeWorker();
+    const { c, builds } = setup(() => w as unknown as Worker);
+    const first = named('a');
+    const newest = named('b');
+    c.submit(first, opts, false);
+    c.submit(newest, opts, false);
+    const requestId = latestBuildRequest(newest);
+    expect(requestId).toBeDefined();
+    expect(requestId).not.toBe(latestBuildRequest(first));
+    w.fail();
+    expect(builds).toHaveLength(1);
+    expect(builds[0]).toMatchObject({ sourceRevision: sourceRevisionOf(newest), requestId });
   });
 
   it('builds right here when the worker cannot be created', () => {

@@ -2,21 +2,21 @@
   "id": "ultra-high-energy-etching-array",
   "name": "Ultra-high Energy Etching Array",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEEtchingArrayModule.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEEtchingArrayModule.java",
   "size": [7, 7, 7],
   "layers": [
-    [" AAAAA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    ["       ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", "       "],
-    [" AA~AA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    [" CCCCC ", "C-----C", "C-----C", "C-----C", "C-----C", "CCDDDCC", " CBEBC "],
-    [" ECFCE ", " G-H-G ", " G-H-G ", " G-H-G ", " G-H-G ", " CDDDC ", " EBEBE "],
-    [" ECCCE ", " B---B ", " B---B ", " B---B ", " B---B ", " CDDDC ", " EBEBE "],
-    ["  EEE  ", "  BGB  ", "  BGB  ", "  BGB  ", "  BGB  ", "  BGB  ", "  EEE  "]
+    [" AAAAA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA "],
+    ["       ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", "       "],
+    [" AA~AA ", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", " AAAAA "],
+    [" BBBBB ", "B-----B", "B-----B", "B-----B", "B-----B", "BBDDDBB", " BCECB "],
+    [" EBFBE ", " G-H-G ", " G-H-G ", " G-H-G ", " G-H-G ", " BDDDB ", " ECECE "],
+    [" EBBBE ", " C---C ", " C---C ", " C---C ", " C---C ", " BDDDB ", " ECECE "],
+    ["  EEE  ", "  CGC  ", "  CGC  ", "  CGC  ", "  CGC  ", "  CGC  ", "  EEE  "]
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings12@1", "hatches": ["itemIn", "fluidIn", "fluidOut"] },
-    "B": { "blockId": "gregtech:gt.blockcasings12@1" },
-    "C": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "B": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "C": { "blockId": "gregtech:gt.blockcasings12@1" },
     "D": { "blockId": "gtnhlanth:casing.shielded_accelerator@0" },
     "E": { "blockId": "gregtech:gt.blockframes@582" },
     "F": { "blockId": "gt.hatch.special" },
@@ -33,5 +33,5 @@
   "requiredHatches": {},
   "defaultHatches": ["itemIn"],
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTEEtchingArrayModule (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTEEtchingArrayModule (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

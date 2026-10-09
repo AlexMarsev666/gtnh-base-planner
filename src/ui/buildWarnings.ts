@@ -6,7 +6,7 @@ import { clearSlot, notify } from './notices';
 import type { PipelineResult } from './pipeline';
 
 /** Notice slots of the machine view, and of the template view. */
-const MACHINE_SLOTS = ['pack', 'hatches', 'pipes'];
+const MACHINE_SLOTS = ['pack', 'hatches', 'pipes', 'structure'];
 const SITE_SLOTS = ['arrange', 'import', 'import-placeholders'];
 
 /**
@@ -18,7 +18,13 @@ export function createBuildWarnings(): (result: PipelineResult) => void {
   let lastPack: PackResult | null = null;
   let lastHatches: HatchResult | null = null;
   let lastPipes: RouteNet[] | null = null;
-  return ({ def, pack, hatches, pipes, loosened }) => {
+  let lastError: string | null = null;
+  return ({ def, pack, hatches, pipes, loosened, error }) => {
+    if (error !== lastError) {
+      if (error) notify(error, 8000, 'structure');
+      else clearSlot('structure');
+      lastError = error;
+    }
     if (pack !== lastPack) {
       if (pack && pack.placed < pack.requested)
         notify(t.placedFewer(pack.placed, pack.requested, pack.reason), 6000, 'pack');

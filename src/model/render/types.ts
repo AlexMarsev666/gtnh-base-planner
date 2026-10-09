@@ -12,7 +12,7 @@ export interface Voxel {
   blockId: string;
   kind: VoxelKind;
   unitIds: number[];
-  /** Controller front / hatch face. */
+  /** Controller front, hatch face or fixed directional block front. */
   facing?: Dir;
   hatchKind?: HatchKind;
   /**

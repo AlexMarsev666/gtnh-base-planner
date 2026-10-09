@@ -1,0 +1,3913 @@
+{
+  "absolute-baryonic-perfection-purification-unit": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "accelerated-biological-coordinator": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "active-transformer": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "advanced-concrete-backfiller": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "algae-farm": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkHatchExact"
+    }
+  ],
+  "alloy-blast-smelter": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "amazon-warehousing-depot": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "beam-crafter": [
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "big-barrel-brewery": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "bio-vat": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "boldarnator": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "clarifier-purification-unit": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "comet-compact-cyclotron": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "compact-fusion-computer-mk-i-prototype": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "compact-fusion-computer-mk-ii": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "compact-fusion-computer-mk-iii": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "compact-fusion-computer-mk-iv-prototype": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "compact-fusion-computer-mk-v": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "component-assembly-line": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "concrete-backfiller": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "coolant-tower": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "cryogenic-freezer": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "dangote-distillus": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "data-bank": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "decay-warehouse": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "deep-earth-heating-pump": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "density-2": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "digester": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "dimensionally-transcendent-plasma-forge": [
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "dissection-apparatus": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "dissolution-tank": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "distillation-tower": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "draconic-evolution-fusion-crafter": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "drone-centre": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    }
+  ],
+  "dyson-swarm": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "electric-air-filter-t1": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "electric-air-filter-t2": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "electric-air-filter-t3": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "electric-blast-furnace": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "electric-implosion-compressor": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "elemental-duplicator": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "endothermic-fridge": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "energy-infuser": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "entropic-processor": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "exothermic-hearth": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "extreme-combustion-engine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "extreme-entity-crusher": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "extreme-heat-exchanger": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "extreme-industrial-greenhouse": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    }
+  ],
+  "extreme-temperature-fluctuation-purification-unit": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "exxonmobil-chemical-plant": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "eye-of-harmony": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneOutputBus"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneOutputHatch"
+    }
+  ],
+  "flocculation-purification-unit": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "fluidIn",
+      "max": 3,
+      "helper": "checkHatchMax"
+    },
+    {
+      "kind": "fluidOut",
+      "max": 3,
+      "helper": "checkHatchMax"
+    }
+  ],
+  "flotation-cell-regulator": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "fluid-drilling-rig-ii": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "fluid-drilling-rig-iii": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "fluid-drilling-rig-iv": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "fluid-drilling-rig": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "fluid-shaper": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "forge-of-the-gods": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneInputHatch"
+    }
+  ],
+  "full-board-immersion-device": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "fusion-control-computer-mark-i": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    }
+  ],
+  "fusion-control-computer-mark-ii": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    }
+  ],
+  "fusion-control-computer-mark-iii": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    }
+  ],
+  "fusiontech-mk-iv": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    }
+  ],
+  "fusiontech-mk-v": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    }
+  ],
+  "high-energy-laser-purification-unit": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "high-temperature-gas-cooled-reactor": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "hot-isostatic-pressurization-unit": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "hyper-intensity-laser-engraver": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "implosion-compressor": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-3d-copying-machine": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-arc-furnace": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "industrial-autoclave": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "industrial-bending-machine": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-centrifuge": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "industrial-chemical-bath": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "industrial-coke-oven": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "industrial-cutting-factory": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-electrolyzer": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "industrial-extrusion-machine": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-forming-press": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-maceration-stack": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-mixing-machine": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "industrial-precision-lathe": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "industrial-sledgehammer": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "industrial-wire-factory": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "infinite-fluid-drilling-rig": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "integrated-ore-factory": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "isamill-grinding-machine": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "l-a-t-e-x": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "lapotronic-supercapacitor": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-bronze-boiler": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-chemical-reactor": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "large-combustion-engine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-electric-compressor": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "large-essentia-smeltery": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "large-fluid-extractor": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "large-gas-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-heat-exchanger": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "large-hp-steam-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-molecular-assembler": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-naquadah-reactor": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-neutralization-engine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "large-plasma-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-scale-auto-assembler-v1-01": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-semifluid-generator": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-sifter": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "large-steam-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-steel-boiler": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-supercritical-steam-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "large-thermal-refinery": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-titanium-boiler": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "large-tungstensteel-boiler": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "linear-accelerator": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "max": 2,
+      "helper": "checkHatchMax"
+    }
+  ],
+  "magnetic-flux-exhibitor": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "manual-transformer": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHatchMin"
+    }
+  ],
+  "mass-solidifier": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "matter-fabrication-cpu": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "mega-alloy-blast-smelter": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "mega-chemical-reactor": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "mega-distillation-tower": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "mega-oil-cracker": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "microwave-grinder": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "miniature-wormhole-generator": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "molecular-transformer": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "multi-smelter": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "nano-forge": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    }
+  ],
+  "nanochip-assembly-complex": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatchMaybeExotic"
+    }
+  ],
+  "nanochip-assembly-matrix": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "nanoprecision-cutting-chamber": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "naquadah-fuel-refinery": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "neutron-activator": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "neutronium-compressor": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    }
+  ],
+  "nuclear-salt-processing-plant": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 2,
+      "max": 2,
+      "helper": "checkHatchExact"
+    },
+    {
+      "kind": "muffler",
+      "min": 2,
+      "max": 2,
+      "helper": "checkHatchExact"
+    }
+  ],
+  "oil-cracking-unit": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "optically-optimized-organizer": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidIn",
+      "max": 2,
+      "helper": "checkHatchMax"
+    }
+  ],
+  "ore-drilling-plant-ii": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "ore-drilling-plant-iii": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "ore-drilling-plant-iv": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "ore-drilling-plant": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "ore-washing-plant": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "ozonation-purification-unit": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "pcb-factory": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "ph-neutralization-purification-unit": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "planetary-gas-siphon": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "fluidIn",
+      "max": 0,
+      "helper": "checkHatchMax"
+    },
+    {
+      "kind": "itemOut",
+      "max": 0,
+      "helper": "checkHatchMax"
+    },
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "max": 1,
+      "helper": "checkHatchExact"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkHatchExact"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkHatchExact"
+    }
+  ],
+  "precise-auto-assembler-mt-3662": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "pseudostable-black-hole-containment-field": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "pyrolyse-oven": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "quantum-computer": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "quantum-force-transformer": [
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "reactor-fuel-processing-plant": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMufflerHatch"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 2,
+      "helper": "checkHatchMin"
+    },
+    {
+      "kind": "fluidIn",
+      "max": 4,
+      "helper": "checkHatchMax"
+    },
+    {
+      "kind": "fluidOut",
+      "max": 2,
+      "helper": "checkHatchMax"
+    }
+  ],
+  "research-completer": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "research-station": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "residual-decontaminant-degasser-purification-unit": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "rocketdyne-f-1a-engine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "semi-stable-antimatter-stabilization-sequencer": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "shielded-lagrangian-annihilation-matrix": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "solar-factory": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "solar-tower": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "solid-oxide-fuel-cell-mk-i": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "solid-oxide-fuel-cell-mk-ii": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "source-chamber": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "space-assembler-module-mk-i": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    }
+  ],
+  "space-assembler-module-mk-ii": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    }
+  ],
+  "space-assembler-module-mk-iii": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    }
+  ],
+  "space-mining-module-mk-i": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    }
+  ],
+  "space-mining-module-mk-ii": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    }
+  ],
+  "space-mining-module-mk-iii": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    }
+  ],
+  "space-pumping-module-mk-i": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "space-pumping-module-mk-ii": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "space-pumping-module-mk-iii": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "sparge-tower-controller": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "static-network-switch-with-qos": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "steam-blender": [
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "steam-purifier": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    }
+  ],
+  "steam-separator": [
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "synchrotron": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 2,
+      "helper": "checkHatchMin"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 2,
+      "helper": "checkHatchMin"
+    }
+  ],
+  "target-chamber": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    },
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "max": 1,
+      "helper": "checkHatchExact"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkHatchExact"
+    }
+  ],
+  "tesla-tower": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "tfft": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "thermal-boiler": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "thermic-heating-device": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "thorium-high-temperature-reactor": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "thorium-reactor-lftr": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 4,
+      "max": 4,
+      "helper": "checkHatchExact"
+    },
+    {
+      "kind": "muffler",
+      "min": 4,
+      "max": 4,
+      "helper": "checkHatchExact"
+    }
+  ],
+  "transcendent-plasma-mixer": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    }
+  ],
+  "tree-growth-simulator": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "turbocan-pro": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "universal-chemical-fuel-engine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "utupu-tanuri": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "vacuum-freezer": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "void-miner-i": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "void-miner-ii": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "void-miners": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneMaintenanceHatch"
+    }
+  ],
+  "volcanus": [
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    },
+    {
+      "anyOf": ["itemIn", "fluidIn"],
+      "min": 1,
+      "helper": "checkHasAnyInput"
+    },
+    {
+      "anyOf": ["itemOut", "fluidOut"],
+      "min": 1,
+      "helper": "checkHasAnyOutput"
+    }
+  ],
+  "water-pump": [
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "max": 1,
+      "helper": "checkOneOutputHatch"
+    }
+  ],
+  "water-purification-plant": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "weighted-network-switch-with-qos": [
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasAnyEnergy"
+    }
+  ],
+  "whakawhiti-wera-xl": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "fluidOut",
+      "min": 1,
+      "helper": "checkHasOutputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    }
+  ],
+  "xl-turbo-gas-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "xl-turbo-hp-steam-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "xl-turbo-plasma-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "xl-turbo-sc-steam-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "xl-turbo-steam-turbine": [
+    {
+      "kind": "fluidIn",
+      "min": 1,
+      "helper": "checkHasInputHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "dynamo",
+      "min": 1,
+      "helper": "checkHasAnyDynamo"
+    }
+  ],
+  "zhuhai-fishing-port": [
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ],
+  "zyngen": [
+    {
+      "kind": "itemIn",
+      "min": 1,
+      "helper": "checkHasInputBus"
+    },
+    {
+      "kind": "itemOut",
+      "min": 1,
+      "helper": "checkHasOutputBus"
+    },
+    {
+      "kind": "energy",
+      "min": 1,
+      "helper": "checkHasEnergyHatch"
+    },
+    {
+      "kind": "maintenance",
+      "min": 1,
+      "helper": "checkHasMaintenanceHatch"
+    },
+    {
+      "kind": "muffler",
+      "min": 1,
+      "helper": "checkHasMufflerHatch"
+    }
+  ]
+}

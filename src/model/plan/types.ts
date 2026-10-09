@@ -1,11 +1,14 @@
 import type { Dir, Vec3 } from '../core/types';
 import type { HatchKind, PlanLimits, Unit } from '../multiblock/types';
+import type { VoltageTier } from '../tiers';
 
 /** A machine plan and what building it produces: packed units, placed hatches, shared walls. */
 
 /** Everything that defines a plan. Derived data is never stored. */
 export interface PlanState {
   v: 1;
+  /** Source game rules are distinct from the document version; absent in historical files. */
+  rulesVersion?: string;
   multiblockId: string;
   count: number;
   limits: PlanLimits;
@@ -19,6 +22,15 @@ export interface PlanState {
    * means `resize.default`.
    */
   size?: number;
+  voltageTier?: VoltageTier;
+  manualTransformerMode?: 'up' | 'down';
+  /** Data Bank screwdriver setting; absent in old documents means wireless transmission off. */
+  dataBankWireless?: boolean;
+  assemblyGrowth?: 'left' | 'right';
+  /** Uniform Water Pump frame material, independent of hatch voltage. */
+  steamFrameTier?: 'bronze' | 'steel';
+  structureGlassTier?: VoltageTier;
+  hatchTiers?: Record<string, VoltageTier>;
 }
 
 export interface PackResult {
@@ -30,6 +42,8 @@ export interface PackResult {
 }
 
 export interface HatchPlacement {
+  tier?: VoltageTier;
+  assignments?: string[];
   kind: HatchKind;
   /** World cell occupied by the hatch block. */
   cell: Vec3;

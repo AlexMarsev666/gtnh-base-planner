@@ -202,7 +202,9 @@ describe('buildSite', () => {
   it('packs groups, places ports on the edges and routes every net', () => {
     const b = createSiteBuilder()(chain, { pipes: true, cables: false });
     expect(b.groups.map((g) => g.units.length)).toEqual([2, 2]);
-    expect(b.warnings).toEqual([]);
+    // This routing fixture deliberately disables maintenance and power. RC2 validation reports those
+    // missing mandatory hatches, independently of whether all requested networks can be routed.
+    expect(b.warnings.filter((w) => w.type !== 'error' || w.code !== 'structure')).toEqual([]);
     expect(b.nets).toHaveLength(4);
     for (const n of b.nets) expect(n.route!.connected).toBe(n.route!.total);
     const dust = b.ports.find((p) => p.port.id === 'dust')!;

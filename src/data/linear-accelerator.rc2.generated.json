@@ -1,0 +1,56 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "source": "src/main/java/gtnhlanth/common/tileentity/MTELINAC.java",
+  "sha256": "58cf11cf9b88d31234aabc203a69ca2b1b2d13d188681526826c41656206de0d",
+  "blocks": {
+    "c": "gtnhlanth:casing.shielded_accelerator@0",
+    "j": "gtnhlanth:casing.shielded_accelerator@0",
+    "g": "gregtech:gt.blockcasings3@10",
+    "b": "bartworks:BW_TieredGlass@0",
+    "i": "gregtech:gt.blockmachines@10503",
+    "o": "gregtech:gt.blockmachines@10504",
+    "v": "gtnhlanth:casing.electrode@0",
+    "k": "gtnhlanth:tile.casing.shielded_accelerator_glass@0",
+    "d": "gtnhlanth:casing.coolant_delivery@0",
+    "y": "gregtech:gt.blockcasings@15",
+    "h": "gt.hatch.inputHatch"
+  },
+  "segments": {
+    "base": {
+      "size": [7, 7, 8],
+      "layers": [
+        ["ggg~ggg", "ggggggg", "jcccccj", "jcccccj", "jcccccj", "jcccccj", "jcccccj", "jcccccj"],
+        ["gbbbbbg", "gcccccg", "cvvvvvc", "cdddddc", "cdvvvdc", "cdddddc", "cdvvvdc", "cdddddc"],
+        ["gbbbbbg", "gcccccg", "kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk"],
+        ["gbbibbg", "gcc-ccg", "kvv-vvk", "kdy-ydk", "kdv-vdk", "kdy-ydk", "kdv-vdk", "kdy-ydk"],
+        ["gbbbbbg", "gcccccg", "kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk"],
+        ["gbbbbbg", "gcccccg", "cvvvvvc", "cdddddc", "cdvvvdc", "cdddddc", "cdvvvdc", "cdddddc"],
+        ["ggggggg", "ggggggg", "ccccccc", "cckkkcc", "cckkkcc", "cckkkcc", "cckkkcc", "cckhkcc"]
+      ]
+    },
+    "layer": {
+      "size": [7, 7, 2],
+      "layers": [
+        ["ccccccc", "ccccccc"],
+        ["cdvvvdc", "cdddddc"],
+        ["kvvvvvk", "kdyyydk"],
+        ["kdv-vdk", "kdy-ydk"],
+        ["kvvvvvk", "kdyyydk"],
+        ["cdvvvdc", "cdddddc"],
+        ["cckkkcc", "cckkkcc"]
+      ]
+    },
+    "end": {
+      "size": [7, 7, 9],
+      "layers": [
+        ["ccccccc", "ccccccc", "ccccccc", "ccccccc", "ccccccc", "ccccccc", "ccccccc", "ccccccc", "ccccccc"],
+        ["cdvvvdc", "cdddddc", "cdvvvdc", "cdddddc", "cdvvvdc", "cdddddc", "cvvvvvc", "ccccccc", "cbbbbbc"],
+        ["kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk", "kvvvvvk", "ccccccc", "cbbbbbc"],
+        ["kdv-vdk", "kdy-ydk", "kdv-vdk", "kdy-ydk", "kdv-vdk", "kdy-ydk", "kvv-vvk", "ccc-ccc", "cbbobbc"],
+        ["kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk", "kvvvvvk", "kdyyydk", "kvvvvvk", "ccccccc", "cbbbbbc"],
+        ["cdvvvdc", "cdddddc", "cdvvvdc", "cdddddc", "cdvvvdc", "cdddddc", "cvvvvvc", "ccccccc", "cbbbbbc"],
+        ["cckkkcc", "cckhkcc", "cckkkcc", "cckkkcc", "cckkkcc", "cckkkcc", "ccccccc", "ccccccc", "ccccccc"]
+      ]
+    }
+  }
+}

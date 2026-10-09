@@ -6,7 +6,16 @@
  * Blocks used only by generated catalog entries live in `./blocks.generated.json` (tools/game-dump).
  */
 import generatedBlocks from './blocks.generated.json' with { type: 'json' };
-import { SINGLE_MACHINES, singleMachineBlockId } from './single-machines';
+import glassVariants from './glass-variants.runtime.generated.json';
+import {
+  DATA_ACCESS_HATCHES,
+  DATA_INTERFACES,
+  SINGLE_MACHINES,
+  singleMachineBlockId,
+} from './single-machines';
+import { VOLTAGE_TIERS, TRANSFORMER_TIERS } from '../model/tiers';
+import { ARC_HATCHES } from '../model/multiblock/arcFurnace';
+import { COMPUTATION_HATCHES } from '../model/multiblock/computation';
 
 export interface BlockInfo {
   id: string;
@@ -15,6 +24,12 @@ export interface BlockInfo {
 }
 
 const list: BlockInfo[] = [
+  { id: 'gregtech:gt.blockmachines@31040', name: 'Steam Hatch (ULV)', color: '#b0ac99' },
+  { id: 'gregtech:gt.blockmachines@967', name: 'Cryotheum Cooling Hatch (IV)', color: '#66cddd' },
+  { id: 'gregtech:gt.blockmachines@968', name: 'Pyrotheum Heating Hatch (IV)', color: '#f18a30' },
+  { id: 'gregtech:gt.blockmachines@10503', name: 'Beam Input Hatch (LuV)', color: '#586fb2' },
+  { id: 'gregtech:gt.blockmachines@10504', name: 'Beam Output Hatch (LuV)', color: '#586fb2' },
+  { id: 'gregtech:gt.blockmachines@3014', name: 'Filtered Beam Output Hatch (UV)', color: '#586fb2' },
   // Coke Oven (GT:NH 2.9+)
   { id: 'gt.cokeOvenBrick', name: 'Coke Oven Bricks', color: '#a0654a' },
   { id: 'gt.cokeOvenController', name: 'Coke Oven', color: '#6b3b2a' },
@@ -47,6 +62,7 @@ const list: BlockInfo[] = [
   { id: 'gt.hatch.dynamo', name: 'Dynamo Hatch', color: '#5b6168' },
   { id: 'gt.hatch.maintenance', name: 'Maintenance Hatch', color: '#5b6168' },
   { id: 'gt.hatch.muffler', name: 'Muffler Hatch', color: '#5b6168' },
+  { id: 'gt.hatch.dataAccess', name: 'Data Access Hatch', color: '#5b6168' },
 
   // Added by the multiblock catalog (unit 9)
   { id: 'gt.casing.firebricks', name: 'Firebricks', color: '#8e5a3c' },
@@ -112,7 +128,61 @@ const machines: BlockInfo[] = SINGLE_MACHINES.map((m) => ({
 }));
 
 export const BLOCKS: Readonly<Record<string, BlockInfo>> = Object.fromEntries(
-  [...generated, ...machines, ...list].map((b) => [b.id, b]),
+  [
+    ...generated,
+    ...glassVariants.map((variant) => ({
+      id: variant.id,
+      name: `Borosilicate Glass (${variant.tier})`,
+      color: '#e8f4e8',
+    })),
+    ...machines,
+    ...list,
+    ...VOLTAGE_TIERS.flatMap((tier) =>
+      [
+        ...machines,
+        ...list.filter(
+          (b) =>
+            b.id === 'site.singleblock' ||
+            (b.id.startsWith('gt.hatch.') && !['gt.hatch.maintenance', 'gt.hatch.dataAccess'].includes(b.id)),
+        ),
+      ].map((b) => ({ ...b, id: `${b.id}.${tier}`, name: `${b.name} (${tier})` })),
+    ),
+    ...DATA_ACCESS_HATCHES.map((variant) => ({
+      id: `gt.hatch.dataAccess.${VOLTAGE_TIERS[variant.tier]}`,
+      name: `${variant.name} (${VOLTAGE_TIERS[variant.tier]})`,
+      color: '#5b6168',
+    })),
+    ...Object.values(DATA_INTERFACES).map((variant) => ({
+      id: `gregtech:gt.blockmachines@${variant.meta}`,
+      name: `${variant.name} (${VOLTAGE_TIERS[variant.tier]})`,
+      color: '#667788',
+    })),
+    ...Object.values(ARC_HATCHES).map((variant) => ({
+      id: `gregtech:gt.blockmachines@${variant.meta}`,
+      name: `${variant.name} (${variant.tier})`,
+      color: '#888a8d',
+    })),
+    ...Object.values(COMPUTATION_HATCHES).flatMap((variants) =>
+      variants.map((variant) => ({
+        id: `gregtech:gt.blockmachines@${variant.meta}`,
+        name: `${variant.name} (${VOLTAGE_TIERS[variant.tier]})`,
+        color: '#778995',
+      })),
+    ),
+    ...COMPUTATION_HATCHES.uncertainty.map((variant) => ({
+      id: `gt.hatch.uncertainty.${VOLTAGE_TIERS[variant.tier]}`,
+      name: `${variant.name} (${VOLTAGE_TIERS[variant.tier]})`,
+      color: '#85a99a',
+    })),
+    { id: 'gt.hatch.uncertainty', name: 'Uncertainty Resolver (IV)', color: '#85a99a' },
+    ...TRANSFORMER_TIERS.flatMap((tier) =>
+      ['up', 'down'].map((mode) => ({
+        id: `site.transformer.${tier}.${mode}`,
+        name: `Transformer (${tier} / ${VOLTAGE_TIERS[VOLTAGE_TIERS.indexOf(tier) + 1]})`,
+        color: '#7c848c',
+      })),
+    ),
+  ].map((b) => [b.id, b]),
 );
 
 export function blockInfo(id: string): BlockInfo {

@@ -23,8 +23,8 @@ import type { SiteGroup, SiteState } from './types';
  * the result says how many were. Runs alternate between allowing that and keeping every packing: repacking
  * widens the spread of results more than it moves the median, and the best layout wins either way.
  *
- * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, pipe and
- * cable blocks, then the width + depth of the layout. The start wins ties, so the result is never worse than
+ * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, surface
+ * blocks, bends, pipe and cable blocks, then the width + depth of the layout. The start wins ties, so the result is never worse than
  * the arrangement it was given.
  */
 
@@ -69,6 +69,8 @@ export interface LayoutScore {
   unconnected: number;
   blocks: number;
   span: number;
+  surface?: number;
+  bends?: number;
 }
 
 export interface OptimizeResult {
@@ -101,19 +103,29 @@ export function scoreBuild(build: SiteBuild): LayoutScore {
     unconnected: build.stats.terminals - build.stats.connected,
     blocks: build.stats.pipeBlocks + build.stats.cableBlocks,
     span: x1 > x0 ? x1 - x0 + (z1 - z0) : 0,
+    ...(build.stats.surfaceBlocks === undefined
+      ? {}
+      : { surface: build.stats.surfaceBlocks, bends: build.stats.bends ?? 0 }),
   };
 }
 
 /** Whether `a` is strictly better than `b`. */
 export function better(a: LayoutScore, b: LayoutScore): boolean {
-  for (const k of ['problems', 'unconnected', 'blocks', 'span'] as const)
-    if (a[k] !== b[k]) return a[k] < b[k];
+  for (const k of ['problems', 'unconnected', 'surface', 'bends', 'blocks', 'span'] as const)
+    if ((a[k] ?? 0) !== (b[k] ?? 0)) return (a[k] ?? 0) < (b[k] ?? 0);
   return false;
 }
 
 /** One number for the annealer, ordered like `better` for any realistic layout. */
 export function scoreValue(s: LayoutScore): number {
-  return s.problems * 5000 + s.unconnected * 200 + s.blocks + 0.1 * s.span;
+  return (
+    s.problems * 1e12 +
+    s.unconnected * 1e8 +
+    (s.surface ?? 0) * 1e5 +
+    (s.bends ?? 0) * 100 +
+    s.blocks +
+    0.1 * s.span
+  );
 }
 
 export function optimizeSite(
@@ -127,18 +139,36 @@ export function optimizeSite(
   const budget = opts.budgetMs ?? DEFAULT_BUDGET_MS;
   const used = () => now() - began;
   // Many layouts of one site are built: keep every pack, then prune once at the end.
-  const measured = builder(site, { pipes: false, cables: false, below, keepCache: true });
+  const measured = builder(site, { pipes: true, cables: true, below, keepCache: true });
+  const start = scoreBuild(measured);
+  const routeMs = Math.max(1, used());
+  if (used() >= budget)
+    return {
+      site,
+      improved: false,
+      start,
+      result: start,
+      tried: 0,
+      reshaped: 0,
+    };
   const footprints = localFootprints(measured);
   const heights = localHeights(measured);
   const sizeOf = (id: string) => footprints.get(id);
   const shapes =
     opts.reshape === false
       ? undefined
-      : groupShapes(site, builder, below, { budgetMs: budget * SHAPES_SHARE, now: opts.now });
+      : groupShapes(site, builder, below, {
+          budgetMs: Math.min(budget - used(), budget * SHAPES_SHARE),
+          now,
+          deadline: Math.min(began + budget, now() + budget * SHAPES_SHARE),
+          baseline: measured,
+        });
   const heightOf = (id: string) => heights.get(id) ?? 1;
 
   /** The router's verdict on a layout, remembered: the annealer comes back to the same layouts often. */
   const scores = new Map<string, LayoutScore>();
+  scores.set(layoutKey(site.groups), start);
+  let best = { groups: site.groups, score: start };
   const route = (groups: SiteGroup[]): LayoutScore => {
     const key = layoutKey(groups);
     let score = scores.get(key);
@@ -146,15 +176,13 @@ export function optimizeSite(
       score = scoreBuild(builder({ ...site, groups }, { pipes: true, cables: true, below, keepCache: true }));
       scores.set(key, score);
     }
+    // The scalar guides random search; every evaluated candidate is retained using the exact priorities.
+    if (better(score, best.score)) best = { groups, score };
     return score;
   };
 
-  const routeBegan = now();
-  const start = route(site.groups);
-  // What one routing costs here, to size the rest of the search.
-  const routeMs = Math.max(1, now() - routeBegan);
-  let best = { groups: site.groups, score: start };
   const consider = (groups: SiteGroup[]) => {
+    if (!scores.has(layoutKey(groups)) && used() >= budget) return;
     const score = route(groups);
     if (better(score, best.score)) best = { groups, score };
   };
@@ -163,12 +191,14 @@ export function optimizeSite(
   const seeds = Math.max(1, opts.seeds ?? DEFAULT_SEEDS);
   const candidates: { groups: SiteGroup[]; estimate: number }[] = [];
   for (let seed = 1; seed <= seeds; seed++) {
+    if (used() >= budget * EXPLORE_SHARE) break;
     const r = annealGroups(site, sizeOf, {
       seed: seed + offset,
       heightOf,
       shapes: seed % 2 === 1 ? shapes : undefined,
       iterations: opts.iterations,
       budgetMs: (budget * EXPLORE_SHARE) / seeds,
+      deadline: began + budget * EXPLORE_SHARE,
       now: opts.now,
     });
     if (r.improved) candidates.push({ groups: r.groups, estimate: r.after });
@@ -176,7 +206,7 @@ export function optimizeSite(
   // The best estimates first; at least one is routed, more while the budget allows.
   candidates.sort((a, b) => a.estimate - b.estimate);
   candidates.forEach((c, i) => {
-    if (i === 0 || used() < budget * CANDIDATE_SHARE) consider(c.groups);
+    if ((i === 0 && used() < budget) || used() < budget * CANDIDATE_SHARE) consider(c.groups);
   });
 
   const steps = opts.refineSteps ?? DEFAULT_REFINE_STEPS;
@@ -191,6 +221,7 @@ export function optimizeSite(
         shapes: run % 2 === 1 ? shapes : undefined,
         iterations: steps,
         budgetMs: left / (runs - run + 1),
+        deadline: began + budget,
         now: opts.now,
         heat: opts.refineHeat ?? DEFAULT_REFINE_HEAT,
         evaluate: (groups) => scoreValue(route(groups)),
@@ -201,7 +232,8 @@ export function optimizeSite(
 
   const improved = best.groups !== site.groups;
   // Back to the ordinary build, which drops the packs the result does not use.
-  builder(improved ? { ...site, groups: best.groups } : site, { pipes: false, cables: false, below });
+  if (used() < budget)
+    builder(improved ? { ...site, groups: best.groups } : site, { pipes: false, cables: false, below });
   return {
     site: improved ? { ...site, groups: best.groups } : site,
     improved,

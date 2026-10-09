@@ -61,7 +61,7 @@ describe('validateSiteState', () => {
     expect(s.groups[1].size).toBe(7);
   });
 
-  it('keeps the machine of single-block groups only, and drops one it does not know', () => {
+  it('keeps unknown machine looks for replacement, and drops machine fields on multiblocks', () => {
     const s = sample();
     s.groups.push({
       id: 'sb',
@@ -78,7 +78,7 @@ describe('validateSiteState', () => {
     expect(out.groups[2].machine).toBe('macerator');
     expect('machine' in out.groups[0]).toBe(false);
     s.groups[2].machine = 'flux-capacitor';
-    expect('machine' in validateSiteState(s).groups[2]).toBe(false);
+    expect(validateSiteState(s).groups[2].machine).toBe('flux-capacitor');
   });
 
   it('keeps the elevation of a group, and drops a zero one', () => {
@@ -180,7 +180,6 @@ describe('malformed site links and files', () => {
   it('rejects bad fields with a readable error', () => {
     const cases: [string, (s: SiteState) => void][] = [
       ['rotation', (s) => ((s.groups[0] as { rotation: number }).rotation = 4)],
-      ['unknown multiblock', (s) => (s.groups[0].multiblockId = 'nope')],
       ['script id', (s) => (s.groups[0].multiblockId = '<script>')],
       ['hatch kind', (s) => ((s.groups[0].enabledHatches as string[]) = ['laser'])],
       ['colour', (s) => (s.resources['item:dust'].color = 'red')],
@@ -232,6 +231,12 @@ describe('site persistence', () => {
     st.setItem(SITE_STORAGE_KEY, '{"broken":');
     expect(loadStoredSite(st, () => 5)).toBeNull();
     expect(st.getItem(`${SITE_STORAGE_KEY}:backup-5`)).toBe('{"broken":');
+    st.setItem(SITE_STORAGE_KEY, '{"anotherBroken":');
+    expect(loadStoredSite(st, () => 5)).toBeNull();
+    expect(st.getItem(`${SITE_STORAGE_KEY}:backup-5`)).toBe('{"broken":');
+    expect(st.getItem(`${SITE_STORAGE_KEY}:backup-5-1`)).toBe('{"anotherBroken":');
+    expect(loadStoredSite(st, () => 5)).toBeNull();
+    expect(st.getItem(`${SITE_STORAGE_KEY}:backup-5-2`)).toBeNull();
   });
 
   it('reads and clears only its own hash parameter', () => {

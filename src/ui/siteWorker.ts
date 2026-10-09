@@ -18,7 +18,7 @@ import { arrangeHere, type Arranged } from './siteArrange';
  */
 
 export type SiteWorkerRequest =
-  | { id: number; type: 'build'; site: SiteState; opts: SiteBuildOptions }
+  | { id: number; sourceRevision: number; type: 'build'; site: SiteState; opts: SiteBuildOptions }
   | { id: number; type: 'arrange'; site: SiteState; below: boolean; optimize?: boolean }
   | {
       id: number;
@@ -30,10 +30,10 @@ export type SiteWorkerRequest =
 
 /** `partial`: the groups without pipes, sent first when routing will take a while; the full build follows. */
 export type SiteWorkerResponse =
-  | { id: number; build: SiteBuild; partial?: boolean }
+  | { id: number; sourceRevision?: number; build: SiteBuild; partial?: boolean }
   | { id: number; imported: { site: SiteState; report: ImportReport } }
   | { id: number; arranged: Arranged }
-  | { id: number; error: string };
+  | { id: number; sourceRevision?: number; error: string };
 
 /** Above this many pipe and cable ends, the groups are shown before the nets are routed. */
 const PROGRESSIVE_TERMINALS = 200;
@@ -59,10 +59,15 @@ self.onmessage = (e: MessageEvent<SiteWorkerRequest>) => {
       const ends = groups.nets
         .filter((n) => (n.kind === 'power' ? opts.cables : opts.pipes))
         .reduce((s, n) => s + n.terminals.length, 0);
-      if (ends > PROGRESSIVE_TERMINALS) post({ id, build: groups, partial: true });
+      if (ends > PROGRESSIVE_TERMINALS)
+        post({ id, sourceRevision: req.sourceRevision, build: groups, partial: true });
     }
-    post({ id, build: buildSite(site, opts) });
+    post({ id, sourceRevision: req.sourceRevision, build: buildSite(site, opts) });
   } catch (err) {
-    post({ id: req.id, error: err instanceof Error ? err.message : String(err) });
+    post({
+      id: req.id,
+      sourceRevision: req.type === 'build' ? req.sourceRevision : undefined,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 };

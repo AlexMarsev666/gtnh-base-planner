@@ -1,8 +1,7 @@
-import { getMultiblock } from '../data/catalog';
-import { effectiveSize } from '../model/resize';
 import type { Rotation, Vec3 } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
 import type { PlanState } from '../model/plan/types';
+import { isVoltageTier, type VoltageTier } from '../model/tiers';
 import {
   MAX_PAYLOAD_BYTES,
   PlanFormatError,
@@ -37,15 +36,15 @@ export { MAX_PAYLOAD_BYTES, PlanFormatError } from './binary';
  *                               (so a multiblock's `resize.default` must never change)
  */
 
-export const PLAN_VERSION = 1;
+export const PLAN_VERSION = 2;
 export const MIN_COUNT = 1;
 export const MAX_COUNT = 2000;
 /** Limits count units per axis, so they never need to exceed the unit count. */
 export const MAX_LIMIT = MAX_COUNT;
 export const MAX_COORD = 4096;
 export const MAX_UNIT_ID = 1_000_000;
-/** Largest `size` accepted from input; the multiblock's own `resize.max` clamps it further. */
-export const MAX_SIZE = 64;
+/** Document bound, independent of current game rules or catalog availability. Older plans used 64. */
+export const MAX_SIZE = 256;
 const DEFAULT_COUNT = 4;
 
 /** Stable order of hatch kinds; the index is the bit used in share links. Append only. */
@@ -59,6 +58,22 @@ export const HATCH_KINDS: readonly HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'cryotheumIn',
+  'pyrotheumIn',
+  'dataAccess',
+  'assemblyDataIn',
+  'assemblyDataOut',
+  'wirelessAssemblyDataIn',
+  'wirelessAssemblyDataOut',
+  'electrodeIn',
+  'electrodeBus',
+  'electrodeDetector',
+  'computationIn',
+  'computationOut',
+  'wirelessComputationIn',
+  'wirelessComputationOut',
+  'uncertainty',
+  'computerRack',
 ];
 
 export const ID_RE = /^[a-z0-9_-]+$/;
@@ -116,7 +131,6 @@ function expectMultiblockId(value: unknown): string {
   if (typeof value !== 'string' || value.length > MAX_ID_LENGTH || !ID_RE.test(value)) {
     throw new PlanFormatError('Multiblock id is invalid.');
   }
-  if (!getMultiblock(value)) throw new PlanFormatError(`Unknown multiblock "${value}".`);
   return value;
 }
 
@@ -143,17 +157,17 @@ function validateUnit(value: unknown, index: number): Unit {
 /**
  * Strict validation of untrusted input (JSON files, links, localStorage):
  * known multiblock id, count 1..MAX_COUNT, integer limits (units per axis) 1..MAX_LIMIT or null, known hatch kinds, `#rrggbb` colours,
- * manual units with integer coordinates within ±512 and rotation 0..3, an integer size 1..64. Throws with a
+ * manual units with bounded integer coordinates and rotation 0..3, a bounded integer size. Throws with a
  * readable message.
  *
  * Returns a fresh, normalised copy: hatch kinds in `HATCH_KINDS` order, lower-case colours,
  * an empty `manualUnits` list becomes `undefined`, unknown top-level keys are dropped, and `size` is
- * snapped to one the multiblock can take (dropped when it cannot be resized).
+ * retained even when it violates current game rules.
  */
 export function validatePlanState(input: unknown): PlanState {
   const obj = expectObject(input, 'Plan');
   const v = field(obj, 'v');
-  if (v !== PLAN_VERSION) {
+  if (v !== 1 && v !== PLAN_VERSION) {
     throw new PlanFormatError(`Unsupported plan version ${JSON.stringify(v) ?? 'undefined'}.`);
   }
   const multiblockId = expectMultiblockId(field(obj, 'multiblockId'));
@@ -197,6 +211,67 @@ export function validatePlanState(input: unknown): PlanState {
   }
 
   const plan: PlanState = { v: 1, multiblockId, count, limits, enabledHatches, colors };
+  const tier = field(obj, 'voltageTier');
+  if (tier !== undefined && tier !== null) {
+    if (!isVoltageTier(tier)) throw new PlanFormatError('Invalid voltage tier.');
+    plan.voltageTier = tier;
+  }
+  const hatchTiers = field(obj, 'hatchTiers');
+  const glassTier = field(obj, 'structureGlassTier');
+  if (glassTier !== undefined) {
+    if (!isVoltageTier(glassTier)) throw new PlanFormatError('Invalid structure glass tier.');
+    plan.structureGlassTier = glassTier;
+  }
+  const manualMode = field(obj, 'manualTransformerMode');
+  if (manualMode !== undefined) {
+    if (manualMode !== 'up' && manualMode !== 'down')
+      throw new PlanFormatError('Invalid Manual Transformer mode.');
+    plan.manualTransformerMode = manualMode;
+  }
+  const wireless = field(obj, 'dataBankWireless');
+  if (wireless !== undefined) {
+    if (typeof wireless !== 'boolean') throw new PlanFormatError('Invalid Data Bank wireless setting.');
+    plan.dataBankWireless = wireless;
+  }
+  const frame = field(obj, 'steamFrameTier');
+  if (frame !== undefined) {
+    if (frame !== 'bronze' && frame !== 'steel')
+      throw new PlanFormatError('Invalid Water Pump frame material.');
+    plan.steamFrameTier = frame;
+  }
+  const growth = field(obj, 'assemblyGrowth');
+  if (growth !== undefined) {
+    if (growth !== 'left' && growth !== 'right')
+      throw new PlanFormatError('Invalid assembly growth direction.');
+    plan.assemblyGrowth = growth;
+  }
+  if (hatchTiers !== undefined) {
+    const tiers = expectObject(hatchTiers, 'Hatch tiers');
+    if (Object.keys(tiers).length > MAX_COUNT * 32) throw new PlanFormatError('Too many hatch assignments.');
+    plan.hatchTiers = {};
+    for (const key of Object.keys(tiers).sort()) {
+      if (
+        !key.length ||
+        key.length > 256 ||
+        /[\u0000-\u001f\u007f]/.test(key) ||
+        ['__proto__', 'constructor', 'prototype'].includes(key) ||
+        !isVoltageTier(field(tiers, key))
+      )
+        throw new PlanFormatError('Invalid hatch tier.');
+      plan.hatchTiers[key] = field(tiers, key) as VoltageTier;
+    }
+  }
+  const rulesVersion = field(obj, 'rulesVersion');
+  if (rulesVersion !== undefined && rulesVersion !== null) {
+    if (
+      typeof rulesVersion !== 'string' ||
+      !rulesVersion.length ||
+      rulesVersion.length > 64 ||
+      /[\u0000-\u001f\u007f]/.test(rulesVersion)
+    )
+      throw new PlanFormatError('Game rules version must be text of 1 to 64 characters.');
+    plan.rulesVersion = rulesVersion;
+  }
 
   const unitsRaw = field(obj, 'manualUnits');
   if (unitsRaw !== undefined && unitsRaw !== null) {
@@ -211,8 +286,7 @@ export function validatePlanState(input: unknown): PlanState {
 
   const sizeRaw = field(obj, 'size');
   if (sizeRaw !== undefined && sizeRaw !== null) {
-    const size = effectiveSize(getMultiblock(multiblockId)!, expectInt(sizeRaw, 'Size', 1, MAX_SIZE));
-    if (size !== undefined) plan.size = size;
+    plan.size = expectInt(sizeRaw, 'Size', 1, MAX_SIZE);
   }
   return plan;
 }
@@ -231,9 +305,35 @@ interface CompactPlan {
   u?: number[];
   i?: number[];
   s?: number;
+  r?: string;
+  t?: VoltageTier;
+  tm?: 'up' | 'down';
+  dw?: boolean;
+  ag?: 'left' | 'right';
+  sf?: 'bronze' | 'steel';
+  g?: VoltageTier;
+  a?: Record<string, VoltageTier>;
 }
 
-const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's']);
+const COMPACT_KEYS = new Set([
+  'v',
+  'm',
+  'n',
+  'l',
+  'h',
+  'c',
+  'u',
+  'i',
+  's',
+  'r',
+  't',
+  'tm',
+  'a',
+  'g',
+  'dw',
+  'ag',
+  'sf',
+]);
 
 function hatchMask(kinds: readonly HatchKind[]): number {
   let mask = 0;
@@ -246,7 +346,7 @@ function hatchMask(kinds: readonly HatchKind[]): number {
 
 /** Compact form of an already validated plan. Deterministic: equal plans give equal output. */
 function toCompact(plan: PlanState): CompactPlan {
-  const out: CompactPlan = { v: plan.v, m: plan.multiblockId, h: hatchMask(plan.enabledHatches) };
+  const out: CompactPlan = { v: PLAN_VERSION, m: plan.multiblockId, h: hatchMask(plan.enabledHatches) };
   if (plan.count !== DEFAULT_COUNT) out.n = plan.count;
   const { x, y, z } = plan.limits;
   if (x !== null || y !== null || z !== null) out.l = [x ?? 0, y ?? 0, z ?? 0];
@@ -265,6 +365,14 @@ function toCompact(plan: PlanState): CompactPlan {
     if (plan.manualUnits.some((u, i) => u.id !== i)) out.i = plan.manualUnits.map((u) => u.id);
   }
   if (plan.size !== undefined) out.s = plan.size;
+  if (plan.rulesVersion !== undefined) out.r = plan.rulesVersion;
+  if (plan.voltageTier !== undefined) out.t = plan.voltageTier;
+  if (plan.manualTransformerMode !== undefined) out.tm = plan.manualTransformerMode;
+  if (plan.dataBankWireless !== undefined) out.dw = plan.dataBankWireless;
+  if (plan.assemblyGrowth !== undefined) out.ag = plan.assemblyGrowth;
+  if (plan.steamFrameTier !== undefined) out.sf = plan.steamFrameTier;
+  if (plan.structureGlassTier !== undefined) out.g = plan.structureGlassTier;
+  if (plan.hatchTiers !== undefined) out.a = plan.hatchTiers;
   return out;
 }
 
@@ -274,7 +382,7 @@ function fromCompact(input: unknown): PlanState {
     if (!COMPACT_KEYS.has(key)) throw new PlanFormatError(`Unexpected field "${key}" in plan link.`);
   }
   const v = field(obj, 'v');
-  if (v !== PLAN_VERSION) {
+  if (v !== 1 && v !== PLAN_VERSION) {
     throw new PlanFormatError(`Unsupported plan version ${JSON.stringify(v) ?? 'undefined'}.`);
   }
   const multiblockId = expectMultiblockId(field(obj, 'm'));
@@ -291,15 +399,16 @@ function fromCompact(input: unknown): PlanState {
     limits = { x: lx ?? null, y: ly ?? null, z: lz ?? null };
   }
 
-  const mask = expectInt(field(obj, 'h'), 'Hatch mask', 0, 2 ** HATCH_KINDS.length - 1);
-  const enabledHatches = HATCH_KINDS.filter((_, bit) => (mask >> bit) & 1);
+  const wireKinds = v === 1 ? HATCH_KINDS.slice(0, 9) : HATCH_KINDS;
+  const mask = expectInt(field(obj, 'h'), 'Hatch mask', 0, 2 ** wireKinds.length - 1);
+  const enabledHatches = wireKinds.filter((_, bit) => (mask >> bit) & 1);
 
   const colors: Partial<Record<HatchKind, string>> = {};
   const c = field(obj, 'c');
   if (c !== undefined) {
     const cObj = expectObject(c, 'Colours');
     for (const key of Object.keys(cObj)) {
-      const kind = /^[0-9]$/.test(key) ? HATCH_KINDS[Number(key)] : undefined;
+      const kind = /^(0|[1-9][0-9]*)$/.test(key) ? wireKinds[Number(key)] : undefined;
       if (!kind) throw new PlanFormatError('Colour key is not a known hatch kind.');
       const value = field(cObj, key);
       if (typeof value !== 'string' || !/^[0-9a-f]{6}$/i.test(value)) {
@@ -319,6 +428,14 @@ function fromCompact(input: unknown): PlanState {
   };
 
   const u = field(obj, 'u');
+  if (field(obj, 'r') !== undefined) plan.rulesVersion = field(obj, 'r');
+  if (field(obj, 't') !== undefined) plan.voltageTier = field(obj, 't');
+  if (field(obj, 'tm') !== undefined) plan.manualTransformerMode = field(obj, 'tm');
+  if (field(obj, 'dw') !== undefined) plan.dataBankWireless = field(obj, 'dw');
+  if (field(obj, 'ag') !== undefined) plan.assemblyGrowth = field(obj, 'ag');
+  if (field(obj, 'sf') !== undefined) plan.steamFrameTier = field(obj, 'sf');
+  if (field(obj, 'g') !== undefined) plan.structureGlassTier = field(obj, 'g');
+  if (field(obj, 'a') !== undefined) plan.hatchTiers = field(obj, 'a');
   const ids = field(obj, 'i');
   if (u !== undefined) {
     const flat = expectArray(u, 'Manual units', MAX_COUNT * 4);

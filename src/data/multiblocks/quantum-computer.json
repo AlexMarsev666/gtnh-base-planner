@@ -2,26 +2,25 @@
   "id": "quantum-computer",
   "name": "Quantum Computer",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/MTEQuantumComputer.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEQuantumComputer.java",
   "size": [3, 4, 5],
   "layers": [
-    ["AA ", "BCD", "BCD", "BCD", "AA "],
-    ["A~ ", "EE ", "EE ", "EE ", "AA "],
-    ["AA ", "EE ", "EE ", "EE ", "AA "],
-    ["AA ", "BCD", "BCD", "BCD", "AA "]
+    ["AA ", "BC-", "BC-", "BC-", "AA "],
+    ["A~ ", "DD ", "DD ", "DD ", "AA "],
+    ["AA ", "DD ", "DD ", "DD ", "AA "],
+    ["AA ", "BC-", "BC-", "BC-", "AA "]
   ],
   "legend": {
     "A": { "blockId": "tectech:gt.blockcasingsTT@1", "hatches": ["energy", "maintenance"] },
     "B": { "blockId": "tectech:gt.blockcasingsTT@1" },
     "C": { "blockId": "tectech:gt.blockcasingsTT@2" },
-    "D": { "blockId": "gt.hatch.special" },
-    "E": { "blockId": "tectech:gt.blockcasingsTT@3" }
+    "D": { "blockId": "tectech:gt.blockcasingsTT@3" }
   },
   "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15311" },
   "hatchBlocks": { "energy": "gt.hatch.energy", "maintenance": "gt.hatch.maintenance" },
   "shareableHatches": [],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
   "defaultHatches": ["energy", "maintenance"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEQuantumComputer (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEQuantumComputer (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

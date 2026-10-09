@@ -3,6 +3,7 @@
   import { t } from '../i18n/en';
   import { site, siteGroup, siteNet } from '../state/site';
   import { siteBuild, siteBusy } from './sitePipeline';
+  import { sourceRevisionOf } from './buildIdentity';
 
   interface Props {
     onproblems: () => void;
@@ -52,7 +53,14 @@
 </script>
 
 {#if main.length || detail}
-  <footer class="stats" data-testid="site-stats">
+  <footer
+    class="stats"
+    data-testid="site-stats"
+    data-request-id={$siteBuild.requestId}
+    data-source-revision={$siteBuild.sourceRevision}
+    data-pending={!!$siteBuild.pending}
+    aria-busy={$siteBusy || !!$siteBuild.pending || $siteBuild.sourceRevision !== sourceRevisionOf($site)}
+  >
     {#each main as part, i (i)}
       {#if i > 0}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
       <span>{part}</span>

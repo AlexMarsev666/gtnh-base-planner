@@ -52,7 +52,13 @@ export function loadStoredSite(
         const k = storage.key(i);
         kept = !!k?.startsWith(SITE_BACKUP_PREFIX) && storage.getItem(k) === raw;
       }
-      if (!kept) storage.setItem(`${SITE_BACKUP_PREFIX}${now()}`, raw);
+      if (!kept) {
+        const base = `${SITE_BACKUP_PREFIX}${now()}`;
+        let key = base;
+        let suffix = 0;
+        while (storage.getItem(key) !== null) key = `${base}-${++suffix}`;
+        storage.setItem(key, raw);
+      }
     } catch {
       // Storage full or blocked: nothing more to do.
     }
@@ -63,7 +69,23 @@ export function loadStoredSite(
 export function saveStoredSite(site: SiteState, storage: StorageLike | null = browserStorage()): boolean {
   if (!storage) return false;
   try {
-    storage.setItem(SITE_STORAGE_KEY, JSON.stringify(validateSiteState(site)));
+    validateSiteState(site);
+    const raw = storage.getItem(SITE_STORAGE_KEY);
+    if (raw !== null && JSON.parse(raw).v === 1) {
+      let kept = false;
+      for (let i = 0; i < storage.length && !kept; i++) {
+        const key = storage.key(i);
+        kept = !!key?.startsWith(SITE_BACKUP_PREFIX) && storage.getItem(key) === raw;
+      }
+      if (!kept) {
+        const base = `${SITE_BACKUP_PREFIX}migration-${Date.now()}`;
+        let key = base;
+        let suffix = 0;
+        while (storage.getItem(key) !== null) key = `${base}-${++suffix}`;
+        storage.setItem(key, raw);
+      }
+    }
+    storage.setItem(SITE_STORAGE_KEY, siteToJson(site));
     return true;
   } catch {
     return false;

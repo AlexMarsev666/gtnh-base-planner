@@ -9,3 +9,16 @@ node_modules/
 dist/
 test-results/
 playwright-report/
+.tool-cache/
+
+# Local diagnostics, archives and generated native validation payloads
+*.log
+*.cpuprofile
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+native-rc2-fixtures.json
+native-*-fixtures.json

@@ -1,0 +1,103 @@
+{
+  "source": "GT5-Unofficial 5.09.54.205",
+  "tiers": {
+    "alloy-smelter": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "amplifabricator": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "arc-furnace": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "assembler": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "autoclave": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "bender": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "brewery": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "canner": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "centrifuge": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "chemical-bath": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "chemical-reactor": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "circuit-assembler": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    "compressor": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "cutting-machine": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "distillery": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "electric-furnace": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "electrolyzer": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "electromagnetic-polarizer": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "electromagnetic-separator": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "extractor": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "extruder": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "fermenter": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "fluid-canner": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "fluid-extractor": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "fluid-heater": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "fluid-solidifier": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "forge-hammer": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "forming-press": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "laser-engraver": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "lathe": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "macerator": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "mass-fabricator": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "microwave": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "mixer": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "ore-washer": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "packager": [1, 2, 3, 4, 5, 6, 7, 8],
+    "plasma-arc-furnace": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "printer": [1, 2, 3, 4, 5, 6, 7, 8],
+    "pump": [1, 2, 3],
+    "recycler": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "replicator": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "rock-breaker": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "scanner": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "sifter": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "thermal-centrifuge": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "unpackager": [1, 2, 3, 4, 5, 6, 7, 8],
+    "wiremill": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "generator": [],
+    "tank": []
+  },
+  "dataAccess": [
+    {
+      "meta": 145,
+      "tier": 4,
+      "name": "Data Access Hatch"
+    },
+    {
+      "meta": 146,
+      "tier": 6,
+      "name": "Advanced Data Access Hatch"
+    },
+    {
+      "meta": 147,
+      "tier": 8,
+      "name": "Automatable Data Access Hatch"
+    }
+  ],
+  "dataInterfaces": {
+    "assemblyDataIn": {
+      "meta": 15442,
+      "tier": 7,
+      "name": "Assembly Line Reception Connector"
+    },
+    "assemblyDataOut": {
+      "meta": 15443,
+      "tier": 7,
+      "name": "Data Bank Transmission Connector"
+    },
+    "wirelessAssemblyDataIn": {
+      "meta": 15446,
+      "tier": 10,
+      "name": "Wireless Assembly Line Reception Connector"
+    },
+    "wirelessAssemblyDataOut": {
+      "meta": 15447,
+      "tier": 10,
+      "name": "Wireless Data Bank Transmission Connector"
+    }
+  },
+  "hatches": {
+    "itemIn": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "itemOut": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "fluidIn": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    "fluidOut": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    "energy": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    "dynamo": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    "muffler": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "dataAccess": [4, 6, 8]
+  }
+}

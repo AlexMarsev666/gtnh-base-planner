@@ -8,9 +8,8 @@
  * (frames, sheetmetal, storage blocks, BartWorks material casings) by material id, tinted with the material colour;
  * vanilla blocks by a small table. Controllers are their hatch casing with the front overlay GT's `getTexture` draws.
  */
-import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { findCalls, methodBody, splitArgs, stripComments } from '../gt-source/java.mjs';
 import { Registry } from '../gt-source/registry.mjs';
 
@@ -145,17 +144,18 @@ const MANUAL = {
 
 export class StaticTextures {
   /**
-   * @param {string} checkout GT5-Unofficial checkout (Java sources; `git ls-files` must list the textures)
+   * @param {string} checkout GT5-Unofficial checkout or extracted source archive
    * @param {import('./jars.mjs').TextureJars} jars sprites, to check which files exist
    */
   constructor(checkout, jars) {
-    const textureList = execSync('git ls-files "src/main/resources/assets/*/textures/blocks/*"', {
-      cwd: checkout,
-      maxBuffer: 1 << 26,
+    const textureList = readdirSync(join(checkout, 'src/main/resources/assets'), {
+      recursive: true,
+      withFileTypes: true,
     })
-      .toString()
-      .trim()
-      .split('\n');
+      .filter((entry) => entry.isFile())
+      .map((entry) => relative(checkout, join(entry.parentPath, entry.name)).replaceAll('\\', '/'))
+      .filter((path) => /\/textures\/blocks\/.+\.png$/.test(path))
+      .sort();
     this.checkout = checkout;
     this.jars = jars;
     this.reg = new Registry(checkout, textureList);

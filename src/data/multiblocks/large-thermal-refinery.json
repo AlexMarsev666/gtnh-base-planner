@@ -2,7 +2,7 @@
   "id": "large-thermal-refinery",
   "name": "Large Thermal Refinery",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialThermalCentrifuge.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialThermalCentrifuge.java",
   "size": [5, 8, 6],
   "layers": [
     [" A~A ", "AAAAA", "AAAAA", "AAAAA", "AAAAA", " AAA "],
@@ -34,12 +34,8 @@
     "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemIn", "itemOut"],
-  "requiredHatches": {
-    "energy": { "min": 1 },
-    "maintenance": { "min": 1, "max": 1 },
-    "muffler": { "min": 1, "max": 1 }
-  },
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 }, "muffler": { "min": 1 } },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialThermalCentrifuge (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialThermalCentrifuge (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

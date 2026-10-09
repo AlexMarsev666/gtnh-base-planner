@@ -6,5 +6,8 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'tools/**/*.test.ts', 'scripts/**/*.test.ts'],
     environment: 'node',
+    // Native fixture generation and routing both occupy a core and large geometry caches. Run files
+    // serially so the existing routing deadlines measure the model, not a concurrent fixture import.
+    maxWorkers: 1,
   },
 });

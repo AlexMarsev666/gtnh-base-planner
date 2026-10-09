@@ -1,0 +1,83 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "source": "src/main/java/bartworks/common/loaders/ItemRegistry.java",
+  "variants": [
+    {
+      "id": "bartworks:BW_TieredGlass@0",
+      "tier": "HV",
+      "tile": "DUMP_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/BoronSilicateGlassBlock.png",
+      "sha256": "62274b8df12d0c02c14812b7f4dc6609db469d7d8f645b1fa6ce73690d989422"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@1",
+      "tier": "EV",
+      "tile": "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/TitaniumReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "fadb8056a698f9d65160ef00899096125fc12a301eb300aca7d9fc12b893dd0f"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@2",
+      "tier": "IV",
+      "tile": "DUMP_TUNGSTEN_STEEL_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/TungstenSteelReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "7ba9253edb294e7f1c2bddcc62c308c78b087af24f26b3d73f80063d445ae49f"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@3",
+      "tier": "LuV",
+      "tile": "DUMP_RHODIUM_PLATED_PALLADIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/RhodiumPlatedPalladiumReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "7bae8db63721e01d397469b5cd66ecc1f210b66470ff655e68b276ce93323c06"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@4",
+      "tier": "ZPM",
+      "tile": "DUMP_IRIDIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/IridiumReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "d5cd2cb7ebd8f1e77edda3f506eca2066883f268d4430adbd09a6f2168d78bc3"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@5",
+      "tier": "UV",
+      "tile": "DUMP_OSMIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/OsmiumReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "64ac599ec6eb75f31038e7458227bf05b03f1f88fd72ef536aa7fb54c27566a2"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@6",
+      "tier": "UHV",
+      "tile": "DUMP_NEUTRONIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/NeutroniumReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "9ea3a2f97b4d23449d4f9f8d3c5c5019fa6c2339047879f224cde8cb1748c1cf"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@7",
+      "tier": "UEV",
+      "tile": "DUMP_INFINITY_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/InfinityReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "bec51e89d8b7cd74321fd594c70f10e14a7ba77c2f8c13c551e400a0b59ee1e6"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@8",
+      "tier": "UIV",
+      "tile": "DUMP_TRANSCENDENTALLY_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/TranscendentallyReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "005ab7a238b3f69f1fbe6bc4b623a20df4142fcab7553a56c37a2f8187e8430c"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@9",
+      "tier": "UMV",
+      "tile": "DUMP_HEXANITE_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/HexaniteReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "7d28b462eb96536e5f61cf21fb16ddf3061e429161baa41b4c0e90dceb12756c"
+    },
+    {
+      "id": "bartworks:BW_TieredGlass@10",
+      "tier": "UXV",
+      "tile": "DUMP_UNIVERSIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "path": "src/main/resources/assets/bartworks/textures/blocks/UniversiumReinforcedBoronSilicateGlassBlock.png",
+      "sha256": "94294d5a4f21aa7db5daf5c721c7f0fc0aca5270ca0bd68d7a8135e298cd5f7d"
+    }
+  ]
+}

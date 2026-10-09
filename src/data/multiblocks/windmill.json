@@ -2,7 +2,7 @@
   "id": "windmill",
   "name": "Windmill",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/bartworks/common/tileentities/multis/MTEWindmill.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bartworks/common/tileentities/multis/MTEWindmill.java",
   "size": [7, 12, 7],
   "layers": [
     [" AA~AA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA "],
@@ -30,5 +30,5 @@
   "requiredHatches": {},
   "defaultHatches": [],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEWindmill (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEWindmill (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

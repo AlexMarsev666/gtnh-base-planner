@@ -1,3 +1,4 @@
+import { withSteamFrame } from '../model/multiblock/steamWaterPump';
 import { derived } from 'svelte/store';
 import { getMultiblock } from '../data/catalog';
 import { DEFAULT_HATCH_COLORS } from '../model/colors';
@@ -20,12 +21,21 @@ import { connectBelow, plan, showCables, showPipes } from '../state/store';
 import { withBuildDimensions } from './dimensions';
 import { warnOnce } from './notices';
 import { hatchKey, layoutKey, pipesKey, sceneKey } from './pipelineKeys';
+import { placeResourceHatches, validateResourceHatches } from '../model/site/resourcePlacement';
+import { validateAlternativeCounts } from '../model/multiblock/rules';
+import { hatchTiers } from '../data/single-machines';
+import { supportsHatchTier } from '../model/hatches/tiers';
+import { withUniformHatchTiers } from '../model/hatches/assignments';
+import { withStructureGlass } from '../model/multiblock/glass';
+import { withAssemblyGrowth } from '../model/multiblock/circuitAssemblyLine';
 
 /** The model functions the pipeline calls (injectable for tests). */
 export interface PipelineDeps {
   getMultiblock: (id: string) => MultiblockDef | undefined;
   packUnits: typeof packUnits;
   placeHatches: typeof placeHatches;
+  placeResourceHatches?: typeof placeResourceHatches;
+  validateResourceHatches?: typeof validateResourceHatches;
   /** Looser layouts to try when the compact one cannot fit every hatch. */
   layoutCandidates: typeof layoutCandidates;
   /** Looser versions of a layout, tried when pipes or cables leave a hatch unconnected. */
@@ -39,6 +49,8 @@ export const defaultDeps: PipelineDeps = {
   getMultiblock,
   packUnits,
   placeHatches,
+  placeResourceHatches,
+  validateResourceHatches,
   layoutCandidates,
   loosenings,
   computeWallStats,
@@ -104,13 +116,33 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
 
   return function run(p: PlanState, pipesOn: boolean, cablesOn = false, below = false): PipelineResult {
     // Hatches may face down, and pipes run under the build, when connections from below are allowed.
-    const d: PipelineDeps = below
-      ? { ...deps, placeHatches: (df, u, e, a) => deps.placeHatches(df, u, e, a, { below: true }) }
-      : deps;
     const raw = deps.getMultiblock(p.multiblockId);
+    const tiered =
+      (p.voltageTier !== undefined ||
+        p.hatchTiers !== undefined ||
+        p.enabledHatches.includes('dataAccess')) &&
+      raw &&
+      p.enabledHatches.some((k) => supportsHatchTier(raw, k));
+    const d: PipelineDeps =
+      tiered && deps.placeResourceHatches
+        ? {
+            ...deps,
+            placeHatches: (df, u, e, a) =>
+              Object.keys(p.hatchTiers ?? {}).length
+                ? deps.placeResourceHatches!(df, u, e, {}, p, below, {})
+                : withUniformHatchTiers(df, u, deps.placeHatches(df, u, e, a, { below }), p),
+          }
+        : below
+          ? { ...deps, placeHatches: (df, u, e, a) => deps.placeHatches(df, u, e, a, { below: true }) }
+          : deps;
     const size = raw ? effectiveSize(raw, p.size) : undefined;
     // A resizable multiblock is built at the plan's height / length.
-    const def = raw ? sizedDef(raw, size) : undefined;
+    const def = raw
+      ? withSteamFrame(
+          withAssemblyGrowth(withStructureGlass(sizedDef(raw, size), p.structureGlassTier), p.assemblyGrowth),
+          p.steamFrameTier,
+        )
+      : undefined;
     const empty: PipelineResult = {
       def,
       pack: null,
@@ -122,6 +154,11 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       error: null,
     };
     if (!def) return { ...empty, error: `Unknown multiblock "${p.multiblockId}"` };
+    if (p.size !== undefined && p.size !== size)
+      return {
+        ...empty,
+        error: `Saved size ${p.size} is not supported by the current rules for "${p.multiblockId}"`,
+      };
 
     const kinds: RoutedKind[] = [...(pipesOn ? PIPE_KINDS : []), ...(cablesOn ? CABLE_KINDS : [])];
     // With pipes or cables on, an auto layout is chosen so that every hatch gets connected.
@@ -129,12 +166,15 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     const colors = mergeColors(p.colors);
     const layoutK = layoutKey({
       defId: def.id,
+      structureGlassTier: p.structureGlassTier,
+      assemblyGrowth: p.assemblyGrowth,
+      steamFrameTier: p.steamFrameTier,
       size,
       count: p.count,
       limits: p.limits,
       manualUnits: p.manualUnits,
     });
-    const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below);
+    const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below, p);
     const pipesK = pipesKey(hatchK, kinds);
     const sceneK = sceneKey(pipesK, colors);
     if (lastResult && sceneK === lastResultKey) return lastResult;
@@ -189,6 +229,11 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     if (!placed.ok) return finish({ ...empty, pack: pack.value, error: placed.error });
     const units = placed.value.pack.units;
     const hatchResult = placed.value.hatches;
+    const tierErrors = hatchResult.hatches.flatMap((h) =>
+      h.tier && hatchTiers(h.kind).length && !hatchTiers(h.kind).includes(h.tier)
+        ? [`${h.kind} has no ${h.tier} variant in RC2.`]
+        : [],
+    );
     const layout = placed.value.pack;
     const loosened = placed.value.loosened;
 
@@ -202,6 +247,12 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       kinds.length > 0 ? (routed ?? d.routePipes(def, units, hatchResult.hatches, { kinds, below })) : null,
     );
     const pipeNets = pipes.ok ? pipes.value : null;
+    const validationErrors = deps.validateResourceHatches
+      ? [
+          ...deps.validateResourceHatches(def, units, withPipeFaces(hatchResult.hatches, pipeNets), p),
+          ...validateAlternativeCounts(def, units, hatchResult.hatches),
+        ]
+      : [];
 
     // Hatches turn to whichever side their pipe reaches them from.
     // Width and depth of the whole build are measured beside it.
@@ -225,7 +276,11 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       stats: stats.value,
       pipes: pipeNets,
       scene: scene.ok ? scene.value : null,
-      error: scene.ok ? (pipes.ok ? null : pipes.error) : scene.error,
+      error: scene.ok
+        ? pipes.ok
+          ? [...new Set([...tierErrors, ...validationErrors])].join(' ') || null
+          : pipes.error
+        : scene.error,
     });
   };
 }

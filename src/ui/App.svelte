@@ -2,8 +2,19 @@
   import { onMount } from 'svelte';
   import { t } from '../i18n/en';
   import { groupIndexOfUnit, portIndexOfUnit, portUnitId } from '../model/site/ids';
-  import { appMode, flowAnimation, isolate, site, siteGroup, siteNet, sitePort } from '../state/site';
-  import { plan, selectedUnits, viewMode, xray } from '../state/store';
+  import {
+    appMode,
+    flowAnimation,
+    isolate,
+    site,
+    siteGroup,
+    siteHatch,
+    siteNet,
+    sitePort,
+    undergroundView,
+  } from '../state/site';
+  import { undergroundScene } from '../model/render/underground';
+  import { plan, selectedUnits, selectedHatchAssignments, viewMode, xray } from '../state/store';
   import { selectMultiblock } from './actions';
   import { startSessions } from './appSession';
   import BlocksPanel from './BlocksPanel.svelte';
@@ -176,7 +187,11 @@
 
 <main>
   <Scene
-    scene={siteMode ? $siteScene : $build.scene}
+    scene={siteMode
+      ? $siteScene && $undergroundView
+        ? undergroundScene($siteScene)
+        : $siteScene
+      : $build.scene}
     mode={$viewMode}
     xray={$xray}
     selected={siteMode ? siteSelected : $selectedUnits}
@@ -187,6 +202,27 @@
     {inset}
     {onpick}
     {onpicknet}
+    onpickvoxel={(voxel) => {
+      if (!siteMode) {
+        const hatch =
+          voxel?.kind === 'hatch'
+            ? $build.hatches?.hatches.find((h) => h.cell.join() === voxel.pos.join())
+            : undefined;
+        selectedHatchAssignments.set(hatch?.assignments ?? []);
+        if (hatch) settingsOpen = true;
+        return;
+      }
+      const pg =
+        siteMode && voxel
+          ? $siteBuild.build?.groups.find((pg) => pg.units.some((u) => voxel.unitIds.includes(u.id)))
+          : undefined;
+      const hatch =
+        pg && voxel?.kind === 'hatch'
+          ? pg.hatches.find((h) => h.cell.join() === voxel.pos.join())
+          : undefined;
+      siteHatch.set(hatch?.assignments ? { group: pg!.group.id, assignments: hatch.assignments } : null);
+      if (hatch) sitePanelOpen = true;
+    }}
     onfail={() => (rendererFailed = true)}
   />
 

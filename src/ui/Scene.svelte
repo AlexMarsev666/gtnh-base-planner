@@ -2,7 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import { DEFAULT_HATCH_COLORS } from '../model/colors';
   import type { Vec3, ViewMode } from '../model/core/types';
-  import type { SceneModel } from '../model/render/types';
+  import type { SceneModel, Voxel } from '../model/render/types';
   import { createRenderer, type Renderer } from '../render/renderer';
   import { warnOnce } from './notices';
 
@@ -12,6 +12,7 @@
     xray: boolean;
     selected: number[];
     onpick: (unitIds: number[]) => void;
+    onpickvoxel?: (voxel: Voxel | null) => void;
     onfail: () => void;
     /** Site view: a pipe was clicked (net id), or something else (null). */
     onpicknet?: (netId: number | null) => void;
@@ -34,6 +35,7 @@
     xray,
     selected,
     onpick,
+    onpickvoxel,
     onfail,
     onpicknet,
     flow = true,
@@ -71,6 +73,7 @@
     try {
       r = createRenderer(canvas, {
         onPick: (ids) => onpick(ids),
+        onPickVoxel: (voxel) => onpickvoxel?.(voxel),
         onPickNet: (id) => onpicknet?.(id),
         onView: (theta) => onview?.(theta),
         onMoveSelection: (dx, dz) => onmove?.(dx, dz),

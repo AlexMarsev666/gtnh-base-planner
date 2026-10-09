@@ -8,6 +8,10 @@
 // Raised with the catalog built from the game dump (244 multiblocks, 39 of them new, several huge: Forge of the
 // Gods, Large Hadron Collider, Nanochip Assembly Complex; 619 atlas tiles): site worker 111 KB, atlas 141 KB,
 // dist 3.9 MB.
+// RC2 migration, source-derived casing counters, persistent individual tiers, transformers and routing
+// controls bring the production main script to ~389 KB gzip. Retain a small margin at 400 KB.
+// Reviewed RC2 structure adapters and lexicographic underground search bring the worker to ~133 KB
+// gzip; allow 140 KB without raising the atlas, stylesheet or whole-site budgets.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -17,8 +21,8 @@ const dist = process.argv[2] ?? 'dist';
 
 /** [what, file matcher, measure, budget in bytes] */
 const budgets = [
-  ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 380 * KB],
-  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 130 * KB],
+  ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 400 * KB],
+  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 140 * KB],
   ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 6 * KB],
   ['texture atlas', /^textures\/atlas\.png$/, 'raw', 170 * KB],
   ['whole site', /./, 'raw', 4.75 * 1024 * KB],

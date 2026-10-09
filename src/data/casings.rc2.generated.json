@@ -1,0 +1,488 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "entries": {
+    "absolute-baryonic-perfection-purification-unit": [
+      {
+        "blocks": ["gregtech:gt.blockcasings10@2"],
+        "min": 300,
+        "counter": "numCasings",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitBaryonicPerfection.java"
+      }
+    ],
+    "active-transformer": [
+      {
+        "blocks": ["tectech:gt.blockcasingsTT@0"],
+        "min": 5,
+        "counter": "casingCount",
+        "source": "src/main/java/tectech/thing/metaTileEntity/multi/MTEActiveTransformer.java"
+      }
+    ],
+    "algae-farm": [
+      {
+        "blocks": ["gregtech:gt.blockcasings12@15"],
+        "min": 20,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEAlgaePond.java"
+      }
+    ],
+    "alloy-blast-smelter": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@15"],
+        "min": 3,
+        "counter": "mCasing",
+        "source": "src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEAlloyBlastSmelter.java"
+      }
+    ],
+    "big-barrel-brewery": [
+      {
+        "blocks": ["gt.casing.reinforcedWooden"],
+        "min": 14,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialBrewery.java"
+      }
+    ],
+    "bio-vat": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@1"],
+        "min": 19,
+        "counter": "mCasing",
+        "source": "src/main/java/bartworks/common/tileentities/multis/MTEBioVat.java"
+      }
+    ],
+    "dangote-distillus": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@1"],
+        "min": 7,
+        "counter": "mCasing",
+        "source": "src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvDistillationTower.java"
+      }
+    ],
+    "density-2": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@0"],
+        "min": 50,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEAdvImplosionCompressor.java"
+      }
+    ],
+    "digester": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@0"],
+        "min": 40,
+        "counter": "casingAmount",
+        "source": "src/main/java/gtnhlanth/common/tileentity/MTEDigester.java"
+      }
+    ],
+    "dissection-apparatus": [
+      {
+        "blocks": ["gt.casing.cleanStainless"],
+        "min": 45,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtractor.java"
+      }
+    ],
+    "dissolution-tank": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@1"],
+        "min": 30,
+        "counter": "casingAmount",
+        "source": "src/main/java/gtnhlanth/common/tileentity/MTEDissolutionTank.java"
+      }
+    ],
+    "draconic-evolution-fusion-crafter": [
+      {
+        "blocks": ["kubatech:defc.casing@7"],
+        "min": 19,
+        "counter": "mCasing",
+        "source": "src/main/java/kubatech/tileentity/gregtech/multiblock/MTEDEFusionCrafter.java"
+      }
+    ],
+    "electric-implosion-compressor": [
+      {
+        "blocks": ["gregtech:gt.blockreinforced@10"],
+        "min": 230,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEElectricImplosionCompressor.java"
+      }
+    ],
+    "endothermic-fridge": [
+      {
+        "blocks": ["gregtech:gt.blockcasings14@4"],
+        "min": 750,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEEndothermicFridge.java"
+      }
+    ],
+    "exothermic-hearth": [
+      {
+        "blocks": ["gregtech:gt.blockcasings14@3"],
+        "min": 1800,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEExothermicHearth.java"
+      }
+    ],
+    "extreme-entity-crusher": [
+      {
+        "blocks": ["gt.casing.solidSteel"],
+        "min": 35,
+        "counter": "mCasing",
+        "source": "src/main/java/kubatech/tileentity/gregtech/multiblock/MTEExtremeEntityCrusher.java"
+      }
+    ],
+    "extreme-heat-exchanger": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@0"],
+        "min": 25,
+        "counter": "casingAmount",
+        "source": "src/main/java/goodgenerator/blocks/tileEntity/MTEExtremeHeatExchanger.java"
+      }
+    ],
+    "extreme-temperature-fluctuation-purification-unit": [
+      {
+        "blocks": ["gregtech:gt.blockcasings9@11"],
+        "min": 50,
+        "counter": "casingCount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitPlasmaHeater.java"
+      }
+    ],
+    "flocculation-purification-unit": [
+      {
+        "blocks": ["gregtech:gt.blockcasings9@6"],
+        "min": 56,
+        "counter": "casingCount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitFlocculation.java"
+      }
+    ],
+    "hot-isostatic-pressurization-unit": [
+      {
+        "blocks": ["gregtech:gt.blockcasings10@4", "gregtech:gt.blockcasings10@5"],
+        "min": 95,
+        "hatchableOnly": true,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEHIPCompressor.java"
+      }
+    ],
+    "hyper-intensity-laser-engraver": [
+      {
+        "blocks": ["gregtech:gt.blockcasings10@1"],
+        "min": 35,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialLaserEngraver.java"
+      }
+    ],
+    "implosion-compressor": [
+      {
+        "blocks": ["gt.casing.solidSteel"],
+        "min": 16,
+        "counter": "mCasing",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEImplosionCompressor.java"
+      }
+    ],
+    "industrial-3d-copying-machine": [
+      {
+        "blocks": ["miscutils:gtplusplus.blockcasings.5@5"],
+        "min": 40,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialChisel.java"
+      }
+    ],
+    "industrial-arc-furnace": [
+      {
+        "blocks": ["gregtech:gt.blockcasings2@0"],
+        "min": 10,
+        "counter": "mCasing",
+        "source": "src/main/java/kubatech/tileentity/gregtech/multiblock/MTEIndustrialArcFurnace.java"
+      }
+    ],
+    "industrial-autoclave": [
+      {
+        "blocks": ["gt.casing.pressureContainment"],
+        "min": 128,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiAutoclave.java"
+      }
+    ],
+    "industrial-bending-machine": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@4"],
+        "min": 4,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialBendingMachine.java"
+      }
+    ],
+    "industrial-centrifuge": [
+      {
+        "blocks": ["gtpp.casing.centrifuge"],
+        "min": 6,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialCentrifuge.java"
+      }
+    ],
+    "industrial-coke-oven": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@1"],
+        "min": 35,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialCokeOven.java"
+      }
+    ],
+    "industrial-electrolyzer": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@5"],
+        "min": 6,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialElectrolyzer.java"
+      }
+    ],
+    "industrial-extrusion-machine": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@1"],
+        "min": 3,
+        "counter": "casingAmountStainless",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtruder.java"
+      },
+      {
+        "blocks": ["gregtech:gt.blockcasings10@3"],
+        "min": 8,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtruder.java"
+      }
+    ],
+    "industrial-forming-press": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@4"],
+        "min": 5,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialFormingPress.java"
+      }
+    ],
+    "industrial-mixing-machine": [
+      {
+        "blocks": ["gregtech:gt.blockcasings12@13"],
+        "min": 5,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialMixer.java"
+      }
+    ],
+    "industrial-precision-lathe": [
+      {
+        "blocks": ["gregtech:gt.blockcasings2@0"],
+        "min": 42,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiLathe.java"
+      }
+    ],
+    "industrial-sledgehammer": [
+      {
+        "blocks": ["miscutils:gtplusplus.blockcasings.5@6"],
+        "min": 10,
+        "hatchableOnly": true,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialForgeHammer.java"
+      }
+    ],
+    "industrial-wire-factory": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@6"],
+        "min": 14,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialWireMill.java"
+      }
+    ],
+    "infinite-fluid-drilling-rig": [
+      {
+        "blocks": ["gregtech:gt.blockcasings8@2"],
+        "min": 90,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEOilDrillInfinite.java"
+      }
+    ],
+    "l-a-t-e-x": [
+      {
+        "blocks": ["gregtech:gt.blockcasings8@0"],
+        "min": 14,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTELatex.java"
+      }
+    ],
+    "large-chemical-reactor": [
+      {
+        "blocks": ["gt.casing.chemicallyInert"],
+        "min": 8,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTELargeChemicalReactor.java"
+      }
+    ],
+    "large-electric-compressor": [
+      {
+        "blocks": ["gregtech:gt.blockcasings10@5", "gregtech:gt.blockcasings10@4"],
+        "min": 95,
+        "hatchableOnly": true,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEIndustrialCompressor.java"
+      }
+    ],
+    "large-molecular-assembler": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@0"],
+        "min": 24,
+        "counter": "casing",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTELargeMolecularAssembler.java"
+      }
+    ],
+    "large-naquadah-reactor": [
+      {
+        "blocks": ["gregtech:gt.blockcasings13@15"],
+        "min": 130,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTELargeNaquadahReactor.java"
+      }
+    ],
+    "matter-fabrication-cpu": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@9"],
+        "min": 35,
+        "counter": "mCasing",
+        "source": "src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEMassFabricator.java"
+      }
+    ],
+    "mega-distillation-tower": [
+      {
+        "blocks": ["gregtech:gt.blockcasings14@5"],
+        "min": 150,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaDistillationTower.java"
+      }
+    ],
+    "mega-oil-cracker": [
+      {
+        "blocks": ["gregtech:gt.blockcasings14@5"],
+        "min": 145,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaOilCracker.java"
+      }
+    ],
+    "neutron-activator": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@1"],
+        "min": 7,
+        "counter": "casingAmount",
+        "source": "src/main/java/goodgenerator/blocks/tileEntity/MTENeutronActivator.java"
+      }
+    ],
+    "neutronium-compressor": [
+      {
+        "blocks": ["gregtech:gt.blockcasings10@6"],
+        "min": 220,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTENeutroniumCompressor.java"
+      }
+    ],
+    "oil-cracking-unit": [
+      {
+        "blocks": ["gt.casing.cleanStainless"],
+        "min": 18,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEOilCracker.java"
+      }
+    ],
+    "ozonation-purification-unit": [
+      {
+        "blocks": ["gregtech:gt.blockcasings9@10", "gregtech:gt.blockcasings9@9"],
+        "min": 96,
+        "hatchableOnly": true,
+        "counter": "casingCount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitOzonation.java"
+      }
+    ],
+    "pseudostable-black-hole-containment-field": [
+      {
+        "blocks": ["gregtech:gt.blockcasings10@12"],
+        "min": 950,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEBlackHoleCompressor.java"
+      }
+    ],
+    "pyrolyse-oven": [
+      {
+        "blocks": ["gt.casing.pyrolyseOven"],
+        "min": 60,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEPyrolyseOven.java"
+      }
+    ],
+    "residual-decontaminant-degasser-purification-unit": [
+      {
+        "blocks": ["gregtech:gt.blockcasings9@11"],
+        "min": 780,
+        "counter": "casingCount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitDegasser.java"
+      }
+    ],
+    "sparge-tower-controller": [
+      {
+        "blocks": ["miscutils:gtplusplus.blockcasings.5@4"],
+        "min": 45,
+        "counter": "mCasing",
+        "source": "src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTESpargeTower.java"
+      }
+    ],
+    "thermal-boiler": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@0"],
+        "min": 10,
+        "counter": "casingAmountRobust",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEThermalBoiler.java"
+      }
+    ],
+    "thorium-reactor-lftr": [
+      {
+        "blocks": ["miscutils:miscutils.blockcasings@12"],
+        "min": 27,
+        "hatchableOnly": true,
+        "counter": "mCasing",
+        "source": "src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTENuclearReactor.java"
+      }
+    ],
+    "turbocan-pro": [
+      {
+        "blocks": ["gt.casing.solidSteel"],
+        "min": 85,
+        "counter": "mCasingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiCanner.java"
+      }
+    ],
+    "universal-chemical-fuel-engine": [
+      {
+        "blocks": ["gregtech:gt.blockcasings4@2"],
+        "min": 100,
+        "counter": "casingAmount",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEUniversalChemicalFuelEngine.java"
+      }
+    ],
+    "utupu-tanuri": [
+      {
+        "blocks": ["miscutils:gtplusplus.blockcasings.4@10"],
+        "min": 4,
+        "counter": "mCasing",
+        "source": "src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIndustrialDehydrator.java"
+      }
+    ],
+    "vacuum-freezer": [
+      {
+        "blocks": ["gt.casing.frostProof"],
+        "min": 16,
+        "counter": "mCasing",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEVacuumFreezer.java"
+      }
+    ],
+    "water-pump": [
+      {
+        "blocks": ["gregtech:gt.blockcasings9@2"],
+        "min": 9,
+        "counter": "mCountCasing",
+        "source": "src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamWaterPump.java"
+      }
+    ]
+  }
+}

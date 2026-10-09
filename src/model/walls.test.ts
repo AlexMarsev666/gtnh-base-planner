@@ -47,6 +47,21 @@ const longBox: MultiblockDef = {
 };
 
 describe('computeWallStats', () => {
+  it('rejects a shared directional block when the two structures require different fronts', () => {
+    const def: MultiblockDef = {
+      ...coke,
+      id: 'directional-wall',
+      size: [3, 1, 3],
+      layers: [['CCC', 'C~C', 'CCC']],
+      legend: { C: { blockId: BRICK, facing: 'north' } },
+    };
+    const shared = computeWallStats(def, [u(0, [0, 0, 0]), u(1, [2, 0, 0])], []);
+    expect(shared.conflictCells).toEqual([]);
+    expect(shared.byBlock[BRICK]).toBe(13);
+    const conflicting = computeWallStats(def, [u(0, [0, 0, 0]), u(1, [2, 0, 0], 2)], []);
+    expect(keys(conflicting.conflictCells)).toEqual(['2,0,0', '2,0,1', '2,0,2']);
+    expect(conflicting.savedBlocks).toBe(0);
+  });
   it('returns zeros for an empty plan', () => {
     expect(computeWallStats(coke, [], [])).toEqual({
       totalBlocks: 0,

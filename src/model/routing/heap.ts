@@ -7,7 +7,7 @@ export class CellHeap {
   size = 0;
 
   constructor(
-    private key: Float64Array,
+    private key: Float64Array | ((a: number, b: number) => boolean),
     /** Heap slot per cell, -1 when the cell is not queued. */
     private pos: Int32Array,
   ) {
@@ -20,6 +20,7 @@ export class CellHeap {
   }
 
   private less(a: number, b: number): boolean {
+    if (typeof this.key === 'function') return this.key(a, b);
     const ka = this.key[a];
     const kb = this.key[b];
     return ka < kb || (ka === kb && a < b);

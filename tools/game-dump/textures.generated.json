@@ -1519,10 +1519,10 @@
         "assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_OPTICAL_ORGANIZER.png"
       ]
     },
-    "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_SMD_PROCESSOR": {
+    "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_PART_PROCESSOR": {
       "from": [
         "assets/gregtech/textures/blocks/iconsets/NANOCHIP_MESH_INTERFACE_CASING.png",
-        "assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SMD_PROCESSOR.png"
+        "assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PART_PROCESSOR.png"
       ]
     },
     "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_SPLITTER": {
@@ -1793,9 +1793,6 @@
     "DUMP_TFFTSTORAGE_FIELD_BLOCK1": {
       "from": ["assets/kekztech/textures/blocks/TFFTStorageFieldBlock1.png"]
     },
-    "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK": {
-      "from": ["assets/bartworks/textures/blocks/TitaniumReinforcedBoronSilicateGlassBlock.png"]
-    },
     "DUMP_TM_TESLA_BASE_SIDES": {
       "from": ["assets/gregtech/textures/blocks/iconsets/TM_TESLA_BASE_SIDES.png"]
     },
@@ -1923,7 +1920,6 @@
     "bartworks:BW_Machinery_Casings@0": { "side": "DUMP_NICKEL_FERRITE_BLOCKS" },
     "bartworks:BW_Machinery_Casings@1": { "side": "DUMP_TRANSFORMER_COIL" },
     "bartworks:BW_TieredGlass@0": { "side": "DUMP_BORON_SILICATE_GLASS_BLOCK" },
-    "bartworks:BW_TieredGlass@1": { "side": "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK" },
     "bartworks:BW_TieredGlass@3": {
       "side": "DUMP_RHODIUM_PLATED_PALLADIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
     },
@@ -3097,7 +3093,7 @@
     },
     "gregtech:gt.blockmachines@9505": {
       "side": "DUMP_NANOCHIP_MESH_INTERFACE_CASING",
-      "front": "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_SMD_PROCESSOR"
+      "front": "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_PART_PROCESSOR"
     },
     "gregtech:gt.blockmachines@9506": {
       "side": "DUMP_NANOCHIP_MESH_INTERFACE_CASING",

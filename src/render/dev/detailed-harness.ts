@@ -16,6 +16,15 @@ declare global {
 }
 
 const HATCH_BLOCK: Record<HatchKind, string> = {
+  computationIn: 'gregtech:gt.blockmachines@15440',
+  computationOut: 'gregtech:gt.blockmachines@15441',
+  wirelessComputationIn: 'gregtech:gt.blockmachines@15445',
+  wirelessComputationOut: 'gregtech:gt.blockmachines@15444',
+  uncertainty: 'gt.hatch.uncertainty.IV',
+  computerRack: 'gregtech:gt.blockmachines@15450',
+  electrodeIn: 'gregtech:gt.blockmachines@14203',
+  electrodeBus: 'gregtech:gt.blockmachines@14203',
+  electrodeDetector: 'gregtech:gt.blockmachines@14204',
   itemIn: 'gt.hatch.inputBus',
   itemOut: 'gt.hatch.outputBus',
   fluidIn: 'gt.hatch.inputHatch',
@@ -25,6 +34,13 @@ const HATCH_BLOCK: Record<HatchKind, string> = {
   maintenance: 'gt.hatch.maintenance',
   muffler: 'gt.hatch.muffler',
   steamIn: 'gt.hatch.steamInput',
+  cryotheumIn: 'gregtech:gt.blockmachines@967',
+  pyrotheumIn: 'gregtech:gt.blockmachines@968',
+  dataAccess: 'gt.hatch.dataAccess',
+  assemblyDataIn: 'gregtech:gt.blockmachines@15442',
+  assemblyDataOut: 'gregtech:gt.blockmachines@15443',
+  wirelessAssemblyDataIn: 'gregtech:gt.blockmachines@15446',
+  wirelessAssemblyDataOut: 'gregtech:gt.blockmachines@15447',
 };
 
 function rows(): BlockVisual[][] {
@@ -71,7 +87,11 @@ async function main(): Promise<void> {
   const provider = createDetailedProvider();
   await provider.load();
   const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const grid = rows();
+  const visuals = rows().flat();
+  const columns = Math.ceil(Math.sqrt(visuals.length));
+  const grid = Array.from({ length: Math.ceil(visuals.length / columns) }, (_, i) =>
+    visuals.slice(i * columns, (i + 1) * columns),
+  );
   let meshes = 0;
   grid.forEach((row, z) => {
     row.forEach((visual, x) => {
@@ -82,10 +102,12 @@ async function main(): Promise<void> {
     });
   });
 
-  const width = 8 * 1.25;
+  const width = columns * 1.25;
   const depth = grid.length * 2;
-  const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-  camera.position.set(width / 2 + 3, 9, depth + 6);
+  const aspect = canvas.clientWidth / canvas.clientHeight;
+  const half = Math.max(width / aspect, depth) * 0.65;
+  const camera = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 0.1, 1000);
+  camera.position.set(width / 2 + depth * 0.15, depth * 1.2, depth * 1.1);
   camera.lookAt(width / 2 - 0.6, 0, depth / 2 - 0.6);
   renderer.render(scene, camera);
   window.__detailedHarness = { ready: true, meshes };

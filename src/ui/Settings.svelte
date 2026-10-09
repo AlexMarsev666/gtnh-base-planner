@@ -1,14 +1,32 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import type { MultiblockDef, PlanLimits } from '../model/multiblock/types';
-  import { connectBelow, plan, showCables, showPipes, xray } from '../state/store';
-  import { resetColors, resetPlan, setHatchColor, setLimit, setSize, toggleHatch } from './actions';
+  import { connectBelow, plan, showCables, showPipes, xray, selectedHatchAssignments } from '../state/store';
+  import {
+    resetColors,
+    resetPlan,
+    setHatchColor,
+    setLimit,
+    setSize,
+    toggleHatch,
+    setVoltageTier,
+    setManualTransformerMode,
+    setDataBankWireless,
+    setAssemblyGrowth,
+    setSteamFrameTier,
+    setStructureGlassTier,
+    setIndividualHatchTier,
+  } from './actions';
   import { hatchKindsOf } from './catalogView';
   import { LIMIT_MAX, LIMIT_MIN, formatLimit, parseLimit, parseSize } from './fields';
   import { notify } from './notices';
   import NumberStepper from './NumberStepper.svelte';
   import ToggleRow from './ToggleRow.svelte';
-  import { mergeColors } from './pipeline';
+  import { build, mergeColors } from './pipeline';
+  import { VOLTAGE_TIERS } from '../model/tiers';
+  import { hatchTiers } from '../data/single-machines';
+  import { supportsHatchTier } from '../model/hatches/tiers';
+  import { BOROSILICATE_GLASS_TIERS } from '../model/multiblock/glass';
   import { copyShareLink, downloadJson, openJsonFile, shareFallback } from './session';
   import { addPlanToSite } from './siteCommands';
 
@@ -33,6 +51,15 @@
     if (n !== null) setSize(n);
   }
   const colors = $derived(mergeColors($plan.colors));
+  const ioHatches = $derived(
+    $build.hatches?.hatches
+      .filter((h) => def && supportsHatchTier(def, h.kind))
+      .sort(
+        (a, b) =>
+          Number(!['itemIn', 'itemOut', 'fluidIn', 'fluidOut'].includes(a.kind)) -
+          Number(!['itemIn', 'itemOut', 'fluidIn', 'fluidOut'].includes(b.kind)),
+      ) ?? [],
+  );
 
   function commitLimit(axis: keyof PlanLimits, text: string) {
     const v = parseLimit(text);
@@ -117,7 +144,76 @@
   {#if kinds.length}
     <section>
       <h2>{t.hatches}</h2>
+      <label class="limit"
+        ><span
+          >{def?.id === 'manual-transformer'
+            ? t.site.transformerInputTier
+            : def?.id === 'water-pump'
+              ? t.site.outputHatchTier
+              : t.site.voltageTier}</span
+        ><select
+          class="field"
+          data-testid="plan-voltage-tier"
+          value={$plan.voltageTier ?? ''}
+          onchange={(e) => setVoltageTier(e.currentTarget.value)}
+        >
+          <option value="">{t.site.unspecifiedTier}</option>{#each VOLTAGE_TIERS as tier}<option value={tier}
+              >{tier}</option
+            >{/each}
+        </select></label
+      >
+      {#if def?.id === 'manual-transformer'}
+        <label class="limit"
+          ><span>{t.site.transformerMode}</span><select
+            class="field"
+            data-testid="plan-manual-transformer-mode"
+            value={$plan.manualTransformerMode ?? 'up'}
+            onchange={(e) => setManualTransformerMode(e.currentTarget.value)}
+          >
+            <option value="up">{t.site.transformerUp}</option><option value="down"
+              >{t.site.transformerDown}</option
+            >
+          </select></label
+        >
+        <p class="hint">{t.site.manualTransformerHint}</p>
+      {/if}
+      {#if def?.id === 'circuit-assembly-line'}
+        <label class="limit"
+          ><span>{t.site.assemblyGrowth}</span><select
+            class="field"
+            data-testid="assembly-growth"
+            value={$plan.assemblyGrowth ?? 'left'}
+            onchange={(e) => setAssemblyGrowth(e.currentTarget.value as 'left' | 'right')}
+          >
+            <option value="left">{t.site.assemblyGrowthLeft}</option>
+            <option value="right">{t.site.assemblyGrowthRight}</option>
+          </select></label
+        >
+      {/if}
+      {#if def?.id === 'water-pump'}
+        <label class="limit"
+          ><span>{t.site.steamFrameTier}</span><select
+            class="field"
+            data-testid="steam-frame-tier"
+            value={$plan.steamFrameTier ?? 'bronze'}
+            onchange={(e) => setSteamFrameTier(e.currentTarget.value as 'bronze' | 'steel')}
+          >
+            <option value="bronze">{t.site.steamFrameBronze}</option><option value="steel"
+              >{t.site.steamFrameSteel}</option
+            >
+          </select></label
+        >
+      {/if}
       <ul class="rows">
+        {#if def?.id === 'data-bank'}
+          <ToggleRow
+            on={$plan.dataBankWireless ?? false}
+            label={t.site.dataBankWireless}
+            title={t.site.dataBankWirelessHint}
+            testid="data-bank-wireless"
+            ontoggle={() => setDataBankWireless(!$plan.dataBankWireless)}
+          />
+        {/if}
         {#each kinds as kind (kind)}
           {@const on = $plan.enabledHatches.includes(kind)}
           <ToggleRow
@@ -139,6 +235,48 @@
           </ToggleRow>
         {/each}
       </ul>
+      {#if def?.selectableGlass}
+        <label class="limit"
+          ><span>{t.site.structureGlassTier}</span><select
+            class="field"
+            data-testid="plan-structure-glass-tier"
+            value={$plan.structureGlassTier ?? ''}
+            onchange={(e) => setStructureGlassTier(e.currentTarget.value)}
+          >
+            <option value="">{t.site.catalogGlass}</option>
+            {#if $plan.structureGlassTier && !BOROSILICATE_GLASS_TIERS.includes($plan.structureGlassTier)}
+              <option value={$plan.structureGlassTier}
+                >{$plan.structureGlassTier} · {t.site.unavailableTier}</option
+              >
+            {/if}
+            {#each BOROSILICATE_GLASS_TIERS as tier}<option value={tier}>{tier}</option>{/each}
+          </select></label
+        >
+      {/if}
+      {#each ioHatches as hatch (JSON.stringify(hatch.assignments ?? [hatch.cell, hatch.kind]))}
+        <label
+          class="limit hatch-setting"
+          class:active={hatch.assignments?.some((key) => $selectedHatchAssignments.includes(key))}
+        >
+          <span>{t.hatchKinds[hatch.kind]} · {hatch.cell.join(', ')}</span>
+          <select
+            class="field"
+            data-testid="plan-individual-hatch-tier"
+            value={hatch.assignments?.some((key) => $plan.hatchTiers?.[key]) ? (hatch.tier ?? '') : ''}
+            onchange={(e) => setIndividualHatchTier(hatch.assignments ?? [], e.currentTarget.value)}
+          >
+            <option value=""
+              >{hatch.kind === 'dataAccess' || hatch.kind === 'uncertainty'
+                ? `${t.site.defaultHatchTier} (${hatch.kind === 'dataAccess' ? 'EV' : 'IV'})`
+                : t.site.followMachineTier}</option
+            >
+            {#if hatch.tier && !hatchTiers(hatch.kind).includes(hatch.tier)}<option value={hatch.tier}
+                >{hatch.tier} · {t.site.unavailableTier}</option
+              >{/if}
+            {#each hatchTiers(hatch.kind) as tier}<option value={tier}>{tier}</option>{/each}
+          </select>
+        </label>
+      {/each}
       {#if Object.keys($plan.colors).length}
         <button class="link" onclick={resetColors}>{t.resetColors}</button>
       {/if}
@@ -259,6 +397,14 @@
   }
   .limit > span {
     white-space: nowrap;
+  }
+  .hatch-setting {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 8px;
+  }
+  .hatch-setting.active {
+    outline: 1px solid var(--line);
   }
   .limit :global(.field) {
     text-align: left;

@@ -53,6 +53,19 @@ function fakeDeps() {
 }
 
 describe('pipeline', () => {
+  it('reports an unsupported saved height without replacing its original size or placement', () => {
+    const deps = fakeDeps();
+    const plan = {
+      ...defaultPlan('distillation-tower'),
+      size: 40,
+      manualUnits: [{ id: 42, origin: [2, 0, 4] as const, rotation: 3 as const }],
+    };
+    const original = JSON.stringify(plan);
+    const result = createPipeline(deps)(plan, true);
+    expect(result.error).toMatch(/Saved size 40 is not supported/);
+    expect(deps.packUnits).not.toHaveBeenCalled();
+    expect(JSON.stringify(plan)).toBe(original);
+  });
   it('recomputes only the stages whose inputs changed', () => {
     const deps = fakeDeps();
     const run = createPipeline(deps);

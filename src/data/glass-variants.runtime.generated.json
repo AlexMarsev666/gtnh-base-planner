@@ -1,0 +1,46 @@
+[
+  {
+    "id": "bartworks:BW_TieredGlass@0",
+    "tier": "HV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@1",
+    "tier": "EV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@2",
+    "tier": "IV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@3",
+    "tier": "LuV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@4",
+    "tier": "ZPM"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@5",
+    "tier": "UV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@6",
+    "tier": "UHV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@7",
+    "tier": "UEV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@8",
+    "tier": "UIV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@9",
+    "tier": "UMV"
+  },
+  {
+    "id": "bartworks:BW_TieredGlass@10",
+    "tier": "UXV"
+  }
+]

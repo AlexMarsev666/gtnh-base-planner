@@ -189,7 +189,7 @@ describe('URL hash', () => {
 describe('JSON files', () => {
   it('round-trips through pretty JSON with a version', () => {
     const json = planToJson(sample());
-    expect(json).toContain('\n  "v": 1');
+    expect(json).toContain('\n  "v": 2');
     expect(planFromJson(json)).toEqual(sample());
   });
 

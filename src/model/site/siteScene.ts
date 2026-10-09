@@ -1,7 +1,7 @@
-import { isSingleBlock } from '../../data/generic';
+import { isSingleBlock, TRANSFORMER_ID } from '../../data/generic';
 import { singleMachineBlockId } from '../../data/single-machines';
 import { DEFAULT_HATCH_COLORS } from '../colors';
-import { key } from '../geometry';
+import { key, rotateDir } from '../geometry';
 import { buildSceneModel } from '../scene';
 import type { Vec3 } from '../core/types';
 import type { SceneModel, Voxel } from '../render/types';
@@ -51,9 +51,19 @@ export function buildSiteScene(
       colors,
     );
     // Each single-block machine shows the look of its own machine.
-    const look = single && pg.group.machine ? singleMachineBlockId(pg.group.machine) : null;
+    const tr =
+      pg.def.id === TRANSFORMER_ID
+        ? (pg.group.transformer ?? ({ lowTier: 'LV', mode: 'down', facing: 'north' } as const))
+        : undefined;
+    const look = tr
+      ? `site.transformer.${tr.lowTier}.${tr.mode}`
+      : single
+        ? (pg.group.machine ? singleMachineBlockId(pg.group.machine) : 'site.singleblock') +
+          (pg.group.voltageTier ? `.${pg.group.voltageTier}` : '')
+        : null;
     for (const v of local.voxels) {
       if (look) v.blockId = look;
+      if (tr) v.facing = rotateDir(tr.facing, pg.group.rotation);
       const k = key(v.pos);
       if (conflictCells.has(k)) v.conflict = true;
       const prev = voxelMap.get(k);
@@ -147,6 +157,8 @@ export function buildSiteScene(
 
   let lo: Vec3 = [0, 0, 0];
   let hi: Vec3 = [w, 1, d];
+  for (const pipe of pipes)
+    for (const path of pipe.paths) for (const p of path) lo = [lo[0], Math.min(lo[1], p[1]), lo[2]];
   for (const v of voxels) {
     lo = [Math.min(lo[0], v.pos[0]), Math.min(lo[1], v.pos[1]), Math.min(lo[2], v.pos[2])];
     hi = [Math.max(hi[0], v.pos[0] + 1), Math.max(hi[1], v.pos[1] + 1), Math.max(hi[2], v.pos[2] + 1)];

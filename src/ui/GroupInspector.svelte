@@ -1,12 +1,31 @@
 <script lang="ts">
-  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
+  import {
+    PLACEHOLDER_ID,
+    SINGLE_BLOCK_ID,
+    TRANSFORMER_ID,
+    getSiteDef,
+    isSingleBlock,
+  } from '../data/generic';
+  import {
+    SINGLE_MACHINES,
+    singleMachineBlockId,
+    singleMachineTiers,
+    hatchTiers,
+  } from '../data/single-machines';
+  import { VOLTAGE_TIERS, TRANSFORMER_TIERS, isVoltageTier } from '../model/tiers';
+  import { blockIconFaces } from './catalogView';
+  import { blockIcon } from './icons';
   import { t } from '../i18n/en';
   import type { PlacedGroup } from '../model/site/buildTypes';
   import { IO_KINDS } from '../model/site/group';
-  import type { SiteGroup } from '../model/site/types';
+  import { hatchKindFor } from '../model/site/demand';
+  import type { ResourceBinding, ResourceRole, SiteGroup } from '../model/site/types';
   import type { HatchKind } from '../model/multiblock/types';
+  import { hasLayeredFluidOutputs, isOilCracker } from '../model/multiblock/structureAdapters';
+  import { defaultHatchTier, supportsHatchTier } from '../model/hatches/tiers';
+  import { BOROSILICATE_GLASS_TIERS } from '../model/multiblock/glass';
   import { SITE_MAX_ELEVATION, SITE_MAX_SIZE } from '../share/siteCodec';
-  import { siteGroup } from '../state/site';
+  import { site, siteGroup, siteHatch } from '../state/site';
   import { hatchKindsOf } from './catalogView';
   import {
     COUNT_MAX,
@@ -56,6 +75,114 @@
   );
 
   let replacing = $state(false);
+  let machineQuery = $state('');
+  const machineChoices = $derived(
+    SINGLE_MACHINES.filter((m) => (m.name + ' ' + m.id).toLowerCase().includes(machineQuery.toLowerCase())),
+  );
+  const voltageChoices = $derived(
+    group.multiblockId === SINGLE_BLOCK_ID && group.machine && singleMachineTiers(group.machine).length
+      ? singleMachineTiers(group.machine)
+      : VOLTAGE_TIERS,
+  );
+  const ioHatches = $derived(
+    placed?.hatches
+      .filter((h) => def && !isSingleBlock(def) && supportsHatchTier(def, h.kind))
+      .sort((a, b) => Number(!IO_KINDS.includes(a.kind)) - Number(!IO_KINDS.includes(b.kind))) ?? [],
+  );
+  const resourceRoles = $derived(placed?.def?.resourceHatchRegions ?? def?.resourceHatchRegions ?? {});
+  const lockedInputKinds = $derived(Object.keys(def?.lockedFluidInputs ?? {}) as HatchKind[]);
+  const lockedItemKinds = $derived(Object.keys(def?.lockedItemInputs ?? {}) as HatchKind[]);
+  const lockedItemResources = $derived(
+    lockedItemKinds.length
+      ? [
+          ...new Set(
+            $site.links
+              .filter(
+                (link) =>
+                  'group' in link.to &&
+                  link.to.group === group.id &&
+                  $site.resources[link.resource]?.kind === 'item',
+              )
+              .map((link) => link.resource),
+          ),
+        ]
+      : [],
+  );
+  const fixedOutputResources = $derived(
+    def?.fixedFluidOutputs?.fluidOut
+      ? [
+          ...new Set(
+            $site.links
+              .filter(
+                (link) =>
+                  'group' in link.from &&
+                  link.from.group === group.id &&
+                  $site.resources[link.resource]?.kind === 'fluid',
+              )
+              .map((link) => link.resource),
+          ),
+        ]
+      : [],
+  );
+  const lockedInputResources = $derived(
+    lockedInputKinds.length
+      ? [
+          ...new Set(
+            $site.links
+              .filter(
+                (link) =>
+                  'group' in link.to &&
+                  link.to.group === group.id &&
+                  $site.resources[link.resource]?.kind === 'fluid',
+              )
+              .map((link) => link.resource),
+          ),
+        ]
+      : [],
+  );
+  const roleKinds = $derived(
+    isOilCracker(def)
+      ? ['fluidIn' as const]
+      : hasLayeredFluidOutputs(def)
+        ? ['fluidOut' as const]
+        : (Object.keys(resourceRoles) as HatchKind[]),
+  );
+  const outputSlotCount = $derived(
+    (
+      placed?.def?.fluidOutputRegions ??
+      placed?.def?.requiredHatches?.fluidOut?.regions ??
+      def?.fluidOutputRegions
+    )?.length ?? (placed?.def?.size[1] ?? 3) - 1,
+  );
+  const roleResources = $derived(placed?.demand.fluidOut ?? []);
+  const roleAssignments = $derived(
+    roleKinds.flatMap((kind) =>
+      (placed?.demand[kind] ?? []).flatMap<{
+        kind: HatchKind;
+        resource: string;
+        binding: ResourceBinding | undefined;
+        index: number;
+      }>((resource) => {
+        const matches = (group.resourceBindings ?? [])
+          .map((binding, index) => ({ kind, resource, binding, index }))
+          .filter(({ binding }) => binding.kind === kind && binding.resource === resource);
+        return matches.length ? matches : [{ kind, resource, binding: undefined, index: -1 }];
+      }),
+    ),
+  );
+  const roleLabels: Partial<Record<ResourceRole, string>> = {
+    hotFluid: 'Hot fluid',
+    helium: 'Helium',
+    mask: 'Photolithographic mask',
+    coldFluid: 'Cooled fluid',
+    water: 'Water',
+    steam: 'Steam',
+    acid: 'Hydrochloric acid',
+    alkaline: 'Sodium hydroxide',
+    coolant: 'Coolant',
+    plasma: 'Plasma',
+    product: 'Product',
+  };
   $effect(() => {
     void group.id;
     replacing = false;
@@ -89,6 +216,55 @@
   function replaceWith(id: string) {
     replacing = false;
     patch({ multiblockId: id });
+  }
+  function setHatchTier(assignments: string[], value: string) {
+    const hatchTiers = { ...group.hatchTiers };
+    for (const key of assignments) {
+      if (isVoltageTier(value)) hatchTiers[key] = value;
+      else delete hatchTiers[key];
+    }
+    patch({ hatchTiers });
+  }
+  function setBinding(kind: HatchKind, resource: string, value: string, index: number) {
+    const old = group.resourceBindings ?? [];
+    const resourceBindings = [...old];
+    if (index >= 0) resourceBindings.splice(index, 1);
+    if (value) {
+      resourceBindings.splice(
+        index < 0 ? resourceBindings.length : index,
+        0,
+        isOilCracker(def) || resourceRoles[kind]
+          ? { kind, resource, role: value as ResourceRole }
+          : { kind, resource, role: 'product', outputSlot: Number(value) },
+      );
+    }
+    patch({ resourceBindings });
+  }
+  function addOutputSlot(resource: string) {
+    patch({
+      resourceBindings: [...(group.resourceBindings ?? []), { kind: 'fluidOut', resource, role: 'product' }],
+    });
+  }
+  function setFluidInputKind(resource: string, value: string) {
+    const resourceBindings = (group.resourceBindings ?? []).filter(
+      (b) => b.resource !== resource || (b.kind !== 'fluidIn' && !lockedInputKinds.includes(b.kind)),
+    );
+    if (value) resourceBindings.push({ kind: value as HatchKind, resource });
+    patch({ resourceBindings });
+  }
+  function setItemInputKind(resource: string, value: string) {
+    const resourceBindings = (group.resourceBindings ?? []).filter(
+      (b) => b.resource !== resource || (b.kind !== 'itemIn' && !lockedItemKinds.includes(b.kind)),
+    );
+    if (value) resourceBindings.push({ kind: value as HatchKind, resource });
+    patch({ resourceBindings });
+  }
+  function setFixedOutputRole(resource: string, value: string) {
+    const bindings = (group.resourceBindings ?? []).filter(
+      (b) => !(b.kind === 'fluidOut' && b.resource === resource),
+    );
+    if (value === 'water') bindings.push({ kind: 'fluidOut', resource, role: 'water' });
+    patch({ resourceBindings: bindings });
   }
 </script>
 
@@ -143,7 +319,308 @@
         {/if}
       </div>
     {/if}
+    {#if group.multiblockId === SINGLE_BLOCK_ID}
+      <label class="col"
+        ><span>{t.site.searchMachines}</span><input
+          class="field text"
+          type="search"
+          bind:value={machineQuery}
+          data-testid="single-machine-search"
+        /></label
+      >
+      <label class="col"
+        ><span>{t.site.machineLook}</span><select
+          class="field"
+          value={group.machine ?? ''}
+          data-testid="single-machine-select"
+          onchange={(e) => patch({ machine: e.currentTarget.value || null })}
+        >
+          <option value="">{t.site.unspecifiedTier}</option>
+          {#each machineChoices as m (m.id)}<option value={m.id}>{m.name}</option>{/each}
+        </select></label
+      >
+      {#if group.machine}<canvas
+          style="width:72px;height:72px"
+          aria-label={group.machine}
+          use:blockIcon={blockIconFaces(
+            singleMachineBlockId(group.machine) + (group.voltageTier ? `.${group.voltageTier}` : ''),
+          )}
+        ></canvas>{/if}
+    {/if}
+    {#if group.multiblockId !== TRANSFORMER_ID}
+      <label class="col"
+        ><span
+          >{group.multiblockId === 'manual-transformer'
+            ? t.site.transformerInputTier
+            : group.multiblockId === 'water-pump'
+              ? t.site.outputHatchTier
+              : t.site.voltageTier}</span
+        ><select
+          class="field"
+          value={group.voltageTier ?? ''}
+          data-testid="machine-voltage-tier"
+          onchange={(e) =>
+            patch({ voltageTier: isVoltageTier(e.currentTarget.value) ? e.currentTarget.value : null })}
+        >
+          <option value="">{t.site.unspecifiedTier}</option>{#each voltageChoices as tier}<option value={tier}
+              >{tier}</option
+            >{/each}
+        </select></label
+      >
+    {:else}
+      {@const tr = group.transformer ?? ({ lowTier: 'LV', facing: 'north', mode: 'down' } as const)}
+      <label class="col"
+        ><span>{t.site.voltageTier}</span><select
+          class="field"
+          value={tr.lowTier}
+          data-testid="transformer-tier"
+          onchange={(e) => {
+            if (isVoltageTier(e.currentTarget.value))
+              patch({ transformer: { ...tr, lowTier: e.currentTarget.value } });
+          }}
+          >{#each TRANSFORMER_TIERS as tier}<option value={tier}
+              >{tier} → {VOLTAGE_TIERS[VOLTAGE_TIERS.indexOf(tier) + 1]}</option
+            >{/each}</select
+        ></label
+      >
+      <label class="col"
+        ><span>{t.site.transformerMode}</span><select
+          class="field"
+          value={tr.mode}
+          data-testid="transformer-mode"
+          onchange={(e) => patch({ transformer: { ...tr, mode: e.currentTarget.value as 'down' | 'up' } })}
+          ><option value="down">{t.site.transformerDown}</option><option value="up"
+            >{t.site.transformerUp}</option
+          ></select
+        ></label
+      >
+      <label class="col"
+        ><span>{t.site.transformerFacing}</span><select
+          class="field"
+          value={tr.facing}
+          data-testid="transformer-facing"
+          onchange={(e) =>
+            patch({ transformer: { ...tr, facing: e.currentTarget.value as typeof tr.facing } })}
+          >{#each ['north', 'east', 'south', 'west', 'up', 'down'] as face}<option value={face}>{face}</option
+            >{/each}</select
+        ></label
+      >
+    {/if}
+    {#if group.multiblockId === 'manual-transformer'}
+      <label class="col"
+        ><span>{t.site.transformerMode}</span><select
+          class="field"
+          data-testid="manual-transformer-mode"
+          value={group.manualTransformerMode ?? 'up'}
+          onchange={(e) => patch({ manualTransformerMode: e.currentTarget.value as 'up' | 'down' })}
+        >
+          <option value="up">{t.site.transformerUp}</option><option value="down"
+            >{t.site.transformerDown}</option
+          >
+        </select></label
+      >
+      <p class="hint">{t.site.manualTransformerHint}</p>
+    {/if}
+    {#if group.multiblockId === 'circuit-assembly-line'}
+      <label class="pair"
+        ><span>{t.site.assemblyGrowth}</span><select
+          class="field"
+          data-testid="assembly-growth"
+          value={group.assemblyGrowth ?? 'left'}
+          onchange={(e) => patch({ assemblyGrowth: e.currentTarget.value as 'left' | 'right' })}
+        >
+          <option value="left">{t.site.assemblyGrowthLeft}</option>
+          <option value="right">{t.site.assemblyGrowthRight}</option>
+        </select></label
+      >
+    {/if}
+    {#if group.multiblockId === 'data-bank'}
+      <ul class="rows">
+        <ToggleRow
+          on={group.dataBankWireless ?? false}
+          label={t.site.dataBankWireless}
+          title={t.site.dataBankWirelessHint}
+          testid="data-bank-wireless"
+          ontoggle={() => patch({ dataBankWireless: !group.dataBankWireless })}
+        />
+      </ul>
+    {/if}
+    {#if group.multiblockId === 'water-pump'}
+      <label class="pair"
+        ><span>{t.site.steamFrameTier}</span><select
+          class="field"
+          data-testid="steam-frame-tier"
+          value={group.steamFrameTier ?? 'bronze'}
+          onchange={(e) => patch({ steamFrameTier: e.currentTarget.value as 'bronze' | 'steel' })}
+        >
+          <option value="bronze">{t.site.steamFrameBronze}</option><option value="steel"
+            >{t.site.steamFrameSteel}</option
+          >
+        </select></label
+      >
+    {/if}
+    {#if def?.selectableGlass}
+      <label class="col"
+        ><span>{t.site.structureGlassTier}</span><select
+          class="field"
+          data-testid="structure-glass-tier"
+          value={group.structureGlassTier ?? ''}
+          onchange={(e) =>
+            patch({
+              structureGlassTier:
+                e.currentTarget.value === ''
+                  ? null
+                  : (e.currentTarget.value as SiteGroup['structureGlassTier']),
+            })}
+        >
+          <option value="">{t.site.catalogGlass}</option>
+          {#if group.structureGlassTier && !BOROSILICATE_GLASS_TIERS.includes(group.structureGlassTier)}
+            <option value={group.structureGlassTier}
+              >{group.structureGlassTier} · {t.site.unavailableTier}</option
+            >
+          {/if}
+          {#each BOROSILICATE_GLASS_TIERS as tier}<option value={tier}>{tier}</option>{/each}
+        </select></label
+      >
+    {/if}
+    {#each lockedItemResources as resource (resource)}
+      {@const binding = group.resourceBindings?.find(
+        (b) => b.resource === resource && (b.kind === 'itemIn' || lockedItemKinds.includes(b.kind)),
+      )}
+      {@const automatic = def && hatchKindFor('in', resource, $site.resources[resource], def)}
+      <label class="col"
+        ><span>{$site.resources[resource]?.name ?? resource} · {t.site.resourceRole}</span>
+        <select
+          class="field"
+          data-testid="locked-item-input"
+          value={binding?.kind ?? ''}
+          onchange={(e) => setItemInputKind(resource, e.currentTarget.value)}
+        >
+          <option value="">{automatic ? `Automatic · ${t.hatchKinds[automatic]}` : t.site.roleNeeded}</option>
+          {#if def?.hatchBlocks.itemIn}<option value="itemIn">Recipe item input</option>{/if}
+          {#each lockedItemKinds as kind}<option value={kind}>{t.hatchKinds[kind]}</option>{/each}
+        </select>
+      </label>
+    {/each}
+    {#each lockedInputResources as resource (resource)}
+      {@const binding = group.resourceBindings?.find(
+        (b) => b.resource === resource && (b.kind === 'fluidIn' || lockedInputKinds.includes(b.kind)),
+      )}
+      {@const automatic = def && hatchKindFor('in', resource, $site.resources[resource], def)}
+      <label class="col"
+        ><span>{$site.resources[resource]?.name ?? resource} · {t.site.resourceRole}</span>
+        <select
+          class="field"
+          data-testid="locked-fluid-input"
+          value={binding?.kind ?? ''}
+          onchange={(e) => setFluidInputKind(resource, e.currentTarget.value)}
+        >
+          <option value="">{automatic ? `Automatic · ${t.hatchKinds[automatic]}` : t.site.roleNeeded}</option>
+          {#if def?.hatchBlocks.fluidIn}<option value="fluidIn">Recipe fluid input</option>{/if}
+          {#each lockedInputKinds as kind}<option value={kind}>{t.hatchKinds[kind]}</option>{/each}
+        </select>
+      </label>
+    {/each}
+    {#each fixedOutputResources as resource (resource)}
+      {@const binding = group.resourceBindings?.find((b) => b.kind === 'fluidOut' && b.resource === resource)}
+      {@const automatic = def && hatchKindFor('out', resource, $site.resources[resource], def)}
+      <label class="col"
+        ><span>{$site.resources[resource]?.name ?? resource} · {t.site.resourceRole}</span>
+        <select
+          class="field"
+          data-testid="fixed-fluid-output-role"
+          value={binding?.role ?? ''}
+          onchange={(e) => setFixedOutputRole(resource, e.currentTarget.value)}
+        >
+          <option value="">{automatic ? 'Automatic · Water' : t.site.roleNeeded}</option>
+          <option value="water">Water</option>
+        </select>
+      </label>
+    {/each}
+    {#each roleAssignments as assignment (`${assignment.kind}:${assignment.resource}:${assignment.index}`)}
+      {@const resource = assignment.resource}
+      {@const binding = assignment.binding}
+      <label class="col"
+        ><span
+          >{$site.resources[resource]?.name ?? resource} · {isOilCracker(def) ||
+          resourceRoles[assignment.kind]
+            ? t.site.resourceRole
+            : t.site.outputSlot}</span
+        >
+        <select
+          class="field"
+          value={isOilCracker(def) || resourceRoles[assignment.kind]
+            ? (binding?.role ?? '')
+            : (binding?.outputSlot?.toString() ?? '')}
+          data-testid="resource-structural-role"
+          onchange={(e) => setBinding(assignment.kind, resource, e.currentTarget.value, assignment.index)}
+        >
+          <option value="">{t.site.roleNeeded}</option>
+          {#if isOilCracker(def)}<option value="feed">Hydrocarbon feed</option><option value="catalyst"
+              >Cracking agent</option
+            >
+          {:else if resourceRoles[assignment.kind]}{#each Object.keys(resourceRoles[assignment.kind]!) as role}<option
+                value={role}>{roleLabels[role as ResourceRole] ?? role}</option
+              >{/each}
+          {:else}{#each Array.from({ length: outputSlotCount }, (_, i) => i) as slot}<option
+                value={String(slot)}>{slot + 1}</option
+              >{/each}{/if}
+        </select>
+      </label>
+    {/each}
+    {#if hasLayeredFluidOutputs(def)}
+      {#each roleResources as resource}<button class="link" onclick={() => addOutputSlot(resource)}
+          >{t.site.addOutputSlot} · {$site.resources[resource]?.name ?? resource}</button
+        >{/each}
+    {/if}
+    {#if isOilCracker(def)}<label class="col"
+        ><span>{t.site.crackingFeedSide}</span><select
+          class="field"
+          value={group.crackingFeedSide ?? 'right'}
+          data-testid="cracking-feed-side"
+          onchange={(e) => patch({ crackingFeedSide: e.currentTarget.value as 'left' | 'right' })}
+          ><option value="left">−X</option><option value="right">+X</option></select
+        ></label
+      >{/if}
   </div>
+
+  {#if ioHatches.length}
+    <div class="sub" data-testid="individual-hatches">
+      <p class="sub-title">{t.site.individualHatches}</p>
+      {#each ioHatches as hatch (JSON.stringify(hatch.assignments ?? [hatch.cell, hatch.kind]))}
+        <label
+          class="col"
+          style:background={$siteHatch?.group === group.id &&
+          hatch.assignments?.some((a) => $siteHatch?.assignments.includes(a))
+            ? 'var(--line)'
+            : 'transparent'}
+        >
+          <span
+            >{t.hatchKinds[hatch.kind]} · {hatch.resource
+              ? ($site.resources[hatch.resource]?.name ?? hatch.resource)
+              : ''} · ({hatch.cell.join(', ')}){hatch.unitIds.length > 1
+              ? ` · ${hatch.unitIds.length} controllers`
+              : ''}</span
+          >
+          <select
+            class="field"
+            value={hatch.assignments?.some((key) => group.hatchTiers?.[key]) ? (hatch.tier ?? '') : ''}
+            data-testid="individual-hatch-tier"
+            onchange={(e) => setHatchTier(hatch.assignments ?? [], e.currentTarget.value)}
+            ><option value=""
+              >{hatch.kind === 'dataAccess' || hatch.kind === 'uncertainty'
+                ? t.site.defaultHatchTier
+                : t.site.followMachineTier} ({placed?.def
+                ? (defaultHatchTier(placed.def, hatch.kind, group) ?? t.site.unspecifiedTier)
+                : t.site.unspecifiedTier})</option
+            >{#if hatch.tier && !hatchTiers(hatch.kind).includes(hatch.tier)}<option value={hatch.tier}
+                >{hatch.tier} ({t.site.unavailableTier})</option
+              >{/if}{#each hatchTiers(hatch.kind) as tier}<option value={tier}>{tier}</option>{/each}</select
+          >
+        </label>
+      {/each}
+    </div>
+  {/if}
 
   <div class="sub">
     <p class="sub-title">
@@ -213,6 +690,7 @@
           <ToggleRow
             on={group.enabledHatches.includes(kind)}
             label={t.hatchKinds[kind]}
+            testid={`site-hatch-${kind}`}
             ontoggle={() => toggleHatch(kind)}
           />
         {/each}

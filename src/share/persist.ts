@@ -1,5 +1,12 @@
 import type { PlanState } from '../model/plan/types';
-import { MAX_PAYLOAD_BYTES, PlanFormatError, encodePlan, decodePlan, validatePlanState } from './codec';
+import {
+  MAX_PAYLOAD_BYTES,
+  PLAN_VERSION,
+  PlanFormatError,
+  encodePlan,
+  decodePlan,
+  validatePlanState,
+} from './codec';
 
 /**
  * UNIT 5 — Persistence.
@@ -83,7 +90,10 @@ function backupRaw(storage: StorageLike, raw: string, now: () => number): string
       const key = storage.key(i);
       if (key?.startsWith(BACKUP_PREFIX) && storage.getItem(key) === raw) return key;
     }
-    const key = `${BACKUP_PREFIX}${now()}`;
+    const base = `${BACKUP_PREFIX}${now()}`;
+    let key = base;
+    let suffix = 0;
+    while (storage.getItem(key) !== null) key = `${base}-${++suffix}`;
     storage.setItem(key, raw);
     return key;
   } catch {
@@ -105,7 +115,10 @@ export function loadStoredPlan(
 export function saveStoredPlan(state: PlanState, storage: StorageLike | null = browserStorage()): boolean {
   if (!storage) return false;
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(validatePlanState(state)));
+    const validated = validatePlanState(state);
+    const raw = storage.getItem(STORAGE_KEY);
+    if (raw !== null && JSON.parse(raw).v === 1 && !backupRaw(storage, raw, Date.now)) return false;
+    storage.setItem(STORAGE_KEY, JSON.stringify({ ...validated, v: PLAN_VERSION }));
     return true;
   } catch {
     return false;
@@ -179,7 +192,7 @@ export async function planHashUrl(
 export const JSON_FILE_NAME = 'gtnh-plan.json';
 
 export function planToJson(state: PlanState): string {
-  return `${JSON.stringify(validatePlanState(state), null, 2)}\n`;
+  return `${JSON.stringify({ ...validatePlanState(state), v: PLAN_VERSION }, null, 2)}\n`;
 }
 
 export function planFromJson(text: string): PlanState {

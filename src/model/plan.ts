@@ -1,4 +1,5 @@
-import { step } from './geometry';
+import { step, unitCells } from './geometry';
+import { fixedHatchKinds } from './multiblock/fixedHatches';
 import type { HatchAvoid } from './hatches/types';
 import { DEFAULT_TURN_COST } from './routing/constants';
 import type { RouteOptions } from './routing/types';
@@ -265,8 +266,14 @@ export function improveHatches(
   let best = { hatches, pipes, missing: unconnected(pipes), cost: networkCost(pipes) };
   const avoid = new Map<HatchKind, Set<string>>();
   const tried = new Set<string>();
+  const fixed = new Set<string>();
+  for (const unit of units)
+    for (const cell of unitCells(def, unit))
+      for (const kind of fixedHatchKinds(def, def.legend[cell.char])) fixed.add(`${kind}|${cell.pos.join()}`);
   for (let moves = 0; moves < maxMoves;) {
-    const next = longBranches(best.pipes).find((b) => !tried.has(`${b.kind}|${b.cell.join()}`));
+    const next = longBranches(best.pipes).find(
+      (b) => !tried.has(`${b.kind}|${b.cell.join()}`) && !fixed.has(`${b.kind}|${b.cell.join()}`),
+    );
     if (!next) break;
     moves++;
     const id = `${next.kind}|${next.cell.join()}`;

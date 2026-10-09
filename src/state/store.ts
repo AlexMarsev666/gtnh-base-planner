@@ -2,11 +2,16 @@ import { writable } from 'svelte/store';
 import { DEFAULT_MULTIBLOCK_ID, getMultiblock } from '../data/catalog';
 import type { ViewMode } from '../model/core/types';
 import type { PlanState } from '../model/plan/types';
+import { RC2_RULES_VERSION } from '../model/multiblock/rules';
+import { minimumGlassTier } from '../model/multiblock/glass';
 
 export function defaultPlan(multiblockId = DEFAULT_MULTIBLOCK_ID): PlanState {
   const def = getMultiblock(multiblockId);
   return {
     v: 1,
+    rulesVersion: RC2_RULES_VERSION,
+    voltageTier: def?.minimumVoltageTier ?? 'LV',
+    ...(def && minimumGlassTier(def) ? { structureGlassTier: minimumGlassTier(def) } : {}),
     multiblockId,
     count: 4,
     limits: { x: null, y: null, z: null },
@@ -45,3 +50,4 @@ connectBelow.subscribe((on) => {
   }
 });
 export const selectedUnits = writable<number[]>([]);
+export const selectedHatchAssignments = writable<string[]>([]);

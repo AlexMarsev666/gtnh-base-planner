@@ -5,7 +5,7 @@ import type { HatchPlacement } from '../plan/types';
 import { ATTACH_ORDER } from './attachments';
 import { BESIDE_HATCH_COST } from './constants';
 import { FREE, indexOf, reserve } from './grid';
-import { isRoutable, ROUTED_KINDS, type RoutedKind } from './kinds';
+import { isRoutable, ROUTED_KINDS, ROUTED_MASK, type RoutedKind } from './kinds';
 import type { Grid, KindState, Router, Terminal } from './types';
 
 /** What routing connects: its terminals, the cells kept free around the build, and cell prices. */
@@ -120,11 +120,11 @@ export function priceCells(r: Router, hatches: readonly HatchPlacement[], wallCo
   const { g } = r;
   const cells = g.occ.length;
   for (let i = 0; i < cells; i++)
-    if (g.occ[i] === FREE) r.pass[i] = g.termMask[i] !== 0 ? g.termMask[i] : 0xff;
+    if (g.occ[i] === FREE) r.pass[i] = g.termMask[i] !== 0 ? g.termMask[i] : ROUTED_MASK;
   if (wallCost > 0) for (let i = 0; i < cells; i++) if (g.wall[i] === 0) r.price[i] += wallCost;
   for (const h of hatches)
     for (const d of ATTACH_ORDER) {
       const i = indexOf(g, step(h.cell, d));
-      if (i >= 0 && i < cells && r.pass[i] === 0xff) r.price[i] += BESIDE_HATCH_COST;
+      if (i >= 0 && i < cells && r.pass[i] === ROUTED_MASK) r.price[i] += BESIDE_HATCH_COST;
     }
 }

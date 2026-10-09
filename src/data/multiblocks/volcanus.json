@@ -2,12 +2,12 @@
   "id": "volcanus",
   "name": "Volcanus",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvEBF.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvEBF.java",
   "size": [3, 4, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
     ["AAA", "AAA", "AAA"]
   ],
   "legend": {
@@ -15,8 +15,7 @@
       "blockId": "miscutils:gtplusplus.blockcasings.3@11",
       "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"]
     },
-    "B": { "blockId": "gregtech:gt.blockcasings5@0" },
-    "C": { "blockId": "gt.hatch.special" }
+    "B": { "blockId": "gregtech:gt.blockcasings5@0" }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@963" },
   "hatchBlocks": {
@@ -29,12 +28,8 @@
     "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": {
-    "energy": { "min": 1 },
-    "maintenance": { "min": 1, "max": 1 },
-    "muffler": { "min": 1, "max": 1 }
-  },
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 }, "muffler": { "min": 1 } },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEAdvEBF (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEAdvEBF (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

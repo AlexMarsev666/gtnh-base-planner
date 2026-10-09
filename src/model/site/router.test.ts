@@ -10,6 +10,51 @@ function adjacent(a: Vec3, b: Vec3): boolean {
 }
 
 describe('routeNets', () => {
+  it('keeps neat trunks underground even when the correct detour exceeds a weighted surface shortcut', () => {
+    const terminals: RouteNetSpec['terminals'] = [
+      { cell: [1, 0, 1], faces: ['down'], role: 'source' },
+      { cell: [9, 0, 1], faces: ['down'], role: 'sink' },
+    ];
+    const solids: Vec3[] = terminals.map((t) => t.cell);
+    for (let z = 0; z < 280; z++) solids.push([5, -1, z]);
+    const input = {
+      box: { min: [0, -1, 0] as Vec3, max: [11, 1, 282] as Vec3 },
+      solids,
+      keepFree: [],
+      nets: [{ terminals }],
+      rounds: 0,
+    };
+    const [compact] = routeNets(input);
+    const [neat] = routeNets({ ...input, neat: { y: -1, x: [], z: [] } });
+    expect(compact.connected).toBe(2);
+    expect(compact.paths.flat().some((p) => p[1] >= 0)).toBe(true);
+    expect(neat.connected).toBe(2);
+    expect(neat.paths.flat().every((p) => p[1] === -1)).toBe(true);
+    expect(neat.length).toBeGreaterThan(550);
+  });
+
+  it('uses a surface fallback when the requested underground trunk layer is blocked', () => {
+    const terminals: RouteNetSpec['terminals'] = [
+      { cell: [1, 0, 1], faces: ['down'], role: 'source' },
+      { cell: [9, 0, 1], faces: ['down'], role: 'sink' },
+    ];
+    const solids: Vec3[] = terminals.map((t) => t.cell);
+    for (let z = 0; z < 3; z++) solids.push([5, -3, z]);
+    const [route] = routeNets({
+      box: { min: [0, -3, 0], max: [11, 1, 3] },
+      solids,
+      keepFree: [],
+      nets: [{ terminals }],
+      neat: { y: -3, x: [], z: [] },
+      rounds: 0,
+    });
+    expect(route.connected).toBe(2);
+    expect(route.paths.flat().some((p) => p[1] >= 0)).toBe(true);
+    for (const path of route.paths)
+      for (let i = 1; i < path.length; i++)
+        if (path[i][1] < 0 && path[i][1] === path[i - 1][1]) expect(path[i][1]).toBe(-3);
+  });
+
   it('connects two terminals with a straight pipe and orients the flow', () => {
     const net: RouteNetSpec = {
       terminals: [

@@ -42,7 +42,7 @@ export function buildShapes(def: MultiblockDef): Shape[] {
         code = CONTROLLER;
         front = add(p, dirVec(rotateDir(def.controller.facing, r)));
       } else {
-        const id = c.blockId ?? '';
+        const id = c.facing ? JSON.stringify([c.blockId, rotateDir(c.facing, r)]) : (c.blockId ?? '');
         let idx = blockIndex.get(id);
         if (idx === undefined) {
           idx = blockIndex.size;

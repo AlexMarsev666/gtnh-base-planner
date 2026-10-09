@@ -1,5 +1,7 @@
 import type { Rotation } from '../core/types';
 import type { HatchKind, PlanLimits } from '../multiblock/types';
+import type { Dir } from '../core/types';
+import type { VoltageTier } from '../tiers';
 
 /**
  * A site: several groups of multiblocks placed on a bounded ground area, with links that carry one
@@ -23,6 +25,8 @@ export interface ResourceDef {
    * shape are accepted (see `ICON_RE`), so a shared site can never make the page load another address.
    */
   icon?: string;
+  /** Original game stack id; display names never determine structural roles. */
+  gameId?: string;
 }
 
 /** Where resource icons are loaded from. */
@@ -52,8 +56,8 @@ export interface SiteGroup {
    */
   limitsLocked?: boolean;
   /**
-   * Non-IO hatch kinds to place (energy, maintenance, muffler, dynamo). Item, fluid and steam hatches come
-   * from the links that touch the group: one hatch per resource.
+   * Explicit hatch kinds, including required resource interfaces in new groups or those retained from
+   * a machine plan. Links additionally require one resource hatch per resource and output slot.
    */
   enabledHatches: HatchKind[];
   /** Min corner of the group's (rotated) bounding box on the site: [x, z]. */
@@ -65,6 +69,21 @@ export interface SiteGroup {
    * template draws each with its own look. Absent = a plain machine hull.
    */
   machine?: string;
+  /** Absent in legacy documents: unspecified, rather than silently assigning LV. */
+  voltageTier?: VoltageTier;
+  /** Logical unit/kind/resource assignments, independent of world coordinates. */
+  hatchTiers?: Record<string, VoltageTier>;
+  resourceBindings?: ResourceBinding[];
+  crackingFeedSide?: 'left' | 'right';
+  /** Manual multiblock transformer: controller circuit 0 (up) or 1 (down). RC2 disables tapped modes. */
+  manualTransformerMode?: 'up' | 'down';
+  dataBankWireless?: boolean;
+  assemblyGrowth?: 'left' | 'right';
+  /** Uniform Water Pump frame material, independent of hatch voltage. */
+  steamFrameTier?: 'bronze' | 'steel';
+  structureGlassTier?: VoltageTier;
+  /** Local high-voltage face and operating direction of a single transformer. */
+  transformer?: { lowTier: VoltageTier; mode: 'down' | 'up'; facing: Dir };
   /**
    * Blocks between the ground and the group's lowest layer; absent = on the ground. A template that does
    * not fit its ground area is built on several floors, each one a level of groups raised this much.
@@ -72,6 +91,36 @@ export interface SiteGroup {
   elevation?: number;
   /** Where an imported group came from (shown in labels and the group list). */
   source?: { name: string; machineCount?: number; tier?: string };
+}
+
+export const RESOURCE_ROLES = [
+  'helium',
+  'mask',
+  'feed',
+  'catalyst',
+  'product',
+  'hotFluid',
+  'coldFluid',
+  'water',
+  'steam',
+  'acid',
+  'alkaline',
+  'coolant',
+  'plasma',
+] as const;
+export type ResourceRole = (typeof RESOURCE_ROLES)[number];
+
+export interface ResourceBinding {
+  kind: HatchKind;
+  resource: string;
+  role?: ResourceRole;
+  /** Zero-based recipe fluid output index. */
+  outputSlot?: number;
+}
+
+export interface RoutingSettings {
+  mode: 'compact' | 'neat';
+  depth: number;
 }
 
 /** One end of a link: a group, or a port on the site boundary. */
@@ -102,7 +151,7 @@ export interface SitePort {
 }
 
 export interface SiteState {
-  v: 1;
+  v: 1 | 2;
   kind: 'site';
   name?: string;
   /** [width along X, depth along Z] in blocks. */
@@ -115,6 +164,10 @@ export interface SiteState {
   resources: Record<string, ResourceDef>;
   /** Hatch colour overrides, as in `PlanState.colors`. */
   colors: Partial<Record<HatchKind, string>>;
+  /** Absent in old files means the former compact routing. */
+  routing?: RoutingSettings;
+  /** Document version and game rules version are deliberately independent. */
+  rulesVersion?: string;
 }
 
 export function isGroupEnd(e: Endpoint): e is { group: string } {

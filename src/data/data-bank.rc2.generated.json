@@ -1,0 +1,18 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "source": "src/main/java/tectech/thing/metaTileEntity/multi/MTEDataBank.java",
+  "sha256": "baf719fcafdc5cc8615d169d85e9c0687bd94c950e22d1f5743ab650736cacc9",
+  "size": [5, 3, 3],
+  "controllerPos": [2, 1, 0],
+  "layers": [
+    ["BCCCB", "BDDDB", "BDDDB"],
+    ["BC~CB", "BAAAB", "BDDDB"],
+    ["BCCCB", "BDDDB", "BDDDB"]
+  ],
+  "blocks": {
+    "A": "tectech:gt.blockcasingsTT@1",
+    "B": "tectech:gt.blockcasingsTT@2",
+    "C": "tectech:gt.blockcasingsTT@0",
+    "D": "tectech:gt.blockcasingsTT@1"
+  }
+}

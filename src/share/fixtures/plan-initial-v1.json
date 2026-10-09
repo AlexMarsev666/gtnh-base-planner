@@ -1,0 +1,12 @@
+{
+  "v": 1,
+  "multiblockId": "electric-blast-furnace",
+  "count": 2,
+  "limits": { "x": 2, "y": 1, "z": null },
+  "enabledHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "colors": { "itemIn": "#123456" },
+  "manualUnits": [
+    { "id": 7, "origin": [2, 0, 3], "rotation": 1 },
+    { "id": 19, "origin": [12, 8, 6], "rotation": 3 }
+  ]
+}

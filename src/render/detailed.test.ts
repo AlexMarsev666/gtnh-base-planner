@@ -53,6 +53,34 @@ describe('textures.json', () => {
 describe('createDetailedProvider', () => {
   const colors = DEFAULT_HATCH_COLORS;
 
+  it('draws the fixed Beam Input connector on its front only, including vertical directions', async () => {
+    const p = createDetailedProvider({ loadAtlas });
+    await p.load();
+    for (const facing of BOX_FACE_ORDER) {
+      const materials = p.materials(
+        { blockId: 'gregtech:gt.blockmachines@10503', kind: 'casing', facing },
+        colors,
+      );
+      const front = materials[BOX_FACE_ORDER.indexOf(facing)];
+      const rest = materials.filter((_, i) => BOX_FACE_ORDER[i] !== facing);
+      expect(new Set(rest).size).toBe(1);
+      expect(front).not.toBe(rest[0]);
+      expect(front.transparent).toBe(false);
+    }
+    p.dispose();
+  });
+
+  it('renders chemically inert LCR casing as solid despite alpha 250 in its sprite', async () => {
+    const p = createDetailedProvider({ loadAtlas });
+    await p.load();
+    const material = p.materials({ blockId: 'gt.casing.chemicallyInert', kind: 'casing' }, colors)[0];
+    expect(material.transparent).toBe(false);
+    expect(material.depthWrite).toBe(true);
+    const pixels = (mapOf(material)!.image as { data: Uint8Array }).data;
+    for (let i = 3; i < pixels.length; i += 4) expect(pixels[i]).toBe(255);
+    p.dispose();
+  });
+
   it('returns six cached nearest-filtered textured materials for a casing', async () => {
     const p = createDetailedProvider({ loadAtlas });
     await p.load();

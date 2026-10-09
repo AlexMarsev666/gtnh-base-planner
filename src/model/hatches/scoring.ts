@@ -25,6 +25,7 @@ export function compareFaces(a: FaceScore, b: FaceScore): number {
 /** Negative when `a` is the better pick: higher score, then less waste, then a better face, then lower cell. */
 export function compareEntries(a: Entry, b: Entry): number {
   return (
+    (b.fixed ?? 0) - (a.fixed ?? 0) ||
     b.score - a.score ||
     a.waste - b.waste ||
     a.wanted - b.wanted ||

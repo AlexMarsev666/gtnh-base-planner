@@ -1,0 +1,28 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "source": "src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamWaterPump.java",
+  "sha256": "615e6efefb617c044884619cdc9c9e3198b7e887ceda920ddbd069d7ca62675a",
+  "size": [3, 3, 4],
+  "layers": [
+    ["C~C", "CCC", "CCC", "CCC"],
+    [" A ", "   ", "A A", " A "],
+    [" A ", " A ", "AAA", " A "]
+  ],
+  "frames": {
+    "bronze": {
+      "blockId": "gregtech:gt.blockframes@300",
+      "tier": 1
+    },
+    "steel": {
+      "blockId": "gregtech:gt.blockframes@305",
+      "tier": 2
+    }
+  },
+  "minimumCasings": 9,
+  "steamHatch": {
+    "meta": 31040,
+    "capacity": 64000,
+    "name": "Steam Hatch",
+    "tier": 0
+  }
+}

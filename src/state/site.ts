@@ -9,6 +9,8 @@ export const appMode = writable<AppMode>('machine');
 export const site = writable<SiteState>(emptySite());
 /** Selected group id (highlighted in the scene, edited in the site panel). */
 export const siteGroup = writable<string | null>(null);
+export const siteHatch = writable<{ group: string; assignments: string[] } | null>(null);
+export const undergroundView = writable(false);
 /**
  * Selected port id (an input or output on the site edge): dragged or nudged like a group, never together
  * with one. Selecting either clears the other.

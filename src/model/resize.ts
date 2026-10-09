@@ -35,15 +35,33 @@ export function sizedDef(def: MultiblockDef, size: number | undefined): Multiblo
   let byN = memo.get(def);
   if (!byN) memo.set(def, (byN = new Map()));
   let out = byN.get(n);
-  if (!out) byN.set(n, (out = expand(def, rule, n)));
+  if (!out)
+    byN.set(
+      n,
+      (out = def.structureVariants?.[n] ? { ...def, ...def.structureVariants[n] } : expand(def, rule, n)),
+    );
   return out;
+}
+
+/** Smallest height providing the requested output slots. Oversize requests remain invalid instead
+ * of silently dropping recipe slots; the document validator reports that size against RC2 limits.
+ */
+export function sizeForFluidOutputs(def: MultiblockDef, count: number): number | undefined {
+  const rule = def.resize;
+  if (!rule || rule.axis !== 'y') return undefined;
+  const slots = (d: MultiblockDef) =>
+    (d.fluidOutputRegions ?? d.requiredHatches?.fluidOut?.regions)?.length ?? 0;
+  const initial = slots(def);
+  const stride = rule.to - rule.from;
+  const added = slots(sizedDef(def, rule.min + stride)) - initial;
+  return added > 0 ? rule.min + Math.max(0, Math.ceil((count - initial) / added)) * stride : rule.default;
 }
 
 function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef {
   const a = AXIS[rule.axis];
   const t = rule.to - rule.from;
-  const copies = 1 + (n - rule.min) / t;
-  const extra = (copies - 1) * t;
+  const copies = (rule.section ? 0 : 1) + (n - rule.min) / t;
+  const extra = (copies - (rule.section ? 0 : 1)) * t;
 
   // Slab chars with a region get one fresh legend char per copy.
   const legend: Record<string, LegendEntry> = { ...def.legend };
@@ -56,9 +74,18 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
     return ch;
   };
   const slabChars = new Set<string>();
-  forEachCell(def, (ch, p) => {
-    if (p[a] >= rule.from && p[a] < rule.to && legend[ch]?.region !== undefined) slabChars.add(ch);
-  });
+  if (rule.section)
+    rule.section.layers.forEach((layer) =>
+      layer.forEach((row) =>
+        [...row].forEach((ch) => {
+          if (legend[ch]?.region !== undefined) slabChars.add(ch);
+        }),
+      ),
+    );
+  else
+    forEachCell(def, (ch, p) => {
+      if (p[a] >= rule.from && p[a] < rule.to && legend[ch]?.region !== undefined) slabChars.add(ch);
+    });
   /** Per region-carrying slab char: its char in each copy. */
   const perCopy = new Map<string, string[]>();
   const expanded = new Map<string, string[]>();
@@ -78,6 +105,10 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
   // Source index along the axis for each target index, plus which slab copy it belongs to.
   const src = (i: number): { s: number; copy: number } => {
     if (i < rule.from) return { s: i, copy: -1 };
+    if (rule.section) {
+      if (i < rule.from + extra) return { s: (i - rule.from) % t, copy: Math.floor((i - rule.from) / t) };
+      return { s: i - extra, copy: -1 };
+    }
     if (i < rule.to + extra)
       return { s: rule.from + ((i - rule.from) % t), copy: Math.floor((i - rule.from) / t) };
     return { s: i - extra, copy: -1 };
@@ -93,7 +124,8 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
         const p = [x, y, z];
         const { s, copy } = src(p[a]);
         p[a] = s;
-        const ch = [...def.layers[p[1]][p[2]]][p[0]];
+        const layers = copy >= 0 && rule.section ? rule.section.layers : def.layers;
+        const ch = [...layers[p[1]][p[2]]][p[0]];
         row += copy >= 0 && perCopy.has(ch) ? perCopy.get(ch)![copy] : ch;
       }
       layer.push(row);
@@ -102,7 +134,7 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
   }
 
   const pos: [number, number, number] = [...def.controller.pos];
-  if (pos[a] >= rule.to) pos[a] += extra;
+  if (pos[a] >= (rule.section ? rule.from : rule.to)) pos[a] += extra;
 
   let requiredHatches = def.requiredHatches;
   if (requiredHatches && expanded.size > 0) {
@@ -124,12 +156,25 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
     requiredHatches = req as MultiblockDef['requiredHatches'];
   }
 
+  const outputRegions = def.fluidOutputRegions
+    ? def.interleaveFluidOutputRegions
+      ? [
+          ...Array.from({ length: copies }, (_, i) =>
+            def
+              .fluidOutputRegions!.filter((region) => expanded.has(region))
+              .map((region) => expanded.get(region)![i]),
+          ).flat(),
+          ...def.fluidOutputRegions.filter((region) => !expanded.has(region)),
+        ]
+      : def.fluidOutputRegions.flatMap((region) => expanded.get(region) ?? [region])
+    : undefined;
   return {
     ...def,
     size,
     layers,
     legend,
     controller: { ...def.controller, pos },
+    ...(outputRegions ? { fluidOutputRegions: outputRegions } : {}),
     ...(requiredHatches ? { requiredHatches } : {}),
   };
 }

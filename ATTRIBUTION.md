@@ -2,6 +2,22 @@
 
 ## GT5-Unofficial textures (LGPL-3.0)
 
+The Cryotheum/Pyrotheum and Steam Hatch indicators use
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/FLUID_STEAM_IN_SIGN.png`
+from pinned GT5-Unofficial 5.09.54.205, extracted by
+`tools/game-dump/locked-fluid-hatch-textures.mjs`. These fixed IV hatches use the IV machine hull
+and `OVERLAY_PIPE_IN` sprites attributed below. Water Pump's Steam Hatch (31040) uses its registered ULV hull
+and the same pipe/steam sign stack from `MTEHatchCustomFluidBase`, independent of the pump's frame material.
+
+The Beam Input Hatch front is composed by `tools/game-dump/beam-hatch-textures.mjs` from
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_BI_SIDES.png` (MACHINE_METAL tint) and
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/BI_CONN.png`, in GT5-Unofficial 5.09.54.205
+(commit `a3e1e11241a814c9fa0dd0973d5699548428f689`, LGPL-3.0). The compositor verifies
+the RC2 jar checksum and follows `MTEHatchInputBeamline.getTexturesInactive`.
+The regular/filtered Beam Output front uses the corresponding inherited output stack:
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_BO_SIDES.png` and
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/BO_CONN.png`, with the same source, tint and licence.
+
 The DETAILED view uses block textures from [GT5-Unofficial](https://github.com/GTNewHorizons/GT5-Unofficial)
 by the GregTech: New Horizons team (GregTech 5 by GregoriusT and contributors), licensed under the
 [GNU Lesser General Public License v3.0 (LGPL-3.0)](https://github.com/GTNewHorizons/GT5-Unofficial/blob/master/LICENSE.txt).
@@ -141,7 +157,7 @@ casing blocks (`BlockCasings1/2/3/4/8/10/11/12.java`, `BlockCasingsNH.java`), `M
 ### Files used by the generated catalog entries
 
 The face tiles of the generated catalog entries (`tools/texture-sources/DUMP_*.png`, see
-[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.133` jar (the
+[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.205` jar (the
 resources under `src/main/resources/` in the repository), tinted and layered the way the game draws them:
 
 - `src/main/resources/assets/goodgenerator/textures/blocks/supercriticalFluidTurbineCasing.png`
@@ -152,7 +168,6 @@ resources under `src/main/resources/` in the repository), tinted and layered the
 - `src/main/resources/assets/bartworks/textures/blocks/NickelFerriteBlocks.png`
 - `src/main/resources/assets/bartworks/textures/blocks/OsmiumReinforcedBoronSilicateGlassBlock.png`
 - `src/main/resources/assets/bartworks/textures/blocks/RhodiumPlatedPalladiumReinforcedBoronSilicateGlassBlock.png`
-- `src/main/resources/assets/bartworks/textures/blocks/TitaniumReinforcedBoronSilicateGlassBlock.png`
 - `src/main/resources/assets/bartworks/textures/blocks/TranscendentallyReinforcedBoronSilicateGlassBlock.png`
 - `src/main/resources/assets/bartworks/textures/blocks/TransformerCoil.png`
 - `src/main/resources/assets/ggfab/textures/blocks/iconsets/OVERLAY_FRONT_ADV_ASSLINE.png`
@@ -440,10 +455,10 @@ resources under `src/main/resources/` in the repository), tinted and layered the
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_OPTICAL_ORGANIZER.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_ORE_DRILL.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_ORE_FACTORY.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PART_PROCESSOR.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PLANETARYSIPHON.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PURIFICATION_PLANT.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PYROLYSE_OVEN.png`
-- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SMD_PROCESSOR.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SOLAR_FACTORY_INACTIVE.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SPLITTER.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_STEAM_ALLOY_SMELTER_MULTI.png`
@@ -692,3 +707,169 @@ GT5-Unofficial `5.09.54.133` jar, drawn over the machine hull:
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SCANNER.png`
 
 <!-- /tools/game-dump: single-block machines -->
+
+<!-- tools/game-dump: RC2 tier textures -->
+
+### RC2 tiered hulls and transformers
+
+GT5-Unofficial 5.09.54.205 (a3e1e11241a814c9fa0dd0973d5699548428f689), LGPL-3.0.
+Copied by tools/game-dump/tier-textures.mjs; transformer sides follow MTETransformer.getTextureSet.
+
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_EV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_EV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_EV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_HV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_HV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_HV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_IV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_IV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_IV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_LV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_LV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_LV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_LuV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_LuV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_LuV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_MAX_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_MAX_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_MAX_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_MV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_MV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_MV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UEV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UEV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UEV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UHV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UHV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UHV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UIV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UIV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UIV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_ULV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_ULV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_ULV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UMV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UMV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UMV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UXV_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UXV_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_UXV_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_ZPM_BOTTOM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_ZPM_SIDE.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_ZPM_TOP.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_EV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_HV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_IV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_LV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_LuV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MAX.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_EV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_HV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_IV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_LV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_LuV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_MAX.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_MV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_UEV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_UHV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_UIV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_ULV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_UMV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_UV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_UXV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MULTI_4A_ZPM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_MV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_UEV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_UHV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_UIV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_ULV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_UMV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_UV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_UXV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_IN_ZPM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_EV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_HV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_IV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_LV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_LuV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MAX.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_EV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_HV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_IV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_LV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_LuV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_MAX.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_MV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_UEV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_UHV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_UIV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_ULV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_UMV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_UV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_UXV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MULTI_4A_ZPM.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_MV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_UEV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_UHV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_UIV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_ULV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_UMV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_UV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_UXV.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_ZPM.png`
+
+<!-- /tools/game-dump: RC2 tier textures -->
+
+<!-- tools/gt-source: RC2 glass variants -->
+
+Borosilicate glass variants: GT5-Unofficial 5.09.54.205, commit a3e1e11241a814c9fa0dd0973d5699548428f689.
+These textures retain the GT5-Unofficial LGPL-3.0 attribution above and the BartWorks contributor credits. Source files:
+
+- `src/main/resources/assets/bartworks/textures/blocks/BoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/TitaniumReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/TungstenSteelReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/RhodiumPlatedPalladiumReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/IridiumReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/OsmiumReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/NeutroniumReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/InfinityReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/TranscendentallyReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/HexaniteReinforcedBoronSilicateGlassBlock.png`
+- `src/main/resources/assets/bartworks/textures/blocks/UniversiumReinforcedBoronSilicateGlassBlock.png`
+
+<!-- /tools/gt-source: RC2 glass variants -->
+
+Data Access front overlay: GT5-Unofficial 5.09.54.205, commit
+a3e1e11241a814c9fa0dd0973d5699548428f689, under the LGPL-3.0 attribution above.
+`tools/game-dump/data-access-textures.mjs` extracts
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_DATA_ACCESS.png`
+from the SHA-256 verified RC2 dev JAR. The EV/LuV/UV hull tiles are attributed in the RC2 tier section.
+
+Recipe-data connector front: GT5-Unofficial 5.09.54.205, commit
+a3e1e11241a814c9fa0dd0973d5699548428f689, under the LGPL-3.0 attribution above and TecTech contributor
+credits. `tools/game-dump/data-interface-textures.mjs` verifies the RC2 dev JAR and composites
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_EM_D_SIDES.png` with the game's
+MACHINE_METAL modulation and `src/main/resources/assets/gregtech/textures/blocks/iconsets/EM_DATA_CONN.png`.
+The generated face is shared by registered connectors 15442/15443 (ZPM) and 15446/15447 (UEV);
+their tiered hulls are attributed in the RC2 tier section.
+
+Electrode Detector Hatch inactive overlay: GT5-Unofficial 5.09.54.205, commit
+a3e1e11241a814c9fa0dd0973d5699548428f689, under the LGPL-3.0 attribution above.
+`tools/game-dump/arc-hatch-textures.mjs` extracts
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_HATCH_HEAT_SENSOR.png`
+from the verified RC2 dev JAR. Both electrode interfaces use the attributed IV hull;
+the Electrode Hatch inherits the ordinary Item Input Bus overlay. The detector shows its inactive face.
+
+Computational interfaces: GT5-Unofficial 5.09.54.205, commit
+a3e1e11241a814c9fa0dd0973d5699548428f689, under the LGPL-3.0 attribution above and TecTech contributor
+credits. Wired computation connectors 15440/15441 (ZPM) and wireless 15444/15445 (UMV) inherit
+the attributed recipe-data connector overlay. `tools/game-dump/computation-hatch-textures.mjs` extracts
+the inactive `UC.png` and `EM_RACK.png` from
+`src/main/resources/assets/gregtech/textures/blocks/iconsets/` in the SHA-256 verified RC2 dev JAR.
+Uncertainty Resolvers 15430/15431 use IV/ZPM hulls; Computer Rack 15450 uses UV.
+
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/UC.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/EM_RACK.png`

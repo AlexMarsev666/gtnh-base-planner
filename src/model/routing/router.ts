@@ -79,8 +79,8 @@ function createRouter(g: Grid, turnCost: number): Router {
   return {
     g,
     turnCost,
-    used: new Uint8Array(cells),
-    pass: new Uint8Array(cells),
+    used: new Uint16Array(cells),
+    pass: new Uint16Array(cells),
     price: new Float32Array(cells).fill(1),
     keep: new Uint8Array(cells),
     target: new Uint16Array(cells),

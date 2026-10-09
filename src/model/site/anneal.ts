@@ -31,6 +31,8 @@ export interface AnnealOptions {
   iterations?: number;
   /** Stop after this many milliseconds (the cooling follows the clock, so a short run still ends cold). */
   budgetMs?: number;
+  /** Shared outer deadline; prevents nested stages from restarting a budget. */
+  deadline?: number;
   /** Clock for `budgetMs`. Default `performance.now`. */
   now?: () => number;
   /** Weight of the bounding box's width + depth against the wire length. Default `DEFAULT_COMPACT`. */
@@ -449,6 +451,10 @@ export function annealGroups(
   sizeOf: (id: string) => [number, number] | undefined,
   opts: AnnealOptions = {},
 ): AnnealResult {
+  const now = opts.now ?? (() => performance.now());
+  const started = now();
+  const deadline = Math.min(opts.deadline ?? Infinity, started + (opts.budgetMs ?? Infinity));
+  const expired = () => now() >= deadline;
   const m = new Layout(
     site,
     sizeOf,
@@ -475,12 +481,11 @@ export function annealGroups(
     iterations: 0,
   };
   // Only a layout that already respects the site and the corridors can be polished: every move keeps it so.
-  if (m.n < 2 || m.nets.length === 0 || !m.allValid()) return unchanged;
+  if (m.n === 0 || m.nets.length === 0 || !m.allValid() || expired()) return unchanged;
 
   const rand = rng(opts.seed ?? 1);
   const randInt = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
   const pick = <T>(list: readonly T[]): T => list[Math.floor(rand() * list.length)];
-  const now = opts.now ?? (() => performance.now());
   const iterations = opts.iterations ?? defaultIterations(m.n);
   const [w, d] = site.size;
   const gap = site.corridor;
@@ -585,12 +590,19 @@ export function annealGroups(
   // Start temperature: half the typical uphill step of a random shift, so the start layout is reworked a
   // little at first and then held.
   const uphill: number[] = [];
-  const c0 = judge();
-  for (let k = 0; k < (opts.evaluate ? 12 : 60); k++) {
+  const c0 = before;
+  let calibrationBest = before;
+  let calibrationState = m.snapshot();
+  for (let k = 0; k < (opts.evaluate ? 12 : 60) && !expired(); k++) {
     const i = randInt(0, m.n - 1);
     const was = [m.x[i], m.z[i]] as const;
     if (tryPlace(i, m.x[i] + randInt(-4, 4), m.z[i] + randInt(-4, 4))) {
-      const delta = judge() - c0;
+      const value = judge();
+      const delta = value - c0;
+      if (value < calibrationBest) {
+        calibrationBest = value;
+        calibrationState = m.snapshot();
+      }
       if (delta > 0) uphill.push(delta);
       m.set(i, was[0], was[1]);
     }
@@ -599,12 +611,12 @@ export function annealGroups(
   const t1 = t0 / 200;
 
   let current = c0;
-  let best = current;
-  let bestState = m.snapshot();
-  const started = now();
+  let best = calibrationBest;
+  let bestState = calibrationState;
   let progress = 0;
   let done = 0;
   for (; done < iterations; done++) {
+    if (expired()) break;
     // A step judged by `evaluate` can take tens of milliseconds: read the clock every time then.
     if (done % 64 === 0 || opts.evaluate) {
       progress = done / iterations;
@@ -627,7 +639,7 @@ export function annealGroups(
         const [x, z] = beside(i, pick(m.partners[i]));
         moved = tryPlace(i, x, z);
       }
-    } else if (pickMove < 0.8) {
+    } else if (pickMove < 0.8 && m.n > 1) {
       const i = randInt(0, m.n - 1);
       const j = (i + randInt(1, m.n - 1)) % m.n;
       const ci = [m.x[i] + m.w[i] / 2, m.z[i] + m.d[i] / 2];
@@ -653,6 +665,10 @@ export function annealGroups(
       moved = ruinAndRecreate();
     }
     if (!moved) continue;
+    if (expired()) {
+      m.rollback();
+      break;
+    }
     const next = judge();
     const delta = next - current;
     if (delta <= 0 || rand() < Math.exp(-delta / temp)) {

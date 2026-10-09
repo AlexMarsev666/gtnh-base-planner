@@ -69,7 +69,7 @@ export interface SiteNet {
 }
 
 export type SiteWarning =
-  | { type: 'error'; group: string; message: string }
+  | { type: 'error'; group: string; message: string; code?: 'electrical' | 'structure' | 'tier' }
   | { type: 'overlap'; groups: [string, string] }
   | { type: 'outside'; group: string }
   | { type: 'fewer'; group: string; placed: number; requested: number }
@@ -94,6 +94,8 @@ export interface SiteBuild {
     cableBlocks: number;
     connected: number;
     terminals: number;
+    surfaceBlocks?: number;
+    bends?: number;
   };
 }
 

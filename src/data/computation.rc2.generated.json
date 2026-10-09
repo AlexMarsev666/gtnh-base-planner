@@ -1,0 +1,452 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "registrations": {
+    "computationIn": [
+      {
+        "meta": 15440,
+        "tier": 7,
+        "name": "Optical Reception Connector"
+      }
+    ],
+    "computationOut": [
+      {
+        "meta": 15441,
+        "tier": 7,
+        "name": "Optical Transmission Connector"
+      }
+    ],
+    "wirelessComputationIn": [
+      {
+        "meta": 15445,
+        "tier": 12,
+        "name": "Cloud Computation Client Hatch"
+      }
+    ],
+    "wirelessComputationOut": [
+      {
+        "meta": 15444,
+        "tier": 12,
+        "name": "Cloud Computation Server Hatch"
+      }
+    ],
+    "uncertainty": [
+      {
+        "meta": 15430,
+        "tier": 5,
+        "name": "Uncertainty Resolver"
+      },
+      {
+        "meta": 15431,
+        "tier": 7,
+        "name": "Uncertainty Resolver X"
+      }
+    ],
+    "computerRack": [
+      {
+        "meta": 15450,
+        "tier": 8,
+        "name": "Computer Rack"
+      }
+    ]
+  },
+  "sources": {
+    "src/main/java/gtnhintergalactic/tile/multi/TileEntityDysonSwarm.java": "13cd8eebfe6d4fd117543fd52b53de1a1ece13d761466ab2a248ac0f1657c60a",
+    "src/main/java/tectech/thing/metaTileEntity/multi/MTEQuantumComputer.java": "d0d60f6be09aff1494d40a84139af4e5ebd899b6de227687ad7bbe0ed6863416",
+    "src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitch.java": "185611a373e2f5d8c0248b7ec4b8235e3fc694371a495ba956a7c4527c6580c5",
+    "src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitchAdv.java": "58763698bbe1f1be7c19bf58c01aa0b3a772d0ca045891745db7e8759751ebbf"
+  },
+  "dyson": {
+    "source": "src/main/java/gtnhintergalactic/tile/multi/TileEntityDysonSwarm.java",
+    "layers": [
+      [
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAA"
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "   BB~BB        ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "                ",
+        "         CCCCCCC",
+        "         CCCCCCC",
+        "DDDDD    CCCCCCC",
+        "DDDDD    CCCCCCC",
+        "DDDDD    CCCCCCC",
+        "DDDDD    CCCCCCC",
+        "DDDDD    CCCCCCC"
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "   BEEEB        ",
+        "   EFFFE        ",
+        "   EFFFE        ",
+        "   EFFFE        ",
+        "   BEEEB        ",
+        "                ",
+        "         RRRRRRR",
+        "         RCCCCCR",
+        "DGGGD    RCCCCCR",
+        "GDDDG    RCCCCCR",
+        "GDDDG    RCCCCCR",
+        "GDDDG    RCCCCCR",
+        "DGGGD    RRRRRRR"
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "   BBBBB        ",
+        "                ",
+        "         CCCCCCC",
+        "         CCCCCCC",
+        "DDDDD    CCHHHCC",
+        "DDDDD    CCHCHCC",
+        "DDIDD    CCHHHCC",
+        "DDDDD    CCCCCCC",
+        "DDDDD    CCCCCCC"
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "                ",
+        "                ",
+        "           HHH  ",
+        "          H   H ",
+        " KLK      H M H ",
+        " L L      H   H ",
+        " KLK       HHH  ",
+        "                "
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        " KLK        M   ",
+        " L L            ",
+        " KLK            ",
+        "                "
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        " KLK        M   ",
+        " L L            ",
+        " KLK            ",
+        "                "
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "                ",
+        "                ",
+        "           NNN  ",
+        "          N O N ",
+        " KLK      NOMON ",
+        " L L      N O N ",
+        " KLK       NNN  ",
+        "                "
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "    J J         ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        " KLK        M   ",
+        " L L            ",
+        " KLK            ",
+        "                "
+      ],
+      [
+        "                ",
+        "                ",
+        "                ",
+        "    PPP         ",
+        "   PPPPP        ",
+        "   PPPPP        ",
+        "   PPPPP        ",
+        "    PPP         ",
+        "                ",
+        "                ",
+        "           NNN  ",
+        "          N O N ",
+        " KLK      NOMON ",
+        " L L      N O N ",
+        " KLK       NNN  ",
+        "                "
+      ],
+      [
+        "                ",
+        "    PPP         ",
+        "   PPPPP        ",
+        "  PP---PP       ",
+        " PP-----PP      ",
+        " PP--J--PP      ",
+        " PP-----PP      ",
+        "  PP---PP       ",
+        "   PPPPP        ",
+        "    PPP         ",
+        "                ",
+        "                ",
+        " KLK        M   ",
+        " L L            ",
+        " KLK            ",
+        "                "
+      ],
+      [
+        "    PPP         ",
+        "   P---P        ",
+        "  P-----P       ",
+        " P-------P      ",
+        "P---------P     ",
+        "P----J----P     ",
+        "P---------P     ",
+        " P-------P      ",
+        "  P-----P       ",
+        "   P---P        ",
+        "    PPP    NNN  ",
+        "          N O N ",
+        " KLK      NOMON ",
+        " L L      N O N ",
+        " KLK       NNN  ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----J-----     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---         ",
+        "                ",
+        "  K         M   ",
+        " K K            ",
+        "  K             ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----Q-----     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---    NNN  ",
+        "          N O N ",
+        "  K       NOMON ",
+        " K K      N O N ",
+        "  K        NNN  ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----------     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---         ",
+        "                ",
+        "  K         M   ",
+        " K K            ",
+        "  K             ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----------     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---         ",
+        "           NNN  ",
+        "  K        NMN  ",
+        " K K       NNN  ",
+        "  K             ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----------     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---    NNN  ",
+        "          NNNNN ",
+        "  K       NNNNN ",
+        " K K      NNNNN ",
+        "  K        NNN  ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----------     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---    NNN  ",
+        "          NNNNN ",
+        "  K       NNNNN ",
+        " K K      NNNNN ",
+        "  K        NNN  ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----------     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---    NNN  ",
+        "          NNNNN ",
+        "  K       NNNNN ",
+        " K K      NNNNN ",
+        "  K        NNN  ",
+        "                "
+      ],
+      [
+        "    ---         ",
+        "   -----        ",
+        "  -------       ",
+        " ---------      ",
+        "-----------     ",
+        "-----------     ",
+        "-----------     ",
+        " ---------      ",
+        "  -------       ",
+        "   -----        ",
+        "    ---         ",
+        "           NNN  ",
+        "  K        NNN  ",
+        " K K       NNN  ",
+        "  K             ",
+        "                "
+      ]
+    ]
+  },
+  "quantum": {
+    "source": "src/main/java/tectech/thing/metaTileEntity/multi/MTEQuantumComputer.java",
+    "pieces": {
+      "front": ["AA ", "A~ ", "AA ", "AA "],
+      "cap": ["BC-", "DD ", "DD ", "BC-"],
+      "slice": ["BC-", "DE ", "DE ", "BC-"],
+      "back": ["AA ", "AA ", "AA ", "AA "]
+    },
+    "min": 4,
+    "max": 16
+  },
+  "weighted": {
+    "source": "src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitch.java",
+    "layers": [
+      ["BBB", "BAB", "BBB"],
+      ["B~B", "AAA", "BAB"],
+      ["BBB", "BAB", "BBB"]
+    ]
+  },
+  "static": {
+    "source": "src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitchAdv.java",
+    "pieces": {
+      "first": ["AAA", "A~A", "AAA"],
+      "middle": ["ACA", "CBC", "ACA"],
+      "last": ["AAA", "ACA", "AAA"]
+    },
+    "min": 2,
+    "max": 18
+  }
+}

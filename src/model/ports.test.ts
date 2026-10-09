@@ -4,6 +4,7 @@ import { key, rotateDir, step, unitCells } from './geometry';
 import { layoutCandidates, packUnits } from './layout/packer';
 import { placeHatches } from './hatches/placement';
 import { catalog } from '../data/catalog';
+import { sizedDef } from './resize';
 import type { Dir, Rotation, Vec3 } from './core/types';
 import type { HatchKind, MultiblockDef, Unit } from './multiblock/types';
 import type { HatchResult } from './plan/types';
@@ -416,7 +417,7 @@ describe('placeHatches lines hatches up', () => {
   it('turns the end unit of a row the same way as the others, so one straight cable serves the row', () => {
     // Two rows of three Advanced Assembly Lines: the end units also have an open end face, which used to
     // win on side order and needed a cable around the corner.
-    const def = getMultiblock('advanced-assembly-line')!;
+    const def = sizedDef(getMultiblock('advanced-assembly-line')!, 5);
     const { units } = packUnits(def, 6, { x: null, y: null, z: null });
     const { hatches, unplaced } = placeHatches(def, units, ['energy', 'maintenance']);
     expect(unplaced).toEqual([]);

@@ -1,9 +1,50 @@
 import { getMultiblock } from '../data/catalog';
+import { minimumGlassTier } from '../model/multiblock/glass';
 import { effectiveSize } from '../model/resize';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
 import type { PlanState } from '../model/plan/types';
 import { defaultPlan, plan, selectedUnits } from '../state/store';
 import { clampCount } from './fields';
+import { isVoltageTier } from '../model/tiers';
+
+export function withVoltageTier(p: PlanState, tier: string): PlanState {
+  if (tier === '') {
+    const next = { ...p };
+    delete next.voltageTier;
+    return next;
+  }
+  return isVoltageTier(tier) && p.voltageTier !== tier ? { ...p, voltageTier: tier } : p;
+}
+
+export function withManualTransformerMode(p: PlanState, mode: string): PlanState {
+  return (mode === 'up' || mode === 'down') && mode !== p.manualTransformerMode
+    ? { ...p, manualTransformerMode: mode }
+    : p;
+}
+
+export function withStructureGlassTier(p: PlanState, tier: string): PlanState {
+  if (tier === '') {
+    const next = { ...p };
+    delete next.structureGlassTier;
+    return next;
+  }
+  return isVoltageTier(tier) && p.structureGlassTier !== tier ? { ...p, structureGlassTier: tier } : p;
+}
+
+/** A physical shared hatch edits all logical assignments together. */
+export function withIndividualHatchTier(
+  p: PlanState,
+  assignments: readonly string[],
+  value: string,
+): PlanState {
+  if (value !== '' && !isVoltageTier(value)) return p;
+  const hatchTiers = { ...p.hatchTiers };
+  for (const key of assignments) {
+    if (isVoltageTier(value)) hatchTiers[key] = value;
+    else delete hatchTiers[key];
+  }
+  return { ...p, hatchTiers };
+}
 
 /* Pure plan transforms (tested) + thin store wrappers used by the components. */
 
@@ -47,6 +88,13 @@ export function withMultiblock(p: PlanState, id: string): PlanState {
   if (!def) return p;
   const next: PlanState = { ...withoutManual(p), multiblockId: id, enabledHatches: [...def.defaultHatches] };
   delete next.size;
+  delete next.hatchTiers;
+  delete next.manualTransformerMode;
+  delete next.dataBankWireless;
+  delete next.assemblyGrowth;
+  delete next.steamFrameTier;
+  delete next.structureGlassTier;
+  if (minimumGlassTier(def)) next.structureGlassTier = minimumGlassTier(def);
   return next;
 }
 
@@ -76,6 +124,20 @@ export const setLimit = (axis: keyof PlanLimits, v: number | null) =>
 export const toggleHatch = (k: HatchKind) => plan.update((p) => withHatchToggled(p, k));
 export const setHatchColor = (k: HatchKind, c: string) => plan.update((p) => withHatchColor(p, k, c));
 export const resetColors = () => plan.update(withDefaultColors);
+export const setVoltageTier = (tier: string) => plan.update((p) => withVoltageTier(p, tier));
+export const setManualTransformerMode = (mode: string) =>
+  plan.update((p) => withManualTransformerMode(p, mode));
+export const setDataBankWireless = (on: boolean) =>
+  plan.update((p) => (p.multiblockId === 'data-bank' ? { ...p, dataBankWireless: on } : p));
+export function setSteamFrameTier(frame: 'bronze' | 'steel') {
+  plan.update((p) => (p.multiblockId === 'water-pump' ? { ...p, steamFrameTier: frame } : p));
+}
+
+export const setAssemblyGrowth = (growth: 'left' | 'right') =>
+  plan.update((p) => (p.multiblockId === 'circuit-assembly-line' ? { ...p, assemblyGrowth: growth } : p));
+export const setStructureGlassTier = (tier: string) => plan.update((p) => withStructureGlassTier(p, tier));
+export const setIndividualHatchTier = (assignments: readonly string[], tier: string) =>
+  plan.update((p) => withIndividualHatchTier(p, assignments, tier));
 
 export function selectMultiblock(id: string): void {
   selectedUnits.set([]);

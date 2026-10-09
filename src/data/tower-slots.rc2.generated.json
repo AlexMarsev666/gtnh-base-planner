@@ -1,0 +1,25 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaDistillationTower.java",
+  "sha256": "ecb2a26d79439fd2ce8e392f4285f95146e975da313c9ba884053eb2a5869b08",
+  "repeat": {
+    "from": 12,
+    "to": 18,
+    "min": 30,
+    "max": 54
+  },
+  "cells": [
+    {
+      "pos": [0, 13, 4],
+      "region": "lower"
+    },
+    {
+      "pos": [0, 15, 4],
+      "region": "upper"
+    },
+    {
+      "pos": [0, 19, 4],
+      "region": "final"
+    }
+  ]
+}

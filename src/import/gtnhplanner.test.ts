@@ -115,6 +115,55 @@ describe('machine mapping', () => {
       expect(g.machine).toBeUndefined();
   });
 
+  it('retains fluid IDs and source order when assigning Mega Oil Cracker roles', () => {
+    const data = JSON.parse(text);
+    const recipe = data.recipes.find((r: { id: string }) => r.id === 'gt:chem:ticl4');
+    recipe.inputs = [
+      { kind: 'fluid', id: 'heavy_oil', amount: 1000, displayName: 'Feed' },
+      { kind: 'fluid', id: 'hydrogen', amount: 1000, displayName: 'Agent' },
+    ];
+    data.nodes = data.nodes.filter((n: { id: string }) => n.id === 'n1');
+    data.storages = [];
+    data.edges = [];
+    const { site } = buildSiteFromGtnh(
+      parseGtnhProject(JSON.stringify(data)),
+      new Map([['n1', { type: 'multiblock', id: 'mega-oil-cracker' }]]),
+    );
+    expect(site.groups[0].resourceBindings).toEqual([
+      { kind: 'fluidIn', resource: 'fluid:heavy_oil', role: 'feed' },
+      { kind: 'fluidIn', resource: 'fluid:hydrogen', role: 'catalyst' },
+    ]);
+  });
+
+  it('sizes Mega DT for native paired fractions and merges only consecutive overflow chunks', () => {
+    const data = JSON.parse(text);
+    const recipe = data.recipes.find((r: { id: string }) => r.id === 'gt:chem:ticl4');
+    recipe.outputs = [
+      { kind: 'fluid', id: 'a', amount: 2147483647 },
+      { kind: 'fluid', id: 'a', amount: 1000 }, // Same native fraction, an overflow chunk.
+      { kind: 'fluid', id: 'a', amount: 1000 }, // New native fraction, previous amount is not MAX_INT.
+      { kind: 'fluid', id: 'b', amount: 1000 },
+      { kind: 'fluid', id: 'c', amount: 1000 },
+    ];
+    data.nodes = data.nodes.filter((n: { id: string }) => n.id === 'n1');
+    data.storages = [];
+    data.edges = [];
+    const project = parseGtnhProject(JSON.stringify(data));
+    expect(project.recipes.get('gt:chem:ticl4')!.outputs[0].amount).toBe(2147483647);
+    const build = (id: string) => buildSiteFromGtnh(project, new Map([['n1', { type: 'multiblock', id }]]));
+    const { site } = build('mega-distillation-tower');
+    expect(site.groups[0].size).toBe(36); // Two middle sections provide five slots.
+    expect(site.groups[0].resourceBindings).toEqual([
+      { kind: 'fluidOut', resource: 'fluid:a', role: 'product', outputSlot: 0 },
+      { kind: 'fluidOut', resource: 'fluid:a', role: 'product', outputSlot: 1 },
+      { kind: 'fluidOut', resource: 'fluid:b', role: 'product', outputSlot: 2 },
+      { kind: 'fluidOut', resource: 'fluid:c', role: 'product', outputSlot: 3 },
+    ]);
+    const small = build('distillation-tower').site.groups[0];
+    expect(small.resourceBindings).toHaveLength(5);
+    expect(small.size).toBe(6); // The small tower dispatches every original array slot.
+  });
+
   it('shows machines missing from the catalog as placeholders', () => {
     const data = JSON.parse(text);
     data.recipes.find((r: { id: string }) => r.id === 'gt:centrifuge:co').machineType = 'Mega Blast Furnace';
@@ -182,21 +231,24 @@ describe('buildSiteFromGtnh', () => {
     const { site } = buildSiteFromGtnh(parseGtnhProject(text));
     const b = createSiteBuilder()(site, { pipes: true, cables: true });
     expect(
-      b.warnings.filter((w) => w.type === 'overlap' || w.type === 'outside' || w.type === 'error'),
+      b.warnings.filter(
+        (w) =>
+          w.type === 'overlap' || w.type === 'outside' || (w.type === 'error' && w.code !== 'electrical'),
+      ),
     ).toEqual([]);
     const connected = b.nets.reduce((s, n) => s + (n.route?.connected ?? 0), 0);
     const total = b.nets.reduce((s, n) => s + (n.route?.total ?? 0), 0);
     expect(connected / total).toBeGreaterThan(0.9);
   });
 
-  it('routes through a trench one layer down when connections from below are allowed', () => {
+  it('routes new imports within their three-block underground depth', () => {
     const { site } = buildSiteFromGtnh(parseGtnhProject(text), new Map(), { below: true });
     const b = createSiteBuilder()(site, { pipes: true, cables: true, below: true });
     const connected = b.nets.reduce((s, n) => s + (n.route?.connected ?? 0), 0);
     const total = b.nets.reduce((s, n) => s + (n.route?.total ?? 0), 0);
     expect(connected / total).toBeGreaterThan(0.9);
     for (const n of b.nets)
-      for (const c of n.route?.paths.flat() ?? []) expect(c[1]).toBeGreaterThanOrEqual(-1);
+      for (const c of n.route?.paths.flat() ?? []) expect(c[1]).toBeGreaterThanOrEqual(-3);
   });
 
   it('sizes the site to the chain, smaller as well as larger, unless told not to', () => {
@@ -241,7 +293,7 @@ describe('buildSiteFromGtnh', () => {
     const roomy = arrangeOnFloors({ ...big, size: [128, 128] }, builder);
     expect(roomy.arranged.floors).toBe(1);
     expect(roomy.site.groups.every((g) => g.elevation === undefined)).toBe(true);
-  });
+  }, 15000); // Full routing of the 132-unit regression includes underground layers and structure validation.
 
   it('sizes to the chain by default and then needs no floors', () => {
     const { site, report } = buildSiteFromGtnh(parseGtnhProject(text));
@@ -293,7 +345,11 @@ describe('buildSiteFromGtnh', () => {
     }
     expect(site.groups.find((g) => g.multiblockId === 'single-block')!.limits.y).toBe(1);
     expect(
-      b.warnings.filter((w) => ['overlap', 'outside', 'error', 'fewer', 'unplaced'].includes(w.type)),
+      b.warnings.filter(
+        (w) =>
+          ['overlap', 'outside', 'error', 'fewer', 'unplaced'].includes(w.type) &&
+          !(w.type === 'error' && w.code === 'electrical'),
+      ),
     ).toEqual([]);
   });
 

@@ -1,8 +1,10 @@
 import { getSiteDef, isSingleBlock } from '../data/generic';
-import { getSingleMachine } from '../data/single-machines';
-import { effectiveSize } from '../model/resize';
+import { isVoltageTier, VOLTAGE_TIERS } from '../model/tiers';
+import { RC2_RULES_VERSION } from '../model/multiblock/rules';
 import {
   iconUrl,
+  RESOURCE_ROLES,
+  type ResourceRole,
   type Endpoint,
   type ResourceDef,
   type SiteGroup,
@@ -42,7 +44,7 @@ import {
  * 64 KB cap as plan links.
  */
 
-export const SITE_VERSION = 1;
+export const SITE_VERSION = 2;
 export const SITE_MIN_SIZE = 8;
 export const SITE_MAX_SIZE = 256;
 /** Highest a group may stand above the ground (blocks). */
@@ -122,6 +124,8 @@ function validateResource(value: unknown, key: string): ResourceDef {
       throw new PlanFormatError(`${what} icon must be a gtnhplanner.com /datasets/ path.`);
     res.icon = icon;
   }
+  const gameId = optionalString(field(obj, 'gameId'), `${what} game id`, 512);
+  if (gameId !== undefined) res.gameId = gameId;
   return res;
 }
 
@@ -133,7 +137,6 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     throw new PlanFormatError(`${what} multiblock id is invalid.`);
   }
   const def = getSiteDef(multiblockId);
-  if (!def) throw new PlanFormatError(`${what}: unknown multiblock "${multiblockId}".`);
   const limitsObj = expectObject(field(obj, 'limits'), `${what} limits`);
   const limits: PlanLimits = {
     x: expectLimit(field(limitsObj, 'x'), `${what} limit X`),
@@ -155,7 +158,99 @@ function validateGroup(value: unknown, index: number): SiteGroup {
   if (label !== undefined) group.label = label;
   const machine = field(obj, 'machine');
   // A look this version does not know (a newer list) is left out rather than refused: it is only cosmetic.
-  if (typeof machine === 'string' && getSingleMachine(machine) && isSingleBlock(def)) group.machine = machine;
+  if (
+    typeof machine === 'string' &&
+    ID_RE.test(machine) &&
+    machine.length <= 64 &&
+    (!def || isSingleBlock(def))
+  )
+    group.machine = machine;
+  const tier = field(obj, 'voltageTier');
+  if (tier !== undefined && tier !== null) {
+    if (!isVoltageTier(tier)) throw new PlanFormatError(`${what} voltage tier is invalid.`);
+    group.voltageTier = tier;
+  }
+  const hatchTiers = field(obj, 'hatchTiers');
+  if (hatchTiers !== undefined) {
+    const tiers = expectObject(hatchTiers, `${what} hatch tiers`);
+    if (Object.keys(tiers).length > MAX_COUNT * 32) throw new PlanFormatError('Too many hatch assignments.');
+    group.hatchTiers = {};
+    for (const key of Object.keys(tiers).sort()) {
+      expectString(key, 'Hatch assignment', 256);
+      if (RESERVED_KEYS.has(key) || !isVoltageTier(field(tiers, key)))
+        throw new PlanFormatError('Invalid hatch tier.');
+      group.hatchTiers[key] = field(tiers, key) as NonNullable<SiteGroup['voltageTier']>;
+    }
+  }
+  const bindings = field(obj, 'resourceBindings');
+  const glassTier = field(obj, 'structureGlassTier');
+  if (glassTier !== undefined) {
+    if (!isVoltageTier(glassTier)) throw new PlanFormatError('Invalid structure glass tier.');
+    group.structureGlassTier = glassTier;
+  }
+  const manualMode = field(obj, 'manualTransformerMode');
+  if (manualMode !== undefined) {
+    if (manualMode !== 'up' && manualMode !== 'down')
+      throw new PlanFormatError('Invalid Manual Transformer mode.');
+    group.manualTransformerMode = manualMode;
+  }
+  const wireless = field(obj, 'dataBankWireless');
+  if (wireless !== undefined) {
+    if (typeof wireless !== 'boolean') throw new PlanFormatError('Invalid Data Bank wireless setting.');
+    group.dataBankWireless = wireless;
+  }
+  const frame = field(obj, 'steamFrameTier');
+  if (frame !== undefined) {
+    if (frame !== 'bronze' && frame !== 'steel')
+      throw new PlanFormatError('Invalid Water Pump frame material.');
+    group.steamFrameTier = frame;
+  }
+  const growth = field(obj, 'assemblyGrowth');
+  if (growth !== undefined) {
+    if (growth !== 'left' && growth !== 'right')
+      throw new PlanFormatError('Invalid assembly growth direction.');
+    group.assemblyGrowth = growth;
+  }
+  const feedSide = field(obj, 'crackingFeedSide');
+  if (feedSide !== undefined) {
+    if (feedSide !== 'left' && feedSide !== 'right') throw new PlanFormatError('Invalid cracking feed side.');
+    group.crackingFeedSide = feedSide;
+  }
+  if (bindings !== undefined)
+    group.resourceBindings = expectArray(bindings, `${what} resource bindings`, MAX_RESOURCES * 2).map(
+      (value) => {
+        const binding = expectObject(value, 'Resource binding');
+        const out: NonNullable<SiteGroup['resourceBindings']>[number] = {
+          kind: expectHatchKind(field(binding, 'kind'), 'Binding kind'),
+          resource: expectString(field(binding, 'resource'), 'Binding resource', MAX_KEY),
+        };
+        const role = field(binding, 'role');
+        if (role !== undefined) {
+          if (!RESOURCE_ROLES.includes(role as ResourceRole))
+            throw new PlanFormatError('Invalid resource role.');
+          out.role = role as ResourceRole;
+        }
+        const slot = field(binding, 'outputSlot');
+        if (slot !== undefined) out.outputSlot = expectInt(slot, 'Output slot', 0, 63);
+        return out;
+      },
+    );
+  const transformer = field(obj, 'transformer');
+  if (transformer !== undefined) {
+    const tr = expectObject(transformer, 'Transformer');
+    const lowTier = field(tr, 'lowTier');
+    const mode = field(tr, 'mode');
+    const facing = field(tr, 'facing');
+    if (
+      !isVoltageTier(lowTier) ||
+      lowTier === VOLTAGE_TIERS.at(-1) ||
+      (mode !== 'up' && mode !== 'down') ||
+      typeof facing !== 'string' ||
+      !['north', 'east', 'south', 'west', 'up', 'down'].includes(facing)
+    )
+      throw new PlanFormatError('Invalid transformer settings.');
+    group.transformer = { lowTier, mode, facing: facing as NonNullable<SiteGroup['transformer']>['facing'] };
+  }
   const elevation = field(obj, 'elevation');
   if (elevation !== undefined && elevation !== null) {
     const e = expectInt(elevation, `${what} elevation`, 0, SITE_MAX_ELEVATION);
@@ -164,8 +259,7 @@ function validateGroup(value: unknown, index: number): SiteGroup {
   if (field(obj, 'limitsLocked') === true) group.limitsLocked = true;
   const sizeRaw = field(obj, 'size');
   if (sizeRaw !== undefined && sizeRaw !== null) {
-    const size = effectiveSize(def, expectInt(sizeRaw, `${what} size`, 1, MAX_SIZE));
-    if (size !== undefined) group.size = size;
+    group.size = expectInt(sizeRaw, `${what} size`, 1, MAX_SIZE);
   }
   const src = field(obj, 'source');
   if (src !== undefined && src !== null) {
@@ -244,7 +338,7 @@ export function validateSiteState(input: unknown): SiteState {
   const obj = expectObject(input, 'Site');
   if (field(obj, 'kind') !== 'site') throw new PlanFormatError('This is not a site file.');
   const v = field(obj, 'v');
-  if (v !== SITE_VERSION)
+  if (v !== 1 && v !== SITE_VERSION)
     throw new PlanFormatError(`Unsupported site version ${JSON.stringify(v) ?? 'undefined'}.`);
 
   const resourcesObj = expectObject(field(obj, 'resources'), 'Resources');
@@ -318,12 +412,22 @@ export function validateSiteState(input: unknown): SiteState {
   };
   const name = optionalString(field(obj, 'name'), 'Site name', MAX_NAME);
   if (name !== undefined) site.name = name;
+  const rulesVersion = optionalString(field(obj, 'rulesVersion'), 'Game rules version', 64);
+  if (rulesVersion !== undefined) site.rulesVersion = rulesVersion;
+  const routing = field(obj, 'routing');
+  if (routing !== undefined) {
+    const settings = expectObject(routing, 'Routing');
+    const mode = field(settings, 'mode');
+    if (mode !== 'compact' && mode !== 'neat') throw new PlanFormatError('Invalid routing mode.');
+    site.routing = { mode, depth: expectInt(field(settings, 'depth'), 'Underground depth', 1, 6) };
+  }
   return site;
 }
 
 export function emptySite(): SiteState {
   return {
     v: 1,
+    rulesVersion: RC2_RULES_VERSION,
     kind: 'site',
     size: [...DEFAULT_SITE_SIZE],
     corridor: DEFAULT_CORRIDOR,
@@ -332,6 +436,7 @@ export function emptySite(): SiteState {
     ports: [],
     resources: {},
     colors: {},
+    routing: { mode: 'neat', depth: 3 },
   };
 }
 
@@ -344,7 +449,7 @@ export function sitesEqual(a: SiteState, b: SiteState): boolean {
 }
 
 export function siteToJson(site: SiteState): string {
-  return `${JSON.stringify(validateSiteState(site), null, 2)}\n`;
+  return `${JSON.stringify({ ...validateSiteState(site), v: SITE_VERSION }, null, 2)}\n`;
 }
 
 /** Files and stored copies may be larger than links (the payload cap applies to links only). */
@@ -363,7 +468,7 @@ export function siteFromJson(text: string): SiteState {
 }
 
 export async function encodeSite(site: SiteState, opts: CompressOptions = {}): Promise<string> {
-  const bytes = new TextEncoder().encode(JSON.stringify(validateSiteState(site)));
+  const bytes = new TextEncoder().encode(JSON.stringify({ ...validateSiteState(site), v: SITE_VERSION }));
   const code = toBase64Url(await deflateRaw(bytes, opts));
   if (code.length > MAX_PAYLOAD_BYTES)
     throw new PlanFormatError('This site is too large for a link. Download JSON instead.');

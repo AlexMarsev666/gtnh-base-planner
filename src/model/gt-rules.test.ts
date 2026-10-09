@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { catalog } from '../data/catalog';
 import { defaultPlan } from '../state/store';
 import { createPipeline } from '../ui/pipeline';
-import { controllerFacing, key, localCells, rotateDir, step, toWorld } from './geometry';
+import { controllerFacing, key, localCells, rotateDir, step, toWorld, unitCells } from './geometry';
 import { PIPE_KINDS } from './routing/kinds';
 import type { MultiblockDef, PlanLimits, Unit } from './multiblock/types';
 
@@ -10,8 +10,8 @@ import type { MultiblockDef, PlanLimits, Unit } from './multiblock/types';
 const handMade = catalog.filter((d) => !d.generated);
 
 /**
- * Game rules checked against GT5-Unofficial 5.09.54.133 (GT:NH 2.9.0-beta-3) on whole plans, pipes included.
- * See the structure definitions linked from each multiblock's `source`.
+ * Whole-plan constraints, including pipes. Tower/cracker rules are now independently checked with
+ * GT5-Unofficial 5.09.54.205 (RC2); other legacy hand-made entries still need that native comparison.
  */
 
 const NO_LIMITS: PlanLimits = { x: null, y: null, z: null };
@@ -41,13 +41,20 @@ const PLANS: [number, PlanLimits][] = [
 ];
 
 describe('GT rules', () => {
-  it('Distillation Tower: an output hatch on every layer, never facing up or down', () => {
+  it('Distillation Tower: an output hatch on every layer with a free pipe attachment cell', () => {
     for (const height of [3, 5, 12])
       for (const [count, limits] of PLANS) {
         const { def, units, scene } = build('distillation-tower', count, limits, height);
         expect(def.size[1]).toBe(height);
         const outs = scene.hatches.filter((h) => h.kind === 'fluidOut');
-        for (const h of outs) expect(['up', 'down']).not.toContain(h.face);
+        const occupied = new Set(
+          units.flatMap((u) =>
+            unitCells(def, u)
+              .filter((c) => c.role !== 'air')
+              .map((c) => key(c.pos)),
+          ),
+        );
+        for (const h of outs) expect(occupied.has(key(step(h.cell, h.face)))).toBe(false);
         const regionAt = (u: Unit, cell: string) => def.legend[charAt(def, u, cell) ?? '']?.region;
         // Every layer above the base: the ring copies and the top.
         for (const u of units)

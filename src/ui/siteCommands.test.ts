@@ -6,6 +6,9 @@ import type { SiteState } from '../model/site/types';
 import { optimizeAfterImport, whenBuilt } from './siteCommands';
 import type { SiteResult } from './sitePipeline';
 import { withGroupAdded } from './siteActions';
+import { registerBuild, sourceRevisionOf } from './buildIdentity';
+
+const identity = (s: SiteState) => ({ sourceRevision: sourceRevisionOf(s), requestId: 1 });
 
 function imported(): SiteState {
   let s = withGroupAdded(emptySite(), 'electric-blast-furnace', [3, 3]);
@@ -17,6 +20,25 @@ function imported(): SiteState {
 const builtFrom = (s: SiteState): SiteBuild => ({ groups: s.groups.map((group) => ({ group })) }) as never;
 
 describe('whenBuilt', () => {
+  it('ignores results of an earlier job for the same source state', async () => {
+    const s = imported();
+    const revision = registerBuild(s, 22);
+    const builds = writable<SiteResult>({
+      sourceRevision: revision,
+      requestId: 21,
+      build: builtFrom(s),
+      error: null,
+    });
+    const result = vi.fn();
+    void whenBuilt(s, writable(s), builds).then(result);
+    await Promise.resolve();
+    expect(result).not.toHaveBeenCalled();
+    builds.set({ sourceRevision: revision, requestId: 21, build: null, error: 'old job' });
+    await Promise.resolve();
+    expect(result).not.toHaveBeenCalled();
+    builds.set({ sourceRevision: revision, requestId: 22, build: builtFrom(s), error: null });
+    await vi.waitFor(() => expect(result).toHaveBeenCalledWith(true));
+  });
   it('waits for the imported template to be built and routed, not for groups alone or for another site', async () => {
     const s = imported();
     const sites = writable(s);
@@ -26,16 +48,20 @@ describe('whenBuilt', () => {
     await Promise.resolve();
     expect(result).not.toHaveBeenCalled();
     // The groups arrive first, routing still to come.
-    builds.set({ build: builtFrom(s), error: null, pending: true });
+    builds.set({ ...identity(s), build: builtFrom(s), error: null, pending: true });
     await Promise.resolve();
     expect(result).not.toHaveBeenCalled();
-    builds.set({ build: builtFrom(s), error: null });
+    builds.set({ ...identity(s), build: builtFrom(s), error: null });
     await vi.waitFor(() => expect(result).toHaveBeenCalledWith(true));
   });
 
   it('is true at once when the build is already there', async () => {
     const s = imported();
-    const ok = await whenBuilt(s, writable(s), writable<SiteResult>({ build: builtFrom(s), error: null }));
+    const ok = await whenBuilt(
+      s,
+      writable(s),
+      writable<SiteResult>({ ...identity(s), build: builtFrom(s), error: null }),
+    );
     expect(ok).toBe(true);
   });
 
@@ -46,12 +72,30 @@ describe('whenBuilt', () => {
     const edited = whenBuilt(s, sites, builds);
     sites.set({ ...s, name: 'edited' });
     expect(await edited).toBe(false);
-    expect(await whenBuilt(s, writable(s), writable<SiteResult>({ build: null, error: 'boom' }))).toBe(false);
+    expect(
+      await whenBuilt(s, writable(s), writable<SiteResult>({ ...identity(s), build: null, error: 'boom' })),
+    ).toBe(false);
     vi.useFakeTimers();
     const slow = whenBuilt(s, writable(s), writable<SiteResult>({ build: null, error: null }), 1000);
     vi.advanceTimersByTime(1001);
     vi.useRealTimers();
     expect(await slow).toBe(false);
+  });
+
+  it('ignores a previous import with identical ids and its stale error', async () => {
+    const s = imported();
+    const old = imported();
+    const builds = writable<SiteResult>({ ...identity(old), build: builtFrom(old), error: null });
+    const result = vi.fn();
+    void whenBuilt(s, writable(s), builds).then(result);
+    await Promise.resolve();
+    expect(result).not.toHaveBeenCalled();
+    builds.set({ ...identity(old), build: null, error: 'stale failure' });
+    await Promise.resolve();
+    expect(result).not.toHaveBeenCalled();
+    // Worker cloning does not preserve reference equality.
+    builds.set({ ...identity(s), build: builtFrom(structuredClone(s)), error: null });
+    await vi.waitFor(() => expect(result).toHaveBeenCalledWith(true));
   });
 });
 

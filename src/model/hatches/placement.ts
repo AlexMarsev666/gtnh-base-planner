@@ -5,10 +5,16 @@ import type { HatchKind, MultiblockDef, Unit } from '../multiblock/types';
 import type { HatchPlacement, HatchResult } from '../plan/types';
 import { HATCH_PRIORITY } from './constants';
 import { lineKeys, openRank } from './geometry';
-import { allUnplaced, kindsToPlace, quota, sortedIds } from './quota';
+import { allUnplaced, kindsToPlace, quota, sortedIds, alternativeHatchLimits } from './quota';
 import { compareEntries, compareFaces, EntryHeap, type FaceScore } from './scoring';
 import { findSites } from './sites';
 import type { Entry, HatchAvoid, PlaceOptions, Site } from './types';
+import { casingAllowance } from '../multiblock/casingConstraints';
+import { fixedHatchCounts, fixedHatchKind } from '../multiblock/fixedHatches';
+import { hasAlternativeHatchCells } from '../multiblock/fixedHatches';
+import { placeResourceHatches } from '../site/resourcePlacement';
+import { unitCells } from '../geometry';
+import { withAssemblyInputDefaults } from '../multiblock/assemblyLine';
 
 /**
  * UNIT 3 — Hatch placement.
@@ -54,7 +60,22 @@ export function placeHatches(
   try {
     kinds = kindsToPlace(def, enabled);
     if (kinds.length === 0 || units.length === 0) return { hatches: [], unplaced: [] };
-    return place(def, units, kinds, avoid, !!opts.below, opts.toward);
+    if (kinds.includes('itemIn') && !kinds.includes('fluidOut')) def = withAssemblyInputDefaults(def);
+    if (def.orderedHatchKinds?.length || hasAlternativeHatchCells(def, kinds))
+      return placeResourceHatches(def, units, kinds, {}, {}, !!opts.below, {}, avoid, opts.toward);
+    const result = place(def, units, kinds, avoid, !!opts.below, opts.toward);
+    return kinds.includes('dataAccess') || kinds.includes('uncertainty')
+      ? {
+          ...result,
+          hatches: result.hatches.map((h) =>
+            h.kind === 'dataAccess'
+              ? { ...h, tier: 'EV' }
+              : h.kind === 'uncertainty'
+                ? { ...h, tier: 'IV' }
+                : h,
+          ),
+        }
+      : result;
   } catch (err) {
     // Malformed definition (e.g. unknown legend char): nothing can be placed. Anything else is a bug.
     if (err instanceof DefinitionError) return allUnplaced(def, units, kinds);
@@ -71,7 +92,22 @@ function place(
   toward?: PlaceOptions['toward'],
 ): HatchResult {
   const { sites, openAround, openToward, nearby, volume } = findSites(def, units, below);
+  const fixed = new Map<string, HatchKind>();
+  const requiredCells = new Map<string, Set<string>>();
+  if (Object.keys(fixedHatchCounts(def)).length)
+    for (const unit of units)
+      for (const cell of unitCells(def, unit)) {
+        const kind = fixedHatchKind(def, def.legend[cell.char]);
+        if (kind) {
+          fixed.set(cell.pos.join(), kind);
+          const key = `${unit.id}:${kind}`;
+          const positions = requiredCells.get(key) ?? new Set<string>();
+          positions.add(cell.pos.join());
+          requiredCells.set(key, positions);
+        }
+      }
   const unitIds = sortedIds(units);
+  const casings = casingAllowance(def, units);
   const shareable = new Set(def.shareableHatches ?? []);
   const used = new Set<CellKey>();
   /** Empty cell in front of a hatch -> kind of that hatch. */
@@ -123,6 +159,8 @@ function place(
     return n;
   };
   const hatches: HatchPlacement[] = [];
+  const alternativeLimits = alternativeHatchLimits(def);
+  const alternativeCounts = new Map<string, number>();
   const unplaced: HatchResult['unplaced'] = [];
 
   kinds.forEach((kind, ki) => {
@@ -180,10 +218,17 @@ function place(
       /** Current score of candidate `i`, or null when it cannot take this kind any more. */
       const evaluate = (i: number): Entry | null => {
         const c = candidates[i];
-        if (used.has(c.key)) return null;
+        if (used.has(c.key) || !casings.canReplace(c.pos, c.unitIds)) return null;
         let score = 0;
         for (const id of c.unitIds) {
           if ((count.get(id) ?? 0) >= max) return null;
+          if (
+            (alternativeLimits[kind] ?? []).some(
+              (rule) =>
+                rule.anyOf!.reduce((n, k) => n + (alternativeCounts.get(`${id}:${k}`) ?? 0), 0) >= rule.max!,
+            )
+          )
+            return null;
           if (needs(c, id)) score++;
         }
         if (score === 0) return null;
@@ -213,6 +258,7 @@ function place(
         return {
           ...best,
           i,
+          fixed: fixed.get(c.pos.join()) === kind ? c.unitIds.length : 0,
           score,
           waste: c.unitIds.length - score,
           wanted: later.reduce((n, k) => n + (c.kinds.has(k) ? 1 : 0), 0),
@@ -241,9 +287,15 @@ function place(
         const best = candidates[now.i];
         const bestFace = best.faces[now.face];
         used.add(best.key);
+        casings.replace(best.pos, best.unitIds);
         if (frontIndex) frontIndex[bestFace.front as number] = HATCH_PRIORITY.indexOf(kind);
         else frontMap.set(bestFace.front, kind);
         for (const id of best.unitIds) count.set(id, (count.get(id) ?? 0) + 1);
+        if (alternativeLimits[kind])
+          for (const id of best.unitIds) {
+            const key = `${id}:${kind}`;
+            alternativeCounts.set(key, (alternativeCounts.get(key) ?? 0) + 1);
+          }
         served(best);
         hatches.push({ kind, cell: best.pos, face: bestFace.dir, unitIds: [...best.unitIds] });
         for (const k of faceKeys[now.i][now.face]) {
@@ -275,8 +327,14 @@ function place(
       () => {},
     );
 
+    const placedCells = new Set(
+      hatches.filter((hatch) => hatch.kind === kind).map((hatch) => hatch.cell.join()),
+    );
     for (const id of unitIds) {
-      const short = Math.max(target - (count.get(id) ?? 0), missing.get(id) ?? 0);
+      const fixedMissing = [...(requiredCells.get(`${id}:${kind}`) ?? [])].filter(
+        (pos) => !placedCells.has(pos),
+      ).length;
+      const short = Math.max(target - (count.get(id) ?? 0), missing.get(id) ?? 0, fixedMissing);
       for (let n = 0; n < short; n++) unplaced.push({ unitId: id, kind });
     }
   });

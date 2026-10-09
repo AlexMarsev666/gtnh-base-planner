@@ -1,10 +1,11 @@
 import { NO_DIR } from './constants';
+import { ROUTED_MASK } from './kinds';
 import type { Router, Terminal, Tree } from './types';
 
 /** Connecting every terminal of one kind with a network grown over the cheapest cells. */
 
-/** Set bits per byte value. */
-export const POPCOUNT = Uint8Array.from({ length: 256 }, (_, m) => {
+/** Set bits for every supported kind mask, including the ninth routing bit. */
+export const POPCOUNT = Uint8Array.from({ length: ROUTED_MASK + 1 }, (_, m) => {
   let n = 0;
   for (; m !== 0; m &= m - 1) n++;
   return n;
@@ -29,7 +30,7 @@ function growTree(
   const { g, used, pass, price, keep, target, dist, parent, arrive, seen, inNet, heap, turnCost } = r;
   const { offsets } = g;
   const bit = 1 << k;
-  const others = ~bit & 0xff;
+  const others = ~bit & ROUTED_MASK;
   const stamp = ++r.stamp;
   const ns = ++r.netStamp;
   heap.clear();

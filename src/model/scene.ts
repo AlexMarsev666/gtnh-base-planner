@@ -50,6 +50,7 @@ export function buildSceneModel(
         unitIds: [unit.id],
       };
       if (cell.role === 'controller') voxel.facing = facing;
+      else if (cell.facing) voxel.facing = cell.facing;
       byKey.set(k, voxel);
     }
   }
@@ -71,6 +72,7 @@ export function buildSceneModel(
     voxel.hatchKind = h.kind;
     voxel.facing = h.face;
     voxel.blockId = def.hatchBlocks[h.kind] ?? (voxel.blockId || 'gt.hatch.inputBus');
+    if (h.tier) voxel.blockId += `.${h.tier}`;
     if (base) voxel.baseBlockId = base;
   }
 

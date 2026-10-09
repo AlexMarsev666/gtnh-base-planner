@@ -1,5 +1,6 @@
 import { DIRS, dirBetween, dirVec } from '../geometry';
 import type { Dir, Vec3 } from '../core/types';
+import { CellHeap } from '../routing/heap';
 
 /**
  * Net router for sites. Unlike `routing.ts` (one network per hatch kind inside one build), every net here
@@ -64,12 +65,15 @@ export interface RouterInput {
    * underground only where that saves pipe.
    */
   trenchBelow?: number;
+  /** Neat routing keeps trunks on this underground layer and beside row/corridor axes. */
+  neat?: { y: number; x: number[]; z: number[] };
 }
 
 /**
  * Above this many cells nothing is routed (every net reports unconnected). The largest site, 256 × 256,
- * with 18 layers of room is about 1.2M cells; the search keeps 7 states per cell (~12 bytes each), so
- * about 100 MB at the limit.
+ * with 18 layers of room is about 1.2M cells. Compact search keeps about 100 MB of state arrays;
+ * neat search also keeps integer costs, indexed heap positions and cached heuristic bounds
+ * (about 280 MB of state arrays at the same limit). Neither mode shortens the requested depth.
  */
 export const MAX_ROUTER_CELLS = 1_200_000;
 
@@ -242,6 +246,10 @@ interface Search {
   hist: Float32Array;
   /** States taken off the heap so far: the measure of work for the rip-up budget. */
   work: number;
+  neat?: RouterInput['neat'];
+  guideX?: Float32Array;
+  guideZ?: Float32Array;
+  neatCosts?: { crossings: Uint32Array; surface: Uint32Array; bends: Uint32Array; positions: Int32Array };
 }
 
 /** A terminal after resolving its faces against the grid. */
@@ -304,6 +312,7 @@ function search(
   goals: Int32Array,
   soft: boolean,
 ): number[] | null {
+  if (s.neat) return searchNeat(g, s, net, tree, target, goals, soft);
   const { occ, claim, offsets } = g;
   const { dist, parent, seen, heap, turnCost } = s;
   const stamp = ++s.stamp;
@@ -359,6 +368,164 @@ function search(
   return null;
 }
 
+/** Lexicographic A*: diagnostic crossings, surface cells, bends, length. Corridor guides only
+ * break equal-cost ties. Every horizontal underground trunk stays at the requested depth;
+ * vertical branches reach its terminals, and surface paths remain available as a fallback.
+ */
+function searchNeat(
+  g: Grid,
+  s: Search,
+  net: number,
+  tree: readonly number[],
+  target: Uint8Array,
+  goals: Int32Array,
+  soft: boolean,
+): number[] | null {
+  const { occ, claim, offsets } = g;
+  const { dist, parent, seen } = s;
+  const stamp = ++s.stamp;
+  const own = PIPE + net;
+  const n = dist.length;
+  const costs = (s.neatCosts ??= {
+    crossings: new Uint32Array(n),
+    surface: new Uint32Array(n),
+    bends: new Uint32Array(n),
+    positions: new Int32Array(n).fill(-1),
+  });
+  const { crossings, surface, bends, positions } = costs;
+  const targets: number[][] = [];
+  const targetSet = new Set<number>();
+  for (let i = 0; i < goals.length; i += 3) {
+    const block = goals[i] + g.dx * (goals[i + 1] + g.dy * goals[i + 2]);
+    for (const offset of offsets) {
+      const at = block + offset;
+      if (!target[at] || targetSet.has(at)) continue;
+      targetSet.add(at);
+      const x = at % g.dx,
+        r = (at - x) / g.dx,
+        y = r % g.dy;
+      targets.push([x, y + g.oy, (r - y) / g.dy]);
+    }
+  }
+  // A lower bound for paths adding no surface cells. Such paths can change horizontal axes
+  // only on the configured trunk layer. Paths that visit the surface have a larger primary
+  // cost, so this remains an admissible lexicographic bound even if their bend count is lower.
+  const hBends = new Uint8Array(n).fill(255);
+  const hLength = new Float32Array(n);
+  const prepare = (state: number): void => {
+    if (hBends[state] !== 255) return;
+    const cell = Math.floor(state / STATES),
+      x = cell % g.dx;
+    const r = (cell - x) / g.dx,
+      y = (r % g.dy) + g.oy,
+      z = (r - (y - g.oy)) / g.dy;
+    const start = cell * STATES;
+    for (let d = 0; d < STATES; d++) hLength[start + d] = Infinity;
+    for (let i = 0; i < targets.length; i++) {
+      const [tx, ty, tz] = targets[i];
+      const dx = tx - x,
+        dz = tz - z;
+      const hx = dx ? (dx > 0 ? 2 : 3) : -1;
+      const hz = dz ? (dz > 0 ? 1 : 0) : -1;
+      const axes = Number(dx !== 0) + Number(dz !== 0);
+      const plane = dx || dz ? s.neat!.y : ty;
+      const first = plane === y ? -1 : plane > y ? 4 : 5;
+      const last = plane === ty ? -1 : ty > plane ? 4 : 5;
+      const length = Math.abs(dx) + Math.abs(dz) + Math.abs(y - plane) + Math.abs(ty - plane);
+      const turns = Number(axes > 0 && first !== -1) + Number(axes === 2) + Number(axes > 0 && last !== -1);
+      const firstX = first !== -1 ? first : hx !== -1 ? hx : hz !== -1 ? hz : last;
+      const firstZ = first !== -1 ? first : hz !== -1 ? hz : hx !== -1 ? hx : last;
+      for (let d = 0; d < STATES; d++) {
+        const at = start + d;
+        const cost = turns + Number(firstX !== -1 && d !== NO_DIR && d !== firstX && d !== firstZ);
+        if (cost < hBends[at] || (cost === hBends[at] && length < hLength[at])) {
+          hBends[at] = cost;
+          hLength[at] = length;
+        }
+      }
+    }
+    if (!targets.length) for (let d = 0; d < STATES; d++) hBends[start + d] = hLength[start + d] = 0;
+  };
+  const less = (a: number, b: number): boolean => {
+    if (crossings[a] !== crossings[b]) return crossings[a] < crossings[b];
+    if (surface[a] !== surface[b]) return surface[a] < surface[b];
+    prepare(a);
+    prepare(b);
+    const ba = bends[a] + hBends[a],
+      bb = bends[b] + hBends[b];
+    if (ba !== bb) return ba < bb;
+    const la = dist[a] + hLength[a],
+      lb = dist[b] + hLength[b];
+    if (la !== lb) return la < lb;
+    const ga = guide(a),
+      gb = guide(b);
+    return ga !== gb ? ga < gb : a < b;
+  };
+  const guides = new Float32Array(occ.length).fill(-1);
+  const guide = (state: number): number => {
+    const cell = Math.floor(state / STATES);
+    if (guides[cell] >= 0) return guides[cell];
+    const x = cell % g.dx;
+    const r = (cell - x) / g.dx;
+    const y = r % g.dy;
+    const z = (r - y) / g.dy;
+    return (guides[cell] =
+      s.hist[cell] + (y + g.oy === s.neat!.y ? Math.min(s.guideX![x], s.guideZ![z]) : 3));
+  };
+  const heap = new CellHeap(less, positions);
+  for (const cell of tree) {
+    const state = cell * STATES + NO_DIR;
+    crossings[state] = surface[state] = bends[state] = dist[state] = 0;
+    parent[state] = -1;
+    seen[state] = stamp;
+    heap.update(state);
+  }
+  while (heap.size) {
+    const state = heap.pop();
+    const cell = Math.floor(state / STATES);
+    s.work++;
+    if (target[cell] && parent[state] !== -1) {
+      const path: number[] = [];
+      for (let at = state; at !== -1; at = parent[at]) path.push(Math.floor(at / STATES));
+      heap.clear();
+      return path.reverse();
+    }
+    const dir = state % STATES;
+    const y = (Math.floor(cell / g.dx) % g.dy) + g.oy;
+    for (let d = 0; d < 6; d++) {
+      // The depth setting describes the trunk layer, not an optional weighted preference.
+      if (d < 4 && y < 0 && y !== s.neat!.y) continue;
+      const next = cell + offsets[d],
+        occupied = occ[next];
+      const crossing = occupied !== FREE && occupied !== own;
+      if (crossing && (!soft || occupied < PIPE)) continue;
+      if (claim[next] && claim[next] !== net + 1) continue;
+      const nextY = (Math.floor(next / g.dx) % g.dy) + g.oy;
+      const nc = crossings[state] + Number(crossing);
+      const ns = surface[state] + Number(nextY >= 0);
+      const nb = bends[state] + Number(dir !== NO_DIR && dir !== d);
+      const nl = dist[state] + 1;
+      const to = next * STATES + d;
+      if (
+        seen[to] === stamp &&
+        (crossings[to] < nc ||
+          (crossings[to] === nc &&
+            (surface[to] < ns ||
+              (surface[to] === ns && (bends[to] < nb || (bends[to] === nb && dist[to] <= nl))))))
+      )
+        continue;
+      crossings[to] = nc;
+      surface[to] = ns;
+      bends[to] = nb;
+      dist[to] = nl;
+      parent[to] = state;
+      seen[to] = stamp;
+      heap.update(to);
+    }
+  }
+  return null;
+}
+
 /**
  * Whether a terminal may attach at cell `c` right now: open to the air, not claimed by another net, and
  * free or already this net's pipe (with `soft`, another net's pipe too).
@@ -377,6 +544,15 @@ function usable(g: Grid, net: number, c: number, soft = false): boolean {
  * (nothing is written to the grid).
  */
 function routeNet(g: Grid, s: Search, net: number, st: NetState, soft: boolean): number[] {
+  if (s.neat) {
+    const lane = net % 3;
+    const distances = (n: number, origin: number, lines: number[]) =>
+      Float32Array.from({ length: n }, (_, i) =>
+        lines.length ? Math.min(3, ...lines.map((line) => Math.abs(i + origin - line - lane))) * 0.5 : 0,
+      );
+    s.guideX = distances(g.dx, g.ox, s.neat.x);
+    s.guideZ = distances(g.dz, g.oz, s.neat.z);
+  }
   const n = st.terms.length;
   const via = new Int32Array(n).fill(-1);
   const target = new Uint8Array(g.occ.length);
@@ -458,14 +634,27 @@ function connectedCount(st: NetState): number {
   return n;
 }
 
-function score(states: NetState[]): [number, number] {
+function routingScore(states: NetState[], g: Grid, neat: boolean): [number, number, number, number] {
   let conn = 0;
   let len = 0;
+  let surface = 0;
+  let bends = 0;
   for (const st of states) {
     conn += connectedCount(st);
     len += st.cells.length;
+    if (neat) {
+      surface += st.cells.filter((c) => pos(g, c)[1] >= 0).length;
+      for (const path of st.paths)
+        for (let i = 2; i < path.length; i++) {
+          if (
+            dirBetween(pos(g, path[i - 2]), pos(g, path[i - 1])) !==
+            dirBetween(pos(g, path[i - 1]), pos(g, path[i]))
+          )
+            bends++;
+        }
+    }
   }
-  return [conn, len];
+  return [conn, surface, bends, len];
 }
 
 /**
@@ -592,6 +781,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
     turnCost: Math.max(0, input.turnCost ?? 2),
     hist: new Float32Array(cells),
     work: 0,
+    neat: input.neat,
   };
   if (input.trenchBelow !== undefined) {
     // The trench starts dearer; congestion history adds to it like to any other cell.
@@ -628,7 +818,12 @@ export function routeNets(input: RouterInput): RouteResult[] {
       states[i].via = x.via;
     });
   };
-  const beats = (a: [number, number], b: [number, number]) => a[0] > b[0] || (a[0] === b[0] && a[1] < b[1]);
+  const score = (states: NetState[]) => routingScore(states, g, !!input.neat);
+  const beats = (a: ReturnType<typeof score>, b: ReturnType<typeof score>) => {
+    if (a[0] !== b[0]) return a[0] > b[0];
+    for (const i of [1, 2, 3]) if (a[i] !== b[i]) return a[i] < b[i];
+    return false;
+  };
   const failing = () => order.filter((n) => connectedCount(states[n]) < states[n].terms.length);
 
   // Rip-up rounds stop early when they have used their share of work, or when a whole round gains nothing:

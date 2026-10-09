@@ -6,6 +6,15 @@ import textureManifest from '../render/textures.json';
 const TEXTURES = textureManifest as unknown as TextureManifest;
 
 const ALL_KINDS: HatchKind[] = [
+  'computationIn',
+  'computationOut',
+  'wirelessComputationIn',
+  'wirelessComputationOut',
+  'uncertainty',
+  'computerRack',
+  'electrodeIn',
+  'electrodeBus',
+  'electrodeDetector',
   'itemIn',
   'itemOut',
   'fluidIn',
@@ -15,6 +24,13 @@ const ALL_KINDS: HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'cryotheumIn',
+  'pyrotheumIn',
+  'dataAccess',
+  'assemblyDataIn',
+  'assemblyDataOut',
+  'wirelessAssemblyDataIn',
+  'wirelessAssemblyDataOut',
 ];
 
 /** The block id used by most structure cells (used as the picker tile colour). */

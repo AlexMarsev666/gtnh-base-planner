@@ -128,6 +128,7 @@ export function routeSiteNetworks(
     if (t.port) return placedPort.get(t.port)!.faces;
     const h = t.hatch!;
     const pg = groups[groupIndex.get(t.group!)!];
+    if (h.allowedFaces) return h.allowedFaces;
     const single = pg.def && isSingleBlock(pg.def);
     const unit = single ? pg.units.find((u) => u.id === h.unitIds[0]) : undefined;
     const front = unit && pg.def ? controllerFacing(pg.def, unit) : null;
@@ -147,11 +148,20 @@ export function routeSiteNetworks(
     for (const h of pg.hatches) if (!routedHatches.has(h)) keepFree.push(step(h.cell, h.face));
   }
   const height = Math.max(4, ...groups.map((g) => g.max[1] + 3));
+  const neat = site.routing?.mode === 'neat';
+  const depth = neat ? site.routing!.depth : opts.below ? 1 : 0;
   const results = routed.length
     ? routeNets({
         // One layer under the ground for pipes that come from below.
-        box: { min: [0, opts.below ? -1 : 0, 0], max: [w, height, d] },
-        trenchBelow: opts.below ? 0 : undefined,
+        box: { min: [0, -depth, 0], max: [w, height, d] },
+        trenchBelow: !neat && opts.below ? 0 : undefined,
+        neat: neat
+          ? {
+              y: -depth,
+              x: groups.map((g) => g.min[0] - Math.max(1, site.corridor)),
+              z: groups.map((g) => g.min[2] - Math.max(1, site.corridor)),
+            }
+          : undefined,
         solids,
         keepFree,
         nets: routed.map((n) => ({
@@ -161,7 +171,7 @@ export function routeSiteNetworks(
             role: t.role,
           })),
         })),
-        turnCost: opts.turnCost,
+        turnCost: opts.turnCost ?? (neat ? 8 : undefined),
       })
     : [];
   routed.forEach((n, i) => (n.route = results[i]));

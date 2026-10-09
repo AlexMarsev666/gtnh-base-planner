@@ -49,8 +49,10 @@ const IO_ORDER: IoClass[] = ['item', 'fluid', 'steam', 'energy'];
 /** Class of pipe a hatch kind's network is made of (cables for energy and dynamo). */
 export function ioClass(kind: HatchKind): IoClass | null {
   if (isCable(kind)) return 'energy';
-  if (kind === 'itemIn' || kind === 'itemOut') return 'item';
-  if (kind === 'fluidIn' || kind === 'fluidOut') return 'fluid';
+  if (kind === 'itemIn' || kind === 'itemOut' || kind === 'electrodeIn' || kind === 'electrodeBus')
+    return 'item';
+  if (kind === 'fluidIn' || kind === 'fluidOut' || kind === 'cryotheumIn' || kind === 'pyrotheumIn')
+    return 'fluid';
   if (kind === 'steamIn') return 'steam';
   return null;
 }
@@ -107,6 +109,7 @@ export function blockLabel(id: string, manifest: TextureManifest = TEXTURES): st
 
 /** Whether a block id is a hatch or bus that any voltage tier can stand in for. */
 function isTiered(blockId: string): boolean {
+  if (/\.(ULV|LV|MV|HV|EV|IV|LuV|ZPM|UV|UHV|UEV|UIV|UMV|UXV|MAX)$/.test(blockId)) return false;
   // Single-block machines come in every voltage tier as well.
   if (blockId.startsWith('site.machine.') || blockId === 'site.singleblock') return true;
   return blockId.startsWith('gt.hatch.') && blockId !== 'gt.hatch.maintenance';

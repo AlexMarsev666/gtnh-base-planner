@@ -1,9 +1,10 @@
-import { getSiteDef, isSingleBlock } from '../data/generic';
-import { getSingleMachine } from '../data/single-machines';
+import { getSiteDef, isSingleBlock, TRANSFORMER_ID } from '../data/generic';
+import { getSingleMachine, singleMachineTiers } from '../data/single-machines';
 import { fallbackColor } from '../import/gtnhplanner';
-import { IO_KINDS } from '../model/site/group';
+import { defaultGroupHatches, IO_KINDS } from '../model/site/group';
 import type { Endpoint, ResourceKind, SiteGroup, SiteState } from '../model/site/types';
 import { effectiveSize } from '../model/resize';
+import { minimumGlassTier } from '../model/multiblock/glass';
 import type { Rotation } from '../model/core/types';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
 import type { PlanState } from '../model/plan/types';
@@ -19,6 +20,7 @@ import {
 } from '../share/siteCodec';
 import { isolate, site, siteGroup, siteNet } from '../state/site';
 import { clampCount } from './fields';
+import { isVoltageTier } from '../model/tiers';
 
 /* Pure site transforms (tested) + thin store wrappers used by the site components. */
 
@@ -61,10 +63,13 @@ export function withGroupAdded(s: SiteState, multiblockId: string, origin?: [num
     multiblockId,
     count: 1,
     limits: { x: null, y: 1, z: null },
-    enabledHatches: def.defaultHatches.filter((k) => !IO_KINDS.includes(k)),
+    enabledHatches: defaultGroupHatches(def),
     origin: origin ?? [3, 3],
     rotation: 0,
+    voltageTier: def.minimumVoltageTier ?? 'LV',
+    ...(minimumGlassTier(def) ? { structureGlassTier: minimumGlassTier(def) } : {}),
   };
+  if (multiblockId === TRANSFORMER_ID) g.transformer = { lowTier: 'LV', mode: 'down', facing: 'north' };
   return { ...s, groups: [...s.groups, g] };
 }
 
@@ -77,8 +82,17 @@ export function withPlanAdded(s: SiteState, p: PlanState, origin?: [number, numb
     ...g,
     count: p.count,
     limits: { ...p.limits },
-    enabledHatches: p.enabledHatches.filter((k) => !IO_KINDS.includes(k)),
+    enabledHatches: [...p.enabledHatches],
+    ...(p.voltageTier ? { voltageTier: p.voltageTier } : {}),
+    ...(p.hatchTiers ? { hatchTiers: { ...p.hatchTiers } } : {}),
+    ...(p.manualTransformerMode ? { manualTransformerMode: p.manualTransformerMode } : {}),
+    ...(p.dataBankWireless !== undefined ? { dataBankWireless: p.dataBankWireless } : {}),
+    ...(p.assemblyGrowth !== undefined ? { assemblyGrowth: p.assemblyGrowth } : {}),
+    ...(p.steamFrameTier !== undefined ? { steamFrameTier: p.steamFrameTier } : {}),
+    ...(p.structureGlassTier ? { structureGlassTier: p.structureGlassTier } : {}),
   };
+  // A transferred saved plan keeps its original glass, including an absent selection.
+  if (!p.structureGlassTier) delete next.structureGlassTier;
   // Limits set in the machine view are the user's: keep them.
   if (Object.values(p.limits).some((v) => v !== null && v !== undefined)) next.limitsLocked = true;
   if (p.size !== undefined) next.size = p.size;
@@ -109,8 +123,18 @@ export interface GroupPatch {
   elevation?: number;
   rotation?: Rotation;
   label?: string | null;
-  /** Hatch kinds the group places besides its link hatches (IO kinds are dropped: links decide those). */
+  /** Hatch kinds besides link hatches. Existing explicit resource interfaces are retained. */
   enabledHatches?: HatchKind[];
+  voltageTier?: SiteGroup['voltageTier'] | null;
+  hatchTiers?: SiteGroup['hatchTiers'];
+  resourceBindings?: SiteGroup['resourceBindings'];
+  transformer?: SiteGroup['transformer'];
+  crackingFeedSide?: SiteGroup['crackingFeedSide'];
+  manualTransformerMode?: SiteGroup['manualTransformerMode'];
+  dataBankWireless?: boolean;
+  assemblyGrowth?: SiteGroup['assemblyGrowth'];
+  steamFrameTier?: SiteGroup['steamFrameTier'];
+  structureGlassTier?: SiteGroup['structureGlassTier'] | null;
 }
 
 export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): SiteState {
@@ -118,14 +142,35 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
   const groups = s.groups.map((g) => {
     if (g.id !== id) return g;
     const next: SiteGroup = { ...g };
+    if (patch.voltageTier === null) delete next.voltageTier;
+    else if (isVoltageTier(patch.voltageTier)) next.voltageTier = patch.voltageTier;
+    if (patch.hatchTiers) next.hatchTiers = { ...patch.hatchTiers };
+    if (patch.resourceBindings) next.resourceBindings = patch.resourceBindings.map((b) => ({ ...b }));
+    if (patch.transformer) next.transformer = { ...patch.transformer };
+    if (patch.crackingFeedSide) next.crackingFeedSide = patch.crackingFeedSide;
+    if (patch.manualTransformerMode === 'up' || patch.manualTransformerMode === 'down')
+      next.manualTransformerMode = patch.manualTransformerMode;
+    if (typeof patch.dataBankWireless === 'boolean') next.dataBankWireless = patch.dataBankWireless;
+    if (patch.assemblyGrowth === 'left' || patch.assemblyGrowth === 'right')
+      next.assemblyGrowth = patch.assemblyGrowth;
+    if (patch.steamFrameTier === 'bronze' || patch.steamFrameTier === 'steel')
+      next.steamFrameTier = patch.steamFrameTier;
+    if (patch.structureGlassTier === null) delete next.structureGlassTier;
+    else if (isVoltageTier(patch.structureGlassTier)) next.structureGlassTier = patch.structureGlassTier;
     if (patch.multiblockId !== undefined && patch.multiblockId !== g.multiblockId) {
       const def = getSiteDef(patch.multiblockId);
       if (def) {
         next.multiblockId = patch.multiblockId;
-        next.enabledHatches = def.defaultHatches.filter((k) => !IO_KINDS.includes(k));
+        next.enabledHatches = defaultGroupHatches(def);
         delete next.size;
         delete next.label;
         delete next.machine;
+        delete next.structureGlassTier;
+        if (minimumGlassTier(def)) next.structureGlassTier = minimumGlassTier(def);
+        delete next.manualTransformerMode;
+        delete next.dataBankWireless;
+        delete next.assemblyGrowth;
+        delete next.steamFrameTier;
       }
     }
     if (patch.count !== undefined) next.count = clampCount(patch.count);
@@ -148,7 +193,12 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
     if (patch.machine === null) delete next.machine;
     else if (patch.machine !== undefined && getSingleMachine(patch.machine)) {
       const def = getSiteDef(next.multiblockId);
-      if (def && isSingleBlock(def)) next.machine = patch.machine;
+      if (def && isSingleBlock(def)) {
+        next.machine = patch.machine;
+        const tiers = singleMachineTiers(patch.machine);
+        if (tiers.length && (!next.voltageTier || !tiers.includes(next.voltageTier)))
+          next.voltageTier = tiers.includes('LV') ? 'LV' : tiers[0];
+      }
     }
     if (patch.elevation !== undefined) {
       const e = clampInt(patch.elevation, 0, SITE_MAX_ELEVATION);
@@ -156,7 +206,9 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
       else delete next.elevation;
     }
     if (patch.enabledHatches)
-      next.enabledHatches = [...new Set(patch.enabledHatches)].filter((k) => !IO_KINDS.includes(k));
+      next.enabledHatches = [...new Set(patch.enabledHatches)].filter(
+        (k) => !IO_KINDS.includes(k) || next.enabledHatches.includes(k),
+      );
     if (patch.rotation !== undefined) next.rotation = (((patch.rotation % 4) + 4) % 4) as Rotation;
     if (patch.label === null || patch.label === '') delete next.label;
     else if (patch.label !== undefined) next.label = patch.label.slice(0, 120);
@@ -190,6 +242,9 @@ export function withGroupDuplicated(s: SiteState, id: string, origin: [number, n
     origin: copyOrigin,
     limits: { ...g.limits },
     enabledHatches: [...g.enabledHatches],
+    ...(g.hatchTiers ? { hatchTiers: { ...g.hatchTiers } } : {}),
+    ...(g.resourceBindings ? { resourceBindings: g.resourceBindings.map((b) => ({ ...b })) } : {}),
+    ...(g.transformer ? { transformer: { ...g.transformer } } : {}),
   };
   delete copy.source;
   return { ...added, groups: [...added.groups.slice(0, -1), copy] };

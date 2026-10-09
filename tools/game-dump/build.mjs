@@ -34,7 +34,7 @@ const TEXTURES_OUT = join(ROOT, 'tools/game-dump/textures.generated.json');
 const BLOCKS_OUT = join(ROOT, 'src/data/blocks.generated.json');
 /** Faces the old source converter (tools/gt-source) wrote; read once to carry over the entries it still owns. */
 const OLD_TEXTURES = join(ROOT, 'tools/gt-source/textures.generated.json');
-const TAG = '5.09.54.133';
+const TAG = '5.09.54.205';
 const REPO = `https://github.com/GTNewHorizons/GT5-Unofficial/blob/${TAG}/src/main/java/`;
 
 /** GT `HatchElement` names → planner hatch kinds. Machine-specific kinds (data, laser, ...) are left out. */
@@ -139,7 +139,8 @@ function readCatalog() {
   const generated = [];
   for (const f of readdirSync(MULTI_DIR).filter((n) => n.endsWith('.json'))) {
     const def = JSON.parse(readFileSync(join(MULTI_DIR, f), 'utf8'));
-    const cls = /\/(\w+)\.java$/.exec(def.source ?? '')?.[1] ?? null;
+    const sourceClass = /\/(\w+)\.java$/.exec(def.source ?? '')?.[1] ?? null;
+    const cls = sourceClass === 'MTESMDProcessorModule' ? 'MTEPartProcessorModule' : sourceClass;
     (def.generated ? generated : hand).push({ id: def.id, name: def.name, cls, def });
   }
   return { hand, generated };
@@ -173,6 +174,16 @@ export function convertStructure(doc, { id, name }) {
 
   // Cells: controller-relative position → { blockId?, hatches, special }.
   const cells = new Map();
+  // StructureLib 1.4.45's reserved AIR marker is a required empty cell, not a special hatch.
+  // Do not infer air from ordinary machine-local hint numbers. A placed block takes precedence
+  // where a controller's construct() also populates an optional tree or other non-structural object.
+  const placedKeys = new Set(variant.blocks.map((b) => vkey(b.d)));
+  const hintKeys = new Set((variant.hints ?? []).map((h) => vkey(h.d)));
+  const air = new Map(
+    (variant.hints ?? [])
+      .filter((h) => h.hint === 13 && !placedKeys.has(vkey(h.d)))
+      .map((h) => [vkey(h.d), h.d]),
+  );
   const cell = (d) => {
     const k = vkey(d);
     let c = cells.get(k);
@@ -188,7 +199,12 @@ export function convertStructure(doc, { id, name }) {
   }
   const dropped = new Set();
   for (const s of variant.hatch_slots ?? []) {
+    if (air.has(vkey(s.d))) continue;
     if (vkey(s.d) === vkey(ctrlBlock.d)) continue;
+    // Probes can visit absent sections or alternative shapes, including empty cells inside the
+    // bounding box (Drone Centre's legacy fallback). Only actual blocks/hints establish a cell in
+    // this constructed variant; a bare probe cannot turn free space into a mandatory hatch.
+    if (!placedKeys.has(vkey(s.d)) && !hintKeys.has(vkey(s.d))) continue;
     const kinds = [];
     for (const k of s.kinds) {
       if (HATCH_KIND[k]) kinds.push(HATCH_KIND[k]);
@@ -201,6 +217,7 @@ export function convertStructure(doc, { id, name }) {
   // Hint dots with nothing placed: a cell only a machine-specific hatch (data, beamline, ...) may fill.
   for (const h of variant.hints ?? []) {
     const k = vkey(h.d);
+    if (air.has(k)) continue;
     if (k !== vkey(ctrlBlock.d) && !cells.has(k)) cell(h.d).special = true;
   }
   // A hatch slot or hint with nothing placed and no block or controller next to it is not part of the structure
@@ -230,7 +247,7 @@ export function convertStructure(doc, { id, name }) {
   }
 
   // Bounding box → local frame (x east, y up, z south, min corner at 0).
-  const all = [...cells.values()].map((c) => c.d).concat([ctrlBlock.d]);
+  const all = [...cells.values()].map((c) => c.d).concat([ctrlBlock.d], [...air.values()]);
   const min = [0, 1, 2].map((a) => Math.min(...all.map((p) => p[a])));
   const max = [0, 1, 2].map((a) => Math.max(...all.map((p) => p[a])));
   const size = [0, 1, 2].map((a) => max[a] - min[a] + 1);
@@ -279,6 +296,7 @@ export function convertStructure(doc, { id, name }) {
         const k = vkey([x, y, z]);
         if (k === vkey(ctrlPos)) row += '~';
         else if (grid.has(k)) row += legendChar(grid.get(k));
+        else if (air.has(vkey([x + min[0], y + min[1], z + min[2]]))) row += '-';
         else row += outside.has(k) ? ' ' : '-';
       }
       rows.push(row);
@@ -314,8 +332,8 @@ export function convertStructure(doc, { id, name }) {
   const required = {};
   if (kinds.includes('dynamo')) required.dynamo = { min: 1 };
   else if (kinds.includes('energy')) required.energy = { min: 1 };
-  if (kinds.includes('maintenance')) required.maintenance = { min: 1, max: 1 };
-  if (kinds.includes('muffler')) required.muffler = { min: 1, max: 1 };
+  if (kinds.includes('maintenance')) required.maintenance = { min: 1 };
+  if (kinds.includes('muffler')) required.muffler = { min: 1 };
   const io = ['itemIn', 'itemOut', 'fluidIn', 'fluidOut', 'steamIn'].filter((k) => kinds.includes(k));
   const hasItems = kinds.includes('itemIn') || kinds.includes('itemOut');
   const defaults = kinds.filter(
@@ -822,7 +840,7 @@ function writeAttribution(paths, carried) {
     '### Files used by the generated catalog entries',
     '',
     'The face tiles of the generated catalog entries (`tools/texture-sources/DUMP_*.png`, see',
-    '[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.133` jar (the',
+    '[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.205` jar (the',
     'resources under `src/main/resources/` in the repository), tinted and layered the way the game draws them:',
     '',
     ...paths.map((p) => `- \`src/main/resources/${p}\``),

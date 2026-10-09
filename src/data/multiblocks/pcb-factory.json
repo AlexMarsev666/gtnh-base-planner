@@ -2,13 +2,13 @@
   "id": "pcb-factory",
   "name": "PCB Factory",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBFactory.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBFactory.java",
   "size": [7, 6, 7],
   "layers": [
     ["ABB~BBA", "BCCCCCB", "BCCCCCB", "BCCCCCB", "BCCCCCB", "BCCCCCB", "ADDDDDA"],
-    ["AEEEEEA", "BFFFFFB", "GFHHHFG", "GFHHHFG", "GFHHHFG", "BFFFFFB", "ADDDDDA"],
-    ["AEEEEEA", "BFFFFFB", "GFFFFFG", "GFFFFFG", "GFFFFFG", "BFFFFFB", "ABBBBBA"],
-    ["AEEEEEA", "BFFFFFB", "BFFFFFB", "BFFFFFB", "BFFFFFB", "BFFFFFB", "ABBBBBA"],
+    ["AEEEEEA", "B-----B", "F-GGG-F", "F-GGG-F", "F-GGG-F", "B-----B", "ADDDDDA"],
+    ["AEEEEEA", "B-----B", "F-----F", "F-----F", "F-----F", "B-----B", "ABBBBBA"],
+    ["AEEEEEA", "B-----B", "B-----B", "B-----B", "B-----B", "B-----B", "ABBBBBA"],
     ["AAAAAAA", "BEEEEEB", "BEEEEEB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "A     A"],
     ["       ", "A     A", "A     A", "AAAAAAA", "A     A", "A     A", "       "]
   ],
@@ -21,9 +21,8 @@
       "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
     },
     "E": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "F": { "blockId": "gt.hatch.special" },
-    "G": { "blockId": "gregtech:gt.blockcasings3@10" },
-    "H": { "blockId": "gregtech:gt.blockframes@367" }
+    "F": { "blockId": "gregtech:gt.blockcasings3@10" },
+    "G": { "blockId": "gregtech:gt.blockframes@367" }
   },
   "controller": { "pos": [3, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@356" },
   "hatchBlocks": {
@@ -34,8 +33,8 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPCBFactory (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPCBFactory (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

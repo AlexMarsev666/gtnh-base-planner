@@ -1,0 +1,319 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "entries": {
+    "beam-mirror": {
+      "source": "src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamMirror.java",
+      "sha256": "6beed4ad7fe9a068a7c1fd925289c412cd9d9279b7aeb3337e946884c14a0cf1",
+      "forms": [
+        {
+          "size": [3, 5, 5],
+          "layers": [
+            ["E~E", "BBB", "BBB", "BBB", "BBB"],
+            ["ECE", "BAB", "BAB", "BAB", "BBB"],
+            ["   ", "   ", "   ", "BAB", "BBB"],
+            ["   ", "   ", "   ", "BAB", "BBB"],
+            ["   ", "   ", "   ", "EDE", "EEE"]
+          ],
+          "blocks": {
+            "A": "bartworks:BW_TieredGlass@0",
+            "B": "gtnhlanth:casing.shielded_accelerator@0",
+            "C": "gregtech:gt.blockmachines@10503",
+            "D": "gregtech:gt.blockmachines@10504",
+            "E": "gregtech:gt.blockcasings3@10"
+          },
+          "controllerPos": [1, 0, 0]
+        },
+        {
+          "size": [3, 6, 5],
+          "layers": [
+            ["E~E", "BBB", "BBB", "BBB", "BBB"],
+            ["ECE", "BAB", "BAB", "BAB", "BBB"],
+            ["   ", "   ", "   ", "BAB", "BBB"],
+            ["   ", "   ", "   ", "BAB", "BBB"],
+            ["EDE", "BAB", "BAB", "BAB", "BBB"],
+            ["EEE", "BBB", "BBB", "BBB", "BBB"]
+          ],
+          "blocks": {
+            "A": "bartworks:BW_TieredGlass@0",
+            "B": "gtnhlanth:casing.shielded_accelerator@0",
+            "C": "gregtech:gt.blockmachines@10503",
+            "D": "gregtech:gt.blockmachines@10504",
+            "E": "gregtech:gt.blockcasings3@10"
+          },
+          "controllerPos": [1, 0, 0]
+        }
+      ]
+    },
+    "beam-splitter": {
+      "source": "src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamSplitter.java",
+      "sha256": "74ee1f707f34ecb55959a131be5f9ff5175133ab7097ada919eb3d2355cafce8",
+      "forms": [
+        {
+          "size": [9, 3, 9],
+          "layers": [
+            [
+              "   E~E   ",
+              "    B    ",
+              "    B    ",
+              "    B    ",
+              "    B    ",
+              "   BBB   ",
+              "   BBB   ",
+              "  BBBBB  ",
+              "EEEEEEEEE"
+            ],
+            [
+              "   ECE   ",
+              "   B B   ",
+              "   A A   ",
+              "   A A   ",
+              "   B B   ",
+              "  B   B  ",
+              " BB   BB ",
+              "BB     BB",
+              "EDBDBDBDE"
+            ],
+            [
+              "   EEE   ",
+              "    B    ",
+              "    B    ",
+              "    B    ",
+              "    B    ",
+              "   BAB   ",
+              "   BAB   ",
+              "  BAAAB  ",
+              "EEEEEEEEE"
+            ]
+          ],
+          "blocks": {
+            "A": "bartworks:BW_TieredGlass@0",
+            "B": "gtnhlanth:casing.shielded_accelerator@0",
+            "C": "gregtech:gt.blockmachines@10503",
+            "D": "gregtech:gt.blockmachines@3014",
+            "E": "gregtech:gt.blockcasings3@10"
+          },
+          "controllerPos": [4, 0, 0]
+        }
+      ]
+    },
+    "beam-stabilizer": {
+      "source": "src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamStabilizer.java",
+      "sha256": "680e756882ebcc364fd70f04f0041ef624633d36009cfeb06de2f033e9afc501",
+      "forms": [
+        {
+          "size": [7, 7, 11],
+          "layers": [
+            [
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "  BBB  ",
+              "       ",
+              "       ",
+              "       "
+            ],
+            [
+              "       ",
+              "       ",
+              "       ",
+              "  BBB  ",
+              "       ",
+              "       ",
+              "       ",
+              " B B B ",
+              "       ",
+              "       ",
+              "       "
+            ],
+            [
+              "  E~E  ",
+              "  BBB  ",
+              "  BBB  ",
+              " BBBBB ",
+              "  BBB  ",
+              "  BBB  ",
+              "  BBB  ",
+              "B BBB B",
+              "  BBB  ",
+              "  BBB  ",
+              "  EEE  "
+            ],
+            [
+              "  ECE  ",
+              "  B B  ",
+              "  B B  ",
+              " BB BB ",
+              "  B B  ",
+              "  B B  ",
+              "  B B  ",
+              "BBB BBB",
+              "  B B  ",
+              "  B B  ",
+              "  EDE  "
+            ],
+            [
+              "  EEE  ",
+              "  BAB  ",
+              "  BAB  ",
+              " BBABB ",
+              "  BAB  ",
+              "  BAB  ",
+              "  BAB  ",
+              "B BAB B",
+              "  BAB  ",
+              "  BAB  ",
+              "  EEE  "
+            ],
+            [
+              "       ",
+              "       ",
+              "       ",
+              "  BBB  ",
+              "       ",
+              "       ",
+              "       ",
+              " B B B ",
+              "       ",
+              "       ",
+              "       "
+            ],
+            [
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "       ",
+              "  BBB  ",
+              "       ",
+              "       ",
+              "       "
+            ]
+          ],
+          "blocks": {
+            "A": "bartworks:BW_TieredGlass@0",
+            "B": "gtnhlanth:casing.shielded_accelerator@0",
+            "C": "gregtech:gt.blockmachines@10503",
+            "D": "gregtech:gt.blockmachines@10504",
+            "E": "gregtech:gt.blockcasings3@10"
+          },
+          "controllerPos": [3, 2, 0]
+        }
+      ]
+    },
+    "beam-crafter": {
+      "source": "src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamCrafter.java",
+      "sha256": "7530dc3f00c112e4144a1247409711ce23bdbd9abab00eb4184d4c7b4e4ef44e",
+      "forms": [
+        {
+          "size": [17, 5, 11],
+          "layers": [
+            [
+              "                 ",
+              " BBB         BBB ",
+              " BBB         BBB ",
+              " BBB         BBB ",
+              " BBB         BBB ",
+              "  BBB       BBB  ",
+              "  BBBB     BBBB  ",
+              "   BBBBBBBBBBB   ",
+              "    BBBBBBBBB    ",
+              "      BBBBB      ",
+              "                 "
+            ],
+            [
+              " DDD         DDD ",
+              "B   B       B   B",
+              "B   B       B   B",
+              "B   B       B   B",
+              "B   BB     BB   B",
+              " B   BB   BB   B ",
+              " B    BBBBB    B ",
+              "  B           B  ",
+              "   B         B   ",
+              "    BB     BB    ",
+              "      BBBBB      "
+            ],
+            [
+              " DCD         DCD ",
+              "B   B       B   B",
+              "B   A       A   B",
+              "B   A       A   B",
+              "B   AA     AA   B",
+              " A   AA   AA   A ",
+              " A    AB~BA    A ",
+              "  A           A  ",
+              "   A         A   ",
+              "    AA     AA    ",
+              "      BBBBB      "
+            ],
+            [
+              " DDD         DDD ",
+              "B   B       B   B",
+              "B   B       B   B",
+              "B   B       B   B",
+              "B   BB     BB   B",
+              " B   BB   BB   B ",
+              " B    BBBBB    B ",
+              "  B           B  ",
+              "   B         B   ",
+              "    BB     BB    ",
+              "      BBBBB      "
+            ],
+            [
+              "                 ",
+              " BBB         BBB ",
+              " BBB         BBB ",
+              " BBB         BBB ",
+              " BBB         BBB ",
+              "  BBB       BBB  ",
+              "  BBBB     BBBB  ",
+              "   BBBBBBBBBBB   ",
+              "    BBBBBBBBB    ",
+              "      BBBBB      ",
+              "                 "
+            ]
+          ],
+          "blocks": {
+            "A": "bartworks:BW_TieredGlass@0",
+            "B": "gtnhlanth:casing.shielded_accelerator@0",
+            "C": "gregtech:gt.blockmachines@10503",
+            "D": "gregtech:gt.blockcasings3@10"
+          },
+          "controllerPos": [8, 2, 6]
+        }
+      ]
+    },
+    "source-chamber": {
+      "source": "src/main/java/gtnhlanth/common/tileentity/MTESourceChamber.java",
+      "sha256": "d89953501d5caa732cbaccc125771f57be9125a6e6bd98cfea953220958a3eb8",
+      "forms": [
+        {
+          "size": [5, 5, 6],
+          "layers": [
+            ["dd~dd", "ccocc", "ccccc", "ccccc", "ccccc", "ccccc"],
+            ["ckkkc", "keeek", "k---k", "k---k", "keeek", "ckkkc"],
+            ["ckikc", "ke-ek", "k---k", "k---k", "ke-ek", "ckbkc"],
+            ["ckkkc", "keeek", "k---k", "k---k", "keeek", "ckkkc"],
+            ["ccccc", "ckkkc", "ckkkc", "ckkkc", "ckkkc", "ccccc"]
+          ],
+          "blocks": {
+            "c": "gtnhlanth:casing.shielded_accelerator@0",
+            "d": "gtnhlanth:casing.shielded_accelerator@0",
+            "k": "gtnhlanth:tile.casing.shielded_accelerator_glass@0",
+            "e": "gtnhlanth:casing.electrode@0",
+            "i": "gt.hatch.inputBus",
+            "o": "gt.hatch.outputBus",
+            "b": "gregtech:gt.blockmachines@10504"
+          },
+          "controllerPos": [2, 0, 0]
+        }
+      ]
+    }
+  }
+}

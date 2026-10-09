@@ -57,12 +57,21 @@ describe('groupShapes', () => {
     const s = site([group('big', 'electric-blast-furnace', 8), group('small', 'electric-blast-furnace', 2)]);
     // No time at all: nothing is measured.
     expect(groupShapes(s, createSiteBuilder(), false, { budgetMs: 0 }).size).toBe(0);
-    // A clock that jumps after the first group: only the smaller one (2 units) gets measured.
+    // Charge work rather than reading the clock. Each individual assessment has its own deadline check.
     let t = 0;
-    const now = () => (t += 40);
-    const shapes = groupShapes(s, createSiteBuilder(), false, { budgetMs: 100, now });
+    const build = createSiteBuilder();
+    const shapes = groupShapes(
+      s,
+      (site, opts) => {
+        t += 40;
+        return build(site, opts);
+      },
+      false,
+      { budgetMs: 100, now: () => t },
+    );
     expect(shapes.has('small')).toBe(true);
     expect(shapes.has('big')).toBe(false);
+    expect(t).toBeLessThanOrEqual(140);
     // With no limit both are measured.
     expect([...groupShapes(s, createSiteBuilder(), false).keys()].sort()).toEqual(['big', 'small']);
   });
@@ -70,6 +79,26 @@ describe('groupShapes', () => {
   it('leaves single units and single-block machines alone', () => {
     const s = site([group('a', 'electric-blast-furnace', 1)]);
     expect(groupShapes(s, createSiteBuilder(), false).size).toBe(0);
+  });
+
+  it('uses the global absolute deadline instead of granting measurement a fresh budget', () => {
+    const s = site([group('a', 'electric-blast-furnace', 6)]);
+    const build = createSiteBuilder();
+    const baseline = build(s, { pipes: false, cables: false });
+    let t = 1000;
+    let calls = 0;
+    groupShapes(
+      s,
+      (trial, options) => {
+        calls++;
+        t += 400;
+        return build(trial, options);
+      },
+      false,
+      { baseline, budgetMs: 10000, deadline: 1300, now: () => t },
+    );
+    expect(calls).toBe(1);
+    expect(t).toBe(1400);
   });
 
   it('every offered shape builds with the units it claims, at the footprint it claims', () => {

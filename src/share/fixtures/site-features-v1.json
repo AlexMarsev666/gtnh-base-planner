@@ -1,0 +1,72 @@
+{
+  "v": 1,
+  "kind": "site",
+  "name": "Historical feature fields",
+  "size": [30, 40],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "g1",
+      "multiblockId": "distillation-tower",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["energy", "maintenance"],
+      "origin": [4, 8],
+      "rotation": 2,
+      "size": 7
+    },
+    {
+      "id": "g2",
+      "multiblockId": "single-block",
+      "machine": "macerator",
+      "label": "Maceration",
+      "elevation": 7,
+      "count": 2,
+      "limits": {
+        "x": 1,
+        "y": 2,
+        "z": 1
+      },
+      "limitsLocked": true,
+      "enabledHatches": [],
+      "origin": [16, 20],
+      "rotation": 3
+    }
+  ],
+  "links": [
+    {
+      "id": "l1",
+      "from": {
+        "port": "p1"
+      },
+      "to": {
+        "group": "g1"
+      },
+      "resource": "fluid:oil",
+      "rate": 4
+    }
+  ],
+  "ports": [
+    {
+      "id": "p1",
+      "dir": "in",
+      "resource": "fluid:oil",
+      "pos": [0, 12]
+    }
+  ],
+  "resources": {
+    "fluid:oil": {
+      "kind": "fluid",
+      "name": "Oil",
+      "color": "#345678",
+      "icon": "/datasets/gtnh/items/123.png"
+    }
+  },
+  "colors": {
+    "fluidIn": "#abcdef"
+  }
+}

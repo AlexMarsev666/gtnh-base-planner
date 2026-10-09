@@ -13,6 +13,7 @@ import { catalog, getMultiblock } from './catalog';
 
 export const SINGLE_BLOCK_ID = 'single-block';
 export const PLACEHOLDER_ID = 'placeholder';
+export const TRANSFORMER_ID = 'transformer';
 
 const IO_AND_POWER = ['itemIn', 'itemOut', 'fluidIn', 'fluidOut', 'energy', 'dynamo', 'maintenance'] as const;
 
@@ -58,7 +59,15 @@ export const PLACEHOLDER_DEF: MultiblockDef = {
     'A 3×3×3 stand-in for a multiblock that is not in the catalog yet. Its size and hatches are not real.',
 };
 
-const GENERIC: readonly MultiblockDef[] = [SINGLE_BLOCK_DEF, PLACEHOLDER_DEF];
+export const TRANSFORMER_DEF: MultiblockDef = {
+  ...SINGLE_BLOCK_DEF,
+  id: TRANSFORMER_ID,
+  name: 'Transformer',
+  controller: { ...SINGLE_BLOCK_DEF.controller, blockId: 'site.transformer.LV.down' },
+  hatchBlocks: { energy: 'gt.hatch.energy', dynamo: 'gt.hatch.dynamo' },
+  notes: 'RC2 transformer: the front is the higher voltage side; all other faces are the lower side.',
+};
+const GENERIC: readonly MultiblockDef[] = [SINGLE_BLOCK_DEF, TRANSFORMER_DEF, PLACEHOLDER_DEF];
 
 /** Catalog multiblock or generic stand-in by id. */
 export function getSiteDef(id: string): MultiblockDef | undefined {
@@ -69,5 +78,5 @@ export function getSiteDef(id: string): MultiblockDef | undefined {
 export const siteDefs: readonly MultiblockDef[] = [...catalog, ...GENERIC];
 
 export function isSingleBlock(def: MultiblockDef): boolean {
-  return def.id === SINGLE_BLOCK_ID;
+  return def.id === SINGLE_BLOCK_ID || def.id === TRANSFORMER_ID;
 }

@@ -15,7 +15,7 @@ export interface Grid {
   dz: number;
   occ: Uint8Array;
   /** Bitmask of routed kinds (bit = index in ROUTED_KINDS) whose terminal sits in this cell. */
-  termMask: Uint8Array;
+  termMask: Uint16Array;
   /** 1 where a free cell touches the build or the ground (not the grid border): a pipe there hugs a wall. */
   wall: Uint8Array;
   /** Lowest y index above the ground (and the solid border). */
@@ -44,9 +44,9 @@ export interface Router {
   g: Grid;
   turnCost: number;
   /** Per cell: bitmask of kinds whose current network uses it. */
-  used: Uint8Array;
+  used: Uint16Array;
   /** Per cell: bitmask of kinds that may enter it (free, and not another kind's reserved cell). */
-  pass: Uint8Array;
+  pass: Uint16Array;
   /** Per cell: price of a pipe block there before congestion: 1, plus beside-hatch and history costs. */
   price: Float32Array;
   /** Per cell: 1 on the previous network of the kind being repaired (free to keep, see `routePipes`). */

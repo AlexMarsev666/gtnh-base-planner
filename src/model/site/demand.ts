@@ -1,8 +1,8 @@
-import { getSiteDef, isSingleBlock } from '../../data/generic';
+import { getSiteDef, isSingleBlock, TRANSFORMER_ID } from '../../data/generic';
 import type { HatchKind, MultiblockDef } from '../multiblock/types';
 import type { Side, SiteWarning } from './buildTypes';
 import type { Demand } from './group';
-import type { Endpoint, ResourceDef, SiteState } from './types';
+import type { Endpoint, ResourceBinding, ResourceDef, SiteState } from './types';
 
 /** What each group needs: the hatch kind and resource of every link end on it. */
 
@@ -12,14 +12,58 @@ export function hatchKindFor(
   key: string,
   res: ResourceDef,
   def: MultiblockDef,
+  bindings: readonly ResourceBinding[] = [],
 ): HatchKind | null {
+  if (def.id === TRANSFORMER_ID && res.kind !== 'power') return null;
   const any = isSingleBlock(def);
   const has = (k: HatchKind) => any || def.hatchBlocks[k] !== undefined;
   let kind: HatchKind;
   if (res.kind === 'power') kind = side === 'in' ? 'energy' : 'dynamo';
-  else if (res.kind === 'item') kind = side === 'in' ? 'itemIn' : 'itemOut';
-  else if (side === 'out') kind = 'fluidOut';
-  else {
+  else if (res.kind === 'item') {
+    kind = side === 'in' ? 'itemIn' : 'itemOut';
+    if (side === 'in' && def.lockedItemInputs) {
+      const binding = bindings.find(
+        (b) => b.resource === key && (b.kind === 'itemIn' || def.lockedItemInputs?.[b.kind]),
+      );
+      if (binding) {
+        const locked = def.lockedItemInputs[binding.kind];
+        return !has(binding.kind) || (locked && res.gameId && !locked.includes(res.gameId))
+          ? null
+          : binding.kind;
+      }
+      const locked = Object.entries(def.lockedItemInputs).find(
+        ([, ids]) => res.gameId && ids.includes(res.gameId),
+      );
+      if (locked) return locked[0] as HatchKind;
+      if (!res.gameId) return null;
+    }
+  } else if (side === 'out') {
+    kind = 'fluidOut';
+    const fixed = def.fixedFluidOutputs?.[kind];
+    if (
+      fixed &&
+      (res.gameId
+        ? res.gameId !== fixed
+        : !bindings.some((b) => b.kind === kind && b.resource === key && b.role === fixed))
+    )
+      return null;
+  } else {
+    if (def.lockedFluidInputs) {
+      const binding = bindings.find(
+        (b) => b.resource === key && (b.kind === 'fluidIn' || def.lockedFluidInputs?.[b.kind]),
+      );
+      if (binding) {
+        const locked = def.lockedFluidInputs[binding.kind];
+        // A known different fluid cannot enter the locked interface. Unknown IDs need an explicit choice.
+        return !has(binding.kind) || (locked && res.gameId && res.gameId !== locked) ? null : binding.kind;
+      }
+      const locked = (Object.entries(def.lockedFluidInputs) as [HatchKind, string][]).find(
+        ([, fluid]) => res.gameId === fluid,
+      );
+      if (locked) return locked[0];
+      if (!res.gameId) return null;
+      if (!has('fluidIn')) return null;
+    }
     const steamy = /steam/i.test(key) || /steam/i.test(res.name);
     kind = !any && has('steamIn') && (!has('fluidIn') || steamy) ? 'steamIn' : 'fluidIn';
   }
@@ -57,7 +101,7 @@ export function deriveSiteDemand(site: SiteState): SiteDemand {
       const g = groupById.get(end.group);
       const def = g ? getSiteDef(g.multiblockId) : undefined;
       if (!g || !def) continue;
-      const kind = hatchKindFor(side, l.resource, res, def);
+      const kind = hatchKindFor(side, l.resource, res, def, g.resourceBindings);
       if (!kind) {
         const u = `${end.group}\u0000${l.resource}`;
         if (!unsupported.has(u))

@@ -9,10 +9,13 @@ import { createSiteBuilder } from '../model/site/build';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
 import { warnOnce } from './notices';
+import { registerBuild } from './buildIdentity';
 import { arrangeHere, type Arranged } from './siteArrange';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
 
 export interface SiteResult {
+  requestId?: number;
+  sourceRevision?: number;
   build: SiteBuild | null;
   error: string | null;
   /** The build has no pipes yet: they are routed once editing pauses (see `holdRouting`). */
@@ -44,7 +47,13 @@ export interface SiteWorkerController {
   arrange: (site: SiteState, below: boolean, optimize?: boolean) => Promise<Arranged>;
 }
 
-type BuildRequest = { site: SiteState; opts: SiteBuildOptions; pending: boolean };
+type BuildRequest = {
+  site: SiteState;
+  opts: SiteBuildOptions;
+  pending: boolean;
+  requestId: number;
+  sourceRevision: number;
+};
 interface PendingImport {
   project: GtnhProject;
   choices: Map<string, MachineChoice>;
@@ -94,10 +103,21 @@ export function createSiteWorkerController(
 
   function buildHere(req: BuildRequest): SiteResult {
     try {
-      return { build: here()(req.site, req.opts), error: null, pending: req.pending };
+      return {
+        build: here()(req.site, req.opts),
+        error: null,
+        pending: req.pending,
+        requestId: req.requestId,
+        sourceRevision: req.sourceRevision,
+      };
     } catch (err) {
       warnOnce('buildSite', err);
-      return { build: null, error: err instanceof Error ? err.message : String(err) };
+      return {
+        build: null,
+        error: err instanceof Error ? err.message : String(err),
+        requestId: req.requestId,
+        sourceRevision: req.sourceRevision,
+      };
     }
   }
 
@@ -163,7 +183,14 @@ export function createSiteWorkerController(
       if (!job || msg.id !== job.id) return;
       if ('partial' in msg && msg.partial) {
         // Groups first; the routed build of the same request is still coming.
-        if (!queued) events.onBuild({ build: msg.build, error: null, pending: true });
+        if (!queued && 'build' in job)
+          events.onBuild({
+            build: msg.build,
+            error: null,
+            pending: true,
+            requestId: job.build.requestId,
+            sourceRevision: job.build.sourceRevision,
+          });
         events.onBusy(true, true);
         return;
       }
@@ -176,9 +203,20 @@ export function createSiteWorkerController(
         else job.arrange.reject(new Error('error' in msg ? msg.error : 'Arrange failed'));
       } else if ('error' in msg) {
         warnOnce('buildSite', msg.error);
-        events.onBuild({ build: null, error: msg.error });
+        events.onBuild({
+          build: null,
+          error: msg.error,
+          requestId: job.build.requestId,
+          sourceRevision: job.build.sourceRevision,
+        });
       } else if ('build' in msg)
-        events.onBuild({ build: msg.build, error: null, pending: job.build.pending });
+        events.onBuild({
+          build: msg.build,
+          error: null,
+          pending: job.build.pending,
+          requestId: job.build.requestId,
+          sourceRevision: job.build.sourceRevision,
+        });
       sendQueued();
     };
     w.onerror = (e) => {
@@ -212,17 +250,25 @@ export function createSiteWorkerController(
       events.onBusy(false);
       return;
     }
-    inFlight = { id: ++nextId, build: req };
-    post(w, { id: inFlight.id, type: 'build', site: req.site, opts: req.opts });
+    inFlight = { id: req.requestId, build: req };
+    post(w, {
+      id: inFlight.id,
+      sourceRevision: req.sourceRevision,
+      type: 'build',
+      site: req.site,
+      opts: req.opts,
+    });
   }
 
   return {
     submit(site, opts, pending) {
+      const requestId = ++nextId;
+      const req = { site, opts, pending, requestId, sourceRevision: registerBuild(site, requestId) };
       if (workerFailed) {
-        events.onBuild(buildHere({ site, opts, pending }));
+        events.onBuild(buildHere(req));
         return;
       }
-      queued = { site, opts, pending };
+      queued = req;
       events.onBusy(true);
       // The worker is busy with a site that is gone (an import or an opened file replaced it): drop that
       // build rather than wait for it. Its group cache would not help the new site anyway.

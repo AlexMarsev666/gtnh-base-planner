@@ -1,0 +1,42 @@
+{
+  "rulesVersion": "2.9.0-RC-2",
+  "sources": [
+    {
+      "source": "src/main/java/gregtech/common/tileentities/machines/multi/MTEAssemblyLine.java",
+      "sha256": "f446b09f030c90b36fa8767473ba4a1c3b009ce20353b341725512262f8a6339"
+    },
+    {
+      "source": "src/main/java/ggfab/mte/MTEAdvAssLine.java",
+      "sha256": "a02eb1f9059917dce1edf0f873ebe1b184e841f0d16fe1f2ebf7d38422df3736"
+    }
+  ],
+  "segments": {
+    "first": {
+      "size": [1, 4, 3],
+      "layers": [
+        ["b", "i", "b"],
+        ["g", "m", "g"],
+        ["~", "l", "G"],
+        [" ", "e", " "]
+      ]
+    },
+    "later": {
+      "size": [1, 4, 3],
+      "layers": [
+        ["b", "I", "b"],
+        ["g", "m", "g"],
+        ["d", "l", "d"],
+        [" ", "e", " "]
+      ]
+    },
+    "last": {
+      "size": [1, 4, 3],
+      "layers": [
+        ["o", "i", "b"],
+        ["g", "m", "g"],
+        ["d", "l", "d"],
+        [" ", "e", " "]
+      ]
+    }
+  }
+}

@@ -184,6 +184,27 @@ describe('annealGroups', () => {
     expectValid(site, r.groups, fixed);
   });
 
+  it('stops calibration at the shared deadline and keeps its best evaluated candidate', () => {
+    const site = web(4, 3);
+    const laid = { ...site, groups: arrangeSite(site, fixed).groups };
+    let time = 0;
+    let evaluations = 0;
+    const r = annealGroups(laid, fixed, {
+      iterations: 1000,
+      budgetMs: 800,
+      now: () => time,
+      evaluate: () => {
+        time += 400;
+        return 100 - ++evaluations;
+      },
+    });
+    expect(evaluations).toBe(2);
+    expect(time).toBe(800);
+    expect(r.iterations).toBe(0);
+    expect(r.after).toBeLessThan(r.before);
+    expectValid(site, r.groups, fixed);
+  });
+
   it('works on real machines, and the layout still builds without overlaps', () => {
     const site = chain();
     const build = createSiteBuilder();

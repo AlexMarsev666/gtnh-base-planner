@@ -1,5 +1,6 @@
 import { get, type Readable } from 'svelte/store';
 import { getSiteDef } from '../data/generic';
+import { latestBuildRequest, sourceRevisionOf } from './buildIdentity';
 import { t } from '../i18n/en';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
@@ -88,15 +89,17 @@ function optimizedNotice(o: NonNullable<Arranged['optimized']>): string {
   return o.improved ? t.site.optimized(o.start.blocks, o.result.blocks, o.reshaped) : t.site.optimizedSame;
 }
 
-/** Whether `build` is the build of `s`: built, routed (not the groups alone) and of the same groups. */
-function isBuildOf(result: SiteResult, s: SiteState): boolean {
-  const b = result.build;
+/** Results belong to a source revision and the latest request, never just reusable group ids. */
+function belongsTo(result: SiteResult, s: SiteState): boolean {
   return (
-    !!b &&
-    !result.pending &&
-    b.groups.length === s.groups.length &&
-    b.groups.every((pg, i) => pg.group.id === s.groups[i].id)
+    result.sourceRevision === sourceRevisionOf(s) &&
+    result.requestId !== undefined &&
+    (latestBuildRequest(s) === undefined || result.requestId === latestBuildRequest(s))
   );
+}
+
+function isBuildOf(result: SiteResult, s: SiteState): boolean {
+  return belongsTo(result, s) && !!result.build && !result.pending;
 }
 
 /**
@@ -127,7 +130,7 @@ export function whenBuilt(
       }),
       builds.subscribe((r) => {
         if (isBuildOf(r, imported)) finish(true);
-        else if (r.error) finish(false);
+        else if (r.error && belongsTo(r, imported)) finish(false);
       }),
     );
   });

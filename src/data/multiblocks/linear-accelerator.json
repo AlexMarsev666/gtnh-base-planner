@@ -2,7 +2,7 @@
   "id": "linear-accelerator",
   "name": "Linear Accelerator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhlanth/common/tileentity/MTELINAC.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTELINAC.java",
   "size": [7, 7, 19],
   "layers": [
     [
@@ -70,23 +70,23 @@
     ],
     [
       "ADDIDDA",
-      "ACCICCA",
-      "GEEIEEG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GEEIEEG",
-      "CCCICCC",
+      "ACC-CCA",
+      "GEE-EEG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GEE-EEG",
+      "CCC-CCC",
       "CDDIDDC"
     ],
     [
@@ -173,8 +173,8 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["fluidIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTELINAC (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTELINAC (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

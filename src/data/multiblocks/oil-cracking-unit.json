@@ -1,7 +1,7 @@
 {
   "id": "oil-cracking-unit",
   "name": "Oil Cracking Unit",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilCracker.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilCracker.java",
   "size": [5, 3, 3],
   "layers": [
     ["rKmKl", "rKmKl", "rKmKl"],
@@ -39,5 +39,5 @@
   },
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "5x3x3 (width x height x depth): a Clean Stainless Steel column on each side (l, r), two coil columns (any tier; Cupronickel shown) and a Clean Stainless Steel middle column (m) around a 3-block air core. At least 18 casings. GT requires: at least one input hatch in the middle column (steam or hydrogen), a hydrocarbon input hatch on one side column and the output hatch on the opposite side column. GT decides at check time which side is input, so the mirrored layout (output left, input right) is also valid; this planner fixes input on the left (local -X) and output on the right. The middle column also takes input buses (programmed circuit). Energy and maintenance hatches may go on any casing. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it. A side wall shared between two crackers is one unit's output side and the other's input side, so fluid hatches cannot be shared across side walls here; sharing only makes sense through the top, bottom or back middle column. Energy and maintenance are never marked shareable (energy starvation; maintenance flags are cleared by the first reader). The planner places one input hatch on the side column (region side) and one in the middle column (region middle)."
+  "notes": "5x3x3 (width x height x depth): a Clean Stainless Steel column on each side (l, r), two coil columns (any tier; Cupronickel shown) and a Clean Stainless Steel middle column (m) around a 3-block air core. At least 18 casings. GT requires: at least one input hatch in the middle column (steam or hydrogen), a hydrocarbon input hatch on one side column and the output hatch on the opposite side column. GT decides at check time which side is input, so the mirrored layout (output left, input right) is also valid; the planner supports both orientations selected by Cracking Feed Side. The middle column also takes input buses (programmed circuit). Energy and maintenance hatches may go on any casing. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it. A side wall shared between two crackers is one unit's output side and the other's input side, so fluid hatches cannot be shared across side walls here; sharing only makes sense through the top, bottom or back middle column. Energy and maintenance are never marked shareable (energy starvation; maintenance flags are cleared by the first reader). The planner places one input hatch on the side column (region side) and one in the middle column (region middle)."
 }

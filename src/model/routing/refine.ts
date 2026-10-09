@@ -1,4 +1,5 @@
 import { NO_DIR } from './constants';
+import { ROUTED_MASK } from './kinds';
 import type { Router, Terminal, Tree } from './types';
 
 /** Reworking a finished network branch by branch, keeping its terminals. */
@@ -29,7 +30,7 @@ export function refineTree(
   const { g, used, pass, dist, parent, arrive, seen, inNet, heap, turnCost } = r;
   const { offsets } = g;
   const bit = 1 << s.k;
-  const others = ~bit & 0xff;
+  const others = ~bit & ROUTED_MASK;
   const nbrs = new Map<number, number[]>();
   const link = (a: number, b: number): void => {
     if (a === b) return;

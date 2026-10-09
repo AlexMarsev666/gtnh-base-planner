@@ -1,0 +1,1735 @@
+{
+  "schema": 1,
+  "semanticAudit": "partial",
+  "scope": "One default placement per controller; no proof of all conditional or resource rules.",
+  "pack": "2.9.0-RC-2",
+  "sourceCommit": "a3e1e11241a814c9fa0dd0973d5699548428f689",
+  "loadedJars": [
+    {
+      "class": "gregtech.api.metatileentity.implementations.MTEMultiBlockBase",
+      "sha256": "8bada681d3190188bcef8583ae7c9bb447d6fd4ef8dc7ac50bcf4a744daf4b5a",
+      "artifact": "GT5-Unofficial-5.09.54.205-dev.jar"
+    },
+    {
+      "class": "com.gtnewhorizon.structurelib.alignment.IAlignment",
+      "sha256": "d6eb9b4bc09efd0fc4d39a14e5000254b75fdae4b2eee7d2f51135d7dbe8cc5e",
+      "artifact": "StructureLib-1.4.45-dev.jar"
+    }
+  ],
+  "count": 244,
+  "formed": 188,
+  "rejected": 15,
+  "exceptions": 4,
+  "unresolved": 37,
+  "entries": [
+    {
+      "machine": "absolute-baryonic-perfection-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitBaryonicPerfection.java",
+      "status": "default-formed",
+      "placementSha256": "386615280b3c6e93ee2df41fcc351c5b4e0c61f26b30351d85f47f7ee84a77e6",
+      "errors": []
+    },
+    {
+      "machine": "accelerated-biological-coordinator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEBiologicalCoordinationModule.java",
+      "status": "default-formed",
+      "placementSha256": "f7b4331f1856edce98dfb9518c077aaac5558ed249cb10c2dc4bba0d94fc52b8",
+      "errors": []
+    },
+    {
+      "machine": "active-transformer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEActiveTransformer.java",
+      "status": "default-formed",
+      "placementSha256": "6ee3893d36c2cf54d90d3bc13a7088c71e138cb191abf2c414a17de4491cd442",
+      "errors": []
+    },
+    {
+      "machine": "advanced-assembly-line",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/ggfab/mte/MTEAdvAssLine.java",
+      "status": "default-formed",
+      "placementSha256": "e9b501d3fadd5ef8b4a77706b67c2726993e9ca2f409c6e7fdaa7a5328fbecb3",
+      "errors": []
+    },
+    {
+      "machine": "advanced-concrete-backfiller",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEConcreteBackfiller2.java",
+      "status": "default-formed",
+      "placementSha256": "033cbb8b66f2f63bb352716dc89f509bb2a786849ced70f1bdd4996613677786",
+      "errors": []
+    },
+    {
+      "machine": "algae-farm",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEAlgaePond.java",
+      "status": "default-formed",
+      "placementSha256": "cf123cc7be3db3f6201a3d9072cf657bd1a808c6a16bac304703ea1dc00616ff",
+      "errors": []
+    },
+    {
+      "machine": "alloy-blast-smelter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEAlloyBlastSmelter.java",
+      "status": "default-formed",
+      "placementSha256": "3b6abd168f4e5ed5c4d2a1cb802a0d960dab8bf1c6228b44f44e1d3ef1e75516",
+      "errors": []
+    },
+    {
+      "machine": "amazon-warehousing-depot",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialPackager.java",
+      "status": "default-formed",
+      "placementSha256": "91dc324e2c4f7b0e8264cdb8f878741ba80b4ba9945bc7ea2a3dcd4efca04f51",
+      "errors": []
+    },
+    {
+      "machine": "assembly-line",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/MTEAssemblyLine.java",
+      "status": "default-formed",
+      "placementSha256": "da772efc6b3e85cb932746502cfe449f50f3d2b5fdba6e28d462fd8a627bbc09",
+      "errors": []
+    },
+    {
+      "machine": "beam-crafter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamCrafter.java",
+      "status": "default-formed",
+      "placementSha256": "17ee372fdf16c986f6c7c3586efa46d791ff4c651e1cc93251865220c73b3bc2",
+      "errors": []
+    },
+    {
+      "machine": "beam-mirror",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamMirror.java",
+      "status": "default-formed",
+      "placementSha256": "91898b4eef47cce05adf43510e7fd6a7c63f299aed925df51db3fe2041973e6c",
+      "errors": []
+    },
+    {
+      "machine": "beam-splitter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamSplitter.java",
+      "status": "default-formed",
+      "placementSha256": "e5bd8192b2359a16181533a19ebc84b3ec7545c1f68be0d58306b435039436df",
+      "errors": []
+    },
+    {
+      "machine": "beam-stabilizer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamStabilizer.java",
+      "status": "default-formed",
+      "placementSha256": "4e9a18f438fa3ee205bef38609ff501de9c112396507ed5926aeef2f0449aa01",
+      "errors": []
+    },
+    {
+      "machine": "big-barrel-brewery",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.frame.steel, gt.casing.reinforcedWooden"
+    },
+    {
+      "machine": "bio-chamber",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBBioChamber.java",
+      "status": "default-formed",
+      "placementSha256": "30c477092430b50e923e2c01c4a00a14f94da495736506d4c7a0b9e50de2f859",
+      "errors": []
+    },
+    {
+      "machine": "bio-vat",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bartworks/common/tileentities/multis/MTEBioVat.java",
+      "status": "default-formed",
+      "placementSha256": "af7a68b05d7910f61fb84aa6b5a8fd76459466b00b6ad41eb6a4111619cc25ac",
+      "errors": []
+    },
+    {
+      "machine": "boldarnator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialRockBreaker.java",
+      "status": "default-rejected",
+      "placementSha256": "5430ed4cee433261721cde1371fb73df03f2545c30f387d748fc4b0996451102",
+      "errors": [
+        {
+          "id": "POSITIONED_ERROR",
+          "payload": "/////gAAAGEAAAABAAAAAQ50aWxlLmxhdmEubmFtZQ=="
+        }
+      ]
+    },
+    {
+      "machine": "bose-einstein-condensate-entanglement-apparatus",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECGenerator.java",
+      "status": "native-exception",
+      "placementSha256": "813b3084de9dd706e2f5dd7a20bc9c8b4a6d404c526a4a3b6c819aafcfb26eba",
+      "exception": "java.lang.NullPointerException"
+    },
+    {
+      "machine": "bose-einstein-condensate-maxwell-gate",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECDiode.java",
+      "status": "native-exception",
+      "placementSha256": "0275fec229d6659cb1a1960c17187bddf50fb0837c117f72f24c168e76eb0254",
+      "exception": "java.lang.NullPointerException"
+    },
+    {
+      "machine": "bose-einstein-condensate-observation-array",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECAssembler.java",
+      "status": "native-exception",
+      "placementSha256": "8a40846452ddcbf741bfb7c0cdf72414cc1097f0af94f0cd5163eca125439035",
+      "exception": "java.lang.NullPointerException"
+    },
+    {
+      "machine": "bose-einstein-condensate-teleportation-node",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECIONode.java",
+      "status": "native-exception",
+      "placementSha256": "cc25a0a1f375a1b4d86fc534aeda951ba8b87c86593a0214c66e9d00227c84c5",
+      "exception": "java.lang.NullPointerException"
+    },
+    {
+      "machine": "bricked-blast-furnace",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEBrickedBlastFurnace.java",
+      "status": "default-formed",
+      "placementSha256": "cd941cfe8e1829037d27dc9948530bdfef9b5711b0d1a2b9eb4d79f55fc45010",
+      "errors": []
+    },
+    {
+      "machine": "circuit-assembly-line",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/bartworks/common/tileentities/multis/MTECircuitAssemblyLine.java",
+      "status": "default-formed",
+      "placementSha256": "69b249b4aca1636657d31599dc12ff4663c5b2591862d1769fb1d960d34523f8",
+      "errors": []
+    },
+    {
+      "machine": "clarifier-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitClarifier.java",
+      "status": "default-formed",
+      "placementSha256": "4f17669aa56ab1c4a1e50c25a1afe44e69af67c230e970055e3a3d0587d22ed4",
+      "errors": []
+    },
+    {
+      "machine": "coke-oven",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.cokeOvenBrick, gt.cokeOvenController"
+    },
+    {
+      "machine": "comet-compact-cyclotron",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTECyclotron.java",
+      "status": "default-formed",
+      "placementSha256": "62165c1c259a0854d8714dbdf4210e6ccd380b7a140838efd70ef40e8f8772be",
+      "errors": []
+    },
+    {
+      "machine": "compact-fusion-computer-mk-i-prototype",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTELargeFusionComputer1.java",
+      "status": "default-formed",
+      "placementSha256": "c869ba762bff407567dcfd37c4389239677763aba8c21b257a9725a942192658",
+      "errors": []
+    },
+    {
+      "machine": "compact-fusion-computer-mk-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTELargeFusionComputer2.java",
+      "status": "default-formed",
+      "placementSha256": "067cf6c58e7dc568c087f0064b98f11a68567b319a394ff1ae2f4a6f75c18a02",
+      "errors": []
+    },
+    {
+      "machine": "compact-fusion-computer-mk-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTELargeFusionComputer3.java",
+      "status": "default-formed",
+      "placementSha256": "c89a867944149770d120905647ede9e300695229d2d82fd16538dec2f6cba59d",
+      "errors": []
+    },
+    {
+      "machine": "compact-fusion-computer-mk-iv-prototype",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTELargeFusionComputer4.java",
+      "status": "default-formed",
+      "placementSha256": "40ead3aa1af750c224d91961182b58f0d85046cf705ad136382d4b13a83a610b",
+      "errors": []
+    },
+    {
+      "machine": "compact-fusion-computer-mk-v",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTELargeFusionComputer5.java",
+      "status": "default-formed",
+      "placementSha256": "4965830505928e1bb746c5e39bdd4190c67de48f87222fb7571c78ce2a1e5879",
+      "errors": []
+    },
+    {
+      "machine": "component-assembly-line",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEComponentAssemblyLine.java",
+      "status": "default-formed",
+      "placementSha256": "f633b71b0891674001cee53b7c4da45a74b96cf353c7021ee173a0ffb9418a07",
+      "errors": []
+    },
+    {
+      "machine": "concrete-backfiller",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEConcreteBackfiller1.java",
+      "status": "default-formed",
+      "placementSha256": "c16a696cd41fca3a0d05fffa751ed71bb7a22207f9401e53291be54638e8e419",
+      "errors": []
+    },
+    {
+      "machine": "coolant-tower",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTECoolantTower.java",
+      "status": "default-formed",
+      "placementSha256": "c83bdfb79231617d98feffb60e1322d60901c9c26f20a199fcfb77174c533c72",
+      "errors": []
+    },
+    {
+      "machine": "cooling-tower",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBCoolingTower.java",
+      "status": "default-formed",
+      "placementSha256": "0067223772718792d71559fb7f57352ffdb364d5aac6393d2d53b9102e9af4f7",
+      "errors": []
+    },
+    {
+      "machine": "cryogenic-freezer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/MTECryogenicFreezer.java",
+      "status": "default-formed",
+      "placementSha256": "0f22f401774d64b8cd00b699754fe5b08fa8e6ba1b4e404333eafa4c4abd0601",
+      "errors": []
+    },
+    {
+      "machine": "dangote-distillus",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvDistillationTower.java",
+      "status": "default-formed",
+      "placementSha256": "316af979352b1f85c6a0015393d3850960c14de695bec5c1e43e457755eb7309",
+      "errors": []
+    },
+    {
+      "machine": "data-bank",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/tectech/thing/metaTileEntity/multi/MTEDataBank.java",
+      "status": "default-formed",
+      "placementSha256": "ae50cbb0879c8c253604c3ef856b430148119f5cfe803f243e9d9008a52f8092",
+      "errors": []
+    },
+    {
+      "machine": "decay-warehouse",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "deep-earth-heating-pump",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bartworks/common/tileentities/multis/MTEDeepEarthHeatingPump.java",
+      "status": "default-formed",
+      "placementSha256": "2724d988f57f5bcfc9f100605ab237e67ca6fe70e1af1b16340edc1b6b1fb1aa",
+      "errors": []
+    },
+    {
+      "machine": "density-2",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEAdvImplosionCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "4b026cf62bfe721b799b1f45d5579468e4a842558575e8f9e69831c4a2be757e",
+      "errors": []
+    },
+    {
+      "machine": "digester",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTEDigester.java",
+      "status": "default-formed",
+      "placementSha256": "41a81c8eb660d529ffd4512b057543434c566472cf18748bd9a1a9039679e471",
+      "errors": []
+    },
+    {
+      "machine": "dimensionally-transcendent-plasma-forge",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEPlasmaForge.java",
+      "status": "default-formed",
+      "placementSha256": "653afe2815d694750d3e7bf768cd1e335d21388a2940cd5b2690c4d541375d78",
+      "errors": []
+    },
+    {
+      "machine": "dissection-apparatus",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtractor.java",
+      "status": "default-formed",
+      "placementSha256": "088a2bca0c89f604f8c2976b7fcbd2748a2d10056a80c340826186036cd4f308",
+      "errors": []
+    },
+    {
+      "machine": "dissolution-tank",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTEDissolutionTank.java",
+      "status": "default-formed",
+      "placementSha256": "e2a4a512cb00afe229eceafdc970740e51c80a0a78fc1521caa5a8baa4c5dcc0",
+      "errors": []
+    },
+    {
+      "machine": "distillation-tower",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/MTEDistillationTower.java",
+      "status": "default-formed",
+      "placementSha256": "199d214a54d191491a932e3e5577730137c5372d7acdd0d5e59b7a1e16d50bf0",
+      "errors": []
+    },
+    {
+      "machine": "draconic-evolution-fusion-crafter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEDEFusionCrafter.java",
+      "status": "default-formed",
+      "placementSha256": "e06682894c61b9210d8ff4e8d1e20d14f61c77f5f241f482f861741e220d5167",
+      "errors": []
+    },
+    {
+      "machine": "drone-centre",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/drone/MTEDroneCentre.java",
+      "status": "default-formed",
+      "placementSha256": "89a1fa7514f9de33ac38ee83cd1d776d04e46dafd53d592d4f9978e6c67a250d",
+      "errors": []
+    },
+    {
+      "machine": "dyson-swarm",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gtnhintergalactic/tile/multi/TileEntityDysonSwarm.java",
+      "status": "default-formed",
+      "placementSha256": "7ae85c56b55caacdc4c761eda7b9c991355f00c0647ffd044e4f1aaa4642ce53",
+      "errors": []
+    },
+    {
+      "machine": "electric-air-filter-t1",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEAirFilter1.java",
+      "status": "default-formed",
+      "placementSha256": "d5f7148d5417c289eaa56a7177c1d3b3aafe598479d2955aa2d54c1349132ea0",
+      "errors": []
+    },
+    {
+      "machine": "electric-air-filter-t2",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEAirFilter2.java",
+      "status": "default-formed",
+      "placementSha256": "d61e0fb854056db5a60f267afbb48fd379d51c85a1b4378502e0406116cef0a1",
+      "errors": []
+    },
+    {
+      "machine": "electric-air-filter-t3",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEAirFilter3.java",
+      "status": "default-formed",
+      "placementSha256": "54d7da06d8f88c9d3839ea47b513b0f2f456951b87190f673ec8925ac6295292",
+      "errors": []
+    },
+    {
+      "machine": "electric-blast-furnace",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEElectricBlastFurnace.java",
+      "status": "default-formed",
+      "placementSha256": "549479b335aa1d192f792a21ee8676ae7b6dfd2df250ca72c9f7649446d05a9a",
+      "errors": []
+    },
+    {
+      "machine": "electric-implosion-compressor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEElectricImplosionCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "958454c026b2c6907ee7ada53f8ff914ed8d60ad1be889640df56bfee314fe9d",
+      "errors": []
+    },
+    {
+      "machine": "elemental-duplicator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEElementalDuplicator.java",
+      "status": "default-rejected",
+      "placementSha256": "8a650a0e90364040f87eb9f684e851e7344bcd742348fa9660b9029e161b4572",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "AC1HVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5ub3RfbWF0Y2hfaGF0Y2gAAAACAQExAgAAAisAAHlL"
+        }
+      ]
+    },
+    {
+      "machine": "endothermic-fridge",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEEndothermicFridge.java",
+      "status": "default-formed",
+      "placementSha256": "152ae01829ac703232d918d864ecf4f290c41d8a6afe2c21111e0a50d94e3438",
+      "errors": []
+    },
+    {
+      "machine": "energy-infuser",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEEnergyInfuser.java",
+      "status": "default-formed",
+      "placementSha256": "869258c2d04428e8e91a8b3a59e6bf73b304f398828323e908c2b50a413bed1c",
+      "errors": []
+    },
+    {
+      "machine": "entropic-processor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEEntropicProcessor.java",
+      "status": "default-formed",
+      "placementSha256": "335f034d7d5b61d9a1b416c7a0d53e70c03f3b208f30dbe7de96d96953b5f1eb",
+      "errors": []
+    },
+    {
+      "machine": "exo-foundry",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/foundry/MTEExoFoundry.java",
+      "status": "default-rejected",
+      "placementSha256": "8b5d82bdb1cb4f2d5f33db6cd32aa0e5580ebd49609c35c7a8aceca692d173f1",
+      "errors": [
+        {
+          "id": "POSITIONED_ERROR",
+          "payload": "AAAAAgAAAJUAAAAAAAAACBRHVDVVLk1CVFQuSW5wdXRIYXRjaBhHVDVVLk1CVFQuU29saWRpZmVySGF0Y2gTR1Q1VS5NQlRULk91dHB1dEJ1cxJHVDVVLk1CVFQuSW5wdXRCdXMVR1Q1VS5NQlRULkVuZXJneUhhdGNoG0dUNVUuTUJUVC5FeG90aWNFbmVyZ3lIYXRjaBpHVDVVLk1CVFQuTWFpbnRlbmFuY2VIYXRjaBhndC5mb3VuZHJ5Y2FzaW5ncy4wLm5hbWU="
+        }
+      ]
+    },
+    {
+      "machine": "exothermic-hearth",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEExothermicHearth.java",
+      "status": "default-formed",
+      "placementSha256": "d793f37ac1780915a2804fce70d7dcf1b5c694e1083fcaed25e6c73756b4fac3",
+      "errors": []
+    },
+    {
+      "machine": "extreme-combustion-engine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.frame.ptfe, gt.casing.robustTungstensteel, gt.casing.tungstensteelFirebox, gt.casing.turbineTungstensteel, gt.casing.steelGearbox, gt.casing.extremeEngineIntake"
+    },
+    {
+      "machine": "extreme-entity-crusher",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt5u.controller.extremeEntityCrusher, gt.frame.steel, ext.extraUtilitiesSpikeBaseDiamond"
+    },
+    {
+      "machine": "extreme-heat-exchanger",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEExtremeHeatExchanger.java",
+      "status": "default-formed",
+      "placementSha256": "9bf494cf33f805bbd5da2306c914995c5085565e18d8576d0ba7a922a717677f",
+      "errors": []
+    },
+    {
+      "machine": "extreme-industrial-greenhouse",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEExtremeIndustrialGreenhouse.java",
+      "status": "default-formed",
+      "placementSha256": "acd63c3cf89ce7362f666d3896fd677c51a65517257aa8a8facfd3963b829896",
+      "errors": []
+    },
+    {
+      "machine": "extreme-temperature-fluctuation-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitPlasmaHeater.java",
+      "status": "default-formed",
+      "placementSha256": "6dcaa28d817792ce5cf7fb95d2106b7d05d97b86733845a3890c1e47cb80711b",
+      "errors": []
+    },
+    {
+      "machine": "exxonmobil-chemical-plant",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/chemplant/MTEChemicalPlant.java",
+      "status": "default-formed",
+      "placementSha256": "e1e5de7a0d321633f7afc6f693607183e4d366bbf852e3cf60b7c641c03e2039",
+      "errors": []
+    },
+    {
+      "machine": "eye-of-harmony",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEEyeOfHarmony.java",
+      "status": "default-rejected",
+      "placementSha256": "0ffd6d15ac61e1f15360bf87b3b4312dcf2a106cf28190eb7a879779563cbbdf",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "AC1HVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5ub3RfbWF0Y2hfaGF0Y2gAAAACAQEyAwAAAAI="
+        }
+      ]
+    },
+    {
+      "machine": "flocculation-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitFlocculation.java",
+      "status": "default-formed",
+      "placementSha256": "8a9bfebc2d1c52dcd82757bd6e02ba98f9e398ac4a1ae5be83d968ba55fd22bc",
+      "errors": []
+    },
+    {
+      "machine": "flotation-cell-regulator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFrothFlotationCell.java",
+      "status": "default-formed",
+      "placementSha256": "07d81103318871adc49c5c9f36eae0195182db874674a7ff088c722261ea3c28",
+      "errors": []
+    },
+    {
+      "machine": "fluid-drilling-rig",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilDrill1.java",
+      "status": "default-formed",
+      "placementSha256": "fadf7472af44df5749c5488cf8bda59ddb0b555d8694bb31ac506f5e95d94bdc",
+      "errors": []
+    },
+    {
+      "machine": "fluid-drilling-rig-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilDrill2.java",
+      "status": "default-formed",
+      "placementSha256": "8d8f771201b6a4eb63f8ece022ac57cf628f03050441e7989efdc48e64bb72ce",
+      "errors": []
+    },
+    {
+      "machine": "fluid-drilling-rig-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilDrill3.java",
+      "status": "default-formed",
+      "placementSha256": "c6d4c7151244954bc064dde07b35b896544839c0cc2ff350be41ee980bccb42b",
+      "errors": []
+    },
+    {
+      "machine": "fluid-drilling-rig-iv",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilDrill4.java",
+      "status": "default-formed",
+      "placementSha256": "3635b2991f9c5b9c9e99ed6fcf01356779ea1d0953a6bdf57f36ac148d4b8810",
+      "errors": []
+    },
+    {
+      "machine": "fluid-shaper",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFluidShaper.java",
+      "status": "default-formed",
+      "placementSha256": "acc6309e1da47e83d667281afa89f168a253417711842d4df0047f203db21269",
+      "errors": []
+    },
+    {
+      "machine": "forge-of-the-gods",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEForgeOfGods.java",
+      "status": "default-rejected",
+      "placementSha256": "5fe3bb18d19e6d82416b937e4b8650c09123951a5487abe7c59ff964873ed582",
+      "errors": [
+        {
+          "id": "POSITIONED_ERROR",
+          "payload": "AAAAEQAAAGMAAAA9AAAAARhndC5nb2Rmb3JnZWNhc2luZy4wLm5hbWU="
+        }
+      ]
+    },
+    {
+      "machine": "full-board-immersion-device",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEBoardProcessorModule.java",
+      "status": "default-formed",
+      "placementSha256": "324718aed6d7fad4c30843656a40c29807f160778be00624e9c25fae2ae88338",
+      "errors": []
+    },
+    {
+      "machine": "fusion-control-computer-mark-i",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFusionComputer1.java",
+      "status": "default-formed",
+      "placementSha256": "883459d2c37779379bed4d9a161d3e7e413347a94176ca6ba7b5e461c3e844c3",
+      "errors": []
+    },
+    {
+      "machine": "fusion-control-computer-mark-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFusionComputer2.java",
+      "status": "default-formed",
+      "placementSha256": "c10d420917ceb516fd4b1e45784d062e329495d30a78ab6308d6ebf70c768f76",
+      "errors": []
+    },
+    {
+      "machine": "fusion-control-computer-mark-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFusionComputer3.java",
+      "status": "default-formed",
+      "placementSha256": "bec4ca4c0d9601c9a31d1456fb529c2549baf58275c4d512999d8fb953a768a5",
+      "errors": []
+    },
+    {
+      "machine": "fusiontech-mk-iv",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvFusionMk4.java",
+      "status": "default-formed",
+      "placementSha256": "0e19b5ffe96545194f6668a6af08be6207e815a021f8ec4f32c4db4b2b35486b",
+      "errors": []
+    },
+    {
+      "machine": "fusiontech-mk-v",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvFusionMk5.java",
+      "status": "default-formed",
+      "placementSha256": "1c9e763dc4b8caddf530f24d1666401b179d642b48fb6faeb785d7a4063126e9",
+      "errors": []
+    },
+    {
+      "machine": "helioflare-power-forge",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTESmeltingModule.java",
+      "status": "default-formed",
+      "placementSha256": "2859ff8a590925c959ea2657d2331e1ddd1a355a3f0829eb236c27f1d90259ac",
+      "errors": []
+    },
+    {
+      "machine": "helioflux-melting-core",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEMoltenModule.java",
+      "status": "default-formed",
+      "placementSha256": "bf328ff3bd6fa669f7565e2a9caf389c2e23c6d8545320b7a23a499ea2d1181a",
+      "errors": []
+    },
+    {
+      "machine": "heliofusion-exoticizer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEExoticModule.java",
+      "status": "default-formed",
+      "placementSha256": "1b2911afc0631b60651f940f7f440c2f81277acc84e810ad1c2d1df980947235",
+      "errors": []
+    },
+    {
+      "machine": "heliothermal-plasma-fabricator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEPlasmaModule.java",
+      "status": "default-formed",
+      "placementSha256": "2f9bc64b5325ecc26583264e3213baf0cda6844eca4870bcb491a21fc463326b",
+      "errors": []
+    },
+    {
+      "machine": "high-energy-laser-purification-unit",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "high-temperature-gas-cooled-reactor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEHighTempGasCooledReactor.java",
+      "status": "default-formed",
+      "placementSha256": "1032f5efbd66f23177eb700f1ee930622fced2521603e83484f50b450e0308ec",
+      "errors": []
+    },
+    {
+      "machine": "hot-isostatic-pressurization-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEHIPCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "745ada62eda03e0155c831b792c4e53b4e50a985351e467ad667dea4e96da0ba",
+      "errors": []
+    },
+    {
+      "machine": "hyper-intensity-laser-engraver",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "implosion-compressor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEImplosionCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "2762847685f2bfbd9a52f14710097bb167c0f1305aa0ec54fe23ab585a8b4c1d",
+      "errors": []
+    },
+    {
+      "machine": "industrial-3d-copying-machine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialChisel.java",
+      "status": "default-formed",
+      "placementSha256": "696a852964166bda6ccb71fadc9b4ed8cc351bd1dffa05eeddfe50d7b8d3e5dc",
+      "errors": []
+    },
+    {
+      "machine": "industrial-arc-furnace",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEIndustrialArcFurnace.java",
+      "status": "default-formed",
+      "placementSha256": "fa1b6e0a2867690a5d165b36c05fd0cad6ea6f88d69858488f795ef294ed1ab0",
+      "errors": []
+    },
+    {
+      "machine": "industrial-autoclave",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.pressureContainment, gt.frame.ptfe, gt.casing.bronzePipe"
+    },
+    {
+      "machine": "industrial-bending-machine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialBendingMachine.java",
+      "status": "default-formed",
+      "placementSha256": "297da92d6c2fb4f9fd8f4dfcf69f010e5aa0b56177010383501b593fbe7443db",
+      "errors": []
+    },
+    {
+      "machine": "industrial-centrifuge",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.frame.eglinSteel, gtpp.casing.centrifuge, gtpp.casing.largeSieveGrate"
+    },
+    {
+      "machine": "industrial-chemical-bath",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialChemicalBath.java",
+      "status": "default-formed",
+      "placementSha256": "51b7abec9cc5b516316fa07b046f59ca2f2bfb80ea6f806bb4339088e357450b",
+      "errors": []
+    },
+    {
+      "machine": "industrial-coke-oven",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialCokeOven.java",
+      "status": "default-formed",
+      "placementSha256": "fdf4a938f1eb9c12d59659f7e2b6453be34ae50e82865f74c6c6f0df6efddf9a",
+      "errors": []
+    },
+    {
+      "machine": "industrial-cutting-factory",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialCuttingMachine.java",
+      "status": "default-formed",
+      "placementSha256": "775722d034ffe7954bcb9d0778ba7e96d7cfb5ed833913a11624f5e934d97419",
+      "errors": []
+    },
+    {
+      "machine": "industrial-electrolyzer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialElectrolyzer.java",
+      "status": "default-formed",
+      "placementSha256": "6fa7310ea9e762537fe2c5a6e678db4f4652c34f0ad7989c29bb6c5f670500b3",
+      "errors": []
+    },
+    {
+      "machine": "industrial-extrusion-machine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtruder.java",
+      "status": "default-formed",
+      "placementSha256": "3aa2f46e046d853681cb1f915646890cd36bfbcb8d1e9423c43bee8c4a83ffbb",
+      "errors": []
+    },
+    {
+      "machine": "industrial-forming-press",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialFormingPress.java",
+      "status": "default-formed",
+      "placementSha256": "3fa1b50d1019d3fa586e0be1c53246aa23102a09d2af8e67b097068773c28a73",
+      "errors": []
+    },
+    {
+      "machine": "industrial-maceration-stack",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialMacerator.java",
+      "status": "default-formed",
+      "placementSha256": "163e93203894fc188f4a71bec7deb7d8c899225f3819724c4fcb38603387332a",
+      "errors": []
+    },
+    {
+      "machine": "industrial-mixing-machine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialMixer.java",
+      "status": "default-formed",
+      "placementSha256": "0772f1b212b1304b95c3d3a28e1c3e8b31b56fe0f34e5e33aad87d37606a93c5",
+      "errors": []
+    },
+    {
+      "machine": "industrial-precision-lathe",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiLathe.java",
+      "status": "default-formed",
+      "placementSha256": "84ba122637f6cd10f366379a90b05fb5f59c276a2d3c23d137a3864d60e2e20c",
+      "errors": []
+    },
+    {
+      "machine": "industrial-sledgehammer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialForgeHammer.java",
+      "status": "default-formed",
+      "placementSha256": "162a5f2ed70ef04744490cc1aa3d48f2aec1f28a8d69ae04d581be5450650faf",
+      "errors": []
+    },
+    {
+      "machine": "industrial-wire-factory",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialWireMill.java",
+      "status": "default-formed",
+      "placementSha256": "4df8e0ee2809b6f692b43bdd4a911af733f76946b798440df73109d6e87f7c70",
+      "errors": []
+    },
+    {
+      "machine": "infinite-fluid-drilling-rig",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilDrillInfinite.java",
+      "status": "default-formed",
+      "placementSha256": "e0dfb6a0581ca31286c8c87b966215bcc90894e758d0a661d7ca36ace4174d26",
+      "errors": []
+    },
+    {
+      "machine": "integrated-ore-factory",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIntegratedOreFactory.java",
+      "status": "default-formed",
+      "placementSha256": "16386450bab1be13dd8da1130caeccf6892058a25b1538ce4f8eaaa7a577bd5b",
+      "errors": []
+    },
+    {
+      "machine": "isamill-grinding-machine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIsaMill.java",
+      "status": "default-rejected",
+      "placementSha256": "d7716a4871d2f9e8116a240059a5ec65c29de1ce800ea9db0f8b20011e3b8dd5",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "AC1HVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5ub3RfbWF0Y2hfaGF0Y2gAAAACAQExAgAAAisAAHk1"
+        }
+      ]
+    },
+    {
+      "machine": "l-a-t-e-x",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELatex.java",
+      "status": "default-formed",
+      "placementSha256": "13236391592cb3de248f276b8787bd860dd44375eea7f0e1317c5519633602c0",
+      "errors": []
+    },
+    {
+      "machine": "lapotronic-supercapacitor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kekztech/common/tileentities/MTELapotronicSuperCapacitor.java",
+      "status": "default-rejected",
+      "placementSha256": "6c51d0b4d63e0d32c5c32b875e1d245d9704208eabd5be2c14b0efe96ac02c1e",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ACVHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5sc2NfY2FwAAAAAA=="
+        }
+      ]
+    },
+    {
+      "machine": "large-bronze-boiler",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeBoilerBronze.java",
+      "status": "default-formed",
+      "placementSha256": "d3cf66ece54dc8fa965b15f46e0d9a754033b49109447290abf92afcf47a164b",
+      "errors": []
+    },
+    {
+      "machine": "large-chemical-reactor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeChemicalReactor.java",
+      "status": "default-formed",
+      "placementSha256": "9648aab6feab491ca8167bc56eff144290147bc7a132dab0a5b3b57380806b54",
+      "errors": []
+    },
+    {
+      "machine": "large-combustion-engine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.frame.ptfe, gt.casing.engineIntake, gt.casing.titaniumGearbox"
+    },
+    {
+      "machine": "large-electric-compressor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEIndustrialCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "ebc7c1bd74fa6579eb81867ab84413009b465f30679d3429e015004e9bbc8acf",
+      "errors": []
+    },
+    {
+      "machine": "large-essentia-smeltery",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt5u.magicCasing.0, gt5u.essentiaCell.0, ext.thaumicbasesAdvAlchFurnace, gt5u.controller.largeEssentiaSmeltery, ext.blockCosmeticOpaque, gt5u.essentiaFilterCasing.0"
+    },
+    {
+      "machine": "large-fluid-extractor",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.robustTungstensteel, gt.frame.blackSteel, gt.coil.solenoid"
+    },
+    {
+      "machine": "large-gas-turbine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.turbineStainless, gt.frame.stainless"
+    },
+    {
+      "machine": "large-hadron-collider",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "large-heat-exchanger",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEHeatExchanger.java",
+      "status": "default-formed",
+      "placementSha256": "cf64f7016125478c12ee8d8df1492469fee39cd1bf88b15ac11798594f3a8ad7",
+      "errors": []
+    },
+    {
+      "machine": "large-hp-steam-turbine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.turbineTitanium, gt.frame.titanium"
+    },
+    {
+      "machine": "large-molecular-assembler",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeMolecularAssembler.java",
+      "status": "default-formed",
+      "placementSha256": "a26816ac29bdba2edbd2b0fdea41fb1192f2fbea272fd6a8b484406ea3e0a83c",
+      "errors": []
+    },
+    {
+      "machine": "large-naquadah-reactor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeNaquadahReactor.java",
+      "status": "default-formed",
+      "placementSha256": "f35032336225e1e866dd8e976f2ebe9d58d644b7d5c2416c2ca9349480fee83d",
+      "errors": []
+    },
+    {
+      "machine": "large-neutralization-engine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeNeutralizationEngine.java",
+      "status": "default-formed",
+      "placementSha256": "fc9c5402bd5ecaf78d05fd424f0a1e46d7cb0565c87b7feb6bc0673869b9b360",
+      "errors": []
+    },
+    {
+      "machine": "large-plasma-turbine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.turbineTungstensteel, gt.frame.tungstensteel, gt.casing.tungstensteelPipe"
+    },
+    {
+      "machine": "large-scale-auto-assembler-v1-01",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEAutoCrafter.java",
+      "status": "default-formed",
+      "placementSha256": "177309f25dcae7114291f4d0be9015d913ac1285ce7f3c2a5504789a8c31e940",
+      "errors": []
+    },
+    {
+      "machine": "large-semifluid-generator",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.engineIntake, gt.casing.steelGearbox"
+    },
+    {
+      "machine": "large-sifter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialSifter.java",
+      "status": "default-formed",
+      "placementSha256": "e859a7fbbab1363e5fc1c500ed849f4a6fdfdda78d1115e9d4086419004cb76d",
+      "errors": []
+    },
+    {
+      "machine": "large-steam-turbine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.turbine, gt.frame.iron"
+    },
+    {
+      "machine": "large-steel-boiler",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeBoilerSteel.java",
+      "status": "default-formed",
+      "placementSha256": "9fc7011b894abc84939918298863b3b5d2883c545b753942c563c2adf439a7a1",
+      "errors": []
+    },
+    {
+      "machine": "large-supercritical-steam-turbine",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.turbineSC, gt.frame.pbi, gt.casing.pbiPipe"
+    },
+    {
+      "machine": "large-thermal-refinery",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialThermalCentrifuge.java",
+      "status": "default-formed",
+      "placementSha256": "fb5527d464f75726f5a056dc9f117f2bb74ee69206ab202e7fe6aa9262d80045",
+      "errors": []
+    },
+    {
+      "machine": "large-titanium-boiler",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeBoilerTitanium.java",
+      "status": "default-formed",
+      "placementSha256": "c17a01cb7becc27c66b6d511eab26e2b8dd37bc11719eb8ce79569cdd229df70",
+      "errors": []
+    },
+    {
+      "machine": "large-tungstensteel-boiler",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeBoilerTungstenSteel.java",
+      "status": "default-formed",
+      "placementSha256": "7820905cf64a2acb53cfcbef7f2443435b54e4394318ea6d874bf162233778eb",
+      "errors": []
+    },
+    {
+      "machine": "linear-accelerator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gtnhlanth/common/tileentity/MTELINAC.java",
+      "status": "default-formed",
+      "placementSha256": "6557a6ace0fbe3339cf1071bfb0c0f327aa3531e49f75fa5504bb7852b7c7c45",
+      "errors": []
+    },
+    {
+      "machine": "magnetic-flux-exhibitor",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "manual-transformer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bartworks/common/tileentities/multis/MTEManualTrafo.java",
+      "status": "default-formed",
+      "placementSha256": "74d2c78ebed7007e34f28c7cb7006ec91e430fcb2cc4d7373af9db0ba3fd7377",
+      "errors": []
+    },
+    {
+      "machine": "mass-solidifier",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMassSolidifier.java",
+      "status": "default-formed",
+      "placementSha256": "60affbf36fc2715d4d3731cb481c1bd47d46b4b891189f2dc3679350bca6cfc2",
+      "errors": []
+    },
+    {
+      "machine": "matter-fabrication-cpu",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEMassFabricator.java",
+      "status": "default-rejected",
+      "placementSha256": "d47b192b97bbf0dd9f1b14fe4be062e5b92d2ce0acb76f0a79410508de5ae165",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ACtHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5taXNzaW5nX2hhdGNoAAAAAQMAAAAE"
+        }
+      ]
+    },
+    {
+      "machine": "mega-alloy-blast-smelter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/mega/MTEMegaAlloyBlastSmelter.java",
+      "status": "default-formed",
+      "placementSha256": "671d3348b27bf611fdf21abe7dd1d48a7b7cd4eefdf6c01afd0b1181d5286839",
+      "errors": []
+    },
+    {
+      "machine": "mega-chemical-reactor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaChemicalReactor.java",
+      "status": "default-formed",
+      "placementSha256": "06561621aac8bea2b03a19a2a497d81f00547283188fa6b38f3302663da0c66c",
+      "errors": []
+    },
+    {
+      "machine": "mega-distillation-tower",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaDistillationTower.java",
+      "status": "default-formed",
+      "placementSha256": "53c930c74f2114c203ff26dc530da5462cf35c45c211b4d65527835c0c8f290b",
+      "errors": []
+    },
+    {
+      "machine": "mega-oil-cracker",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaOilCracker.java",
+      "status": "default-formed",
+      "placementSha256": "7f9eade06b1e73ffebc1aa22ce40f328c33a9407a86f4ff01a5b8ab419fd57f5",
+      "errors": []
+    },
+    {
+      "machine": "microwave-grinder",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEMicrowave.java",
+      "status": "default-formed",
+      "placementSha256": "5cdd3bf8c941af1ba1779fb52c37348eb8f882d1acedb2c858a4e5befef32048",
+      "errors": []
+    },
+    {
+      "machine": "miniature-wormhole-generator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEWormholeGenerator.java",
+      "status": "default-rejected",
+      "placementSha256": "7c5107552ef5392cb3a597b2ce44462cc7c6d3c4c032e976342c619c461491b9",
+      "errors": [
+        {
+          "id": "POSITIONED_ERROR",
+          "payload": "AAAAAwAAAGAAAAADAAAAAhhoYXRjaF90eXBlX3RyYW5zZmVyaGF0Y2gYZ3QuYmxvY2tjYXNpbmdzVFQuMC5uYW1l"
+        }
+      ]
+    },
+    {
+      "machine": "molecular-transformer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialMolecularTransformer.java",
+      "status": "default-formed",
+      "placementSha256": "42463a2b04e84af38ca363dabc30da4e04a5bd13a669564c15724d2ee7cb274d",
+      "errors": []
+    },
+    {
+      "machine": "multi-smelter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiFurnace.java",
+      "status": "default-formed",
+      "placementSha256": "ccd728018fd1996c0cb678c0a0bea1dba7f15ba33a740d836b2c3c31f1c835a0",
+      "errors": []
+    },
+    {
+      "machine": "nano-forge",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTENanoForge.java",
+      "status": "default-rejected",
+      "placementSha256": "a653cf310c860948264d46ecfb6a3e156daaa0eda7051a7578bb0569dcf06242",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ADVHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci51bmtub3duX211bHRpYmxvY2tfdGllcgAAAAA="
+        }
+      ]
+    },
+    {
+      "machine": "nanochip-assembly-complex",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/MTENanochipAssemblyComplex.java",
+      "status": "default-formed",
+      "placementSha256": "f9279ae35cd0f536c4eeb249f007db4ab1747aa578c4398af204bcc30665aa0c",
+      "errors": []
+    },
+    {
+      "machine": "nanochip-assembly-matrix",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEAssemblyMatrixModule.java",
+      "status": "default-formed",
+      "placementSha256": "54f67011e27b7ae57a25f032f2bd872669e5f9e23b34170daf6f6f8946bde045",
+      "errors": []
+    },
+    {
+      "machine": "nanometer-encasement-wrapper",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEEncasementWrapperModule.java",
+      "status": "default-formed",
+      "placementSha256": "942c8f2817ca90f45d9c291545d70a622a0e9967c929d8f72fb7e97b2cd154b6",
+      "errors": []
+    },
+    {
+      "machine": "nanopart-splitter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTESplitterModule.java",
+      "status": "default-formed",
+      "placementSha256": "a867e79f34a802bb31abe7ac8858fe892ec5c8d634574279d5f3f4856bdf0191",
+      "errors": []
+    },
+    {
+      "machine": "nanoprecision-cutting-chamber",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTECuttingChamberModule.java",
+      "status": "default-formed",
+      "placementSha256": "12a62068cf9eca4263135d42d6c19fd5614684578569ad2c313c66d520fbae18",
+      "errors": []
+    },
+    {
+      "machine": "nanoprecision-wire-tracer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEWireTracerModule.java",
+      "status": "default-formed",
+      "placementSha256": "66494dc005e54164c6ef707ce4b94d711f7b53250b63d3991cc27c4ec18130d5",
+      "errors": []
+    },
+    {
+      "machine": "naquadah-fuel-refinery",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTENaquadahFuelRefinery.java",
+      "status": "default-formed",
+      "placementSha256": "1f6e558391f32a7289c173b0e5ebf7a16e39f2d2d8ad8444d11ee768600997ee",
+      "errors": []
+    },
+    {
+      "machine": "neutron-activator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTENeutronActivator.java",
+      "status": "default-rejected",
+      "placementSha256": "c86f922f1235498e7ba1a07940210584963a1b8228bd294928b93e7bea1bf259",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ADlHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5taXNzaW5nX25ldXRyb25fYWNjZWxlcmF0b3IAAAAA"
+        }
+      ]
+    },
+    {
+      "machine": "neutronium-compressor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTENeutroniumCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "76f673ff493918c23fdbdb7a3764f3ff47d37bbfcb9bbed3d9c987ce1f324607",
+      "errors": []
+    },
+    {
+      "machine": "nuclear-salt-processing-plant",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTENuclearSaltProcessingPlant.java",
+      "status": "default-formed",
+      "placementSha256": "716ae629c2cdfc3fff85edddb9041418db48211e9fd6a9b215298645f166b942",
+      "errors": []
+    },
+    {
+      "machine": "oil-cracking-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilCracker.java",
+      "status": "default-formed",
+      "placementSha256": "72aec05dd648fddf7901e1125612589b3d045f39aae10d728832318034e789a5",
+      "errors": []
+    },
+    {
+      "machine": "optically-optimized-organizer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEOpticalOrganizerModule.java",
+      "status": "default-formed",
+      "placementSha256": "d9233c6e503a28301aab36352bb123bc3a77961b9a1dd6fbb167b88f6c5a6749",
+      "errors": []
+    },
+    {
+      "machine": "ore-drilling-plant",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreDrillingPlant1.java",
+      "status": "default-formed",
+      "placementSha256": "e1eff7b36ee058f04366b7becd2a14da74531e04a127439fb6067a46dcbca4b4",
+      "errors": []
+    },
+    {
+      "machine": "ore-drilling-plant-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreDrillingPlant2.java",
+      "status": "default-formed",
+      "placementSha256": "3eb98df5f6bf70843b102a31a3654408791a1e3f7de01008148a8ef8a7aedd43",
+      "errors": []
+    },
+    {
+      "machine": "ore-drilling-plant-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreDrillingPlant3.java",
+      "status": "default-formed",
+      "placementSha256": "b7eff08b7b47bc17485f36101300dfe498fae8650c6e8608a67cf22ce7e74f69",
+      "errors": []
+    },
+    {
+      "machine": "ore-drilling-plant-iv",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreDrillingPlant4.java",
+      "status": "default-formed",
+      "placementSha256": "f6d5e6fcf0ea853f4d3235ae1f1599f8244e54f90f448b439e0a6f2934454185",
+      "errors": []
+    },
+    {
+      "machine": "ore-washing-plant",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreWashingPlant.java",
+      "status": "default-formed",
+      "placementSha256": "b593e5ed5683de9815c0e01073e3eb8a5a56682d8cf5bf11cf183b0445a003d0",
+      "errors": []
+    },
+    {
+      "machine": "ozonation-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitOzonation.java",
+      "status": "default-formed",
+      "placementSha256": "8708b8df877bdb33a61f7df8fbb91b6d3180f23345d75e11bc3e69e1949b7ba2",
+      "errors": []
+    },
+    {
+      "machine": "part-preparation-apparatus",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEPartProcessorModule.java",
+      "status": "default-formed",
+      "placementSha256": "a86211513d0dde832b08880d6f26f984c5f65c3264f221a7ad107c37ae134b64",
+      "errors": []
+    },
+    {
+      "machine": "pcb-factory",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBFactory.java",
+      "status": "default-formed",
+      "placementSha256": "4fc03a0f91390fecfd0360bc8cf10007214d6abd338bde1e3df0707a694cd67f",
+      "errors": []
+    },
+    {
+      "machine": "ph-neutralization-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitPhAdjustment.java",
+      "status": "default-formed",
+      "placementSha256": "7ddebc841dc510e4cb1145584ff2c6ba2724a88a5db2ac8fa4256de1cc58bb98",
+      "errors": []
+    },
+    {
+      "machine": "planetary-gas-siphon",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/MTEPlanetaryGasSiphon.java",
+      "status": "default-formed",
+      "placementSha256": "699e863382f7bdb816458814fdbe3afdda47040e79cee84a05e2aacfe12b2e56",
+      "errors": []
+    },
+    {
+      "machine": "power-station-control-node",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/storage/MTEPowerSubStation.java",
+      "status": "default-rejected",
+      "placementSha256": "958a7d2e929f17ddaea9edca0a5a422bc07dd852b23ef10677477fff9e7123ea",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "AChHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5wc3NfZHluYW1vAAAAAA=="
+        }
+      ]
+    },
+    {
+      "machine": "precise-auto-assembler-mt-3662",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEPreciseAssembler.java",
+      "status": "default-formed",
+      "placementSha256": "d94f22c71a42f1c99ed64bf38800923fc8699739eed97aee8e456698e0aa1d92",
+      "errors": []
+    },
+    {
+      "machine": "pseudostable-black-hole-containment-field",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEBlackHoleCompressor.java",
+      "status": "default-formed",
+      "placementSha256": "f1fd3b45cc066d4c5af12f5975ecb2e4f496443a544168aab475a9d261134de5",
+      "errors": []
+    },
+    {
+      "machine": "pyrolyse-oven",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.pyrolyseOven, gt.casing.steelFirebox, gt.frame.steel"
+    },
+    {
+      "machine": "quantum-computer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/tectech/thing/metaTileEntity/multi/MTEQuantumComputer.java",
+      "status": "default-formed",
+      "placementSha256": "c7b08fa480b3e736678c17fc334f8929df2e3f8849a812b6e6ada1cdf6ae9c6c",
+      "errors": []
+    },
+    {
+      "machine": "quantum-force-transformer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEQuantumForceTransformer.java",
+      "status": "default-formed",
+      "placementSha256": "4c8239a06fc6a7688ffc3aaea07cca827e1832766c8e7ad9affa9cbd907fa8b4",
+      "errors": []
+    },
+    {
+      "machine": "reactor-fuel-processing-plant",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTERefinery.java",
+      "status": "default-formed",
+      "placementSha256": "5f12b1b4bc252480739c08754add061ec581efc736cefd7ea6c5a32c9a49884c",
+      "errors": []
+    },
+    {
+      "machine": "research-completer",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt5u.gtBlockcasings8.8, ext.blockCosmeticOpaque, gt5u.controller.researchCompleter"
+    },
+    {
+      "machine": "research-station",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "residual-decontaminant-degasser-purification-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitDegasser.java",
+      "status": "default-rejected",
+      "placementSha256": "031ae7453de75000b704de6b409bb3091b7836db6aa9778310b4c2f376b4999f",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ACtHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5taXNzaW5nX2hhdGNoAAAAAQIAAAIrAAAkxQ=="
+        }
+      ]
+    },
+    {
+      "machine": "rocketdyne-f-1a-engine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTELargeRocketEngine.java",
+      "status": "default-rejected",
+      "placementSha256": "a07f7f5e4b5a448189345430b5aa2bf442c8dcb1667bd6efa0d358edc83d6618",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ACtHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5taXNzaW5nX2hhdGNoAAAAAQIAAAIrAAADXQ=="
+        }
+      ]
+    },
+    {
+      "machine": "semi-stable-antimatter-stabilization-sequencer",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "shielded-lagrangian-annihilation-matrix",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/AntimatterGenerator.java",
+      "status": "default-rejected",
+      "placementSha256": "2587f659ce9fd9b54987446abf563b84196154d6412eec393b4d9bb599fc9d10",
+      "errors": [
+        {
+          "id": "TRANSLATABLE_ERROR",
+          "payload": "ACtHVDVVLmd1aS50ZXh0LnN0cnVjdHVyZV9lcnJvci5taXNzaW5nX2hhdGNoAAAAAQMAAAAN"
+        }
+      ]
+    },
+    {
+      "machine": "solar-factory",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTESolarFactory.java",
+      "status": "default-formed",
+      "placementSha256": "2cea723a37d14724f39f9a0432b5d29aec75dbc2ac2811866c7a2e3d8a33fc7f",
+      "errors": []
+    },
+    {
+      "machine": "solar-tower",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTESolarTower.java",
+      "status": "default-formed",
+      "placementSha256": "387696785c80f914c96aad7080a3060cf8390f48be59268be2c1ece3c1e1a744",
+      "errors": []
+    },
+    {
+      "machine": "solid-oxide-fuel-cell-mk-i",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kekztech/common/tileentities/MTESOFuelCellMK1.java",
+      "status": "default-formed",
+      "placementSha256": "79e6b834e0dd8a12be5f0eab469a7e7d8e71cf5b6299a9a65e8d1f352261ed98",
+      "errors": []
+    },
+    {
+      "machine": "solid-oxide-fuel-cell-mk-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kekztech/common/tileentities/MTESOFuelCellMK2.java",
+      "status": "default-formed",
+      "placementSha256": "724289e25bd513b7054bae610258ccae232ae33f111d74f95e56741071a7da5c",
+      "errors": []
+    },
+    {
+      "machine": "source-chamber",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gtnhlanth/common/tileentity/MTESourceChamber.java",
+      "status": "default-formed",
+      "placementSha256": "db228cafb8781918991d90e666cdfd8ae079a937669bf1fb398d1fbd293b14eb",
+      "errors": []
+    },
+    {
+      "machine": "space-assembler-module-mk-i",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleAssembler.java",
+      "status": "default-formed",
+      "placementSha256": "5b0de497524ca7f0bbf2987811f646821992274918006f04cf067427679204c2",
+      "errors": []
+    },
+    {
+      "machine": "space-assembler-module-mk-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleAssembler.java",
+      "status": "default-formed",
+      "placementSha256": "cfccd03da33e54b5e3feb1a45cafdb7154a8b34eab148d3131a4068d53f78eb7",
+      "errors": []
+    },
+    {
+      "machine": "space-assembler-module-mk-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleAssembler.java",
+      "status": "default-formed",
+      "placementSha256": "a47f08f018124b2361aaf2da8c6bf5f1882c0a5dc9db0a5557ec9f83cfce5556",
+      "errors": []
+    },
+    {
+      "machine": "space-elevator",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt5u.sBlockCasingsDyson.9, gt5u.gtBlockcasingsSE.0, gt5u.gtBlockcasingsSE.2, gt5u.gtBlockcasingsSE.1, gt5u.tieredCasing, gt5u.controller.spaceElevator, gt.frame.neutronium, gt5u.sSpaceElevatorCable.0"
+    },
+    {
+      "machine": "space-mining-module-mk-i",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleMiner.java",
+      "status": "default-formed",
+      "placementSha256": "7021170a5908291267b5b983fcc1291459886f2feae007d9ff4e2b67af6d4b19",
+      "errors": []
+    },
+    {
+      "machine": "space-mining-module-mk-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleMiner.java",
+      "status": "default-formed",
+      "placementSha256": "f4b1cc02027488ed75baebff1baf9f178421672cb83329d47f402884c352558d",
+      "errors": []
+    },
+    {
+      "machine": "space-mining-module-mk-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleMiner.java",
+      "status": "default-formed",
+      "placementSha256": "a55d8da483348d81aa60084ffa8e0d7d119f1951589eeca7f130fbafc418eca0",
+      "errors": []
+    },
+    {
+      "machine": "space-project-manager",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleManager.java",
+      "status": "default-formed",
+      "placementSha256": "61c56e323912228b76a17eea5ceec8074a136406f0760651f082b3ba9c45ae48",
+      "errors": []
+    },
+    {
+      "machine": "space-pumping-module-mk-i",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModulePump.java",
+      "status": "default-formed",
+      "placementSha256": "38b62bd19553af8361f1dfe87d43a81115357a7344458a122cf001121126fdac",
+      "errors": []
+    },
+    {
+      "machine": "space-pumping-module-mk-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModulePump.java",
+      "status": "default-formed",
+      "placementSha256": "345615e2602b9cfc0eb59cc0c38250fd4a3f26ad880107d581cb16a78444f795",
+      "errors": []
+    },
+    {
+      "machine": "space-pumping-module-mk-iii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModulePump.java",
+      "status": "default-formed",
+      "placementSha256": "b3747ef41c4a9f5eaf80c6227704cba0bedacaf652ac82fe6aa802de88e4d3a8",
+      "errors": []
+    },
+    {
+      "machine": "space-research-module",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleResearch.java",
+      "status": "default-formed",
+      "placementSha256": "30f1f142add24999ee54eaf9e81a9b87d1efc92e2dfe30e0ee6987d2263a6676",
+      "errors": []
+    },
+    {
+      "machine": "sparge-tower-controller",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTESpargeTower.java",
+      "status": "default-formed",
+      "placementSha256": "42544813e6563dbdae7d1fffde4bced0dd7846d9f752f0085dc7b99feadde0e7",
+      "errors": []
+    },
+    {
+      "machine": "spinmatron-2737",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "static-network-switch-with-qos",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitchAdv.java",
+      "status": "default-formed",
+      "placementSha256": "c9523d6e6bbaa7118acbc296acd63bcd917b88aca570abd62aebbbec7bb406cf",
+      "errors": []
+    },
+    {
+      "machine": "steam-blender",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePlated, gt.frame.bronze, gt.casing.bronzeGearbox, gt.casing.bronzePipe"
+    },
+    {
+      "machine": "steam-fuser",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePlated, gt.casing.bronzePipe"
+    },
+    {
+      "machine": "steam-grinder",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePlated, gt.frame.bronze, gt.casing.bronzeGearbox"
+    },
+    {
+      "machine": "steam-hearth",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePipe, gt.casing.bronzePlated, gt.casing.bronzeFirebox, gt.casing.bronzeGearbox"
+    },
+    {
+      "machine": "steam-presser",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePlated, mc.ironBlock, gt.casing.bronzePipe"
+    },
+    {
+      "machine": "steam-purifier",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePlated, gt.casing.bronzeGearbox, gt.casing.bronzePipe"
+    },
+    {
+      "machine": "steam-separator",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePlated, gt.casing.bronzeGearbox, gt.casing.bronzeFirebox, gt.casing.bronzePipe"
+    },
+    {
+      "machine": "steam-squasher",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.casing.bronzePipe, gt.casing.bronzePlated, mc.ironBlock"
+    },
+    {
+      "machine": "superconductive-strand-splitter",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTESuperconductorSplitterModule.java",
+      "status": "default-formed",
+      "placementSha256": "d2ea73dce174bcff99fd6a0402b6b4df610a581dd2b57ed8ef1b370d0337fea3",
+      "errors": []
+    },
+    {
+      "machine": "synchrotron",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "target-chamber",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTETargetChamber.java",
+      "status": "default-formed",
+      "placementSha256": "4d1323fc472db3d2059cffdd8d97f001dc938f29e3fd5c9c4f24bc81f79f57ab",
+      "errors": []
+    },
+    {
+      "machine": "tesla-tower",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTETeslaTower.java",
+      "status": "default-formed",
+      "placementSha256": "a29173df7659472402b510783e0c0192d7bbee2bce9372051f6749d34b47bb82",
+      "errors": []
+    },
+    {
+      "machine": "tfft",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kekztech/common/tileentities/MTETankTFFT.java",
+      "status": "default-formed",
+      "placementSha256": "011182a4353a90b89dbf552ed40b142f448e416554878f148a19c6ba69e14f7d",
+      "errors": []
+    },
+    {
+      "machine": "thermal-boiler",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEThermalBoiler.java",
+      "status": "default-formed",
+      "placementSha256": "81b03d01e38abfd931598d225756ee4f91f9a39d4838e90ea320c2b969016d74",
+      "errors": []
+    },
+    {
+      "machine": "thermic-heating-device",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIndustrialFluidHeater.java",
+      "status": "default-formed",
+      "placementSha256": "74cfe867fc553bb1b62993e0cb3686b5e8753220657c6bdf8be54449dc7a5bd4",
+      "errors": []
+    },
+    {
+      "machine": "thorium-high-temperature-reactor",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bartworks/common/tileentities/multis/MTEThoriumHighTempReactor.java",
+      "status": "default-formed",
+      "placementSha256": "abc445b1f13cf2a893c45176234c514ef6eac782decf41eb5d207c97ec8103b0",
+      "errors": []
+    },
+    {
+      "machine": "thorium-reactor-lftr",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTENuclearReactor.java",
+      "status": "default-formed",
+      "placementSha256": "f6e132cfed851cf745b31d67fa4c0a048f49cafb0f253108369f1d2aee27003c",
+      "errors": []
+    },
+    {
+      "machine": "transcendent-plasma-mixer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTETranscendentPlasmaMixer.java",
+      "status": "default-formed",
+      "placementSha256": "155d6a395866b7b4ce5be6c9c91d8605b7ad0b0d2271b186b63dab511ea8371a",
+      "errors": []
+    },
+    {
+      "machine": "tree-growth-simulator",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTETreeFarm.java",
+      "status": "default-formed",
+      "placementSha256": "da9a2c395b9813cee114ae4fa7f7f2dcdc8981bb2aa0b1fe48b7f5ae3d23110a",
+      "errors": []
+    },
+    {
+      "machine": "turbocan-pro",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiCanner.java",
+      "status": "default-formed",
+      "placementSha256": "91c2a7ba20dc7a237c440487a8d8db733176511c2bc9e1638a73859056f45e09",
+      "errors": []
+    },
+    {
+      "machine": "ultra-high-energy-etching-array",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "universal-chemical-fuel-engine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEUniversalChemicalFuelEngine.java",
+      "status": "default-formed",
+      "placementSha256": "55428216d5e72d4c1fa78fa0f149f1f6c6e180ffd60941511c1238d56413b2a0",
+      "errors": []
+    },
+    {
+      "machine": "utupu-tanuri",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIndustrialDehydrator.java",
+      "status": "default-formed",
+      "placementSha256": "04e7c0576c7db51b16475d06a2bd601c02e852b9951f3805459edc272ea39e60",
+      "errors": []
+    },
+    {
+      "machine": "vacuum-freezer",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEVacuumFreezer.java",
+      "status": "default-formed",
+      "placementSha256": "1c9d7d8d7e09d6ee1222d95b711b8a7072d8ddffe672800e0c4dea4f78167fa7",
+      "errors": []
+    },
+    {
+      "machine": "void-miner-i",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bwcrossmod/galacticgreg/MTEVoidMiners.java",
+      "status": "default-formed",
+      "placementSha256": "4ba799f3bdc8f507e755707bd71e43848247f4cf5ac2c14b1e68ad9fa2a0e369",
+      "errors": []
+    },
+    {
+      "machine": "void-miner-ii",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bwcrossmod/galacticgreg/MTEVoidMiners.java",
+      "status": "default-formed",
+      "placementSha256": "572701da4ba4c49fc795d7b40ac5603b8bdc23688406fec637273263702c6fd4",
+      "errors": []
+    },
+    {
+      "machine": "void-miners",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bwcrossmod/galacticgreg/MTEVoidMiners.java",
+      "status": "default-formed",
+      "placementSha256": "8152bc1fd293c62b27e5bf2a819a4b998b3e8929da00ec89a132041ed5f0146b",
+      "errors": []
+    },
+    {
+      "machine": "volcanus",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvEBF.java",
+      "status": "default-formed",
+      "placementSha256": "970e322cc188ef0c9c080afa250b7ce34c3c37079eb75994196b40ec611b067d",
+      "errors": []
+    },
+    {
+      "machine": "water-pump",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamWaterPump.java",
+      "status": "default-formed",
+      "placementSha256": "e92164b42b3827fdd8a114d13b789f5c0c3f83f603deb1dc27b04bae4ae7222f",
+      "errors": []
+    },
+    {
+      "machine": "water-purification-plant",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationPlant.java",
+      "status": "default-formed",
+      "placementSha256": "4126671653da45b639a41c45dde250457d5e45757d3e41d00de07d0675070edd",
+      "errors": []
+    },
+    {
+      "machine": "weighted-network-switch-with-qos",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitch.java",
+      "status": "default-formed",
+      "placementSha256": "a0a68372bbd86a28ddddb0c32ec8465309358443f8aab640502482458f0de09a",
+      "errors": []
+    },
+    {
+      "machine": "whakawhiti-wera-xl",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/advanced/MTEAdvHeatExchanger.java",
+      "status": "default-formed",
+      "placementSha256": "60a1d592a7df417284f9671734ee22168ec4652d020e03f54a6e8d5a768d7804",
+      "errors": []
+    },
+    {
+      "machine": "windmill",
+      "status": "unresolved",
+      "reason": "Error: Native physical blocks not yet mapped: gt.hatch.special"
+    },
+    {
+      "machine": "xl-turbo-gas-turbine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbineGas.java",
+      "status": "default-formed",
+      "placementSha256": "352241ec9d9bf3b69e1ab730f4c6f542b9dbf844e72c4f238f376f165cd64594",
+      "errors": []
+    },
+    {
+      "machine": "xl-turbo-hp-steam-turbine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbineHPSteam.java",
+      "status": "default-formed",
+      "placementSha256": "519253b4d51110a6d741ebc9d2d6843ada7d0207e6f886a583f01bfc56da83ad",
+      "errors": []
+    },
+    {
+      "machine": "xl-turbo-plasma-turbine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbinePlasma.java",
+      "status": "default-formed",
+      "placementSha256": "3a2e6b3dd48caaabe3eff5bf444d1434b9dd609c704efadaf4c6bc7148b4ae0b",
+      "errors": []
+    },
+    {
+      "machine": "xl-turbo-sc-steam-turbine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbineSCSteam.java",
+      "status": "default-formed",
+      "placementSha256": "b29d42ceda7262c17a8c60fa8f4f8fa7ef5989cbd0e41f5500715ec324dff87f",
+      "errors": []
+    },
+    {
+      "machine": "xl-turbo-steam-turbine",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbineSteam.java",
+      "status": "default-formed",
+      "placementSha256": "d500d0005c50bf030f9249f70027733ed053c64507ee6c3ce11b7273121c1d11",
+      "errors": []
+    },
+    {
+      "machine": "yottank",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEYottaFluidTank.java",
+      "status": "default-formed",
+      "placementSha256": "19740757fdae38af874982a27e93ff37e2e8c2de8791155f1e57440970906d57",
+      "errors": []
+    },
+    {
+      "machine": "zhuhai-fishing-port",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialFishingPond.java",
+      "status": "default-formed",
+      "placementSha256": "4a3bf4637d1566b7397fab997d52601e883b76dc29f93bac7664f0fdd15af7f6",
+      "errors": []
+    },
+    {
+      "machine": "zyngen",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIndustrialAlloySmelter.java",
+      "status": "default-formed",
+      "placementSha256": "8b8f6902e8c43d92a47177033561eec22fec06bff86f536505eab8f8d899115c",
+      "errors": []
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "id": "heliofusion-exoticizer",
   "name": "Heliofusion Exoticizer",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEExoticModule.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEExoticModule.java",
   "size": [7, 7, 13],
   "layers": [
     [
@@ -125,5 +125,5 @@
   "requiredHatches": {},
   "defaultHatches": [],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEExoticModule (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEExoticModule (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

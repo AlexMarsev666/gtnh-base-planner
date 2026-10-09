@@ -1,5 +1,10 @@
 import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef, isSingleBlock } from '../data/generic';
 import { singleMachineForName } from '../data/single-machines';
+import { isVoltageTier } from '../model/tiers';
+import { RC2_RULES_VERSION } from '../model/multiblock/rules';
+import { minimumGlassTier } from '../model/multiblock/glass';
+import { hasLayeredFluidOutputs, isOilCracker } from '../model/multiblock/structureAdapters';
+import { sizeForFluidOutputs } from '../model/resize';
 import {
   SINGLE_BLOCK_NAMES,
   SKIP_NAMES,
@@ -12,7 +17,7 @@ import {
 import { arrangeSite, grownSize, type ArrangeResult } from '../model/site/arrange';
 import { createSiteBuilder, localFootprints, localHeights } from '../model/site/build';
 import type { SiteBuilder } from '../model/site/buildTypes';
-import { IO_KINDS, singleBlockLimits } from '../model/site/group';
+import { defaultGroupHatches, singleBlockLimits } from '../model/site/group';
 import {
   iconUrl,
   type Endpoint,
@@ -65,6 +70,8 @@ export type GtnhKind = 'item' | 'fluid' | 'aspect' | 'power';
 export interface GtnhStack {
   kind: GtnhKind;
   id: string;
+  /** Original recipe amount, used to recognize overflow chunks in Mega DT output dispatch. */
+  amount?: number;
   displayName?: string;
   dominantColor?: string;
   /** Icon path on gtnhplanner.com, kept only when it is a `/datasets/...png` path. */
@@ -148,6 +155,8 @@ function stack(v: unknown): GtnhStack | null {
   const id = str(v.id);
   if (!kind || !id) return null;
   const s: GtnhStack = { kind, id };
+  const amount = num(v.amount);
+  if (amount !== undefined) s.amount = amount;
   const name = str(v.displayName);
   if (name) s.displayName = name;
   const color = str(v.dominantColor);
@@ -675,6 +684,7 @@ export function buildSiteFromGtnh(
         kind,
         name: (kind === 'power' ? 'EU' : (name ?? id)).slice(0, 120),
         color: color ?? (kind === 'power' ? '#e8c547' : fallbackColor(k)),
+        gameId: id,
       };
     } else if (name && resources[k].name === id) resources[k].name = name.slice(0, 120);
     if (icon && !resources[k].icon && kind !== 'power') resources[k].icon = icon;
@@ -715,7 +725,7 @@ export function buildSiteFromGtnh(
       multiblockId,
       count: row.count,
       limits: choice.type === 'multiblock' ? squareLimits(def, row.count) : { x: null, y: 1, z: null },
-      enabledHatches: def.defaultHatches.filter((k) => !IO_KINDS.includes(k)),
+      enabledHatches: defaultGroupHatches(def),
       origin: [0, 0],
       rotation: 0,
       source: {
@@ -724,6 +734,44 @@ export function buildSiteFromGtnh(
       },
     };
     if (row.node.overclockTier) g.source!.tier = row.node.overclockTier.slice(0, 16);
+    const tier = row.node.overclockTier || row.recipe.minimumTier;
+    if (isVoltageTier(tier)) g.voltageTier = tier;
+    else g.voltageTier = def.minimumVoltageTier ?? 'LV';
+    if (minimumGlassTier(def)) g.structureGlassTier = minimumGlassTier(def);
+    if (isOilCracker(def)) {
+      const fluids = row.recipe.inputs.filter((s) => s.kind === 'fluid');
+      g.resourceBindings = fluids.map((s, i) => ({
+        kind: 'fluidIn',
+        resource: resourceKey(s.kind, s.id),
+        role: i === 1 ? 'catalyst' : 'feed',
+      }));
+    }
+    if (hasLayeredFluidOutputs(def)) {
+      const outputs = row.recipe.outputs.filter((s) => s.kind === 'fluid');
+      g.resourceBindings = [];
+      for (const [i, output] of outputs.entries()) {
+        // Mega DT merges consecutive overflow chunks of one fluid into one fraction before dispatch.
+        // Ordinary duplicate slots stay distinct; the small tower dispatches every array slot separately.
+        const previous = outputs[i - 1];
+        if (
+          def.id === 'mega-distillation-tower' &&
+          previous?.id === output.id &&
+          previous.amount === 2147483647
+        )
+          continue;
+        g.resourceBindings.push({
+          kind: 'fluidOut',
+          resource: resourceKey(output.kind, output.id),
+          role: 'product',
+          outputSlot: g.resourceBindings.length,
+        });
+      }
+      if (def.resize?.axis === 'y')
+        g.size = Math.max(
+          def.resize.default,
+          sizeForFluidOutputs(def, g.resourceBindings.length) ?? def.resize.default,
+        );
+    }
     if (choice.type !== 'multiblock') g.label = row.machine.slice(0, 120);
     if (choice.type === 'single') {
       // The machine's own look, by the names the node and its recipe map use.
@@ -857,6 +905,8 @@ export function buildSiteFromGtnh(
     ports,
     resources,
     colors: {},
+    routing: { mode: 'neat', depth: 3 },
+    rulesVersion: RC2_RULES_VERSION,
   });
   site = { ...site, groups: stackGroups(site, builder, opts.below) };
   const sizes = localFootprints(builder(site, { pipes: false, cables: false, below: opts.below }));

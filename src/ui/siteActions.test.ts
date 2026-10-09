@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptySite, validateSiteState } from '../share/siteCodec';
 import type { PlanState } from '../model/plan/types';
+import { createSiteBuilder } from '../model/site/build';
 import {
   groupLimitAxis,
   pruned,
@@ -49,7 +50,29 @@ describe('site actions', () => {
     const g = withPlanAdded(emptySite(), p, [5, 5]).groups[0];
     expect(g).toMatchObject({ multiblockId: 'distillation-tower', count: 3, size: 8, origin: [5, 5] });
     expect(g.limits.x).toBe(2);
-    expect(g.enabledHatches).toEqual(['energy', 'maintenance']);
+    expect(g.enabledHatches).toEqual(['fluidIn', 'fluidOut', 'energy', 'maintenance']);
+  });
+
+  it('creates required unlinked resource interfaces and retains them after unrelated hatch edits', () => {
+    let s = withGroupAdded(emptySite(), 'mega-distillation-tower', [3, 3]);
+    const group = s.groups[0];
+    expect(group.enabledHatches).toContain('fluidIn');
+    expect(group.enabledHatches).toContain('fluidOut');
+    s = withGroupPatched(s, group.id, { enabledHatches: [...group.enabledHatches, 'dynamo'] });
+    expect(s.groups[0].enabledHatches).toContain('fluidOut');
+    const run = createSiteBuilder();
+    const built = run(s, { pipes: false, cables: false });
+    expect(built.groups[0].hatches.filter((h) => h.kind === 'fluidOut')).toHaveLength(3);
+    expect(built.warnings.filter((w) => w.type === 'error' && w.code === 'structure')).toEqual([]);
+    // An old document with absent interfaces retains its flags and receives concrete RC2 errors.
+    const legacy = {
+      ...s,
+      groups: [{ ...s.groups[0], enabledHatches: ['energy' as const, 'maintenance' as const] }],
+    };
+    const old = run(legacy, { pipes: false, cables: false });
+    expect(old.groups[0].hatches.filter((h) => h.kind === 'fluidOut')).toHaveLength(0);
+    expect(old.warnings.some((w) => w.type === 'error' && w.message.includes('fluidOut count 0'))).toBe(true);
+    expect(legacy.groups[0].enabledHatches).toEqual(['energy', 'maintenance']);
   });
 
   it('locks a group’s limits when they are edited by hand, and lets the lock be switched', () => {

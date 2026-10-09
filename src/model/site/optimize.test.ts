@@ -68,6 +68,91 @@ function arranged(): SiteState {
 }
 
 describe('optimizeSite', () => {
+  it('retains the best evaluated layout by exact priorities when the scalar guide disagrees', () => {
+    let evaluations = 0;
+    const base = stub(() => 0);
+    const builder: SiteBuilder = (site, opts) => {
+      const build = base(site, opts);
+      if (opts.pipes) {
+        evaluations++;
+        build.stats.surfaceBlocks = evaluations === 1 ? 1 : 0;
+        build.stats.bends = 0;
+        build.stats.pipeBlocks = evaluations === 1 ? 0 : 1000000;
+      }
+      return build;
+    };
+    const result = optimizeSite(arranged(), builder, {
+      reshape: false,
+      iterations: 0,
+      refineRuns: 1,
+      refineSteps: 300,
+      now: () => 0,
+    });
+    expect(evaluations).toBeGreaterThan(1);
+    expect(result.improved).toBe(true);
+    expect(result.result.surface).toBe(0);
+  });
+  it('includes calibration in the overall budget and performs only the baseline at zero budget', () => {
+    const start = arranged();
+    let clock = 0;
+    let routed = 0;
+    const base = stub((s) => s.groups.reduce((n, g) => n + g.origin[1], 0));
+    const builder: SiteBuilder = (s, o) => {
+      if (o.pipes) {
+        clock += 400;
+        routed++;
+      }
+      return base(s, o);
+    };
+    optimizeSite(start, builder, {
+      reshape: false,
+      seeds: 1,
+      iterations: 0,
+      refineSteps: 500,
+      refineRuns: 1,
+      budgetMs: 10000,
+      now: () => clock,
+    });
+    expect(clock).toBeLessThanOrEqual(10400);
+    expect(routed).toBeGreaterThan(1);
+    clock = 0;
+    routed = 0;
+    const zero = optimizeSite(start, builder, { budgetMs: 0, now: () => clock });
+    expect(zero.site).toBe(start);
+    expect(zero.tried).toBe(0);
+    expect(routed).toBe(1);
+  });
+
+  it('searches a single group with fixed ports and improves real routes', () => {
+    const s: SiteState = {
+      v: 1,
+      kind: 'site',
+      size: [80, 80],
+      corridor: 2,
+      colors: {},
+      groups: [{ ...group('g1', 'electric-blast-furnace'), origin: [30, 20] }],
+      resources: { a: res('a'), b: res('b') },
+      ports: [
+        { id: 'p1', dir: 'in', resource: 'a', pos: [0, 20] },
+        { id: 'p2', dir: 'out', resource: 'b', pos: [0, 26] },
+      ],
+      links: [
+        { id: 'l1', from: { port: 'p1' }, to: { group: 'g1' }, resource: 'a' },
+        { id: 'l2', from: { group: 'g1' }, to: { port: 'p2' }, resource: 'b' },
+      ],
+    };
+    const r = optimizeSite(s, createSiteBuilder(), {
+      reshape: false,
+      iterations: 300,
+      refineSteps: 100,
+      refineRuns: 1,
+      now: () => 0,
+    });
+    expect(r.tried).toBeGreaterThan(0);
+    expect(r.result.blocks).toBeLessThan(r.start.blocks);
+    expect(r.result.problems).toBeLessThanOrEqual(r.start.problems);
+    expect(r.result.unconnected).toBeLessThanOrEqual(r.start.unconnected);
+  });
   it('keeps a layout that routes better than the start, and only then', () => {
     const start = arranged();
     const startKey = JSON.stringify(start.groups.map((g) => g.origin));
@@ -269,6 +354,30 @@ describe('scoreBuild', () => {
 });
 
 describe('optimizeSite time budget', () => {
+  it('shares the deadline with packing measurements and several real-router refinement runs', () => {
+    const original = arranged();
+    const site = { ...original, groups: original.groups.map((g) => ({ ...g, count: 2 })) };
+    const base = createSiteBuilder();
+    let t = 0;
+    const phases: boolean[] = [];
+    const builder: SiteBuilder = (s, options) => {
+      phases.push(!!options.pipes);
+      t += 400;
+      return base(s, options);
+    };
+    const result = optimizeSite(site, builder, {
+      budgetMs: 10000,
+      now: () => t,
+      iterations: 100,
+      refineSteps: 100,
+      refineRuns: 3,
+      seeds: 3,
+    });
+    expect(phases[0]).toBe(true);
+    expect(phases).toContain(false);
+    expect(t).toBeLessThanOrEqual(10400);
+    expect(better(result.start, result.result)).toBe(false);
+  });
   it('with no time left hands the start back untouched after routing it once', () => {
     let routed = 0;
     const counting = stub(() => 5);

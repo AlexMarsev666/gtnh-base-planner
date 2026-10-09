@@ -1,8 +1,8 @@
 import { getSiteDef, isSingleBlock } from '../../data/generic';
 import type { PlanLimits } from '../multiblock/types';
 import type { Shape } from './anneal';
-import type { SiteBuilder } from './buildTypes';
-import type { SiteGroup, SiteLink, SiteState } from './types';
+import type { SiteBuild, SiteBuilder } from './buildTypes';
+import type { SiteGroup, SiteState } from './types';
 
 /**
  * The ways each group of a site can be packed: the same machines and count with other `limits` (units along X,
@@ -43,6 +43,10 @@ export interface ShapeOptions {
   budgetMs?: number;
   /** Clock for `budgetMs`. Default `performance.now`. */
   now?: () => number;
+  /** Absolute deadline shared with the other optimisation stages. */
+  deadline?: number;
+  /** Already evaluated original packing; avoids repeating its mandatory initial assessment. */
+  baseline?: SiteBuild;
 }
 
 /**
@@ -58,6 +62,8 @@ export function groupShapes(
 ): Map<string, Shape[]> {
   const now = opts.now ?? (() => performance.now());
   const began = now();
+  const deadline = Math.min(opts.deadline ?? Infinity, began + (opts.budgetMs ?? Infinity));
+  const expired = () => now() >= deadline;
   const out = new Map<string, Shape[]>();
   const order = site.groups
     .filter((g) => {
@@ -65,10 +71,9 @@ export function groupShapes(
       return def && !isSingleBlock(def) && g.count >= 2 && !g.limitsLocked;
     })
     .sort((a, b) => a.count - b.count);
-  /** Milliseconds per unit built, over the variants measured so far. */
-  let unitsBuilt = 0;
-  let spent = 0;
+  let baseline = opts.baseline;
   for (const g of order) {
+    if (expired()) break;
     const def = getSiteDef(g.multiblockId)!;
     const seen = new Set([limitsKey(g.limits)]);
     const variants: PlanLimits[] = [];
@@ -79,15 +84,8 @@ export function groupShapes(
       variants.push(limits);
     }
     if (variants.length === 0) continue;
-    if (opts.budgetMs !== undefined) {
-      const left = opts.budgetMs - (now() - began);
-      const predicted = unitsBuilt > 0 ? (spent / unitsBuilt) * g.count * variants.length : 0;
-      if (left <= 0 || predicted > left) continue;
-    }
-    const t = now();
-    const list = measure(site, g, variants, builder, below);
-    spent += now() - t;
-    unitsBuilt += g.count * variants.length;
+    baseline ??= builder(site, { pipes: false, cables: false, below, keepCache: true });
+    const list = measure(site, g, variants, builder, below, baseline, expired);
     if (list) out.set(g.id, list);
   }
   return out;
@@ -100,49 +98,32 @@ function measure(
   variants: PlanLimits[],
   builder: SiteBuilder,
   below: boolean,
+  baseline: SiteBuild,
+  expired: () => boolean,
 ): Shape[] | null {
-  // Variants get ids of their own and a copy of every link end of their group, so they need the same hatches.
-  const vid = (i: number) => `~s${i}`;
-  const extra: SiteLink[] = [];
-  for (const l of site.links)
-    variants.forEach((_, i) => {
-      for (const side of ['from', 'to'] as const) {
-        const e = l[side];
-        if ('group' in e && e.group === g.id)
-          extra.push({ ...l, id: `${l.id}~${side}${i}`, [side]: { group: vid(i) } });
-      }
-    });
-  const trial: SiteState = {
-    ...site,
-    groups: [...site.groups, ...variants.map((limits, i) => ({ ...g, id: vid(i), limits }))],
-    links: [...site.links, ...extra],
-  };
-  const built = new Map(
-    builder(trial, { pipes: false, cables: false, below, keepCache: true }).groups.map((pg) => [
-      pg.group.id,
-      pg.build,
-    ]),
-  );
-  const shapeOf = (id: string, limits: PlanLimits): Shape | null => {
-    const b = built.get(id);
-    return b ? { limits, size: [b.size[0], b.size[2]], height: b.size[1] } : null;
-  };
+  const current = baseline.groups.find((pg) => pg.group.id === g.id)?.build;
+  if (!current) return null;
   const sameFoot = (a: Shape, b: Shape) =>
     a.size[0] === b.size[0] && a.size[1] === b.size[1] && a.height === b.height;
-  const now = shapeOf(g.id, g.limits);
-  const current = built.get(g.id);
-  if (!now || !current) return null;
+  const now: Shape = { limits: g.limits, size: [current.size[0], current.size[2]], height: current.size[1] };
   const list: Shape[] = [now];
-  variants.forEach((limits, i) => {
-    if (list.length > MAX_SHAPES) return;
-    const b = built.get(vid(i));
-    const shape = shapeOf(vid(i), limits);
-    if (!b || !shape) return;
-    if (b.pack.placed < b.pack.requested) return;
-    if (b.unplaced.length > current.unplaced.length || b.missing.length > current.missing.length) return;
-    if (shape.height > MAX_HEIGHT || list.some((x) => sameFoot(x, shape))) return;
+  for (const limits of variants) {
+    if (list.length > MAX_SHAPES || expired()) break;
+    // One assessment at a time: a batch of all packings could start before the deadline and consume
+    // many evaluations after it. The original IDs and links also keep logical hatch assignments stable.
+    const trial = {
+      ...site,
+      groups: site.groups.map((group) => (group.id === g.id ? { ...group, limits } : group)),
+    };
+    const b = builder(trial, { pipes: false, cables: false, below, keepCache: true }).groups.find(
+      (pg) => pg.group.id === g.id,
+    )?.build;
+    if (!b || b.pack.placed < b.pack.requested) continue;
+    const shape: Shape = { limits, size: [b.size[0], b.size[2]], height: b.size[1] };
+    if (b.unplaced.length > current.unplaced.length || b.missing.length > current.missing.length) continue;
+    if (shape.height > MAX_HEIGHT || list.some((x) => sameFoot(x, shape))) continue;
     list.push(shape);
-  });
+  }
   return list.length > 1 ? list : null;
 }
 

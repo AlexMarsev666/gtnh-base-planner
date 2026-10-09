@@ -1,4 +1,5 @@
-import { isSingleBlock } from '../../data/generic';
+import { withSteamFrame } from '../multiblock/steamWaterPump';
+import { isSingleBlock, TRANSFORMER_ID } from '../../data/generic';
 import { rotateDir, rotatedSize, step, unitCells } from '../geometry';
 import { layoutCandidates, packUnits } from '../layout/packer';
 import { resolveLayout } from '../plan';
@@ -7,15 +8,57 @@ import type { Dir, Rotation, Vec3 } from '../core/types';
 import type { HatchKind, MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
 import type { HatchPlacement, HatchResult, PackResult, WallStats } from '../plan/types';
 import { computeWallStats } from '../walls';
+import { hatchAssignmentKey, placeResourceHatches, type HatchSettings } from './resourcePlacement';
+import { VOLTAGE_TIERS, type VoltageTier } from '../tiers';
+import { withRequiredAlternatives } from '../multiblock/rules';
+import { isOilCracker } from '../multiblock/structureAdapters';
+import { withAssemblyGrowth } from '../multiblock/circuitAssemblyLine';
+import { fixedHatchCounts, fixedHatchKinds } from '../multiblock/fixedHatches';
 
 /** Hatch kinds that carry a link's resource into or out of a group. */
-export const IN_KINDS: readonly HatchKind[] = ['itemIn', 'fluidIn', 'steamIn', 'energy'];
+export const IN_KINDS: readonly HatchKind[] = [
+  'electrodeIn',
+  'electrodeBus',
+  'itemIn',
+  'fluidIn',
+  'steamIn',
+  'energy',
+  'cryotheumIn',
+  'pyrotheumIn',
+];
 export const OUT_KINDS: readonly HatchKind[] = ['itemOut', 'fluidOut', 'dynamo'];
 /** Kinds only links place (a site group never enables them by hand). */
-export const IO_KINDS: readonly HatchKind[] = ['itemIn', 'itemOut', 'fluidIn', 'fluidOut', 'steamIn'];
+export const IO_KINDS: readonly HatchKind[] = [
+  'electrodeIn',
+  'electrodeBus',
+  'itemIn',
+  'itemOut',
+  'fluidIn',
+  'fluidOut',
+  'steamIn',
+  'cryotheumIn',
+  'pyrotheumIn',
+];
+
+/** New groups also retain required resource interfaces when they have no network link yet. */
+export function defaultGroupHatches(def: MultiblockDef): HatchKind[] {
+  return def.defaultHatches.filter(
+    (kind) =>
+      !IO_KINDS.includes(kind) ||
+      (def.requiredHatches?.[kind]?.min ?? 0) > 0 ||
+      (fixedHatchCounts(def)[kind] ?? 0) > 0 ||
+      Object.values(def.legend).some((cell) => {
+        const kinds = fixedHatchKinds(def, cell);
+        return kinds.includes(kind) && kinds.every((kind) => def.defaultHatches.includes(kind));
+      }),
+  );
+}
 
 /** A hatch of a site group, with the resource it carries. */
 export interface SiteHatch extends HatchPlacement {
+  tier?: VoltageTier;
+  assignments?: string[];
+  allowedFaces?: Dir[];
   resource?: string;
   /** Sides it may never face (GT `disallowFaces`, e.g. Distillation Tower layer outputs never face up). */
   blocked?: Dir[];
@@ -204,17 +247,30 @@ export function buildGroup(
   demand: Demand,
   below = false,
   toward: Toward = {},
+  settings?: HatchSettings,
 ): GroupBuild {
-  if (isSingleBlock(raw)) return buildSingleBlocks(raw, count, limits, demand);
-  const def = withDemand(raw, demand);
-  const enabled = [...new Set([...base, ...(Object.keys(demand) as HatchKind[])])].filter(
-    (k) => def.hatchBlocks[k] !== undefined && (!IO_KINDS.includes(k) || (demand[k]?.length ?? 0) > 0),
+  if (isSingleBlock(raw)) return buildSingleBlocks(raw, count, limits, demand, settings);
+  if (isOilCracker(raw) && (settings ? settings.crackingFeedSide === 'left' : toward.fluidIn === 'west'))
+    raw = {
+      ...raw,
+      legend: { ...raw.legend, l: { ...raw.legend.r }, r: { ...raw.legend.l } },
+    };
+  let def = withDemand(
+    withSteamFrame(withAssemblyGrowth(raw, settings?.assemblyGrowth), settings?.steamFrameTier),
+    demand,
   );
+  const enabled = [...new Set([...base, ...(Object.keys(demand) as HatchKind[])])].filter(
+    (k) => def.hatchBlocks[k] !== undefined,
+  );
+  if (settings) def = withRequiredAlternatives(def, enabled);
   const packed = packUnits(def, count, limits);
   const targets = towardPoints(def, packed.units, toward);
   // With `below`, hatches may face down from the lowest layer (see `PlaceOptions`); with `toward`, each
   // kind's hatches lean to the side its pipes leave by.
-  const place: typeof placeHatches = (d, u, e, a) => placeHatches(d, u, e, a, { below, toward: targets });
+  const place: typeof placeHatches = (d, u, e, a) =>
+    settings
+      ? placeResourceHatches(d, u, e, demand, settings, below, toward)
+      : placeHatches(d, u, e, a, { below, toward: targets });
   const resolved = resolveLayout(def, packed, enabled, limits, { placeHatches: place, layoutCandidates });
   const lo: [number, number, number] = [Infinity, Infinity, Infinity];
   const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
@@ -241,7 +297,7 @@ export function buildGroup(
   const missing: GroupBuild['missing'] = [];
   for (const [kind, list] of Object.entries(demand) as [HatchKind, string[]][]) {
     if (!list?.length) continue;
-    hatches = assign(hatches, kind, list, unitIds);
+    if (!settings) hatches = assign(hatches, kind, list, unitIds);
     for (const id of unitIds)
       for (const r of list)
         if (!hatches.some((h) => h.kind === kind && h.resource === r && h.unitIds.includes(id)))
@@ -265,6 +321,7 @@ function buildSingleBlocks(
   count: number,
   limits: PlanLimits,
   demand: Demand,
+  settings?: HatchSettings,
 ): GroupBuild {
   const units = singleBlockLayout(count, limits);
   const flows = Object.entries(demand).flatMap(([kind, list]) =>
@@ -274,13 +331,35 @@ function buildSingleBlocks(
   const missing: GroupBuild['missing'] = [];
   for (const u of units)
     flows.forEach(([kind, resource], i) => {
+      const transformer =
+        def.id === TRANSFORMER_ID
+          ? (settings?.transformer ?? {
+              lowTier: 'LV' as const,
+              facing: 'north' as const,
+              mode: 'down' as const,
+            })
+          : undefined;
+      const highTier = transformer
+        ? VOLTAGE_TIERS[VOLTAGE_TIERS.indexOf(transformer.lowTier) + 1]
+        : undefined;
+      const highSide = transformer && (kind === 'energy') === (transformer.mode === 'down');
+      const allowedFaces = transformer
+        ? highSide
+          ? [transformer.facing]
+          : (['north', 'east', 'south', 'west', 'up', 'down'] as Dir[]).filter(
+              (d) => d !== transformer.facing,
+            )
+        : undefined;
       // More flows than faces: the extras share the top face (a pipe may still come in from any side).
       hatches.push({
         kind,
         resource,
         cell: u.origin,
-        face: SINGLE_FACES[Math.min(i, SINGLE_FACES.length - 1)],
+        face: allowedFaces?.[0] ?? SINGLE_FACES[Math.min(i, SINGLE_FACES.length - 1)],
         unitIds: [u.id],
+        tier: transformer ? (highSide ? highTier : transformer.lowTier) : settings?.voltageTier,
+        assignments: [hatchAssignmentKey(u.id, kind, resource)],
+        ...(allowedFaces ? { allowedFaces } : {}),
       });
     });
   const size: Vec3 = units.length
@@ -373,5 +452,6 @@ export function placeHatch(
     face: rotateDir(h.face, r),
   };
   if (h.blocked) out.blocked = h.blocked.map((d) => rotateDir(d, r));
+  if (h.allowedFaces) out.allowedFaces = h.allowedFaces.map((d) => rotateDir(d, r));
   return out;
 }

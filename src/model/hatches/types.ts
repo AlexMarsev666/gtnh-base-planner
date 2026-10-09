@@ -25,6 +25,8 @@ export interface Site {
 
 /** A candidate site's rank for the hatch kind being placed. */
 export interface Entry {
+  /** Mandatory physical hatch cells precede optional casing replacements. */
+  fixed?: number;
   /** Index into the position-sorted candidate list. */
   i: number;
   /** Units on the site still below their target. */

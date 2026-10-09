@@ -42,7 +42,7 @@ export const TILE = 16;
 const COLUMNS = 16;
 
 /** Client default of `Client.colorModulation.machineMetal` (Dyes.MACHINE_METAL). */
-const MACHINE_METAL = [210, 220, 255];
+export const MACHINE_METAL = [210, 220, 255];
 
 /**
  * Atlas tiles: name → options. The source is `${ICONSETS}/${name}.png` unless `path` (repo-relative) is given;
@@ -51,6 +51,33 @@ const MACHINE_METAL = [210, 220, 255];
  * `ref` is the GT5-Unofficial branch or tag to download from (default `master`).
  */
 export const HAND_TILES = {
+  COMPUTATION_UNCERTAINTY_FRONT: { derived: true, from: ['assets/gregtech/textures/blocks/iconsets/UC.png'] },
+  COMPUTATION_RACK_FRONT: { derived: true, from: ['assets/gregtech/textures/blocks/iconsets/EM_RACK.png'] },
+  ELECTRODE_DETECTOR_FRONT: {
+    derived: true,
+    from: ['assets/gregtech/textures/blocks/iconsets/OVERLAY_HATCH_HEAT_SENSOR.png'],
+  },
+  RECIPE_DATA_FRONT: {
+    derived: true,
+    from: [
+      'assets/gregtech/textures/blocks/iconsets/OVERLAY_EM_D_SIDES.png',
+      'assets/gregtech/textures/blocks/iconsets/EM_DATA_CONN.png',
+    ],
+  },
+  BEAM_OUTPUT_FRONT: {
+    derived: true,
+    from: [
+      'assets/gregtech/textures/blocks/iconsets/OVERLAY_BO_SIDES.png',
+      'assets/gregtech/textures/blocks/iconsets/BO_CONN.png',
+    ],
+  },
+  BEAM_INPUT_FRONT: {
+    derived: true,
+    from: [
+      'assets/gregtech/textures/blocks/iconsets/OVERLAY_BI_SIDES.png',
+      'assets/gregtech/textures/blocks/iconsets/BI_CONN.png',
+    ],
+  },
   // Coke Oven (BlockCasings12 meta 0, MTECokeOven, MTEHatchCokeOven)
   COKE_OVEN_CASING: {},
   COKE_OVEN_OVERLAY_INACTIVE: {},
@@ -183,6 +210,7 @@ export const HAND_TILES = {
   ITEM_IN_SIGN: {},
   ITEM_OUT_SIGN: {},
   FLUID_IN_SIGN: {},
+  FLUID_STEAM_IN_SIGN: {},
   FLUID_OUT_SIGN: {},
   OVERLAY_ENERGY_IN_LV: {},
   OVERLAY_ENERGY_OUT_LV: {},
@@ -207,6 +235,7 @@ export const HAND_TILES = {
   OVERLAY_SCHEST: {},
   OVERLAY_STANK: {},
   OVERLAY_ENERGY_OUT: {},
+  OVERLAY_DATA_ACCESS: {},
 };
 
 /**
@@ -307,6 +336,37 @@ export const HAND_BLOCK_MAP = {
 
   // Generic multiblock controller: solid steel casing + a standard GT multiblock front.
   'gt.controller': { side: 'MACHINE_CASING_SOLID_STEEL', front: 'OVERLAY_FRONT_ELECTRIC_BLAST_FURNACE' },
+  'gregtech:gt.blockmachines@10503': {
+    side: 'DUMP_CASING_SHIELDED_ACCELERATOR',
+    front: 'BEAM_INPUT_FRONT',
+  },
+  'gregtech:gt.blockmachines@10504': { side: 'DUMP_CASING_SHIELDED_ACCELERATOR', front: 'BEAM_OUTPUT_FRONT' },
+  'gregtech:gt.blockmachines@3014': { side: 'DUMP_CASING_SHIELDED_ACCELERATOR', front: 'BEAM_OUTPUT_FRONT' },
+  'gregtech:gt.blockmachines@967': {
+    side: 'MACHINE_IV_SIDE',
+    top: 'MACHINE_IV_TOP',
+    bottom: 'MACHINE_IV_BOTTOM',
+  },
+  'gregtech:gt.blockmachines@968': {
+    side: 'MACHINE_IV_SIDE',
+    top: 'MACHINE_IV_TOP',
+    bottom: 'MACHINE_IV_BOTTOM',
+  },
+  'gregtech:gt.blockmachines@31040': {
+    side: 'MACHINE_ULV_SIDE',
+    top: 'MACHINE_ULV_TOP',
+    bottom: 'MACHINE_ULV_BOTTOM',
+  },
+  'gregtech:gt.blockmachines@14203': {
+    side: 'MACHINE_IV_SIDE',
+    top: 'MACHINE_IV_TOP',
+    bottom: 'MACHINE_IV_BOTTOM',
+  },
+  'gregtech:gt.blockmachines@14204': {
+    side: 'MACHINE_IV_SIDE',
+    top: 'MACHINE_IV_TOP',
+    bottom: 'MACHINE_IV_BOTTOM',
+  },
 
   // Generic hatches: LV hull (the item form of a hatch) + kind overlay on the facing side.
   'gt.hatch.inputBus': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
@@ -317,6 +377,7 @@ export const HAND_BLOCK_MAP = {
   'gt.hatch.dynamo': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.maintenance': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.muffler': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
+  'gt.hatch.dataAccess': { side: 'MACHINE_EV_SIDE', top: 'MACHINE_EV_TOP', bottom: 'MACHINE_EV_BOTTOM' },
   // Site stand-in for any GT single-block machine: an LV machine hull.
   'site.singleblock': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   // Site placeholder for a multiblock that is not transcribed yet: hazard-striped casing.
@@ -369,11 +430,130 @@ for (const m of SINGLE_MACHINES) {
   };
 }
 
+const VOLTAGE_TIERS = [
+  'ULV',
+  'LV',
+  'MV',
+  'HV',
+  'EV',
+  'IV',
+  'LuV',
+  'ZPM',
+  'UV',
+  'UHV',
+  'UEV',
+  'UIV',
+  'UMV',
+  'UXV',
+  'MAX',
+];
+for (const [i, tier] of VOLTAGE_TIERS.entries()) {
+  for (const face of ['SIDE', 'TOP', 'BOTTOM'])
+    HAND_TILES[`MACHINE_${tier}_${face}`] = { tint: MACHINE_METAL };
+  for (const prefix of [
+    'OVERLAY_ENERGY_IN',
+    'OVERLAY_ENERGY_OUT',
+    'OVERLAY_ENERGY_IN_MULTI_4A',
+    'OVERLAY_ENERGY_OUT_MULTI_4A',
+  ])
+    HAND_TILES[`${prefix}_${tier}`] = {};
+  const hull = { side: `MACHINE_${tier}_SIDE`, top: `MACHINE_${tier}_TOP`, bottom: `MACHINE_${tier}_BOTTOM` };
+  HAND_BLOCK_MAP[`site.singleblock.${tier}`] = hull;
+  for (const m of SINGLE_MACHINES)
+    HAND_BLOCK_MAP[`site.machine.${m.id}.${tier}`] = {
+      ...hull,
+      front: HAND_BLOCK_MAP[`site.machine.${m.id}`].front,
+    };
+  for (const id of [
+    'inputBus',
+    'outputBus',
+    'inputHatch',
+    'outputHatch',
+    'energy',
+    'dynamo',
+    'muffler',
+    'steamInput',
+    'steamInputBus',
+    'steamOutputBus',
+  ])
+    HAND_BLOCK_MAP[`gt.hatch.${id}.${tier}`] = hull;
+  if (['EV', 'LuV', 'UV'].includes(tier)) HAND_BLOCK_MAP[`gt.hatch.dataAccess.${tier}`] = hull;
+  if (i < VOLTAGE_TIERS.length - 1) {
+    const high = VOLTAGE_TIERS[i + 1];
+    HAND_BLOCK_MAP[`site.transformer.${tier}.down`] = {
+      ...hull,
+      front: `OVERLAY_ENERGY_IN_${high}`,
+      rest: `OVERLAY_ENERGY_OUT_MULTI_4A_${tier}`,
+    };
+    HAND_BLOCK_MAP[`site.transformer.${tier}.up`] = {
+      ...hull,
+      front: `OVERLAY_ENERGY_OUT_${high}`,
+      rest: `OVERLAY_ENERGY_IN_MULTI_4A_${tier}`,
+    };
+  }
+}
+
 const generated = existsSync(TEXTURES_GENERATED)
   ? JSON.parse(readFileSync(TEXTURES_GENERATED, 'utf8'))
   : { tiles: {}, blocks: {} };
 
+// Canonical RC2 borosilicate variants are selectable in reviewed structures, including EV/IV/UMV/UXV.
+const glassVariants = JSON.parse(
+  readFileSync(join(ROOT, 'src/data/glass-variants.rc2.generated.json'), 'utf8'),
+);
+for (const variant of glassVariants.variants) {
+  HAND_TILES[variant.tile] = { path: variant.path, ref: 'a3e1e11241a814c9fa0dd0973d5699548428f689' };
+  HAND_BLOCK_MAP[variant.id] = { side: variant.tile };
+}
+
 /** Every tile: the hand-made ones and those of the generated catalog entries. */
+const dataInterfaces = JSON.parse(
+  readFileSync(join(ROOT, 'src/data/single-tiers.generated.json'), 'utf8'),
+).dataInterfaces;
+for (const { meta, tier } of Object.values(dataInterfaces)) {
+  const name = [
+    'ULV',
+    'LV',
+    'MV',
+    'HV',
+    'EV',
+    'IV',
+    'LuV',
+    'ZPM',
+    'UV',
+    'UHV',
+    'UEV',
+    'UIV',
+    'UMV',
+    'UXV',
+    'MAX',
+  ][tier];
+  HAND_BLOCK_MAP[`gregtech:gt.blockmachines@${meta}`] = {
+    side: `MACHINE_${name}_SIDE`,
+    top: `MACHINE_${name}_TOP`,
+    bottom: `MACHINE_${name}_BOTTOM`,
+    front: 'RECIPE_DATA_FRONT',
+  };
+}
+const computing = JSON.parse(readFileSync(join(ROOT, 'src/data/computation.rc2.generated.json'), 'utf8'));
+for (const [kind, variants] of Object.entries(computing.registrations))
+  for (const variant of variants) {
+    const tier = VOLTAGE_TIERS[variant.tier];
+    const hull = {
+      side: `MACHINE_${tier}_SIDE`,
+      top: `MACHINE_${tier}_TOP`,
+      bottom: `MACHINE_${tier}_BOTTOM`,
+    };
+    const front =
+      kind === 'uncertainty'
+        ? 'COMPUTATION_UNCERTAINTY_FRONT'
+        : kind === 'computerRack'
+          ? 'COMPUTATION_RACK_FRONT'
+          : 'RECIPE_DATA_FRONT';
+    HAND_BLOCK_MAP[`gregtech:gt.blockmachines@${variant.meta}`] = { ...hull, front };
+    if (kind === 'uncertainty') HAND_BLOCK_MAP[`gt.hatch.uncertainty.${tier}`] = hull;
+  }
+HAND_BLOCK_MAP['gt.hatch.uncertainty'] = HAND_BLOCK_MAP['gt.hatch.uncertainty.IV'];
 export const TILES = { ...generated.tiles, ...HAND_TILES };
 /** Every block → faces mapping (hand-made entries win). */
 export const BLOCK_MAP = { ...generated.blocks, ...HAND_BLOCK_MAP };
@@ -384,6 +564,15 @@ export const BLOCK_MAP = { ...generated.blocks, ...HAND_BLOCK_MAP };
  * the hatch colour at runtime.
  */
 export const HATCH_OVERLAYS = {
+  computationIn: ['RECIPE_DATA_FRONT'],
+  computationOut: ['RECIPE_DATA_FRONT'],
+  wirelessComputationIn: ['RECIPE_DATA_FRONT'],
+  wirelessComputationOut: ['RECIPE_DATA_FRONT'],
+  uncertainty: ['COMPUTATION_UNCERTAINTY_FRONT'],
+  computerRack: ['COMPUTATION_RACK_FRONT'],
+  electrodeIn: ['OVERLAY_PIPE_IN', 'ITEM_IN_SIGN'],
+  electrodeBus: ['OVERLAY_PIPE_IN', 'ITEM_IN_SIGN'],
+  electrodeDetector: ['ELECTRODE_DETECTOR_FRONT'],
   itemIn: ['OVERLAY_PIPE_IN', 'ITEM_IN_SIGN'],
   itemOut: ['OVERLAY_PIPE_OUT', 'ITEM_OUT_SIGN'],
   fluidIn: ['OVERLAY_PIPE_IN', 'FLUID_IN_SIGN'],
@@ -392,7 +581,14 @@ export const HATCH_OVERLAYS = {
   dynamo: ['OVERLAY_ENERGY_OUT_LV'],
   maintenance: ['OVERLAY_MAINTENANCE'],
   muffler: ['OVERLAY_MUFFLER'],
-  steamIn: ['OVERLAY_PIPE_IN', 'FLUID_IN_SIGN'],
+  steamIn: ['OVERLAY_PIPE_IN', 'FLUID_STEAM_IN_SIGN'],
+  cryotheumIn: ['OVERLAY_PIPE_IN', 'FLUID_STEAM_IN_SIGN'],
+  pyrotheumIn: ['OVERLAY_PIPE_IN', 'FLUID_STEAM_IN_SIGN'],
+  dataAccess: ['OVERLAY_DATA_ACCESS'],
+  assemblyDataIn: ['RECIPE_DATA_FRONT'],
+  assemblyDataOut: ['RECIPE_DATA_FRONT'],
+  wirelessAssemblyDataIn: ['RECIPE_DATA_FRONT'],
+  wirelessAssemblyDataOut: ['RECIPE_DATA_FRONT'],
 };
 
 export function tileSourcePath(name) {
@@ -647,7 +843,22 @@ export function buildManifest(rects, atlasSize, blockIds) {
       continue;
     }
     for (const t of Object.values(faces)) if (!rects[t]) throw new Error(`${id}: unknown tile ${t}`);
-    blocks[id] = { ...faces };
+    // Keep transparency explicit. Near-opaque sprite pixels (e.g. LCR's alpha 250) are solid.
+    let holes = 0;
+    let partial = 0;
+    let pixels = 0;
+    const rect = rects[faces.side];
+    if (atlasSize.data && rect) {
+      const [x, y, w, h] = rect;
+      for (let py = y; py < y + h; py++)
+        for (let px = x; px < x + w; px++) {
+          const alpha = atlasSize.data[(py * atlasSize.width + px) * 4 + 3];
+          pixels++;
+          if (alpha === 0) holes++;
+          else if (alpha < 245) partial++;
+        }
+    }
+    blocks[id] = { ...faces, renderMode: partial > pixels / 4 ? 'transparent' : holes ? 'cutout' : 'opaque' };
   }
   for (const [kind, list] of Object.entries(HATCH_OVERLAYS)) {
     for (const t of list) if (!rects[t]) throw new Error(`hatch ${kind}: unknown tile ${t}`);
@@ -669,6 +880,8 @@ async function fetchSources() {
   for (const name of Object.keys(TILES)) {
     const dest = join(SRC_DIR, `${name}.png`);
     if (existsSync(dest)) continue;
+    if (TILES[name].derived)
+      throw new Error(`Regenerate ${name} with tools/game-dump/beam-hatch-textures.mjs`);
     const url = RAW(TILES[name].ref) + tileSourcePath(name);
     let body;
     for (let attempt = 1; !body; attempt++) {

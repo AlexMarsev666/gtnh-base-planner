@@ -1,9 +1,10 @@
+import { withSteamFrame } from '../multiblock/steamWaterPump';
 import { getSiteDef } from '../../data/generic';
 import { effectiveSize, sizedDef } from '../resize';
+import { singleMachineTiers } from '../../data/single-machines';
 import type { PlacedGroup, SiteWarning } from './buildTypes';
 import {
   buildGroup,
-  IO_KINDS,
   placeHatch,
   placeUnit,
   rotatedGroupSize,
@@ -13,6 +14,8 @@ import {
 } from './group';
 import { GROUP_STRIDE } from './ids';
 import type { SiteGroup, SiteState } from './types';
+import { withStructureGlass } from '../multiblock/glass';
+import { withAssemblyGrowth } from '../multiblock/circuitAssemblyLine';
 
 /**
  * Built groups by everything their build depends on (multiblock, size, count, limits, hatches, demand,
@@ -51,8 +54,33 @@ export function placeGroups(
       warnings.push({ type: 'error', group: g.id, message: `Unknown multiblock "${g.multiblockId}"` });
       return { ...empty, error: 'unknown' };
     }
-    const def = sizedDef(raw, effectiveSize(raw, g.size));
-    const base = g.enabledHatches.filter((k) => !IO_KINDS.includes(k));
+    const def = withSteamFrame(
+      withAssemblyGrowth(
+        withStructureGlass(sizedDef(raw, effectiveSize(raw, g.size)), g.structureGlassTier),
+        g.assemblyGrowth,
+      ),
+      g.steamFrameTier,
+    );
+    if (g.size !== undefined && effectiveSize(raw, g.size) !== g.size)
+      warnings.push({
+        type: 'error',
+        group: g.id,
+        code: 'structure',
+        message: `Stored size ${g.size} is not supported by RC2 for ${g.multiblockId}. Choose a supported size explicitly.`,
+      });
+    if (
+      g.machine &&
+      g.voltageTier &&
+      singleMachineTiers(g.machine).length &&
+      !singleMachineTiers(g.machine).includes(g.voltageTier)
+    )
+      warnings.push({
+        type: 'error',
+        group: g.id,
+        code: 'tier',
+        message: `${g.machine} has no ${g.voltageTier} variant in RC2. Select an existing tier.`,
+      });
+    const base = g.enabledHatches;
     const toward = towardOf(g);
     const ck = JSON.stringify([
       def.id,
@@ -63,12 +91,22 @@ export function placeGroups(
       demand,
       below,
       toward,
+      g.voltageTier,
+      g.hatchTiers,
+      g.resourceBindings,
+      g.transformer,
+      g.crackingFeedSide,
+      g.manualTransformerMode,
+      g.dataBankWireless,
+      g.assemblyGrowth,
+      g.structureGlassTier,
+      g.steamFrameTier,
     ]);
     used.add(ck);
     let built = cache.get(ck);
     if (!built) {
       try {
-        built = buildGroup(def, g.count, g.limits, base, demand, below, toward);
+        built = buildGroup(def, g.count, g.limits, base, demand, below, toward, g);
       } catch (err) {
         // Shown on the group; a malformed definition must not stop the rest of the site.
         built = { error: err instanceof Error ? err.message : String(err) };

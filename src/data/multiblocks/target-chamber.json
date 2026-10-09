@@ -2,24 +2,24 @@
   "id": "target-chamber",
   "name": "Target Chamber",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhlanth/common/tileentity/MTETargetChamber.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTETargetChamber.java",
   "size": [5, 5, 6],
   "layers": [
     ["AA~AA", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "CCCCC"],
-    ["CDDDC", "EFGFE", "EFFFE", "EFFFE", "EFHFE", "CDDDC"],
-    ["CDFDC", "EGIGE", "EFFFE", "EFFFE", "EHJHE", "CDKDC"],
-    ["CDDDC", "EFGFE", "EFFFE", "EFFFE", "EFHFE", "CDDDC"],
+    ["CDDDC", "E-F-E", "E---E", "E---E", "E-G-E", "CDDDC"],
+    ["CDHDC", "EFIFE", "E---E", "E---E", "EGJGE", "CDKDC"],
+    ["CDDDC", "E-F-E", "E---E", "E---E", "E-G-E", "CDDDC"],
     ["CCCCC", "BELEB", "BEEEB", "BEEEB", "BELEB", "CCCCC"]
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings3@10", "hatches": ["energy", "maintenance"] },
     "B": { "blockId": "gtnhlanth:casing.shielded_accelerator@0" },
     "C": { "blockId": "gregtech:gt.blockcasings3@10" },
-    "D": { "blockId": "bartworks:BW_TieredGlass@1" },
+    "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "gtnhlanth:tile.casing.shielded_accelerator_glass@0" },
-    "F": { "blockId": "gt.hatch.special" },
-    "G": { "blockId": "gtnhlanth:casing.focus_manipulator@0" },
-    "H": { "blockId": "gtnhlanth:casing.target_receptacle@0" },
+    "F": { "blockId": "gtnhlanth:casing.focus_manipulator@0" },
+    "G": { "blockId": "gtnhlanth:casing.target_receptacle@0" },
+    "H": { "blockId": "gt.hatch.special" },
     "I": { "blockId": "gtnhlanth:casing.focus_holder@0" },
     "J": { "blockId": "gtnhlanth:casing.target_holder@0" },
     "K": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"] },
@@ -33,8 +33,8 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "Built by the game itself: MTETargetChamber (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTETargetChamber (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
 }

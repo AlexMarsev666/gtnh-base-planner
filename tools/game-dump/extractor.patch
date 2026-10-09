@@ -20,10 +20,16 @@ index 13bead4..8ebeea4 100644
      // multiblocks, so drop that one broken optional subtree; every other GT5U hard
      // dependency still resolves and loads on the dev server.
 -    implementation("com.github.GTNewHorizons:GT5-Unofficial:5.09.54.20:dev") {
-+    implementation("com.github.GTNewHorizons:GT5-Unofficial:5.09.54.133:dev") {
++    implementation("com.github.GTNewHorizons:GT5-Unofficial:5.09.54.205:dev") {
          exclude group: "com.github.GTNewHorizons", module: "ThaumicTinkerer"
      }
  
+@@ -47,3 +47,3 @@ dependencies {
+     // StructureLib - the multiblock structure framework (LGPL, GTNewHorizons).
+-    // Pinned from DreamAssemblerXXL manifest 2.9.0-beta-2; matches GT5U's transitive requirement.
+-    implementation("com.github.GTNewHorizons:StructureLib:1.4.42:dev")
++    // Pinned to GTNH 2.9.0-RC-2.
++    implementation("com.github.GTNewHorizons:StructureLib:1.4.45:dev")
 @@ -60,3 +60,20 @@ dependencies {
      // net.minecraft:launchwrapper, which is exactly why this route costs no new dependency.
      testImplementation("junit:junit:4.13.2")
@@ -40,7 +46,7 @@ index 13bead4..8ebeea4 100644
 +    implementation("com.mojang:brigadier:1.0.18")
 +}
 +
-+// Local change: GT5U 5.09.54.133 references jvmdowngrader stubs; GTNHLib mirrors them onto the system class
++// Local change: GT5U 5.09.54.205 references jvmdowngrader stubs; GTNHLib mirrors them onto the system class
 +// loader only, which LaunchClassLoader never asks, so put them on the run classpath too.
 +dependencies {
 +    runtimeOnly("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:2.0.1:downgraded-8")
@@ -79,7 +85,7 @@ index d6007d9..b5cdca8 100644
  
      private static final Logger LOG = LogManager.getLogger(MODID);
  
-+    // Local change: GT5U 5.09.54.133 dev jars reference jvmdowngrader stubs, which a transformer fails on in
++    // Local change: GT5U 5.09.54.205 dev jars reference jvmdowngrader stubs, which a transformer fails on in
 +    // LaunchClassLoader; load them untransformed from the app class path (they are on it).
 +    static {
 +        try {
@@ -101,7 +107,7 @@ index 8cb38c1..b2f9334 100644
          }
          BaseMetaTileEntity base = (BaseMetaTileEntity) te;
          base.setMetaTileID((short) id);
-+        // Local change: GT 5.09.54.133 tracks power fails per owner; an ownerless machine throws on removal.
++        // Local change: GT 5.09.54.205 tracks power fails per owner; an ownerless machine throws on removal.
 +        base.setOwnerUuid(java.util.UUID.fromString("00000000-0000-0000-0000-0000000e17ac"));
 +        base.setOwnerName("gtnhextractor");
          IMetaTileEntity controller = imte.newMetaEntity(base);
@@ -136,7 +142,7 @@ index f050ea0..a048ff4 100644
          }
          BaseMetaTileEntity bmte = (BaseMetaTileEntity) te;
          bmte.setMetaTileID((short) id);
-+        // Local change: GT 5.09.54.133 tracks power fails per owner; an ownerless machine throws on removal.
++        // Local change: GT 5.09.54.205 tracks power fails per owner; an ownerless machine throws on removal.
 +        bmte.setOwnerUuid(java.util.UUID.fromString("00000000-0000-0000-0000-0000000e17ac"));
 +        bmte.setOwnerName("gtnhextractor");
          IMetaTileEntity mte = imte.newMetaEntity(bmte);

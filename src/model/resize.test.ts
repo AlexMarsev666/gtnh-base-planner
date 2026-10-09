@@ -28,6 +28,44 @@ const line: MultiblockDef = {
 };
 
 describe('sizedDef', () => {
+  for (const [axis, size, layers] of [
+    ['x', [2, 1, 1], [['~E']]],
+    ['y', [1, 2, 1], [['~'], ['E']]],
+    ['z', [1, 1, 2], [['~', 'E']]],
+  ] as const)
+    it(`inserts source-defined sections along ${axis} without copying the end piece`, () => {
+      const def: MultiblockDef = {
+        ...line,
+        size: [...size],
+        layers: layers.map((rows) => [...rows]),
+        legend: { E: { blockId: 'gt.casing.solidSteel' }, S: { blockId: 'gt.casing.grate' } },
+        hatchBlocks: {},
+        requiredHatches: {},
+        defaultHatches: [],
+        resize: {
+          axis,
+          from: 1,
+          to: 2,
+          min: 2,
+          max: 4,
+          default: 3,
+          label: 'length',
+          section: { size: [1, 1, 1], layers: [['S']] },
+        },
+      };
+      expect(sizedDef(def, 2)).toBe(def);
+      const grown = sizedDef(def, 4);
+      const cells = localCells(grown);
+      expect(cells.filter((c) => c.char === 'S')).toHaveLength(2);
+      expect(cells.filter((c) => c.char === 'E')).toHaveLength(1);
+      expect(cells.find((c) => c.char === 'E')!.local[{ x: 0, y: 1, z: 2 }[axis]]).toBe(3);
+      expect(validateMultiblockDef(grown)).toEqual([]);
+      const invalid = {
+        ...def,
+        resize: { ...def.resize!, section: { size: [1, 1, 1] as [number, number, number], layers: [['~']] } },
+      };
+      expect(validateMultiblockDef(invalid).some((e) => e.includes('section layers'))).toBe(true);
+    });
   it('returns the stored def at its smallest size and for fixed-size multiblocks', () => {
     expect(sizedDef(dt, 3)).toBe(dt);
     const coke = getMultiblock('coke-oven')!;

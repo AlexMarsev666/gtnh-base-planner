@@ -120,6 +120,35 @@ export function methodBody(src, name) {
   return end < 0 ? null : src.slice(brace + 1, end);
 }
 
+/** The class's actual superclass, skipping bounds such as <T extends Self<T>>. */
+export function superclass(src, name) {
+  const declaration = new RegExp(`\\bclass\\s+${name}\\b`).exec(stripComments(src));
+  if (!declaration) return undefined;
+  const clean = stripComments(src);
+  let depth = 0;
+  let signature = '';
+  for (let i = declaration.index + declaration[0].length; i < clean.length; i++) {
+    const c = clean[i];
+    if (c === '<') depth++;
+    else if (c === '>') depth--;
+    else if (!depth) {
+      if (c === '{') break;
+      signature += c;
+    }
+  }
+  return /\bextends\s+([\w.]+)/.exec(signature)?.[1].split('.').pop();
+}
+
+/** Slice one named (possibly nested) class before looking up its methods. */
+export function classBody(src, name) {
+  const clean = stripComments(src);
+  const declaration = new RegExp(`\\bclass\\s+${name}\\b`).exec(clean);
+  if (!declaration) return null;
+  const open = clean.indexOf('{', declaration.index + declaration[0].length);
+  const close = open >= 0 ? matchClose(clean, open) : -1;
+  return close >= 0 ? clean.slice(open + 1, close) : null;
+}
+
 /** Decodes a Java string literal (without concatenation). */
 export function stringValue(lit) {
   const t = lit.trim();

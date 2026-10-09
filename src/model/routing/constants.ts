@@ -4,7 +4,9 @@
 export const MARGIN = 4;
 
 /**
- * Largest search grid (cells) routing will allocate, about 100 MB of scratch memory. Only far-apart manual
+ * Largest search grid (cells) routing will allocate, about 200 MB of typed scratch buffers plus trees/maps.
+ * Terminal/pass/ownership masks use 16 bits so special fluid networks retain their own reservation bits.
+ * Only far-apart manual
  * layouts from links or files reach it; above it nothing is routed and every terminal reports unconnected.
  */
 export const MAX_GRID_CELLS = 4_000_000;

@@ -12,6 +12,22 @@ export const HATCH_KINDS: readonly HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'cryotheumIn',
+  'pyrotheumIn',
+  'dataAccess',
+  'assemblyDataIn',
+  'assemblyDataOut',
+  'wirelessAssemblyDataIn',
+  'wirelessAssemblyDataOut',
+  'electrodeIn',
+  'electrodeBus',
+  'electrodeDetector',
+  'computationIn',
+  'computationOut',
+  'wirelessComputationIn',
+  'wirelessComputationOut',
+  'uncertainty',
+  'computerRack',
 ];
 
 const HORIZONTAL: readonly HorizontalDir[] = ['north', 'south', 'east', 'west'];
@@ -113,6 +129,10 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
   const regions = new Map<string, Set<HatchKind>>();
   for (const [ch, entry] of Object.entries(legend)) {
     if (!BLOCKS[entry.blockId]) err(`legend "${ch}" blockId "${entry.blockId}" is not in BLOCKS`);
+    if (entry.requiredHatch !== undefined && typeof entry.requiredHatch !== 'boolean')
+      err(`legend "${ch}" requiredHatch must be boolean`);
+    if (entry.requiredHatch && !entry.hatches?.length)
+      err(`legend "${ch}" requiredHatch needs allowed hatch kinds`);
     if (entry.hatches !== undefined) {
       if (!Array.isArray(entry.hatches) || entry.hatches.length === 0)
         err(`legend "${ch}" hatches must be a non-empty array when present`);
@@ -214,6 +234,31 @@ function checkResize(def: MultiblockDef, err: (msg: string) => void, isFile: boo
   if (r.from < 0 || r.to <= r.from || r.to > len)
     err(`resize slab [${r.from}, ${r.to}) is not inside the box`);
   const t = r.to - r.from;
+  if (r.section) {
+    const section = r.section;
+    if (
+      !Array.isArray(section.size) ||
+      section.size.length !== 3 ||
+      section.size.some((n, axis) => !isInt(n) || n !== (axis === a ? t : def.size[axis]))
+    )
+      err('resize.section size must match the slab thickness and the other structure dimensions');
+    if (
+      !Array.isArray(section.layers) ||
+      section.layers.length !== section.size?.[1] ||
+      section.layers.some(
+        (layer) =>
+          !Array.isArray(layer) ||
+          layer.length !== section.size?.[2] ||
+          layer.some(
+            (row) =>
+              typeof row !== 'string' ||
+              row.length !== section.size?.[0] ||
+              [...row].some((char) => char === '~' || (!RESERVED.has(char) && !def.legend[char])),
+          ),
+      )
+    )
+      err('resize.section layers must match its size, use defined cells and contain no controller');
+  }
   if (isFile && r.min !== len) err(`resize.min ${r.min} must equal size along ${r.axis} (${len})`);
   else if (len < r.min || len > r.max || (len - r.min) % t !== 0)
     err(`size along ${r.axis} (${len}) is not a size resize allows`);

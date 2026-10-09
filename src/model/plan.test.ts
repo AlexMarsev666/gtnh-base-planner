@@ -27,9 +27,16 @@ const handMade = catalog.filter((d) => !d.generated);
 const unlimited: PlanLimits = { x: null, y: null, z: null };
 const deps: LayoutDeps = { placeHatches, layoutCandidates };
 
-function resolve(id: string, count: number, limits = unlimited) {
+function resolve(id: string, count: number, limits = unlimited, below = false) {
   const def = getMultiblock(id)!;
-  return resolveLayout(def, packUnits(def, count, limits), def.defaultHatches, limits, deps);
+  const placement = below
+    ? {
+        ...deps,
+        placeHatches: (d: typeof def, u: Unit[], e: typeof def.defaultHatches) =>
+          placeHatches(d, u, e, undefined, { below: true }),
+      }
+    : deps;
+  return resolveLayout(def, packUnits(def, count, limits), def.defaultHatches, limits, placement);
 }
 
 describe('resolveLayout', () => {
@@ -50,10 +57,10 @@ describe('resolveLayout', () => {
     expect(r.pack.requested).toBe(12);
   });
 
-  it('places every default hatch for every catalog multiblock; loosened layouts stay one layer high', () => {
+  it('places catalog default hatches with permitted bottom connections; loosened layouts stay one layer high', () => {
     for (const def of handMade)
       for (const n of [1, 4, 12, 60]) {
-        const r = resolve(def.id, n);
+        const r = resolve(def.id, n, unlimited, true);
         expect(r.hatches.unplaced, `${def.id} × ${n}`).toEqual([]);
         if (r.loosened)
           expect(new Set(r.pack.units.map((u) => u.origin[1])).size, `${def.id} × ${n}`).toBe(1);
