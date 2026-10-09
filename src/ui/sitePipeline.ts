@@ -95,8 +95,13 @@ export function importSite(
  * in the build worker: a big template can take seconds to measure. With `optimize` the arrangement is then
  * annealed and routed a few times, which takes longer.
  */
-export function arrangeInSize(site: SiteState, below: boolean, optimize = false): Promise<Arranged> {
-  return controller.arrange(site, below, optimize);
+export function arrangeInSize(
+  site: SiteState,
+  below: boolean,
+  optimize = false,
+  neat = false,
+): Promise<Arranged> {
+  return controller.arrange(site, below, optimize, neat);
 }
 
 /** Pipes of the last routed build: shown faded while a pending build has none. */

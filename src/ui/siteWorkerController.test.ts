@@ -44,6 +44,19 @@ function setup(worker: () => Worker | null) {
 const named = (name: string) => ({ ...emptySite(), name });
 
 describe('site worker controller', () => {
+  it('forwards Neat to the worker, then finishes through the real fallback if it fails', async () => {
+    const w = fakeWorker();
+    const { c } = setup(() => w as unknown as Worker);
+    const source = named('neat');
+    delete source.routing;
+    const done = c.arrange(source, false, false, true);
+    expect(w.sent[0]).toMatchObject({ type: 'arrange', optimize: false, neat: true, site: source });
+    w.fail();
+    const result = await done;
+    expect(result.site.routing).toEqual({ mode: 'neat', depth: 3 });
+    expect(result.routingSummary).toEqual({ bends: 0, surface: 0, length: 0, unconnected: 0 });
+    expect(result.optimized).toBeUndefined();
+  });
   it('builds right here without a worker', async () => {
     const { c, builds } = setup(() => null);
     const site = named('a');
@@ -189,6 +202,17 @@ function delayedRuntime() {
 const project = { name: 'p', recipes: new Map(), nodes: [], storages: [], edges: [], skipped: 0 };
 
 describe('lazy local site runtime', () => {
+  it('discards a superseded Neat request while the local runtime downloads', async () => {
+    const { c, runtime, finish } = delayedRuntime();
+    const first = c.arrange(named('old'), false, false, true);
+    const rejected = expect(first).rejects.toThrow(/replaced/);
+    const newer = named('new');
+    const next = c.arrange(newer, true, false, true);
+    finish();
+    await rejected;
+    await next;
+    expect(runtime.arrange).toHaveBeenCalledExactlyOnceWith(newer, true, false, true);
+  });
   it('runs only the latest build after downloading and reuses the runtime', async () => {
     const { c, builds, runtime, load, finish } = delayedRuntime();
     c.submit(named('old'), opts, false);

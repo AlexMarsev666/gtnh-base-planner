@@ -29,7 +29,7 @@
     withSiteSize,
     type LinkEnd,
   } from './siteActions';
-  import { addGroup, arrange } from './siteCommands';
+  import { addGroup, arrange, neaten } from './siteCommands';
   import { canRedo, canUndo, redoSite, undoAction, undoSite } from './siteHistory';
   import { siteBuild } from './sitePipeline';
   import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
@@ -415,6 +415,15 @@
           title={t.site.optimizeHint}
           disabled={!$site.groups.length}
           onclick={() => arrange(true)}>{t.site.optimize}</button
+        >
+      </li>
+      <li class="row">
+        <button
+          class="link"
+          data-testid="site-neat"
+          title={t.site.neatenHint}
+          disabled={!$site.groups.length}
+          onclick={neaten}>{t.site.neaten}</button
         >
       </li>
       <!-- In the top bar on wide screens; here only when the bar has no room for it. -->

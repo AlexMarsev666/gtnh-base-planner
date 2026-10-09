@@ -516,6 +516,8 @@ export function arrangeOnFloors(
   site: SiteState,
   builder: SiteBuilder,
   below?: boolean,
+  /** Neat moves groups onto floors but never changes their packing limits. */
+  preserveLimits = false,
 ): { site: SiteState; arranged: ArrangeResult } {
   const onFloors = (s: SiteState) => {
     const built = builder(s, { pipes: false, cables: false, below });
@@ -536,7 +538,7 @@ export function arrangeOnFloors(
         ...g,
         origin: [0, 0] as [number, number],
         rotation: 0 as const,
-        limits: { ...(g.limitsLocked ? g.limits : (g.arrangeLimits ?? g.limits)) },
+        limits: { ...(preserveLimits || g.limitsLocked ? g.limits : (g.arrangeLimits ?? g.limits)) },
       };
       delete copy.elevation;
       return copy;
@@ -544,7 +546,7 @@ export function arrangeOnFloors(
   };
   let laid = onFloors(canonical);
   let out = canonical;
-  if (!laid.arranged.fits) {
+  if (!laid.arranged.fits && !preserveLimits) {
     const gap = Math.max(1, site.corridor);
     const room: [number, number] = [
       Math.max(1, site.size[0] - 2 * (1 + gap)),
@@ -564,6 +566,7 @@ export function arrangeOnFloors(
     }
   }
   const groups = laid.arranged.groups.map((g, i) => {
+    if (preserveLimits) return g;
     const preference = site.groups[i].arrangeLimits ?? site.groups[i].limits;
     const copy = { ...g };
     if (!g.limitsLocked && JSON.stringify(g.limits) !== JSON.stringify(preference))

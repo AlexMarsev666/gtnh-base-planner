@@ -56,13 +56,13 @@ export function addPlanToSite(): void {
  * floors above it, and a group bigger than the ground stacks its machines up. The size is never changed. It
  * runs in the build worker, as a big template takes seconds to measure.
  */
-export async function arrange(optimize = false): Promise<void> {
+export async function arrange(optimize = false, neat = false): Promise<void> {
   const s = get(site);
   if (!s.groups.length) return;
-  notify(optimize ? t.site.optimizing : t.site.arranging, 120000, 'arrange');
+  notify(neat ? t.site.neatening : optimize ? t.site.optimizing : t.site.arranging, 120000, 'arrange');
   let r;
   try {
-    r = await arrangeInSize(s, get(connectBelow), optimize);
+    r = await arrangeInSize(s, get(connectBelow), optimize, neat);
   } catch {
     // Replaced by a newer job (an import, say): that one reports for itself.
     return;
@@ -78,18 +78,23 @@ export async function arrange(optimize = false): Promise<void> {
   notify(
     r.rejected
       ? t.site.arrangementRejected
-      : r.fits && r.optimized
-        ? optimizedNotice(r.optimized)
-        : r.fits
-          ? r.floors > 1
-            ? t.site.arrangedFloors(r.floors)
-            : t.site.arranged
-          : t.site.needs(r.needed[0], r.needed[1]),
+      : r.routingSummary
+        ? t.site.neatSummary(r.routingSummary)
+        : r.fits && r.optimized
+          ? optimizedNotice(r.optimized)
+          : r.fits
+            ? r.floors > 1
+              ? t.site.arrangedFloors(r.floors)
+              : t.site.arranged
+            : t.site.needs(r.needed[0], r.needed[1]),
     r.fits ? 6000 : 8000,
     'arrange',
     changed ? undoAction() : undefined,
   );
 }
+
+/** One undo step: canonical rows, neat routing, independent validation and a routed summary. */
+export const neaten = (): Promise<void> => arrange(false, true);
 
 /** What optimising did, in the router's numbers (pipe and cable blocks). */
 function optimizedNotice(o: NonNullable<Arranged['optimized']>): string {

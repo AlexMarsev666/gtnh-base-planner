@@ -14,7 +14,7 @@ export function createLocalSiteRuntime() {
     build: builder,
     importSite: (project: GtnhProject, choices: Map<string, MachineChoice>, opts: ImportOptions) =>
       buildSiteFromGtnh(project, choices, opts, builder),
-    arrange: (site: Parameters<typeof arrangeHere>[0], below: boolean, optimize: boolean) =>
-      arrangeHere(site, below, builder, optimize),
+    arrange: (site: Parameters<typeof arrangeHere>[0], below: boolean, optimize: boolean, neat = false) =>
+      arrangeHere(site, below, builder, optimize, undefined, neat),
   };
 }

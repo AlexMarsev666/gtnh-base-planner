@@ -3,12 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
-import { arrange, optimizeAfterImport, whenBuilt } from './siteCommands';
+import { arrange, neaten, optimizeAfterImport, whenBuilt } from './siteCommands';
 import * as pipeline from './sitePipeline';
 import { get } from 'svelte/store';
 import type { SiteResult } from './sitePipeline';
 import { withGroupAdded } from './siteActions';
 import { registerBuild, sourceRevisionOf } from './buildIdentity';
+import { startSiteHistory, undo, redo, canUndo } from './siteHistory';
+import { notices } from './notices';
 
 const identity = (s: SiteState) => ({ sourceRevision: sourceRevisionOf(s), requestId: 1 });
 
@@ -98,6 +100,77 @@ describe('whenBuilt', () => {
     // Worker cloning does not preserve reference equality.
     builds.set({ ...identity(s), build: builtFrom(structuredClone(s)), error: null });
     await vi.waitFor(() => expect(result).toHaveBeenCalledWith(true));
+  });
+});
+
+describe('Neat UI transaction', () => {
+  it('publishes mode and layout once, shows actual metrics, and supports one-step undo/redo', async () => {
+    const { site } = await import('../state/site');
+    const original = imported();
+    delete original.routing;
+    site.set(original);
+    const stop = startSiteHistory();
+    const summary = { bends: 7, surface: 11, length: 43, unconnected: 0 };
+    const next = { ...original, routing: { mode: 'neat' as const, depth: 3 } };
+    const spy = vi.spyOn(pipeline, 'arrangeInSize').mockResolvedValue({
+      site: structuredClone(next),
+      fits: true,
+      needed: [20, 20],
+      floors: 1,
+      routingSummary: summary,
+    });
+    try {
+      await neaten();
+      expect(spy).toHaveBeenLastCalledWith(original, expect.any(Boolean), false, true);
+      expect(get(site)).toEqual(next);
+      expect(get(notices).find((n) => n.slot === 'arrange')?.text).toBe(
+        'Neat: 7 bends, 11 surface blocks, 43 pipe and cable blocks, 0 unconnected terminals.',
+      );
+      expect(undo()).toBe(true);
+      expect(get(site)).toBe(original);
+      expect(undo()).toBe(false);
+      expect(redo()).toBe(true);
+      const applied = get(site);
+      await neaten();
+      expect(get(site)).toBe(applied);
+      expect(undo()).toBe(true);
+      expect(get(site)).toBe(original);
+      expect(undo()).toBe(false);
+    } finally {
+      spy.mockRestore();
+      stop();
+    }
+  });
+
+  it.each(['rejected', 'edited', 'cancelled'] as const)('does not publish a %s result', async (reason) => {
+    const { site } = await import('../state/site');
+    const original = imported();
+    site.set(original);
+    const stop = startSiteHistory();
+    const next = { ...original, routing: { mode: 'neat' as const, depth: 3 } };
+    const spy = vi.spyOn(pipeline, 'arrangeInSize').mockImplementation(async () => {
+      if (reason === 'edited') site.set({ ...original, name: 'newer edit' });
+      if (reason === 'cancelled') throw new Error('replaced');
+      return {
+        site: next,
+        fits: true,
+        needed: [20, 20],
+        floors: 1,
+        ...(reason === 'rejected' ? { rejected: true } : {}),
+      };
+    });
+    try {
+      await neaten();
+      expect(get(site).routing).toEqual(original.routing);
+      if (reason === 'edited') expect(get(site).name).toBe('newer edit');
+      else {
+        expect(get(site)).toBe(original);
+        expect(get(canUndo)).toBe(false);
+      }
+    } finally {
+      spy.mockRestore();
+      stop();
+    }
   });
 });
 

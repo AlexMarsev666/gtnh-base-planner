@@ -31,11 +31,14 @@ export interface Arranged {
   optimized?: Optimized;
   /** The proposed arrangement added build violations; the original layout was retained. */
   rejected?: boolean;
+  /** Fully routed, independently checked result of the Neat command. */
+  routingSummary?: { bends: number; surface: number; length: number; unconnected: number };
 }
 
 /**
  * `arrangeOnFloors` with the plain result the worker sends back. With `optimize`, an arrangement that fits
- * is then annealed and the best layout by the router's numbers is kept.
+ * is then annealed and the best layout by the router's numbers is kept. `neat` enables neat routing,
+ * retains packing limits and returns its routed summary; both are compared with the original mode.
  */
 export function arrangeHere(
   site: SiteState,
@@ -43,20 +46,34 @@ export function arrangeHere(
   builder: ReturnType<typeof createSiteBuilder>,
   optimize = false,
   options?: OptimizeOptions,
+  neat = false,
 ): Arranged {
   const buildOptions = { pipes: true, cables: true, below };
   const baseline = builder(site, buildOptions);
-  const r = arrangeOnFloors(site, builder, below);
+  const prepared: SiteState = neat
+    ? { ...site, routing: { mode: 'neat', depth: site.routing?.depth ?? 3 } }
+    : site;
+  const r = arrangeOnFloors(prepared, builder, below, neat);
   const candidate = builder(r.site, buildOptions);
   const unsafe = (before: typeof baseline, after: typeof baseline) =>
     addsLayoutViolations(before, after) || scoreBuild(after).unconnected > scoreBuild(before).unconnected;
   const rejected = unsafe(baseline, candidate);
   const out: Arranged = {
-    site: rejected ? site : r.site,
+    site: rejected || (neat && !r.arranged.fits) ? site : r.site,
     fits: r.arranged.fits,
     needed: r.arranged.needed,
     floors: r.arranged.floors,
     ...(rejected ? { rejected: true } : {}),
+    ...(neat && r.arranged.fits && !rejected
+      ? {
+          routingSummary: {
+            bends: candidate.stats.bends ?? 0,
+            surface: candidate.stats.surfaceBlocks ?? 0,
+            length: candidate.stats.pipeBlocks + candidate.stats.cableBlocks,
+            unconnected: scoreBuild(candidate).unconnected,
+          },
+        }
+      : {}),
   };
   if (optimize && r.arranged.fits && !rejected) {
     const o = optimizeSite(out.site, builder, { ...options, below, alignRows: true });

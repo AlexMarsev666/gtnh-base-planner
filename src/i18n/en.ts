@@ -128,6 +128,12 @@ export const t = {
     arrangementRejected:
       'Kept the original layout: the proposed arrangement introduced build violations or disconnected terminals.',
     arranging: 'Arranging…',
+    neaten: 'Neat',
+    neatenHint:
+      'Align rows and corridors, route underground, and report the checked result. Keeps machine limits.',
+    neatening: 'Aligning and routing neatly…',
+    neatSummary: (s: { bends: number; surface: number; length: number; unconnected: number }) =>
+      `Neat: ${s.bends} bends, ${s.surface} surface blocks, ${s.length} pipe and cable blocks, ${s.unconnected} unconnected terminals.`,
     optimize: 'Optimize',
     optimizeHint:
       'Arrange, then search for a tighter layout with shorter pipes (simulated annealing) and keep it if the router agrees.',

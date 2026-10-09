@@ -40,8 +40,9 @@ export interface SiteWorkerController {
   /**
    * Arranges `site` inside its own size, on floors if need be; drops the current job, which it replaces. With
    * `optimize`, the arrangement is then annealed and the best layout by the router's numbers kept.
+   * `neat` keeps packing limits, enables underground routing and returns the checked route summary.
    */
-  arrange: (site: SiteState, below: boolean, optimize?: boolean) => Promise<Arranged>;
+  arrange: (site: SiteState, below: boolean, optimize?: boolean, neat?: boolean) => Promise<Arranged>;
 }
 
 type BuildRequest = {
@@ -63,6 +64,7 @@ interface PendingArrange {
   site: SiteState;
   below: boolean;
   optimize: boolean;
+  neat: boolean;
   resolve: (r: Arranged) => void;
   reject: (err: Error) => void;
 }
@@ -123,7 +125,7 @@ export function createSiteWorkerController(
         imp.resolve(runtime.importSite(imp.project, imp.choices, imp.opts));
       } else {
         const req = job.arrange;
-        req.resolve(runtime.arrange(req.site, req.below, req.optimize));
+        req.resolve(runtime.arrange(req.site, req.below, req.optimize, req.neat));
       }
     } catch (err) {
       if (inFlight !== job) return;
@@ -301,9 +303,9 @@ export function createSiteWorkerController(
       });
     },
 
-    arrange(site, below, optimize = false) {
+    arrange(site, below, optimize = false, neat = false) {
       return new Promise((resolve, reject) => {
-        const job: PendingArrange = { site, below, optimize, resolve, reject };
+        const job: PendingArrange = { site, below, optimize, neat, resolve, reject };
         // Builds of the current site wait: the arrangement changes it.
         queued = null;
         if (inFlight) stopWorker();
@@ -313,7 +315,7 @@ export function createSiteWorkerController(
           return;
         }
         inFlight = { id: ++nextId, arrange: job };
-        post(w, { id: inFlight.id, type: 'arrange', site, below, optimize });
+        post(w, { id: inFlight.id, type: 'arrange', site, below, optimize, neat });
       });
     },
   };
