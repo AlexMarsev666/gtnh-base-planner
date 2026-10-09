@@ -4,6 +4,7 @@
   import { t } from '../i18n/en';
   import { cachedIconFaces, matchesQuery } from './catalogView';
   import { blockIcon } from './icons';
+  import CatalogSupport from './CatalogSupport.svelte';
 
   interface Props {
     currentId: string;
@@ -61,6 +62,7 @@
               {#each tags(def) as tag, i (tag)}{#if i > 0}<span class="dot">{t.separator}</span
                   >{/if}{tag}{/each}
             </span>
+            <CatalogSupport id={def.id} compact />
           </button>
         </li>
       {/each}

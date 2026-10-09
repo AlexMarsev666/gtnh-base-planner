@@ -30,6 +30,17 @@ export const t = {
   generatedTag: 'From game',
   generatedHint:
     'Game-derived structure. Some RC2 controller restrictions are still under review; verify the layout against the machine source before building.',
+  catalogLimited: 'Limited support',
+  catalogSupportReasons: {
+    'liquid-zones': 'Catalog liquid zones differ from RC2 behavior. Construction in-game is not confirmed.',
+    'retained-shape':
+      'Shape retained from an older conversion. RC2 construction with its integration mods is not verified.',
+    'rejected-default':
+      'The saved RC2 check rejected the default structure. Construction in-game is not confirmed.',
+    'check-exception': 'The saved RC2 check ended with an exception. Construction in-game is not confirmed.',
+    'no-game-check':
+      'RC2 export is incomplete for this structure. No successful construction check is recorded.',
+  },
 
   // Settings drawer
   limits: 'Limits',

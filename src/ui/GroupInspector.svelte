@@ -39,6 +39,8 @@
   } from './fields';
   import NudgePad from './NudgePad.svelte';
   import NumberStepper from './NumberStepper.svelte';
+  import CatalogSupport from './CatalogSupport.svelte';
+  import { catalogSupportReason } from '../data/catalogSupport';
   import { groupLimitAxis, updateSite, withGroupPatched, type GroupPatch } from './siteActions';
   import {
     duplicateSelected,
@@ -346,7 +348,8 @@
         : ''}
     </p>{/if}
 
-  {#if def?.generated}<p class="hint unverified" data-testid="unverified">
+  {#if def}<CatalogSupport id={def.id} />{/if}
+  {#if def?.generated && !catalogSupportReason(def.id)}<p class="hint unverified" data-testid="unverified">
       {t.generatedTag}: {t.generatedHint}
     </p>{/if}
 

@@ -30,6 +30,8 @@ jobs:
         run: npm run format:check
       - name: Type-check
         run: npm run check
+      - name: Catalog support status
+        run: npm run catalog:status -- --check
       - name: Unit tests
         run: npm test
       - name: Layout invariant

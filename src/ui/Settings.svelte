@@ -29,6 +29,7 @@
   import { BOROSILICATE_GLASS_TIERS } from '../model/multiblock/glass';
   import { copyShareLink, downloadJson, openJsonFile, shareFallback } from './session';
   import { addPlanToSite } from './siteCommands';
+  import CatalogSupport from './CatalogSupport.svelte';
 
   interface Props {
     def: MultiblockDef | undefined;
@@ -95,6 +96,8 @@
     <span class="title">{t.settings}</span>
     <button class="link" onclick={onclose}>{t.close}</button>
   </div>
+
+  {#if def}<CatalogSupport id={def.id} />{/if}
 
   <button class="link active add-to-site" data-testid="add-to-site" onclick={addPlanToSite}
     >{t.site.addToSite}</button

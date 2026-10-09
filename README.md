@@ -2,23 +2,25 @@
 
 A 3D planner for [GregTech: New Horizons](https://github.com/GTNewHorizons/GT-New-Horizons-Modpack) multiblocks that share walls, hatches and pipes. Pick a multiblock, set how many you want, and the planner packs them so compatible casings overlap, places shared hatches and routes pipes between them.
 
-It is a layout tool, not a recipe or production-chain calculator. Structures follow GT:NH **2.9.0-beta-3**
-(GT5-Unofficial 5.09.54.133).
+It is a layout tool, not a recipe or production-chain calculator. Generated structures and reviewed rules
+target GT:NH **2.9.0-RC-2** (GT5-Unofficial 5.09.54.205). Some retained forms come from the earlier
+5.09.54.133 converter; [limited-support statuses](docs/plan-v3-stage-6-status.md) record the remaining
+limitations. See [UPDATING.md](docs/UPDATING.md) for the version pins and catalog update procedure.
 
 **Live:** <https://gtnh-base-planner.pages.dev/>
 
 ## Features
 
-- **Catalog of 244 multiblocks** with a picker: every multiblock of GT5-Unofficial 5.09.54.133 but the Mega
-  Industrial Apiary and the Cleanroom. 34 are transcribed and checked by hand: steam machines (Steam Separator,
+- **Catalog of 244 multiblocks** with a picker, built from the RC2 dump and retained definitions; the Mega
+  Industrial Apiary and the Cleanroom are excluded. 34 are transcribed by hand: steam machines (Steam Separator,
   Grinder, Squasher, Presser, Hearth, Blender, Purifier, Fuser), Coke Oven, EBF, Vacuum Freezer, Distillation
   Tower, Pyrolyse Oven, Large Turbines, combustion engines, Assembly Line, Large Fluid Extractor, Industrial
   Autoclave, Industrial Centrifuge and more. The other 210 (Large Boilers, GT++ industrial machines, fusion
   reactors, drilling rigs, TecTech, Bartworks, Good Generator, the Water Purification Plant and its units, the
   Nanochip Assembly Complex and its modules, Forge of the Gods, the Space Elevator modules, Large Hadron Collider,
-  Antimatter Forge, ...) are built by the game itself and dumped block by block by
-  [`tools/game-dump`](tools/game-dump/README.md); they are tagged "From game" in the picker, because their hatch
-  counts are estimated. Almost every GT multiblock can share walls in game (structure checks do not claim
+  Antimatter Forge, ...) mostly come from structures built by the game itself and dumped block by block by
+  [`tools/game-dump`](tools/game-dump/README.md); they are tagged "From game" in the picker. Source-derived
+  counts and reviewed adapters supplement shape hints; rule coverage remains partial. Almost every GT multiblock can share walls in game (structure checks do not claim
   casings).
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).
 - **Auto-packing** of N units with optional limits counted in multiblocks (at most N along X, N layers, N along Z); controllers always face outward, and rows that cannot share a back wall get a one-block walkway. Example: 15 Pyrolyse Ovens with X 5, Layers 1, Z 3 give three rows of five.
