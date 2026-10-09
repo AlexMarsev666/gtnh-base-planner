@@ -149,8 +149,11 @@ export const t = {
       `Neat: ${s.bends} bends, ${s.surface} surface blocks, ${s.length} pipe and cable blocks, ${s.unconnected} unconnected terminals.`,
     optimize: 'Optimize',
     optimizeHint:
-      'Arrange, then search for a tighter layout with shorter pipes (simulated annealing) and keep it if the router agrees.',
-    optimizing: 'Arranging and optimizing…',
+      'Search from the current layout for shorter, tighter routing; keep only an improvement verified by the router.',
+    optimizing: 'Optimizing…',
+    optimizeProgress: (percent: number, tried: number) => `${percent}% · ${tried} layouts evaluated`,
+    cancelOptimize: 'Cancel',
+    optimizeCancelled: 'Optimization cancelled. Layout unchanged.',
     optimized: (from: number, to: number, reshaped: number) =>
       `Optimized: ${from} → ${to} pipe and cable blocks, tested with the router.` +
       (reshaped > 0 ? ` ${reshaped} ${reshaped === 1 ? 'group' : 'groups'} packed another way.` : ''),

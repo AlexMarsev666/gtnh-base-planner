@@ -1,3 +1,4 @@
+import { finishSearch } from './search';
 import { getSiteDef, isSingleBlock } from '../../data/generic';
 import type { PlanLimits } from '../multiblock/types';
 import type { Shape } from './anneal';
@@ -54,12 +55,12 @@ export interface ShapeOptions {
  * trial build of its own, and the cost of packing a unit seen so far decides whether the next group still
  * fits the budget: a group of a hundred units takes seconds to pack six ways.
  */
-export function groupShapes(
+export function* shapeSteps(
   site: SiteState,
   builder: SiteBuilder,
   below: boolean,
   opts: ShapeOptions = {},
-): Map<string, Shape[]> {
+): Generator<void, Map<string, Shape[]>> {
   const now = opts.now ?? (() => performance.now());
   const began = now();
   const deadline = Math.min(opts.deadline ?? Infinity, began + (opts.budgetMs ?? Infinity));
@@ -85,14 +86,14 @@ export function groupShapes(
     }
     if (variants.length === 0) continue;
     baseline ??= builder(site, { pipes: false, cables: false, below, keepCache: true });
-    const list = measure(site, g, variants, builder, below, baseline, expired);
+    const list = yield* measure(site, g, variants, builder, below, baseline, expired);
     if (list) out.set(g.id, list);
   }
   return out;
 }
 
 /** The shapes of one group: its own first, then the variants that build as well as it does. */
-function measure(
+function* measure(
   site: SiteState,
   g: SiteGroup,
   variants: PlanLimits[],
@@ -100,7 +101,7 @@ function measure(
   below: boolean,
   baseline: SiteBuild,
   expired: () => boolean,
-): Shape[] | null {
+): Generator<void, Shape[] | null> {
   const current = baseline.groups.find((pg) => pg.group.id === g.id)?.build;
   if (!current) return null;
   const sameFoot = (a: Shape, b: Shape) =>
@@ -108,6 +109,7 @@ function measure(
   const now: Shape = { limits: g.limits, size: [current.size[0], current.size[2]], height: current.size[1] };
   const list: Shape[] = [now];
   for (const limits of variants) {
+    yield;
     if (list.length > MAX_SHAPES || expired()) break;
     // One assessment at a time: a batch of all packings could start before the deadline and consume
     // many evaluations after it. The original IDs and links also keep logical hatch assignments stable.
@@ -129,4 +131,13 @@ function measure(
 
 function limitsKey(l: PlanLimits): string {
   return `${l.x}/${l.y}/${l.z}`;
+}
+
+export function groupShapes(
+  site: SiteState,
+  builder: SiteBuilder,
+  below: boolean,
+  opts: ShapeOptions = {},
+): Map<string, Shape[]> {
+  return finishSearch(shapeSteps(site, builder, below, opts));
 }

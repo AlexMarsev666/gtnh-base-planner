@@ -3,6 +3,8 @@ import { emptySite } from '../share/siteCodec';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
 import { createSiteWorkerController, type SiteResult, type LocalSiteRuntime } from './siteWorkerController';
 import { latestBuildRequest, sourceRevisionOf } from './buildIdentity';
+import { referencePlans } from '../model/site/fixtures/referencePlans';
+import type { OptimizationProgress } from '../model/site/optimize';
 
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -44,6 +46,60 @@ function setup(worker: () => Worker | null) {
 const named = (name: string) => ({ ...emptySite(), name });
 
 describe('site worker controller', () => {
+  it('forwards progress, terminates a cancelled worker and ignores its late progress/result', async () => {
+    const workers = [fakeWorker(), fakeWorker()];
+    const progress: (OptimizationProgress | null)[] = [];
+    const builds: SiteResult[] = [];
+    let index = 0;
+    const c = createSiteWorkerController(
+      { onBuild: (r) => builds.push(r), onBusy: () => {}, onOptimization: (p) => progress.push(p) },
+      () => workers[index++] as unknown as Worker,
+    );
+    const original = named('original');
+    const result = c.arrange(original, true, true);
+    const rejection = expect(result).rejects.toThrow('Optimization cancelled.');
+    const id = workers[0].sent[0].id;
+    workers[0].reply({ id, progress: { percent: 30, tried: 2 } });
+    expect(progress.at(-1)).toEqual({ percent: 30, tried: 2 });
+    c.submit(original, opts, false);
+    c.cancelOptimization();
+    await rejection;
+    expect(workers[0].terminated).toBe(true);
+    expect(progress.at(-1)).toBeNull();
+    const count = progress.length;
+    workers[0].reply({ id, progress: { percent: 100, tried: 100 } });
+    workers[0].reply({ id, arranged: { site: named('stale'), fits: true, floors: 1, needed: [10, 10] } });
+    expect(progress).toHaveLength(count);
+    expect(workers[1].sent[0]).toMatchObject({ type: 'build', site: original });
+    workers[1].reply({ id: workers[1].sent[0].id, build: { groups: [] } as never });
+    expect(builds).toHaveLength(1);
+  });
+
+  it('cancels the real cooperative fallback and can build again without a stale result', async () => {
+    const source = referencePlans()[1].site;
+    const original = structuredClone(source);
+    const progress: (OptimizationProgress | null)[] = [];
+    const builds: SiteResult[] = [];
+    const c = createSiteWorkerController(
+      {
+        onBuild: (r) => builds.push(r),
+        onBusy: () => {},
+        onOptimization: (p) => {
+          progress.push(p);
+          if (p && p.percent >= 20) c.cancelOptimization();
+        },
+      },
+      () => null,
+    );
+    await expect(c.arrange(source, true, true)).rejects.toThrow('Optimization cancelled.');
+    expect(source).toEqual(original);
+    expect(progress.at(-1)).toBeNull();
+    c.submit(source, opts, false);
+    await vi.waitFor(() => expect(builds).toHaveLength(1));
+    expect(builds[0].error).toBeNull();
+    expect(builds[0].build?.groups).toHaveLength(source.groups.length);
+    expect(progress.at(-1)).toBeNull();
+  });
   it('forwards Neat to the worker, then finishes through the real fallback if it fails', async () => {
     const w = fakeWorker();
     const { c } = setup(() => w as unknown as Worker);

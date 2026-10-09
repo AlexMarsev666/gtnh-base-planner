@@ -27,11 +27,9 @@ describe('stage 5: command rows, connectivity and reference quality', () => {
       built.stats.connected = site.groups[0].origin[1] === source.groups[0].origin[1] ? 2 : 1;
       return built;
     };
-    for (const optimize of [false, true]) {
-      const result = arrangeHere(source, true, disconnected, optimize);
-      expect(result.rejected).toBe(true);
-      expect(result.site).toBe(source);
-    }
+    const result = arrangeHere(source, true, disconnected);
+    expect(result.rejected).toBe(true);
+    expect(result.site).toBe(source);
   });
 
   it('judges short surface routes by the same weighted cost as the neat router', () => {
@@ -50,6 +48,7 @@ describe('stage 5: command rows, connectivity and reference quality', () => {
         },
       } as unknown as SiteBuild);
     expect(better(score(3, 3, 0), score(12, 2, 4))).toBe(true);
+    expect(score(3, 3, 0).routingCost).toBe(15);
     expect(better(score(12, 2, 4), score(3, 3, 0))).toBe(false);
     expect(better(score(3, 3, 0, 2), score(3, 3, 0, 0))).toBe(false);
     const disconnected = { ...score(1, 0, 0), unconnected: 1 };
@@ -109,11 +108,7 @@ describe('stage 5: command rows, connectivity and reference quality', () => {
       expect(addsLayoutViolations(baseline, result)).toBe(false);
       expect(better(scoreBuild(baseline), scoreBuild(result))).toBe(false);
       preservesIdentity(optimized.site as typeof source);
-      if (optimized.optimized?.improved) {
-        expect(optimized.site.groups.map((g) => g.origin[1])).toEqual(
-          aligned.site.groups.map((g) => g.origin[1]),
-        );
-      }
+      expect(optimized.optimized?.start).toEqual(scoreBuild(baseline));
       measurements.push({
         id: fixture.id,
         arrangeRejected: !!aligned.rejected,

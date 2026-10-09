@@ -94,7 +94,7 @@ const MIN_RIPUP_WORK = 1_000_000;
 /** Extra cost of a pipe block in the trench (see `RouterInput.trenchBelow`). */
 const TRENCH_COST = 1;
 /** A surface block costs one extra block in neat mode; short surface connections can still win. */
-const SURFACE_COST = 1;
+export const SURFACE_COST = 4;
 /** Each additional underground level adds a quarter block per step, preferring shallower runs. */
 const DEPTH_COST = 0.25;
 

@@ -3,7 +3,7 @@ import { arrangeSite } from './arrange';
 import { arrangeOnFloors } from '../../import/gtnhplanner';
 import { arrangeHere } from '../../ui/siteArrange';
 import { createSiteBuilder } from './build';
-import { optimizeSite, better } from './optimize';
+import { optimizeSite, optimizeSiteAsync, optimizationBudget, better } from './optimize';
 import { annealGroups } from './anneal';
 import { emptySite, siteFromJson, siteToJson, encodeSite, decodeSite } from '../../share/siteCodec';
 import type { SiteState } from './types';
@@ -49,6 +49,68 @@ const fake =
   };
 
 describe('deterministic commands and iteration schedules', () => {
+  it('scales fixed quotas and the safety ceiling with plan size', () => {
+    const small = pair();
+    const large = { ...small, groups: Array.from({ length: 27 }, () => small.groups[0]) };
+    expect(optimizationBudget(small)).toEqual({ iterations: 6000, refineSteps: 20, budgetMs: 10000 });
+    expect(optimizationBudget(large)).toEqual({ iterations: 43500, refineSteps: 96, budgetMs: 27250 });
+  });
+
+  for (const mode of ['compact', 'neat'] as const) {
+    it(`${mode}: synchronous and cooperative search give identical results from the user layout`, async () => {
+      const source = { ...pair(), routing: { mode, depth: 3 }, optimizationSeed: 73 };
+      const builder: SiteBuilder = (s, opts) => {
+        const built = fake()(s, opts);
+        if (mode === 'neat') {
+          built.stats.surfaceBlocks = built.stats.pipeBlocks;
+          built.stats.bends = 0;
+          built.stats.depthPenalty = 0;
+        }
+        return built;
+      };
+      const options = {
+        now: () => 0,
+        reshape: false,
+        seeds: 2,
+        iterations: 200,
+        refineSteps: 12,
+        refineRuns: 1,
+      };
+      const progress: number[] = [];
+      const sync = arrangeHere(source, true, builder, true, options);
+      const asyncResult = await optimizeSiteAsync(source, builder, options, {
+        onProgress: (p) => progress.push(p.percent),
+      });
+      expect(asyncResult.site).toEqual(sync.site);
+      expect(asyncResult.result).toEqual(sync.optimized?.result);
+      expect(asyncResult.tried).toBeGreaterThan(0);
+      expect(asyncResult.improved).toBe(true);
+      expect(asyncResult.site.groups.some((g, i) => g.origin[1] !== source.groups[i].origin[1])).toBe(true);
+      expect(better(asyncResult.start, asyncResult.result)).toBe(false);
+      expect(progress[0]).toBe(0);
+      expect(progress.at(-1)).toBe(100);
+      expect(progress).toEqual([...progress].sort((a, b) => a - b));
+    });
+  }
+
+  it('cancels cooperative search without modifying its input or publishing a partial winner', async () => {
+    const source = pair();
+    const before = structuredClone(source);
+    const abort = new AbortController();
+    const result = optimizeSiteAsync(
+      source,
+      fake(),
+      { now: () => 0, reshape: false },
+      {
+        signal: abort.signal,
+        onProgress: (p) => {
+          if (p.percent >= 60) abort.abort();
+        },
+      },
+    );
+    await expect(result).rejects.toThrow('Optimization cancelled.');
+    expect(source).toEqual(before);
+  });
   it('preserves a chosen seed and packing preferences in files and links; legacy plans retain defaults', async () => {
     const site = pair();
     site.optimizationSeed = 73;
@@ -199,7 +261,7 @@ describe('deterministic commands and iteration schedules', () => {
     expect(r.optimized?.improved).toBe(false);
   });
 
-  it('does not apply an improvement that would make the next canonical Arrange unsafe', () => {
+  it('allows an improvement without requiring the next canonical Arrange to be safe', () => {
     const source = arrangeOnFloors(pair(), fake(), true).site;
     const collision = source.groups[0].origin;
     const builder: SiteBuilder = (s, opts) => {
@@ -216,6 +278,8 @@ describe('deterministic commands and iteration schedules', () => {
       refineSteps: 12,
       refineRuns: 1,
     });
-    expect(arrangeHere(optimized.site, true, builder).site).toEqual(arrangeHere(source, true, builder).site);
+    expect(optimized.optimized?.improved).toBe(true);
+    expect(optimized.optimized?.result.problems).toBeLessThan(optimized.optimized!.start.problems);
+    expect(arrangeHere(optimized.site, true, builder).rejected).toBe(true);
   });
 });

@@ -52,7 +52,7 @@ describe('stage 5: common row bands and corridors', () => {
     }
   });
 
-  it('all annealing moves and reshapes preserve rows, including when a cheaper shape would block a corridor', () => {
+  it('annealing can leave the readable rows while retaining geometry clearance', () => {
     const site = fixture();
     site.groups = arrangeSite(site, () => [3, 3]).groups;
     const home = new Map(site.groups.map((g) => [g.id, g.origin[1]]));
@@ -66,33 +66,37 @@ describe('stage 5: common row bands and corridors', () => {
       ]),
     );
     let checked = 0;
+    let leftRows = false;
     for (let seed = 1; seed <= 8; seed++) {
       const result = annealGroups(site, () => [3, 3], {
         seed,
         iterations: 250,
-        alignRows: true,
         shapes,
         evaluate: (groups) => {
           checked++;
           for (const g of groups) {
-            expect(g.origin[1]).toBe(home.get(g.id));
+            if (g.origin[1] !== home.get(g.id)) leftRows = true;
             const shape = shapes.get(g.id)!.find((s) => s.limits.y === g.limits.y)!;
+            const width = shape.size[g.rotation % 2 ? 1 : 0];
             const depth = shape.size[g.rotation % 2 ? 0 : 1];
-            const next = groups.filter((other) => other.origin[1] > g.origin[1]);
-            const edge = next.length ? Math.min(...next.map((other) => other.origin[1])) - 2 : 28;
-            expect(g.origin[1] + depth).toBeLessThanOrEqual(edge);
-            for (const other of groups) {
-              const original = site.groups.find((p) => p.id === g.id)!;
-              const next = site.groups.find((p) => p.id === other.id)!;
-              if (g.origin[1] === other.origin[1] && original.origin[0] < next.origin[0])
-                expect(g.origin[0]).toBeLessThan(other.origin[0]);
+            expect(g.origin[0] + width).toBeLessThanOrEqual(47);
+            expect(g.origin[1] + depth).toBeLessThanOrEqual(28);
+            for (const other of groups.filter((o) => o.id !== g.id)) {
+              const os = shapes.get(other.id)!.find((s) => s.limits.y === other.limits.y)!;
+              expect(
+                g.origin[0] + width + 2 <= other.origin[0] ||
+                  other.origin[0] + os.size[other.rotation % 2 ? 1 : 0] + 2 <= g.origin[0] ||
+                  g.origin[1] + depth + 2 <= other.origin[1] ||
+                  other.origin[1] + os.size[other.rotation % 2 ? 0 : 1] + 2 <= g.origin[1],
+              ).toBe(true);
             }
           }
           return groups.reduce((sum, g) => sum + g.origin[0], 0);
         },
       });
-      for (const g of result.groups) expect(g.origin[1]).toBe(home.get(g.id));
+      expect(result.after).toBeLessThanOrEqual(result.before);
     }
     expect(checked).toBeGreaterThan(100);
+    expect(leftRows).toBe(true);
   });
 });

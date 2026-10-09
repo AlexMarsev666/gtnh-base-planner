@@ -1,3 +1,4 @@
+import type { OptimizationProgress } from '../model/site/optimize';
 import { derived, writable } from 'svelte/store';
 import type { GtnhProject, ImportOptions, MachineChoice } from '../import/gtnhplanner';
 import type { SiteBuildOptions } from '../model/site/buildTypes';
@@ -27,6 +28,8 @@ export const siteBuild = writable<SiteResult>({ build: null, error: null }, () =
 );
 /** A build has been running for a while for a site newer than the one shown. */
 export const siteBusy = writable(false);
+export const optimizationProgress = writable<OptimizationProgress | null>(null);
+export const cancelOptimization = () => controller.cancelOptimization();
 
 /** Quick builds do not flash the busy notice. */
 const BUSY_DELAY_MS = 250;
@@ -47,6 +50,7 @@ function setBusy(on: boolean, now = false): void {
 const controller = createSiteWorkerController({
   onBuild: (result) => siteBuild.set(result),
   onBusy: setBusy,
+  onOptimization: (progress) => optimizationProgress.set(progress),
 });
 
 /** Pipes are not routed while the user is editing; they follow this long after the last edit. */
@@ -92,8 +96,8 @@ export function importSite(
 
 /**
  * Arranges a site inside its own size (on floors if the chain does not fit the ground, see `arrangeOnFloors`)
- * in the build worker: a big template can take seconds to measure. With `optimize` the arrangement is then
- * annealed and routed a few times, which takes longer.
+ * in the build worker: a big template can take seconds to measure. With `optimize` search starts from the current
+ * layout, yielding progress between batches and retaining only an improvement.
  */
 export function arrangeInSize(
   site: SiteState,

@@ -1,12 +1,14 @@
-import { annealGroups, type AnnealOptions } from './anneal';
+import { annealSteps, defaultIterations, type AnnealOptions } from './anneal';
 import { localFootprints, localHeights } from './build';
 import type { SiteBuild, SiteBuilder } from './buildTypes';
-import { groupShapes } from './shapes';
-import { layoutViolationCount } from './layoutViolations';
+import { shapeSteps } from './shapes';
+import { finishSearch, runSearch, type SearchControl } from './search';
+import { SURFACE_COST } from './router';
+import { addsLayoutViolations, layoutViolationCount } from './layoutViolations';
 import type { SiteGroup, SiteState } from './types';
 
 /**
- * Optimises an arranged site in two stages, and keeps whatever the real router likes best.
+ * Optimises the current user layout in two stages, and keeps whatever the real router likes best.
  *
  * 1. Explore: anneal the groups' places from several seeds on a cheap estimate of pipe length
  *    (`annealGroups`), then route the start layout and the results, best estimate first. The estimate cannot
@@ -24,13 +26,13 @@ import type { SiteGroup, SiteState } from './types';
  * widens the spread of results more than it moves the median, and the best layout wins either way.
  *
  * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, neat
- * routing cost (length + surface + 8 per bend + depth penalty), surface, bends, length, then span.
+ * routing cost (length + 4 per surface block + 8 per bend + depth penalty), surface, bends, length, then span.
  * Compact routing retains its existing length ranking. The start wins ties, so the result is never worse than
- * the arrangement it was given.
+ * the user layout it was given.
  */
 
-export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now' | 'alignRows'> {
-  /** Milliseconds for the whole search, including the routing of the start layout. Default `DEFAULT_BUDGET_MS`. */
+export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now'> {
+  /** Milliseconds for the whole search, including the routing of the start layout. Default scales with groups and links (see `optimizationBudget`). */
   budgetMs?: number;
   /** Shifts every random seed, so a run can be repeated differently. Default 0. */
   seedOffset?: number;
@@ -40,7 +42,7 @@ export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now
   reshape?: boolean;
   /** Whether the site is built with connections from below (see `SiteBuildOptions.below`). */
   below?: boolean;
-  /** Router-judged steps per polish run; 0 skips the polish. Default `DEFAULT_REFINE_STEPS`. */
+  /** Router-judged steps per polish run; 0 skips the polish. Default scales with groups (see `optimizationBudget`). */
   refineSteps?: number;
   /** Polish runs, one after the other from the best layout so far. Default `DEFAULT_REFINE_RUNS`. */
   refineRuns?: number;
@@ -49,7 +51,6 @@ export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now
 }
 
 export const DEFAULT_SEEDS = 4;
-export const DEFAULT_REFINE_STEPS = 24;
 export const DEFAULT_REFINE_RUNS = 2;
 export const DEFAULT_BUDGET_MS = 10000;
 
@@ -107,7 +108,7 @@ export function scoreBuild(build: SiteBuild): LayoutScore {
           routingCost:
             build.stats.pipeBlocks +
             build.stats.cableBlocks +
-            build.stats.surfaceBlocks +
+            SURFACE_COST * build.stats.surfaceBlocks +
             8 * (build.stats.bends ?? 0) +
             (build.stats.depthPenalty ?? 0),
         }),
@@ -133,15 +134,16 @@ export function scoreValue(s: LayoutScore): number {
   );
 }
 
-export function optimizeSite(
+export function* optimizeSteps(
   site: SiteState,
   builder: SiteBuilder,
   opts: OptimizeOptions = {},
-): OptimizeResult {
+): Generator<OptimizationProgress, OptimizeResult> {
+  yield { percent: 0, tried: 0 };
   const below = !!opts.below;
   const now = opts.now ?? (() => performance.now());
   const began = now();
-  const budget = opts.budgetMs ?? DEFAULT_BUDGET_MS;
+  const budget = opts.budgetMs ?? optimizationBudget(site).budgetMs;
   const used = () => now() - began;
   // Many layouts of one site are built: keep every pack, then prune once at the end.
   const measured = builder(site, { pipes: true, cables: true, below, keepCache: true });
@@ -162,11 +164,14 @@ export function optimizeSite(
   const shapes =
     opts.reshape === false
       ? undefined
-      : groupShapes(site, builder, below, {
-          now,
-          deadline: began + budget,
-          baseline: measured,
-        });
+      : yield* report(
+          shapeSteps(site, builder, below, {
+            now,
+            deadline: began + budget,
+            baseline: measured,
+          }),
+          () => ({ percent: 10, tried: 0 }),
+        );
   const heightOf = (id: string) => heights.get(id) ?? 1;
   if (used() >= budget) return unchanged();
 
@@ -180,7 +185,10 @@ export function optimizeSite(
     const key = layoutKey(groups);
     let score = scores.get(key);
     if (!score) {
-      score = scoreBuild(builder({ ...site, groups }, { pipes: true, cables: true, below, keepCache: true }));
+      const built = builder({ ...site, groups }, { pipes: true, cables: true, below, keepCache: true });
+      score = scoreBuild(built);
+      if (addsLayoutViolations(measured, built) || score.unconnected > start.unconnected)
+        score = { ...score, problems: Math.max(start.problems, score.problems) + 1 };
       scores.set(key, score);
       if (used() >= budget) throw interrupted;
     }
@@ -200,38 +208,45 @@ export function optimizeSite(
   try {
     for (let seed = 1; seed <= seeds; seed++) {
       if (used() >= budget) throw interrupted;
-      const r = annealGroups(site, sizeOf, {
-        seed: seed + offset,
-        heightOf,
-        shapes: seed % 2 === 1 ? shapes : undefined,
-        iterations: opts.iterations,
-        deadline: began + budget,
-        now,
-        alignRows: opts.alignRows,
-      });
+      const r = yield* report(
+        annealSteps(site, sizeOf, {
+          seed: seed + offset,
+          heightOf,
+          shapes: seed % 2 === 1 ? shapes : undefined,
+          iterations: opts.iterations ?? optimizationBudget(site).iterations,
+          deadline: began + budget,
+          now,
+        }),
+        (fraction) => ({ percent: 20 + (35 * (seed - 1 + fraction)) / seeds, tried: scores.size - 1 }),
+      );
       if (used() >= budget) throw interrupted;
       if (r.improved) candidates.push({ groups: r.groups, estimate: r.after });
     }
     // Route every candidate in a fixed order; a safety interruption discards the incomplete search.
     candidates.sort((a, b) => a.estimate - b.estimate);
-    candidates.forEach((c) => consider(c.groups));
+    for (let i = 0; i < candidates.length; i++) {
+      yield { percent: 55 + (5 * i) / candidates.length, tried: scores.size - 1 };
+      consider(candidates[i].groups);
+    }
 
-    const steps = opts.refineSteps ?? DEFAULT_REFINE_STEPS;
+    const steps = opts.refineSteps ?? optimizationBudget(site).refineSteps;
     const runs = Math.max(1, opts.refineRuns ?? DEFAULT_REFINE_RUNS);
     if (steps > 0) {
       for (let run = 1; run <= runs; run++) {
         if (used() >= budget) throw interrupted;
-        const r = annealGroups({ ...site, groups: best.groups }, sizeOf, {
-          seed: run + offset,
-          heightOf,
-          shapes: run % 2 === 1 ? shapes : undefined,
-          iterations: steps,
-          deadline: began + budget,
-          now,
-          alignRows: opts.alignRows,
-          heat: opts.refineHeat ?? DEFAULT_REFINE_HEAT,
-          evaluate: (groups) => scoreValue(route(groups)),
-        });
+        const r = yield* report(
+          annealSteps({ ...site, groups: best.groups }, sizeOf, {
+            seed: run + offset,
+            heightOf,
+            shapes: run % 2 === 1 ? shapes : undefined,
+            iterations: steps,
+            deadline: began + budget,
+            now,
+            heat: opts.refineHeat ?? DEFAULT_REFINE_HEAT,
+            evaluate: (groups) => scoreValue(route(groups)),
+          }),
+          (fraction) => ({ percent: 60 + (39 * (run - 1 + fraction)) / runs, tried: scores.size - 1 }),
+        );
         if (used() >= budget) throw interrupted;
         if (r.improved) consider(r.groups);
       }
@@ -245,6 +260,8 @@ export function optimizeSite(
   // Back to the ordinary build, which drops the packs the result does not use.
   if (used() < budget)
     builder(improved ? { ...site, groups: best.groups } : site, { pipes: false, cables: false, below });
+  if (used() >= budget) return unchanged(scores.size - 1);
+  yield { percent: 100, tried: scores.size - 1 };
   return {
     site: improved
       ? {
@@ -270,4 +287,48 @@ function layoutKey(groups: readonly SiteGroup[]): string {
 
 function limitsKey(g: SiteGroup): string {
   return `${g.limits.x}/${g.limits.y}/${g.limits.z}`;
+}
+
+export interface OptimizationProgress {
+  percent: number;
+  tried: number;
+}
+
+/** Fixed quotas grow with the plan; elapsed time is only a safety ceiling. */
+export function optimizationBudget(site: SiteState) {
+  const groups = site.groups.length;
+  return {
+    iterations: defaultIterations(groups),
+    refineSteps: Math.min(96, 12 + 4 * groups),
+    budgetMs: Math.min(120000, Math.max(DEFAULT_BUDGET_MS, 1000 * groups + 250 * site.links.length)),
+  };
+}
+
+function* report<P, T>(
+  steps: Generator<P, T>,
+  progress: (part: P) => OptimizationProgress,
+): Generator<OptimizationProgress, T> {
+  let step = steps.next();
+  while (!step.done) {
+    yield progress(step.value);
+    step = steps.next();
+  }
+  return step.value;
+}
+
+export function optimizeSite(
+  site: SiteState,
+  builder: SiteBuilder,
+  opts: OptimizeOptions = {},
+): OptimizeResult {
+  return finishSearch(optimizeSteps(site, builder, opts));
+}
+
+export function optimizeSiteAsync(
+  site: SiteState,
+  builder: SiteBuilder,
+  opts: OptimizeOptions = {},
+  control: SearchControl<OptimizationProgress> = {},
+): Promise<OptimizeResult> {
+  return runSearch(optimizeSteps(site, builder, opts), control);
 }

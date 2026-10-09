@@ -68,6 +68,31 @@ function arranged(): SiteState {
 }
 
 describe('optimizeSite', () => {
+  for (const regression of ['new violation', 'lost connection'])
+    it(`rejects a cheaper candidate with a ${regression}, compared directly with the original`, () => {
+      const source = arranged();
+      const key = JSON.stringify(source.groups);
+      const base = stub(() => 1);
+      const builder: SiteBuilder = (site, opts) => {
+        const build = base(site, opts);
+        const original = JSON.stringify(site.groups) === key;
+        build.stats.pipeBlocks = original ? 100 : 1;
+        if (regression === 'new violation')
+          build.warnings = [{ type: 'noport', port: original ? 'existing' : 'different' }];
+        else if (!original) build.stats.connected--;
+        return build;
+      };
+      const result = optimizeSite(source, builder, {
+        reshape: false,
+        now: () => 0,
+        iterations: 200,
+        refineSteps: 12,
+      });
+      expect(result.tried).toBeGreaterThan(0);
+      expect(result.improved).toBe(false);
+      expect(result.site).toBe(source);
+      expect(result.result).toEqual(result.start);
+    });
   it('retains the best evaluated layout by exact priorities when the scalar guide disagrees', () => {
     let evaluations = 0;
     const base = stub(() => 0);
@@ -77,7 +102,7 @@ describe('optimizeSite', () => {
         evaluations++;
         build.stats.surfaceBlocks = evaluations === 1 ? 1 : 0;
         build.stats.bends = 0;
-        build.stats.pipeBlocks = evaluations === 1 ? 0 : 1;
+        build.stats.pipeBlocks = evaluations === 1 ? 0 : 4;
         // Equal routing cost: the exact surface tie-break wins even when the scalar's
         // compactness term is overwhelmed by an artificially enormous span.
         if (evaluations > 1)
@@ -95,7 +120,7 @@ describe('optimizeSite', () => {
     expect(evaluations).toBeGreaterThan(1);
     expect(result.improved).toBe(true);
     expect(result.result.surface).toBe(0);
-    expect(result.result.routingCost).toBe(1);
+    expect(result.result.routingCost).toBe(4);
   });
   it('includes calibration in the overall budget and performs only the baseline at zero budget', () => {
     const start = arranged();

@@ -1,0 +1,1359 @@
+{
+  "workerFile": "assets/siteWorker-BxBT4BeM.js",
+  "rawBytes": 1608148,
+  "gzipBytes": 142338,
+  "note": "renderedBytes are tree-shaken module sizes before final minification. They are not additive gzip contributions; the compressed worker is measured as one stream.",
+  "groups": {
+    "Catalog shapes": 1705902,
+    "Generated constraints and casings": 142738,
+    "Site model and routing": 159416,
+    "Import": 20542,
+    "Other catalog data": 37902,
+    "Other": 19428,
+    "Other model": 130018,
+    "Worker command entry": 4269
+  },
+  "modules": [
+    {
+      "id": "src/data/multiblocks/nanochip-assembly-complex.json",
+      "renderedBytes": 218229
+    },
+    {
+      "id": "src/data/multiblocks/semi-stable-antimatter-stabilization-sequencer.json",
+      "renderedBytes": 151683
+    },
+    {
+      "id": "src/data/multiblocks/forge-of-the-gods.json",
+      "renderedBytes": 110062
+    },
+    {
+      "id": "src/data/multiblocks/large-hadron-collider.json",
+      "renderedBytes": 80802
+    },
+    {
+      "id": "src/data/multiblocks/bose-einstein-condensate-observation-array.json",
+      "renderedBytes": 67376
+    },
+    {
+      "id": "src/data/constraints.runtime.generated.json",
+      "renderedBytes": 66596
+    },
+    {
+      "id": "src/data/multiblocks/space-elevator.json",
+      "renderedBytes": 65778
+    },
+    {
+      "id": "src/data/multiblocks/shielded-lagrangian-annihilation-matrix.json",
+      "renderedBytes": 65270
+    },
+    {
+      "id": "src/data/multiblocks/pseudostable-black-hole-containment-field.json",
+      "renderedBytes": 50579
+    },
+    {
+      "id": "src/data/multiblocks/eye-of-harmony.json",
+      "renderedBytes": 45579
+    },
+    {
+      "id": "src/model/site/resourcePlacement.ts",
+      "renderedBytes": 35093
+    },
+    {
+      "id": "src/data/multiblocks/dimensionally-transcendent-plasma-forge.json",
+      "renderedBytes": 33653
+    },
+    {
+      "id": "src/data/multiblocks/exothermic-hearth.json",
+      "renderedBytes": 32310
+    },
+    {
+      "id": "src/model/site/router.ts",
+      "renderedBytes": 24162
+    },
+    {
+      "id": "src/import/gtnhplanner.ts",
+      "renderedBytes": 20542
+    },
+    {
+      "id": "src/data/catalog.ts",
+      "renderedBytes": 19598
+    },
+    {
+      "id": "src/data/multiblocks/compact-fusion-computer-mk-iv-prototype.json",
+      "renderedBytes": 19496
+    },
+    {
+      "id": "src/data/multiblocks/compact-fusion-computer-mk-i-prototype.json",
+      "renderedBytes": 19480
+    },
+    {
+      "id": "src/data/multiblocks/compact-fusion-computer-mk-v.json",
+      "renderedBytes": 19461
+    },
+    {
+      "id": "src/data/multiblocks/compact-fusion-computer-mk-iii.json",
+      "renderedBytes": 19459
+    },
+    {
+      "id": "src/data/multiblocks/compact-fusion-computer-mk-ii.json",
+      "renderedBytes": 19455
+    },
+    {
+      "id": "src/data/multiblocks/bose-einstein-condensate-entanglement-apparatus.json",
+      "renderedBytes": 18829
+    },
+    {
+      "id": "src/model/site/anneal.ts",
+      "renderedBytes": 18816
+    },
+    {
+      "id": "src/data/multiblocks/exo-foundry.json",
+      "renderedBytes": 17768
+    },
+    {
+      "id": "src/share/siteCodec.ts",
+      "renderedBytes": 16957
+    },
+    {
+      "id": "src/model/multiblock/structureAdapters.ts",
+      "renderedBytes": 16433
+    },
+    {
+      "id": "src/data/multiblocks/endothermic-fridge.json",
+      "renderedBytes": 13250
+    },
+    {
+      "id": "src/data/fusion-slots.rc2.generated.json",
+      "renderedBytes": 12778
+    },
+    {
+      "id": "src/data/multiblocks/synchrotron.json",
+      "renderedBytes": 12290
+    },
+    {
+      "id": "src/data/arc-furnace.rc2.generated.json",
+      "renderedBytes": 12240
+    },
+    {
+      "id": "src/data/multiblocks/residual-decontaminant-degasser-purification-unit.json",
+      "renderedBytes": 11939
+    },
+    {
+      "id": "src/model/site/resourceAllocation.ts",
+      "renderedBytes": 11831
+    },
+    {
+      "id": "src/model/hatches/sites.ts",
+      "renderedBytes": 11014
+    },
+    {
+      "id": "src/data/multiblocks/high-temperature-gas-cooled-reactor.json",
+      "renderedBytes": 11010
+    },
+    {
+      "id": "src/data/computation.rc2.generated.json",
+      "renderedBytes": 10553
+    },
+    {
+      "id": "src/model/site/group.ts",
+      "renderedBytes": 10245
+    },
+    {
+      "id": "src/data/multiblocks/dyson-swarm.json",
+      "renderedBytes": 9822
+    },
+    {
+      "id": "src/data/multiblocks/spinmatron-2737.json",
+      "renderedBytes": 9201
+    },
+    {
+      "id": "src/data/multiblocks/quantum-force-transformer.json",
+      "renderedBytes": 9084
+    },
+    {
+      "id": "src/data/multiblocks/absolute-baryonic-perfection-purification-unit.json",
+      "renderedBytes": 8881
+    },
+    {
+      "id": "src/data/gt-machine-types.generated.json",
+      "renderedBytes": 8809
+    },
+    {
+      "id": "src/data/multiblocks/extreme-temperature-fluctuation-purification-unit.json",
+      "renderedBytes": 8626
+    },
+    {
+      "id": "src/data/multiblocks/mega-distillation-tower.json",
+      "renderedBytes": 8615
+    },
+    {
+      "id": "src/data/beam-structures.rc2.generated.json",
+      "renderedBytes": 8527
+    },
+    {
+      "id": "src/model/site/arrange.ts",
+      "renderedBytes": 8139
+    },
+    {
+      "id": "src/data/single-machines.json",
+      "renderedBytes": 8118
+    },
+    {
+      "id": "src/data/multiblocks/nano-forge.json",
+      "renderedBytes": 8015
+    },
+    {
+      "id": "src/data/multiblocks/planetary-gas-siphon.json",
+      "renderedBytes": 7830
+    },
+    {
+      "id": "src/data/multiblocks/component-assembly-line.json",
+      "renderedBytes": 7751
+    },
+    {
+      "id": "src/data/multiblocks/solar-tower.json",
+      "renderedBytes": 7330
+    },
+    {
+      "id": "src/data/multiblocks/industrial-arc-furnace.json",
+      "renderedBytes": 7232
+    },
+    {
+      "id": "src/data/multiblocks/naquadah-fuel-refinery.json",
+      "renderedBytes": 6676
+    },
+    {
+      "id": "src/model/multiblock/rules.ts",
+      "renderedBytes": 6658
+    },
+    {
+      "id": "src/model/site/nets.ts",
+      "renderedBytes": 6625
+    },
+    {
+      "id": "src/model/walls.ts",
+      "renderedBytes": 6510
+    },
+    {
+      "id": "src/data/multiblocks/mega-alloy-blast-smelter.json",
+      "renderedBytes": 6293
+    },
+    {
+      "id": "src/data/single-tiers.generated.json",
+      "renderedBytes": 6266
+    },
+    {
+      "id": "src/model/resize.ts",
+      "renderedBytes": 6233
+    },
+    {
+      "id": "src/data/casings.runtime.generated.json",
+      "renderedBytes": 6163
+    },
+    {
+      "id": "src/data/multiblocks/bose-einstein-condensate-teleportation-node.json",
+      "renderedBytes": 6150
+    },
+    {
+      "id": "src/data/multiblocks/xl-turbo-hp-steam-turbine.json",
+      "renderedBytes": 6131
+    },
+    {
+      "id": "src/data/multiblocks/xl-turbo-sc-steam-turbine.json",
+      "renderedBytes": 6131
+    },
+    {
+      "id": "src/data/multiblocks/xl-turbo-steam-turbine.json",
+      "renderedBytes": 6116
+    },
+    {
+      "id": "src/model/multiblock/dedicatedHatches.ts",
+      "renderedBytes": 5994
+    },
+    {
+      "id": "src/data/gtnhplanner-machines.ts",
+      "renderedBytes": 5892
+    },
+    {
+      "id": "src/model/site/optimize.ts",
+      "renderedBytes": 5888
+    },
+    {
+      "id": "src/model/multiblock/computation.ts",
+      "renderedBytes": 5803
+    },
+    {
+      "id": "src/data/multiblocks/xl-turbo-gas-turbine.json",
+      "renderedBytes": 5742
+    },
+    {
+      "id": "src/data/multiblocks/xl-turbo-plasma-turbine.json",
+      "renderedBytes": 5727
+    },
+    {
+      "id": "src/model/layout/candidates.ts",
+      "renderedBytes": 5150
+    },
+    {
+      "id": "src/model/site/groups.ts",
+      "renderedBytes": 5073
+    },
+    {
+      "id": "src/model/site/build.ts",
+      "renderedBytes": 5021
+    },
+    {
+      "id": "src/model/site/siteScene.ts",
+      "renderedBytes": 4958
+    },
+    {
+      "id": "src/model/layout/packer.ts",
+      "renderedBytes": 4866
+    },
+    {
+      "id": "src/model/geometry.ts",
+      "renderedBytes": 4834
+    },
+    {
+      "id": "src/data/multiblocks/bose-einstein-condensate-maxwell-gate.json",
+      "renderedBytes": 4760
+    },
+    {
+      "id": "src/data/multiblocks/integrated-ore-factory.json",
+      "renderedBytes": 4722
+    },
+    {
+      "id": "src/model/multiblock/assemblyLine.ts",
+      "renderedBytes": 4632
+    },
+    {
+      "id": "src/model/site/ports.ts",
+      "renderedBytes": 4457
+    },
+    {
+      "id": "src/model/site/shapes.ts",
+      "renderedBytes": 4445
+    },
+    {
+      "id": "src/model/multiblock/casingConstraints.ts",
+      "renderedBytes": 4371
+    },
+    {
+      "id": "src/data/multiblocks/thorium-high-temperature-reactor.json",
+      "renderedBytes": 4278
+    },
+    {
+      "id": "src/data/multiblocks/void-miners.json",
+      "renderedBytes": 4246
+    },
+    {
+      "id": "src/model/layout/modes.ts",
+      "renderedBytes": 4158
+    },
+    {
+      "id": "src/data/multiblocks/neutronium-compressor.json",
+      "renderedBytes": 4067
+    },
+    {
+      "id": "src/data/multiblocks/coolant-tower.json",
+      "renderedBytes": 4064
+    },
+    {
+      "id": "src/data/multiblocks/infinite-fluid-drilling-rig.json",
+      "renderedBytes": 3984
+    },
+    {
+      "id": "src/model/scene.ts",
+      "renderedBytes": 3944
+    },
+    {
+      "id": "src/data/multiblocks/linear-accelerator.json",
+      "renderedBytes": 3928
+    },
+    {
+      "id": "src/model/site/demand.ts",
+      "renderedBytes": 3860
+    },
+    {
+      "id": "src/data/multiblocks/hot-isostatic-pressurization-unit.json",
+      "renderedBytes": 3607
+    },
+    {
+      "id": "src/data/multiblocks/void-miner-ii.json",
+      "renderedBytes": 3587
+    },
+    {
+      "id": "src/data/multiblocks/tesla-tower.json",
+      "renderedBytes": 3585
+    },
+    {
+      "id": "src/data/multiblocks/mega-oil-cracker.json",
+      "renderedBytes": 3475
+    },
+    {
+      "id": "src/data/linear-accelerator.rc2.generated.json",
+      "renderedBytes": 3455
+    },
+    {
+      "id": "src/data/multiblocks/high-energy-laser-purification-unit.json",
+      "renderedBytes": 3350
+    },
+    {
+      "id": "src/model/layout/shapes.ts",
+      "renderedBytes": 3332
+    },
+    {
+      "id": "src/data/multiblocks/universal-chemical-fuel-engine.json",
+      "renderedBytes": 3222
+    },
+    {
+      "id": "src/data/generic.ts",
+      "renderedBytes": 3195
+    },
+    {
+      "id": "src/data/multiblocks/electric-implosion-compressor.json",
+      "renderedBytes": 3105
+    },
+    {
+      "id": "src/data/multiblocks/elemental-duplicator.json",
+      "renderedBytes": 3053
+    },
+    {
+      "id": "src/data/multiblocks/beam-crafter.json",
+      "renderedBytes": 3044
+    },
+    {
+      "id": "src/model/layout/realize.ts",
+      "renderedBytes": 3003
+    },
+    {
+      "id": "src/model/multiblock/glass.ts",
+      "renderedBytes": 2975
+    },
+    {
+      "id": "src/data/multiblocks/flotation-cell-regulator.json",
+      "renderedBytes": 2937
+    },
+    {
+      "id": "src/data/multiblocks/large-naquadah-reactor.json",
+      "renderedBytes": 2892
+    },
+    {
+      "id": "src/data/multiblocks/superconductive-strand-splitter.json",
+      "renderedBytes": 2843
+    },
+    {
+      "id": "src/data/multiblocks/extreme-industrial-greenhouse.json",
+      "renderedBytes": 2827
+    },
+    {
+      "id": "src/data/multiblocks/industrial-autoclave.json",
+      "renderedBytes": 2818
+    },
+    {
+      "id": "src/data/multiblocks/heliothermal-plasma-fabricator.json",
+      "renderedBytes": 2790
+    },
+    {
+      "id": "src/model/multiblock/circuitAssemblyLine.ts",
+      "renderedBytes": 2784
+    },
+    {
+      "id": "src/data/multiblocks/comet-compact-cyclotron.json",
+      "renderedBytes": 2781
+    },
+    {
+      "id": "src/data/multiblocks/extreme-heat-exchanger.json",
+      "renderedBytes": 2773
+    },
+    {
+      "id": "src/data/multiblocks/helioflare-power-forge.json",
+      "renderedBytes": 2761
+    },
+    {
+      "id": "src/data/multiblocks/helioflux-melting-core.json",
+      "renderedBytes": 2758
+    },
+    {
+      "id": "src/data/multiblocks/heliofusion-exoticizer.json",
+      "renderedBytes": 2758
+    },
+    {
+      "id": "src/data/multiblocks/water-purification-plant.json",
+      "renderedBytes": 2753
+    },
+    {
+      "id": "src/data/multiblocks/molecular-transformer.json",
+      "renderedBytes": 2738
+    },
+    {
+      "id": "src/data/multiblocks/density-2.json",
+      "renderedBytes": 2733
+    },
+    {
+      "id": "src/data/multiblocks/void-miner-i.json",
+      "renderedBytes": 2716
+    },
+    {
+      "id": "src/model/plan.ts",
+      "renderedBytes": 2700
+    },
+    {
+      "id": "src/data/multiblocks/clarifier-purification-unit.json",
+      "renderedBytes": 2693
+    },
+    {
+      "id": "src/data/multiblocks/optically-optimized-organizer.json",
+      "renderedBytes": 2693
+    },
+    {
+      "id": "src/model/site/toward.ts",
+      "renderedBytes": 2678
+    },
+    {
+      "id": "src/data/multiblocks/industrial-sledgehammer.json",
+      "renderedBytes": 2647
+    },
+    {
+      "id": "src/data/multiblocks/large-electric-compressor.json",
+      "renderedBytes": 2646
+    },
+    {
+      "id": "src/data/multiblocks/fusiontech-mk-iv.json",
+      "renderedBytes": 2623
+    },
+    {
+      "id": "src/data/multiblocks/fusiontech-mk-v.json",
+      "renderedBytes": 2615
+    },
+    {
+      "id": "src/data/multiblocks/zhuhai-fishing-port.json",
+      "renderedBytes": 2615
+    },
+    {
+      "id": "src/data/multiblocks/fusion-control-computer-mark-iii.json",
+      "renderedBytes": 2609
+    },
+    {
+      "id": "src/data/multiblocks/fusion-control-computer-mark-ii.json",
+      "renderedBytes": 2605
+    },
+    {
+      "id": "src/data/multiblocks/fusion-control-computer-mark-i.json",
+      "renderedBytes": 2598
+    },
+    {
+      "id": "src/data/multiblocks/ozonation-purification-unit.json",
+      "renderedBytes": 2597
+    },
+    {
+      "id": "src/data/multiblocks/steam-purifier.json",
+      "renderedBytes": 2590
+    },
+    {
+      "id": "src/data/multiblocks/nanometer-encasement-wrapper.json",
+      "renderedBytes": 2585
+    },
+    {
+      "id": "src/data/multiblocks/draconic-evolution-fusion-crafter.json",
+      "renderedBytes": 2582
+    },
+    {
+      "id": "src/data/multiblocks/flocculation-purification-unit.json",
+      "renderedBytes": 2566
+    },
+    {
+      "id": "src/data/multiblocks/tree-growth-simulator.json",
+      "renderedBytes": 2564
+    },
+    {
+      "id": "src/data/multiblocks/large-thermal-refinery.json",
+      "renderedBytes": 2554
+    },
+    {
+      "id": "src/data/multiblocks/exxonmobil-chemical-plant.json",
+      "renderedBytes": 2542
+    },
+    {
+      "id": "src/data/multiblocks/ultra-high-energy-etching-array.json",
+      "renderedBytes": 2536
+    },
+    {
+      "id": "src/data/multiblocks/nanoprecision-cutting-chamber.json",
+      "renderedBytes": 2532
+    },
+    {
+      "id": "src/data/multiblocks/accelerated-biological-coordinator.json",
+      "renderedBytes": 2530
+    },
+    {
+      "id": "src/data/multiblocks/mass-solidifier.json",
+      "renderedBytes": 2530
+    },
+    {
+      "id": "src/data/multiblocks/nanoprecision-wire-tracer.json",
+      "renderedBytes": 2510
+    },
+    {
+      "id": "src/data/multiblocks/target-chamber.json",
+      "renderedBytes": 2489
+    },
+    {
+      "id": "src/data/multiblocks/ph-neutralization-purification-unit.json",
+      "renderedBytes": 2488
+    },
+    {
+      "id": "src/data/multiblocks/industrial-coke-oven.json",
+      "renderedBytes": 2486
+    },
+    {
+      "id": "src/data/multiblocks/pcb-factory.json",
+      "renderedBytes": 2484
+    },
+    {
+      "id": "src/data/multiblocks/extreme-combustion-engine.json",
+      "renderedBytes": 2479
+    },
+    {
+      "id": "src/data/multiblocks/nanochip-assembly-matrix.json",
+      "renderedBytes": 2475
+    },
+    {
+      "id": "src/data/multiblocks/miniature-wormhole-generator.json",
+      "renderedBytes": 2470
+    },
+    {
+      "id": "src/data/multiblocks/windmill.json",
+      "renderedBytes": 2459
+    },
+    {
+      "id": "src/data/multiblocks/industrial-mixing-machine.json",
+      "renderedBytes": 2454
+    },
+    {
+      "id": "src/data/multiblocks/whakawhiti-wera-xl.json",
+      "renderedBytes": 2451
+    },
+    {
+      "id": "src/data/multiblocks/large-fluid-extractor.json",
+      "renderedBytes": 2448
+    },
+    {
+      "id": "src/data/multiblocks/algae-farm.json",
+      "renderedBytes": 2447
+    },
+    {
+      "id": "src/data/multiblocks/beam-stabilizer.json",
+      "renderedBytes": 2443
+    },
+    {
+      "id": "src/data/multiblocks/pyrolyse-oven.json",
+      "renderedBytes": 2420
+    },
+    {
+      "id": "src/data/multiblocks/nuclear-salt-processing-plant.json",
+      "renderedBytes": 2411
+    },
+    {
+      "id": "src/data/multiblocks/mega-chemical-reactor.json",
+      "renderedBytes": 2402
+    },
+    {
+      "id": "src/data/multiblocks/full-board-immersion-device.json",
+      "renderedBytes": 2392
+    },
+    {
+      "id": "src/data/multiblocks/steam-blender.json",
+      "renderedBytes": 2385
+    },
+    {
+      "id": "src/data/multiblocks/thermic-heating-device.json",
+      "renderedBytes": 2381
+    },
+    {
+      "id": "src/data/multiblocks/industrial-3d-copying-machine.json",
+      "renderedBytes": 2363
+    },
+    {
+      "id": "src/data/multiblocks/research-station.json",
+      "renderedBytes": 2337
+    },
+    {
+      "id": "src/data/multiblocks/magnetic-flux-exhibitor.json",
+      "renderedBytes": 2330
+    },
+    {
+      "id": "src/data/multiblocks/assembly-line.json",
+      "renderedBytes": 2327
+    },
+    {
+      "id": "src/data/multiblocks/ore-washing-plant.json",
+      "renderedBytes": 2315
+    },
+    {
+      "id": "src/data/multiblocks/industrial-chemical-bath.json",
+      "renderedBytes": 2313
+    },
+    {
+      "id": "src/data/multiblocks/part-preparation-apparatus.json",
+      "renderedBytes": 2308
+    },
+    {
+      "id": "src/data/multiblocks/distillation-tower.json",
+      "renderedBytes": 2294
+    },
+    {
+      "id": "src/data/multiblocks/bio-chamber.json",
+      "renderedBytes": 2291
+    },
+    {
+      "id": "src/data/multiblocks/entropic-processor.json",
+      "renderedBytes": 2290
+    },
+    {
+      "id": "src/data/multiblocks/precise-auto-assembler-mt-3662.json",
+      "renderedBytes": 2287
+    },
+    {
+      "id": "src/data/multiblocks/extreme-entity-crusher.json",
+      "renderedBytes": 2285
+    },
+    {
+      "id": "src/data/multiblocks/industrial-electrolyzer.json",
+      "renderedBytes": 2274
+    },
+    {
+      "id": "src/model/multiblock/beamStructures.ts",
+      "renderedBytes": 2267
+    },
+    {
+      "id": "src/ui/siteArrange.ts",
+      "renderedBytes": 2266
+    },
+    {
+      "id": "src/data/multiblocks/thermal-boiler.json",
+      "renderedBytes": 2265
+    },
+    {
+      "id": "src/data/multiblocks/thorium-reactor-lftr.json",
+      "renderedBytes": 2261
+    },
+    {
+      "id": "src/data/multiblocks/digester.json",
+      "renderedBytes": 2257
+    },
+    {
+      "id": "src/data/multiblocks/large-sifter.json",
+      "renderedBytes": 2248
+    },
+    {
+      "id": "src/data/multiblocks/source-chamber.json",
+      "renderedBytes": 2243
+    },
+    {
+      "id": "src/data/multiblocks/hyper-intensity-laser-engraver.json",
+      "renderedBytes": 2242
+    },
+    {
+      "id": "src/data/multiblocks/neutron-activator.json",
+      "renderedBytes": 2242
+    },
+    {
+      "id": "src/data/multiblocks/drone-centre.json",
+      "renderedBytes": 2241
+    },
+    {
+      "id": "src/data/multiblocks/l-a-t-e-x.json",
+      "renderedBytes": 2239
+    },
+    {
+      "id": "src/data/multiblocks/boldarnator.json",
+      "renderedBytes": 2236
+    },
+    {
+      "id": "src/data/multiblocks/large-essentia-smeltery.json",
+      "renderedBytes": 2235
+    },
+    {
+      "id": "src/share/codec.ts",
+      "renderedBytes": 2217
+    },
+    {
+      "id": "src/data/multiblocks/fluid-shaper.json",
+      "renderedBytes": 2206
+    },
+    {
+      "id": "src/model/site/hatchAccess.ts",
+      "renderedBytes": 2197
+    },
+    {
+      "id": "src/data/multiblocks/large-gas-turbine.json",
+      "renderedBytes": 2179
+    },
+    {
+      "id": "src/data/multiblocks/matter-fabrication-cpu.json",
+      "renderedBytes": 2179
+    },
+    {
+      "id": "src/data/multiblocks/large-supercritical-steam-turbine.json",
+      "renderedBytes": 2177
+    },
+    {
+      "id": "src/data/multiblocks/industrial-centrifuge.json",
+      "renderedBytes": 2176
+    },
+    {
+      "id": "src/data/multiblocks/cryogenic-freezer.json",
+      "renderedBytes": 2170
+    },
+    {
+      "id": "src/data/multiblocks/large-plasma-turbine.json",
+      "renderedBytes": 2166
+    },
+    {
+      "id": "src/data/multiblocks/cooling-tower.json",
+      "renderedBytes": 2165
+    },
+    {
+      "id": "src/data/multiblocks/industrial-extrusion-machine.json",
+      "renderedBytes": 2165
+    },
+    {
+      "id": "src/data/multiblocks/large-hp-steam-turbine.json",
+      "renderedBytes": 2155
+    },
+    {
+      "id": "src/data/multiblocks/rocketdyne-f-1a-engine.json",
+      "renderedBytes": 2154
+    },
+    {
+      "id": "src/data/multiblocks/turbocan-pro.json",
+      "renderedBytes": 2150
+    },
+    {
+      "id": "src/data/multiblocks/industrial-forming-press.json",
+      "renderedBytes": 2141
+    },
+    {
+      "id": "src/data/multiblocks/deep-earth-heating-pump.json",
+      "renderedBytes": 2126
+    },
+    {
+      "id": "src/data/multiblocks/large-steam-turbine.json",
+      "renderedBytes": 2118
+    },
+    {
+      "id": "src/data/multiblocks/reactor-fuel-processing-plant.json",
+      "renderedBytes": 2117
+    },
+    {
+      "id": "src/data/multiblocks/industrial-cutting-factory.json",
+      "renderedBytes": 2114
+    },
+    {
+      "id": "src/data/multiblocks/tfft.json",
+      "renderedBytes": 2105
+    },
+    {
+      "id": "src/data/multiblocks/large-tungstensteel-boiler.json",
+      "renderedBytes": 2095
+    },
+    {
+      "id": "src/data/multiblocks/large-combustion-engine.json",
+      "renderedBytes": 2092
+    },
+    {
+      "id": "src/data/multiblocks/large-neutralization-engine.json",
+      "renderedBytes": 2086
+    },
+    {
+      "id": "src/data/multiblocks/industrial-precision-lathe.json",
+      "renderedBytes": 2085
+    },
+    {
+      "id": "src/data/multiblocks/dangote-distillus.json",
+      "renderedBytes": 2082
+    },
+    {
+      "id": "src/data/multiblocks/oil-cracking-unit.json",
+      "renderedBytes": 2081
+    },
+    {
+      "id": "src/data/multiblocks/dissolution-tank.json",
+      "renderedBytes": 2070
+    },
+    {
+      "id": "src/data/multiblocks/large-titanium-boiler.json",
+      "renderedBytes": 2069
+    },
+    {
+      "id": "src/data/multiblocks/electric-blast-furnace.json",
+      "renderedBytes": 2066
+    },
+    {
+      "id": "src/data/multiblocks/large-bronze-boiler.json",
+      "renderedBytes": 2061
+    },
+    {
+      "id": "src/data/multiblocks/nanopart-splitter.json",
+      "renderedBytes": 2057
+    },
+    {
+      "id": "src/data/multiblocks/large-steel-boiler.json",
+      "renderedBytes": 2056
+    },
+    {
+      "id": "src/model/site/layoutViolations.ts",
+      "renderedBytes": 2015
+    },
+    {
+      "id": "src/data/multiblocks/isamill-grinding-machine.json",
+      "renderedBytes": 2011
+    },
+    {
+      "id": "src/data/multiblocks/steam-presser.json",
+      "renderedBytes": 2005
+    },
+    {
+      "id": "src/data/multiblocks/advanced-concrete-backfiller.json",
+      "renderedBytes": 1994
+    },
+    {
+      "id": "src/data/multiblocks/alloy-blast-smelter.json",
+      "renderedBytes": 1989
+    },
+    {
+      "id": "src/data/multiblocks/circuit-assembly-line.json",
+      "renderedBytes": 1988
+    },
+    {
+      "id": "src/data/multiblocks/sparge-tower-controller.json",
+      "renderedBytes": 1986
+    },
+    {
+      "id": "src/data/multiblocks/advanced-assembly-line.json",
+      "renderedBytes": 1980
+    },
+    {
+      "id": "src/data/multiblocks/solar-factory.json",
+      "renderedBytes": 1977
+    },
+    {
+      "id": "src/data/multiblocks/steam-separator.json",
+      "renderedBytes": 1977
+    },
+    {
+      "id": "src/data/multiblocks/bio-vat.json",
+      "renderedBytes": 1974
+    },
+    {
+      "id": "src/data/multiblocks/utupu-tanuri.json",
+      "renderedBytes": 1973
+    },
+    {
+      "id": "src/data/multiblocks/big-barrel-brewery.json",
+      "renderedBytes": 1971
+    },
+    {
+      "id": "src/data/multiblocks/transcendent-plasma-mixer.json",
+      "renderedBytes": 1969
+    },
+    {
+      "id": "src/data/multiblocks/concrete-backfiller.json",
+      "renderedBytes": 1959
+    },
+    {
+      "id": "src/data/multiblocks/dissection-apparatus.json",
+      "renderedBytes": 1955
+    },
+    {
+      "id": "src/model/multiblock/dataBank.ts",
+      "renderedBytes": 1950
+    },
+    {
+      "id": "src/data/multiblocks/industrial-bending-machine.json",
+      "renderedBytes": 1947
+    },
+    {
+      "id": "src/data/multiblocks/ore-drilling-plant-iii.json",
+      "renderedBytes": 1946
+    },
+    {
+      "id": "src/data/multiblocks/ore-drilling-plant-iv.json",
+      "renderedBytes": 1944
+    },
+    {
+      "id": "src/data/multiblocks/electric-air-filter-t1.json",
+      "renderedBytes": 1941
+    },
+    {
+      "id": "src/data/multiblocks/electric-air-filter-t2.json",
+      "renderedBytes": 1941
+    },
+    {
+      "id": "src/data/multiblocks/electric-air-filter-t3.json",
+      "renderedBytes": 1941
+    },
+    {
+      "id": "src/data/multiblocks/ore-drilling-plant-ii.json",
+      "renderedBytes": 1941
+    },
+    {
+      "id": "src/data/multiblocks/ore-drilling-plant.json",
+      "renderedBytes": 1930
+    },
+    {
+      "id": "src/data/multiblocks/amazon-warehousing-depot.json",
+      "renderedBytes": 1925
+    },
+    {
+      "id": "src/data/multiblocks/large-semifluid-generator.json",
+      "renderedBytes": 1921
+    },
+    {
+      "id": "src/data/multiblocks/volcanus.json",
+      "renderedBytes": 1914
+    },
+    {
+      "id": "src/data/multiblocks/large-heat-exchanger.json",
+      "renderedBytes": 1901
+    },
+    {
+      "id": "src/data/multiblocks/industrial-wire-factory.json",
+      "renderedBytes": 1884
+    },
+    {
+      "id": "src/data/multiblocks/fluid-drilling-rig-iii.json",
+      "renderedBytes": 1881
+    },
+    {
+      "id": "src/data/multiblocks/large-molecular-assembler.json",
+      "renderedBytes": 1880
+    },
+    {
+      "id": "src/data/multiblocks/fluid-drilling-rig-ii.json",
+      "renderedBytes": 1878
+    },
+    {
+      "id": "src/data/multiblocks/fluid-drilling-rig-iv.json",
+      "renderedBytes": 1878
+    },
+    {
+      "id": "src/data/multiblocks/solid-oxide-fuel-cell-mk-ii.json",
+      "renderedBytes": 1878
+    },
+    {
+      "id": "src/data/multiblocks/solid-oxide-fuel-cell-mk-i.json",
+      "renderedBytes": 1874
+    },
+    {
+      "id": "src/data/multiblocks/multi-smelter.json",
+      "renderedBytes": 1869
+    },
+    {
+      "id": "src/data/multiblocks/fluid-drilling-rig.json",
+      "renderedBytes": 1867
+    },
+    {
+      "id": "src/data/multiblocks/yottank.json",
+      "renderedBytes": 1867
+    },
+    {
+      "id": "src/data/multiblocks/lapotronic-supercapacitor.json",
+      "renderedBytes": 1863
+    },
+    {
+      "id": "src/data/multiblocks/large-scale-auto-assembler-v1-01.json",
+      "renderedBytes": 1858
+    },
+    {
+      "id": "src/data/multiblocks/industrial-maceration-stack.json",
+      "renderedBytes": 1854
+    },
+    {
+      "id": "src/data/multiblocks/energy-infuser.json",
+      "renderedBytes": 1850
+    },
+    {
+      "id": "src/data/multiblocks/large-chemical-reactor.json",
+      "renderedBytes": 1849
+    },
+    {
+      "id": "src/data/multiblocks/decay-warehouse.json",
+      "renderedBytes": 1838
+    },
+    {
+      "id": "src/model/multiblock/steamWaterPump.ts",
+      "renderedBytes": 1804
+    },
+    {
+      "id": "src/data/multiblocks/power-station-control-node.json",
+      "renderedBytes": 1801
+    },
+    {
+      "id": "src/data/multiblocks/steam-squasher.json",
+      "renderedBytes": 1766
+    },
+    {
+      "id": "src/data/multiblocks/beam-splitter.json",
+      "renderedBytes": 1754
+    },
+    {
+      "id": "src/data/multiblocks/microwave-grinder.json",
+      "renderedBytes": 1746
+    },
+    {
+      "id": "src/data/multiblocks/zyngen.json",
+      "renderedBytes": 1728
+    },
+    {
+      "id": "src/model/routing/heap.ts",
+      "renderedBytes": 1720
+    },
+    {
+      "id": "src/data/multiblocks/implosion-compressor.json",
+      "renderedBytes": 1709
+    },
+    {
+      "id": "src/model/layout/wallsharing.ts",
+      "renderedBytes": 1703
+    },
+    {
+      "id": "src/data/multiblocks/steam-hearth.json",
+      "renderedBytes": 1700
+    },
+    {
+      "id": "src/data/multiblocks/manual-transformer.json",
+      "renderedBytes": 1699
+    },
+    {
+      "id": "src/data/multiblocks/quantum-computer.json",
+      "renderedBytes": 1699
+    },
+    {
+      "id": "src/data/multiblocks/steam-grinder.json",
+      "renderedBytes": 1685
+    },
+    {
+      "id": "src/data/multiblocks/steam-fuser.json",
+      "renderedBytes": 1673
+    },
+    {
+      "id": "src/data/multiblocks/research-completer.json",
+      "renderedBytes": 1666
+    },
+    {
+      "id": "src/model/multiblock/linearAccelerator.ts",
+      "renderedBytes": 1655
+    },
+    {
+      "id": "src/data/multiblocks/vacuum-freezer.json",
+      "renderedBytes": 1653
+    },
+    {
+      "id": "src/data/multiblocks/data-bank.json",
+      "renderedBytes": 1612
+    },
+    {
+      "id": "src/model/multiblock/arcFurnace.ts",
+      "renderedBytes": 1584
+    },
+    {
+      "id": "src/data/multiblocks/weighted-network-switch-with-qos.json",
+      "renderedBytes": 1583
+    },
+    {
+      "id": "src/data/multiblocks/beam-mirror.json",
+      "renderedBytes": 1578
+    },
+    {
+      "id": "src/data/multiblocks/static-network-switch-with-qos.json",
+      "renderedBytes": 1572
+    },
+    {
+      "id": "src/model/site/occupancy.ts",
+      "renderedBytes": 1561
+    },
+    {
+      "id": "src/model/multiblock/lockedFluidHatches.ts",
+      "renderedBytes": 1530
+    },
+    {
+      "id": "src/data/multiblocks/active-transformer.json",
+      "renderedBytes": 1455
+    },
+    {
+      "id": "src/model/multiblock/dataInterfaces.ts",
+      "renderedBytes": 1418
+    },
+    {
+      "id": "src/data/multiblocks/water-pump.json",
+      "renderedBytes": 1384
+    },
+    {
+      "id": "src/ui/siteWorker.ts",
+      "renderedBytes": 1375
+    },
+    {
+      "id": "src/data/multiblocks/coke-oven.json",
+      "renderedBytes": 1362
+    },
+    {
+      "id": "src/data/cracking-zones.rc2.generated.json",
+      "renderedBytes": 1338
+    },
+    {
+      "id": "src/data/assembly-line.rc2.generated.json",
+      "renderedBytes": 1315
+    },
+    {
+      "id": "src/model/hatches/tiers.ts",
+      "renderedBytes": 1301
+    },
+    {
+      "id": "src/data/circuit-assembly-line.rc2.generated.json",
+      "renderedBytes": 1270
+    },
+    {
+      "id": "src/model/multiblock/fixedHatches.ts",
+      "renderedBytes": 1266
+    },
+    {
+      "id": "src/data/multiblocks/space-assembler-module-mk-iii.json",
+      "renderedBytes": 1254
+    },
+    {
+      "id": "src/data/multiblocks/space-assembler-module-mk-ii.json",
+      "renderedBytes": 1250
+    },
+    {
+      "id": "src/data/multiblocks/space-assembler-module-mk-i.json",
+      "renderedBytes": 1246
+    },
+    {
+      "id": "src/data/multiblocks/space-pumping-module-mk-iii.json",
+      "renderedBytes": 1241
+    },
+    {
+      "id": "src/data/multiblocks/space-mining-module-mk-iii.json",
+      "renderedBytes": 1238
+    },
+    {
+      "id": "src/data/multiblocks/space-pumping-module-mk-ii.json",
+      "renderedBytes": 1237
+    },
+    {
+      "id": "src/data/multiblocks/space-mining-module-mk-ii.json",
+      "renderedBytes": 1234
+    },
+    {
+      "id": "src/data/multiblocks/space-pumping-module-mk-i.json",
+      "renderedBytes": 1233
+    },
+    {
+      "id": "src/data/multiblocks/space-mining-module-mk-i.json",
+      "renderedBytes": 1230
+    },
+    {
+      "id": "src/data/multiblocks/bricked-blast-furnace.json",
+      "renderedBytes": 1227
+    },
+    {
+      "id": "src/data/multiblocks/space-research-module.json",
+      "renderedBytes": 1221
+    },
+    {
+      "id": "src/data/multiblocks/space-project-manager.json",
+      "renderedBytes": 1220
+    },
+    {
+      "id": "src/model/hatches/quota.ts",
+      "renderedBytes": 1115
+    },
+    {
+      "id": "src/data/single-machines.ts",
+      "renderedBytes": 1099
+    },
+    {
+      "id": "src/model/multiblock/hatchOrder.ts",
+      "renderedBytes": 1065
+    },
+    {
+      "id": "src/data/steam-water-pump.rc2.generated.json",
+      "renderedBytes": 1012
+    },
+    {
+      "id": "src/model/routing/kinds.ts",
+      "renderedBytes": 854
+    },
+    {
+      "id": "src/data/data-bank.rc2.generated.json",
+      "renderedBytes": 848
+    },
+    {
+      "id": "src/data/glass-variants.runtime.generated.json",
+      "renderedBytes": 835
+    },
+    {
+      "id": "src/model/colors.ts",
+      "renderedBytes": 812
+    },
+    {
+      "id": "src/model/layout/cache.ts",
+      "renderedBytes": 794
+    },
+    {
+      "id": "src/data/tower-slots.rc2.generated.json",
+      "renderedBytes": 733
+    },
+    {
+      "id": "src/ui/fields.ts",
+      "renderedBytes": 628
+    },
+    {
+      "id": "src/model/site/types.ts",
+      "renderedBytes": 622
+    },
+    {
+      "id": "src/model/hatches/constants.ts",
+      "renderedBytes": 601
+    },
+    {
+      "id": "src/model/site/resourceRoles.ts",
+      "renderedBytes": 593
+    },
+    {
+      "id": "src/model/site/ids.ts",
+      "renderedBytes": 591
+    },
+    {
+      "id": "src/model/site/resourceColor.ts",
+      "renderedBytes": 546
+    },
+    {
+      "id": "src/model/tiers.ts",
+      "renderedBytes": 518
+    },
+    {
+      "id": "src/model/hatches/assignments.ts",
+      "renderedBytes": 304
+    },
+    {
+      "id": "src/share/binary.ts",
+      "renderedBytes": 254
+    },
+    {
+      "id": "src/model/hatches/geometry.ts",
+      "renderedBytes": 224
+    },
+    {
+      "id": "src/model/multiblock/types.ts",
+      "renderedBytes": 139
+    },
+    {
+      "id": "src/model/hatches/placement.ts",
+      "renderedBytes": 0
+    }
+  ],
+  "commit": "ba70ef9f565fd72faec30ea4df153520d0c625c7"
+}

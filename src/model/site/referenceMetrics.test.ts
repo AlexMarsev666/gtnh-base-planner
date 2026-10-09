@@ -1,92 +1,54 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createSiteBuilder } from './build';
-import type { SiteBuild, SiteBuilder } from './buildTypes';
 import { referencePlans } from './fixtures/referencePlans';
-import { siteToJson } from '../../share/siteCodec';
+import { siteFromJson } from '../../share/siteCodec';
+import { routingMetrics } from './routingMetrics';
+import { SURFACE_COST } from './router';
+import { arrangeHere } from '../../ui/siteArrange';
+import accepted from '../../../docs/fixtures/reference-routing-policy-2026-10-10.json';
 
-/** Physical pipe/cable blocks, all paths, bends and disconnected physical terminals. */
-function metrics(site: ReturnType<typeof referencePlans>[number]['site'], built: SiteBuild) {
-  const paths = built.nets.flatMap((n) => n.route?.paths ?? []);
-  let bends = 0;
-  for (const path of paths)
-    for (let i = 2; i < path.length; i++)
-      if (path[i].some((v, axis) => v - path[i - 1][axis] !== path[i - 1][axis] - path[i - 2][axis])) bends++;
-  const cells = new Set(paths.flat().map((p) => p.join()));
-  return {
-    bends,
-    surfaceBlocks: [...cells].filter((cell) => Number(cell.split(',')[1]) >= 0).length,
-    length: built.stats.pipeBlocks + built.stats.cableBlocks,
-    width: site.size[0],
-    depth: site.size[1],
-    unconnectedHatches: built.stats.terminals - built.stats.connected,
-  };
-}
+const plans = [
+  ...referencePlans(),
+  {
+    id: '(3)-corrected',
+    site: siteFromJson(readFileSync(resolve('docs/fixtures/gtnh-site-site (3)-corrected.json'), 'utf8')),
+  },
+];
 
-describe('five reference plans: compare routing with accepted stage 4', () => {
-  for (const fixture of referencePlans())
+describe('accepted routing policy: surface penalty 4, trunks separate from hatch approaches', () => {
+  it('uses the accepted default surface penalty', () => {
+    expect(SURFACE_COST).toBe(4);
+    expect(accepted.surfaceCost).toBe(4);
+  });
+  for (const { id, site } of plans)
     it(
-      fixture.id,
-      async () => {
-        let builder: SiteBuilder = createSiteBuilder();
-        // Recording historical metrics uses an isolated source snapshot, never native/game scenarios.
-        if (process.env.REFERENCE_BASELINE_ROOT) {
-          const modulePath = resolve(
-            process.env.REFERENCE_BASELINE_ROOT,
-            'src/model/site/build.ts',
-          ).replaceAll('\\', '/');
-          const historical = await import(/* @vite-ignore */ modulePath);
-          builder = historical.createSiteBuilder();
-        }
-        const built = builder(fixture.site, { pipes: true, cables: true, below: true });
-        expect(built.warnings.filter((w) => w.type !== 'unrouted')).toEqual([]);
-        const actual = metrics(fixture.site, built);
-        const file = resolve('docs/fixtures', `baseline-${fixture.id}.json`);
-        if (process.env.REFERENCE_BASELINE_ROOT) {
-          mkdirSync(resolve('docs/fixtures'), { recursive: true });
-          writeFileSync(
-            file,
-            JSON.stringify(
-              {
-                commit: 'd2de3e27eb5ddc55caf7026e02b9d90376dfcc53',
-                title: fixture.title,
-                tolerance: 0,
-                metrics: actual,
-              },
-              null,
-              2,
-            ) + '\n',
+      id,
+      () => {
+        const expected = accepted.rows.find((row) => row.id === id)!;
+        const builder = createSiteBuilder();
+        const options = { pipes: true, cables: true, below: true };
+        const original = routingMetrics(builder(site, options));
+        expect(original).toEqual(expected.original);
+        const neat = arrangeHere(site, true, builder, false, undefined, true);
+        expect(!!neat.routingSummary).toBe(expected.neat.accepted);
+        expect(!!neat.rejected).toBe(expected.neat.rejected);
+        const result = routingMetrics(builder(neat.site, options));
+        const { accepted: _accepted, rejected: _rejected, ...metrics } = expected.neat;
+        expect(result).toEqual(metrics);
+        expect(result.warnings).toEqual([]);
+        expect(result.connected).toBe(result.terminals);
+        expect(result.surfaceTrunks + result.surfaceApproaches).toBe(result.surface);
+        expect(Object.values(result.levels).reduce((sum, count) => sum + count, 0)).toBe(result.length);
+        // Keep the compact stage-4 quality gate; the historical fixtures themselves remain unchanged.
+        if (site.routing?.mode === 'compact') {
+          const historical = JSON.parse(
+            readFileSync(resolve('docs/fixtures', `baseline-${id}.json`), 'utf8'),
           );
-          if (!fixture.id.startsWith('01'))
-            writeFileSync(resolve('docs/fixtures', `reference-${fixture.id}.json`), siteToJson(fixture.site));
-        }
-        const baseline = JSON.parse(readFileSync(file, 'utf8'));
-        if (fixture.site.routing?.mode !== 'neat') {
-          for (const [key, value] of Object.entries(actual))
-            expect(value, `${fixture.id}: ${key}`).toBeLessThanOrEqual(
-              baseline.metrics[key] + baseline.tolerance,
-            );
-        } else {
-          // The user's revised routing policy permits shorter surface connections. Preserve
-          // the historical measurements; compare their combined cost instead of forbidding
-          // every increase in surface blocks or bends independently.
-          for (const key of ['width', 'depth', 'unconnectedHatches'] as const)
-            expect(actual[key], `${fixture.id}: ${key}`).toBeLessThanOrEqual(baseline.metrics[key]);
-          const weighted = (m: typeof actual) => m.length + m.surfaceBlocks + m.bends * 8;
-          const cells = new Set(
-            built.nets.flatMap((n) => n.route?.paths.flat().map((p) => p.join(',')) ?? []),
-          );
-          const depthPenalty = [...cells].reduce(
-            (sum, cell) => sum + Math.max(0, -Number(cell.split(',')[1]) - 1) * 0.25,
-            0,
-          );
-          // Historical reports do not record layer occupancy. Omitting their depth penalty
-          // makes this a stricter comparison instead of guessing a larger historical cost.
-          expect(
-            weighted(actual) + depthPenalty,
-            `${fixture.id}: weighted cost; ${JSON.stringify(actual)}`,
-          ).toBeLessThanOrEqual(weighted(baseline.metrics));
+          expect(original.length).toBeLessThanOrEqual(historical.metrics.length);
+          expect(original.bends).toBeLessThanOrEqual(historical.metrics.bends);
+          expect(original.surface).toBeLessThanOrEqual(historical.metrics.surfaceBlocks);
         }
       },
       20000,

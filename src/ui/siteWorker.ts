@@ -9,7 +9,8 @@ import {
 import { createSiteBuilder } from '../model/site/build';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
-import { arrangeHere, type Arranged } from './siteArrange';
+import type { OptimizationProgress } from '../model/site/optimize';
+import { arrangeHere, optimizeHere, type Arranged } from './siteArrange';
 
 /**
  * Builds sites off the main thread: packing hundreds of units and routing a large template takes seconds,
@@ -33,6 +34,7 @@ export type SiteWorkerResponse =
   | { id: number; sourceRevision?: number; build: SiteBuild; partial?: boolean }
   | { id: number; imported: { site: SiteState; report: ImportReport } }
   | { id: number; arranged: Arranged }
+  | { id: number; progress: OptimizationProgress }
   | { id: number; sourceRevision?: number; error: string };
 
 /** Above this many pipe and cable ends, the groups are shown before the nets are routed. */
@@ -40,7 +42,7 @@ const PROGRESSIVE_TERMINALS = 200;
 
 const buildSite = createSiteBuilder();
 
-self.onmessage = (e: MessageEvent<SiteWorkerRequest>) => {
+self.onmessage = async (e: MessageEvent<SiteWorkerRequest>) => {
   const req = e.data;
   const post = (out: SiteWorkerResponse) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
   try {
@@ -51,7 +53,11 @@ self.onmessage = (e: MessageEvent<SiteWorkerRequest>) => {
     if (req.type === 'arrange') {
       post({
         id: req.id,
-        arranged: arrangeHere(req.site, req.below, buildSite, req.optimize, undefined, req.neat),
+        arranged: req.optimize
+          ? await optimizeHere(req.site, req.below, buildSite, {
+              onProgress: (progress) => post({ id: req.id, progress }),
+            })
+          : arrangeHere(req.site, req.below, buildSite, false, undefined, req.neat),
       });
       return;
     }

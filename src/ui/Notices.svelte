@@ -1,11 +1,25 @@
 <script lang="ts">
   import { t } from '../i18n/en';
+  import { optimizationProgress, cancelOptimization } from './sitePipeline';
   import { dismissNotice, notices } from './notices';
   import { answerShared, pendingShared } from './session';
   import { answerSharedSite, pendingSite } from './siteSession';
 </script>
 
 <div class="notices" role="status" aria-live="polite">
+  {#if $optimizationProgress}
+    <p class="notice optimization" data-testid="optimization-progress">
+      <span>{t.site.optimizing}</span>
+      <progress max="100" value={$optimizationProgress.percent} aria-label={t.site.optimizing}></progress>
+      <span
+        >{t.site.optimizeProgress(
+          Math.floor($optimizationProgress.percent),
+          $optimizationProgress.tried,
+        )}</span
+      >
+      <button class="link active" onclick={cancelOptimization}>{t.site.cancelOptimize}</button>
+    </p>
+  {/if}
   {#if $pendingShared}
     <p class="notice confirm" data-testid="shared-confirm">
       <span>{t.sharedPrompt}</span>
@@ -64,6 +78,9 @@
     padding: 2px 8px;
     pointer-events: auto;
     text-align: center;
+  }
+  .optimization {
+    align-items: center;
   }
   .x {
     color: var(--muted);

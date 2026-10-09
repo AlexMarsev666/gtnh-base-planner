@@ -6,7 +6,7 @@ import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
 import { appMode, site, siteGroup } from '../state/site';
 import { connectBelow, plan } from '../state/store';
-import { notify } from './notices';
+import { notify, clearSlot } from './notices';
 import { withGroupAdded, withGrownToFit, withPlanAdded } from './siteActions';
 import { growAfterBuild } from './siteEditing';
 import { undoAction } from './siteHistory';
@@ -59,11 +59,14 @@ export function addPlanToSite(): void {
 export async function arrange(optimize = false, neat = false): Promise<void> {
   const s = get(site);
   if (!s.groups.length) return;
-  notify(neat ? t.site.neatening : optimize ? t.site.optimizing : t.site.arranging, 120000, 'arrange');
+  if (optimize) clearSlot('arrange');
+  else notify(neat ? t.site.neatening : t.site.arranging, 120000, 'arrange');
   let r;
   try {
     r = await arrangeInSize(s, get(connectBelow), optimize, neat);
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message === 'Optimization cancelled.')
+      notify(t.site.optimizeCancelled, 6000, 'arrange');
     // Replaced by a newer job (an import, say): that one reports for itself.
     return;
   }

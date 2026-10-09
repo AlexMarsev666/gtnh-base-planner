@@ -5,7 +5,9 @@ import {
   type ImportOptions,
 } from '../import/gtnhplanner';
 import { createSiteBuilder } from '../model/site/build';
-import { arrangeHere } from './siteArrange';
+import type { OptimizationProgress } from '../model/site/optimize';
+import type { SearchControl } from '../model/site/search';
+import { arrangeHere, optimizeHere } from './siteArrange';
 
 /** Loaded only when the worker is unavailable. All operations reuse the same group cache. */
 export function createLocalSiteRuntime() {
@@ -14,7 +16,15 @@ export function createLocalSiteRuntime() {
     build: builder,
     importSite: (project: GtnhProject, choices: Map<string, MachineChoice>, opts: ImportOptions) =>
       buildSiteFromGtnh(project, choices, opts, builder),
-    arrange: (site: Parameters<typeof arrangeHere>[0], below: boolean, optimize: boolean, neat = false) =>
-      arrangeHere(site, below, builder, optimize, undefined, neat),
+    arrange: (
+      site: Parameters<typeof arrangeHere>[0],
+      below: boolean,
+      optimize: boolean,
+      neat = false,
+      control?: SearchControl<OptimizationProgress>,
+    ) =>
+      optimize
+        ? optimizeHere(site, below, builder, control)
+        : arrangeHere(site, below, builder, false, undefined, neat),
   };
 }

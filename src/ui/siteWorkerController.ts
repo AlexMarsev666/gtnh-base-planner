@@ -1,3 +1,4 @@
+import type { OptimizationProgress } from '../model/site/optimize';
 import type { GtnhProject, ImportOptions, ImportReport, MachineChoice } from '../import/gtnhplanner';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
@@ -26,9 +27,11 @@ export interface SiteWorkerEvents {
   onBuild: (result: SiteResult) => void;
   /** `now`: show it at once (routing is known to be slow), else only if the build is not quick. */
   onBusy: (busy: boolean, now?: boolean) => void;
+  onOptimization?: (progress: OptimizationProgress | null) => void;
 }
 
 export interface SiteWorkerController {
+  cancelOptimization: () => void;
   /** Builds `site`, replacing any build not started yet. `pending`: a build without pipes while editing. */
   submit: (site: SiteState, opts: SiteBuildOptions, pending: boolean) => void;
   /** Imports a project into a new site; drops the current job, which the import replaces. */
@@ -39,7 +42,7 @@ export interface SiteWorkerController {
   ) => Promise<ImportResult>;
   /**
    * Arranges `site` inside its own size, on floors if need be; drops the current job, which it replaces. With
-   * `optimize`, the arrangement is then annealed and the best layout by the router's numbers kept.
+   * `optimize`, search starts from the current user layout and keeps only improvements.
    * `neat` keeps packing limits, enables underground routing and returns the checked route summary.
    */
   arrange: (site: SiteState, below: boolean, optimize?: boolean, neat?: boolean) => Promise<Arranged>;
@@ -61,6 +64,7 @@ interface PendingImport {
 }
 
 interface PendingArrange {
+  abort: AbortController;
   site: SiteState;
   below: boolean;
   optimize: boolean;
@@ -125,7 +129,16 @@ export function createSiteWorkerController(
         imp.resolve(runtime.importSite(imp.project, imp.choices, imp.opts));
       } else {
         const req = job.arrange;
-        req.resolve(runtime.arrange(req.site, req.below, req.optimize, req.neat));
+        const control = {
+          signal: req.abort.signal,
+          onProgress: (progress: OptimizationProgress) => {
+            if (inFlight === job) events.onOptimization?.(progress);
+          },
+        };
+        const result = await (req.optimize
+          ? runtime.arrange(req.site, req.below, true, req.neat, control)
+          : runtime.arrange(req.site, req.below, false, req.neat));
+        if (inFlight === job) req.resolve(result);
       }
     } catch (err) {
       if (inFlight !== job) return;
@@ -142,6 +155,7 @@ export function createSiteWorkerController(
       else job.arrange.reject(error);
     } finally {
       if (inFlight === job) {
+        if ('arrange' in job && job.arrange.optimize) events.onOptimization?.(null);
         inFlight = null;
         sendQueued();
       }
@@ -166,13 +180,17 @@ export function createSiteWorkerController(
   }
 
   /** Drops whatever the worker is doing (its result is no longer wanted). */
-  function stopWorker(): void {
+  function stopWorker(reason = 'Arrange replaced by a newer job.'): void {
     worker?.terminate();
     worker = null;
     const was = inFlight;
     inFlight = null;
     if (was && 'import' in was) was.import.reject(new Error('Import replaced by a newer one.'));
-    if (was && 'arrange' in was) was.arrange.reject(new Error('Arrange replaced by a newer job.'));
+    if (was && 'arrange' in was) {
+      was.arrange.abort.abort();
+      if (was.arrange.optimize) events.onOptimization?.(null);
+      was.arrange.reject(new Error(reason));
+    }
   }
 
   function startWorker(): Worker | null {
@@ -194,6 +212,10 @@ export function createSiteWorkerController(
       const msg = e.data;
       const job = inFlight;
       if (!job || msg.id !== job.id) return;
+      if ('progress' in msg) {
+        if ('arrange' in job && job.arrange.optimize) events.onOptimization?.(msg.progress);
+        return;
+      }
       if ('partial' in msg && msg.partial) {
         // Groups first; the routed build of the same request is still coming.
         if (!queued && 'build' in job)
@@ -212,6 +234,7 @@ export function createSiteWorkerController(
         if ('imported' in msg) job.import.resolve(msg.imported);
         else job.import.reject(new Error('error' in msg ? msg.error : 'Import failed'));
       } else if ('arrange' in job) {
+        if (job.arrange.optimize) events.onOptimization?.(null);
         if ('arranged' in msg) job.arrange.resolve(msg.arranged);
         else job.arrange.reject(new Error('error' in msg ? msg.error : 'Arrange failed'));
       } else if ('error' in msg) {
@@ -276,6 +299,12 @@ export function createSiteWorkerController(
   }
 
   return {
+    cancelOptimization() {
+      if (inFlight && 'arrange' in inFlight && inFlight.arrange.optimize) {
+        stopWorker('Optimization cancelled.');
+        sendQueued();
+      }
+    },
     submit(site, opts, pending) {
       const requestId = ++nextId;
       const req = { site, opts, pending, requestId, sourceRevision: registerBuild(site, requestId) };
@@ -305,10 +334,20 @@ export function createSiteWorkerController(
 
     arrange(site, below, optimize = false, neat = false) {
       return new Promise((resolve, reject) => {
-        const job: PendingArrange = { site, below, optimize, neat, resolve, reject };
+        const job: PendingArrange = {
+          site,
+          below,
+          optimize,
+          neat,
+          resolve,
+          reject,
+          abort: new AbortController(),
+        };
         // Builds of the current site wait: the arrangement changes it.
         queued = null;
         if (inFlight) stopWorker();
+        if (optimize) events.onOptimization?.({ percent: 0, tried: 0 });
+        events.onBusy(true);
         const w = workerFailed ? null : startWorker();
         if (!w) {
           void runLocally({ id: ++nextId, arrange: job });

@@ -174,6 +174,27 @@ describe('Neat UI transaction', () => {
   });
 });
 
+describe('Optimize cancellation', () => {
+  it('reports cancellation without a document update or undo step', async () => {
+    const { site } = await import('../state/site');
+    const original = imported();
+    site.set(original);
+    const stop = startSiteHistory();
+    const spy = vi
+      .spyOn(pipeline, 'arrangeInSize')
+      .mockRejectedValueOnce(new Error('Optimization cancelled.'));
+    try {
+      await arrange(true);
+      expect(get(site)).toBe(original);
+      expect(get(canUndo)).toBe(false);
+      expect(get(notices).some((n) => n.text === 'Optimization cancelled. Layout unchanged.')).toBe(true);
+    } finally {
+      stop();
+      spy.mockRestore();
+    }
+  });
+});
+
 describe('optimizeAfterImport', () => {
   it('optimises once the imported template is built, and only if it is still the current one', async () => {
     const { site } = await import('../state/site');

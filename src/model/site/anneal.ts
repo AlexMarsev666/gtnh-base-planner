@@ -1,3 +1,4 @@
+import { finishSearch } from './search';
 import type { Rotation } from '../core/types';
 import { FLOOR_CLEARANCE } from './arrange';
 import type { PlanLimits } from '../multiblock/types';
@@ -56,8 +57,6 @@ export interface AnnealOptions {
    * move that repacks it in place; the result carries the chosen `limits`. Groups without an entry keep theirs.
    */
   shapes?: ReadonlyMap<string, readonly Shape[]>;
-  /** Keep each group's arranged row and the clear corridor before the next row on its floor. */
-  alignRows?: boolean;
 }
 
 export interface AnnealResult {
@@ -171,7 +170,6 @@ class Layout {
   private readonly gap: number;
   private readonly lo: [number, number];
   private readonly hi: [number, number];
-  private readonly rowEnd: number[];
 
   constructor(
     readonly site: SiteState,
@@ -180,7 +178,6 @@ class Layout {
     readonly compact: number,
     private readonly centre: number = DEFAULT_CENTRE,
     shapes?: ReadonlyMap<string, readonly Shape[]>,
-    private readonly alignRows = false,
   ) {
     const gs = site.groups;
     this.n = gs.length;
@@ -218,18 +215,6 @@ class Layout {
     const side = Math.max(1, this.gap);
     this.lo = [edge, side];
     this.hi = [site.size[0] - edge, site.size[1] - side];
-    this.rowEnd = alignRows
-      ? gs.map((g) =>
-          Math.min(
-            this.hi[1],
-            ...gs
-              .filter(
-                (other) => (other.elevation ?? 0) === (g.elevation ?? 0) && other.origin[1] > g.origin[1],
-              )
-              .map((other) => other.origin[1] - this.gap),
-          ),
-        )
-      : [];
     const partners = gs.map(() => new Set<number>());
     for (const l of site.links) {
       const a = 'group' in l.from ? index.get(l.from.group) : undefined;
@@ -279,17 +264,10 @@ class Layout {
 
   /** Whether group `i` stands inside the site and clear of every other present group. */
   valid(i: number): boolean {
-    if (!this.inside(i) || (this.alignRows && this.z[i] + this.d[i] > this.rowEnd[i])) return false;
+    if (!this.inside(i)) return false;
     for (let j = 0; j < this.n; j++) {
       if (j === i || !this.present[j]) continue;
       if (this.clash(i, j)) return false;
-      if (
-        this.alignRows &&
-        this.y0[i] === this.y0[j] &&
-        this.z[i] === this.z[j] &&
-        this.site.groups[i].origin[0] < this.site.groups[j].origin[0] !== this.x[i] < this.x[j]
-      )
-        return false;
     }
     return true;
   }
@@ -300,7 +278,6 @@ class Layout {
   }
 
   set(i: number, x: number, z: number, r: Rotation = this.rot[i], s: number = this.shape[i]): void {
-    if (this.alignRows) z = this.site.groups[i].origin[1];
     if (x !== this.x[i] || z !== this.z[i] || r !== this.rot[i] || s !== this.shape[i]) {
       for (const k of this.netsOf[i]) this.dirty.add(k);
       if (!this.journal.has(i)) this.journal.set(i, [this.x[i], this.z[i], this.rot[i], this.shape[i]]);
@@ -473,11 +450,11 @@ export function layoutCost(
   return { wire, span, cost: wire + m.compact * span };
 }
 
-export function annealGroups(
+export function* annealSteps(
   site: SiteState,
   sizeOf: (id: string) => [number, number] | undefined,
   opts: AnnealOptions = {},
-): AnnealResult {
+): Generator<number, AnnealResult> {
   const now = opts.now ?? (() => performance.now());
   const started = now();
   const deadline = Math.min(opts.deadline ?? Infinity, started + (opts.budgetMs ?? Infinity));
@@ -489,7 +466,6 @@ export function annealGroups(
     opts.compact ?? DEFAULT_COMPACT,
     opts.centre ?? DEFAULT_CENTRE,
     opts.shapes,
-    opts.alignRows,
   );
   const toGroups = () =>
     site.groups.map((g, i) => ({
@@ -622,6 +598,7 @@ export function annealGroups(
   let calibrationBest = before;
   let calibrationState = m.snapshot();
   for (let k = 0; k < (opts.evaluate ? 12 : 60) && !expired(); k++) {
+    if (opts.evaluate) yield 0;
     const i = randInt(0, m.n - 1);
     const was = [m.x[i], m.z[i]] as const;
     if (tryPlace(i, m.x[i] + randInt(-4, 4), m.z[i] + randInt(-4, 4))) {
@@ -644,6 +621,7 @@ export function annealGroups(
   let progress = 0;
   let done = 0;
   for (; done < iterations; done++) {
+    if (opts.evaluate || done % 1024 === 0) yield done / iterations;
     if (expired()) break;
     // A step judged by `evaluate` can take tens of milliseconds: read the clock every time then.
     if (done % 64 === 0 || opts.evaluate) {
@@ -712,4 +690,12 @@ export function annealGroups(
   m.restore(bestState);
   if (best >= before - 1e-9) return { ...unchanged, iterations: done };
   return { groups: toGroups(), before, after: best, improved: true, iterations: done };
+}
+
+export function annealGroups(
+  site: SiteState,
+  sizeOf: (id: string) => [number, number] | undefined,
+  opts: AnnealOptions = {},
+): AnnealResult {
+  return finishSearch(annealSteps(site, sizeOf, opts));
 }

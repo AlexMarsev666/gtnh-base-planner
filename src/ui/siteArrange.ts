@@ -1,18 +1,21 @@
+import type { SearchControl } from '../model/site/search';
 import { arrangeOnFloors } from '../import/gtnhplanner';
 import type { createSiteBuilder } from '../model/site/build';
 import {
-  better,
   optimizeSite,
+  optimizeSiteAsync,
+  type OptimizationProgress,
+  type OptimizeResult,
   scoreBuild,
   type LayoutScore,
   type OptimizeOptions,
 } from '../model/site/optimize';
-import { addsLayoutViolations, layoutViolations } from '../model/site/layoutViolations';
+import { addsLayoutViolations } from '../model/site/layoutViolations';
 import type { SiteState } from '../model/site/types';
 
 /** What optimising changed: the router's numbers for the user's original layout and for the result. */
 export interface Optimized {
-  /** Whether an annealed layout replaced the arranged one. */
+  /** Whether the search improved the user layout. */
   improved: boolean;
   start: LayoutScore;
   result: LayoutScore;
@@ -36,9 +39,7 @@ export interface Arranged {
 }
 
 /**
- * `arrangeOnFloors` with the plain result the worker sends back. With `optimize`, an arrangement that fits
- * is then annealed and the best layout by the router's numbers is kept. `neat` enables neat routing,
- * retains packing limits and returns its routed summary; both are compared with the original mode.
+ * Align and Neat arrange on floors. Optimize searches directly from the user layout.
  */
 export function arrangeHere(
   site: SiteState,
@@ -48,6 +49,7 @@ export function arrangeHere(
   options?: OptimizeOptions,
   neat = false,
 ): Arranged {
+  if (optimize) return optimizedResult(site, optimizeSite(site, builder, { ...options, below }));
   const buildOptions = { pipes: true, cables: true, below };
   const baseline = builder(site, buildOptions);
   const prepared: SiteState = neat
@@ -75,33 +77,24 @@ export function arrangeHere(
         }
       : {}),
   };
-  if (optimize && r.arranged.fits && !rejected) {
-    const o = optimizeSite(out.site, builder, { ...options, below, alignRows: true });
-    const start = scoreBuild(baseline);
-    // The button also arranges first: compare with the user's original, including invalid originals.
-    // An improvement must still allow the same canonical Arrange next time. Otherwise fixing an
-    // existing collision here would make Arrange reject its old canonical result on the next click.
-    if (
-      !o.stopped &&
-      better(o.result, start) &&
-      (!(layoutViolations(candidate).length || scoreBuild(candidate).unconnected) ||
-        !unsafe(builder(o.site, buildOptions), candidate))
-    ) {
-      out.site = o.site;
-      out.optimized = { improved: true, start, result: o.result, reshaped: o.reshaped };
-      delete out.rejected;
-    } else {
-      out.site = site;
-      out.optimized = {
-        improved: false,
-        start,
-        result: start,
-        reshaped: 0,
-        ...(o.stopped ? { stopped: o.stopped } : {}),
-      };
-    }
-  } else if (optimize) {
-    out.site = site;
-  }
   return out;
+}
+
+function optimizedResult(site: SiteState, result: OptimizeResult): Arranged {
+  return {
+    site: result.site,
+    fits: true,
+    needed: site.size,
+    floors: new Set(site.groups.map((g) => g.elevation ?? 0)).size,
+    optimized: result,
+  };
+}
+
+export async function optimizeHere(
+  site: SiteState,
+  below: boolean,
+  builder: ReturnType<typeof createSiteBuilder>,
+  control: SearchControl<OptimizationProgress> = {},
+): Promise<Arranged> {
+  return optimizedResult(site, await optimizeSiteAsync(site, builder, { below }, control));
 }

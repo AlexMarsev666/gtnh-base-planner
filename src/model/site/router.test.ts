@@ -13,7 +13,7 @@ describe('routeNets', () => {
   it('matches an independent shortest-path oracle for mixed surface and underground routes', () => {
     const start: Vec3 = [0, -1, 1];
     const goal: Vec3 = [4, -1, 1];
-    const stepCost = (y: number) => 1 + (y >= 0 ? 1 : Math.max(0, -y - 1) * 0.25);
+    const stepCost = (y: number) => 1 + (y >= 0 ? 4 : Math.max(0, -y - 1) * 0.25);
     for (let variant = 0; variant < 16; variant++) {
       const terminals: RouteNetSpec['terminals'] = [
         { cell: [0, 0, 1], faces: ['down'], role: 'source' },

@@ -1,0 +1,323 @@
+{
+  "surfaceCost": 4,
+  "below": true,
+  "rows": [
+    {
+      "id": "01-oil-refinery",
+      "budget": {
+        "iterations": 43500,
+        "refineSteps": 96,
+        "budgetMs": 37500
+      },
+      "original": {
+        "length": 489,
+        "bends": 79,
+        "terminals": 102,
+        "connected": 102,
+        "warnings": [],
+        "surface": 446,
+        "surfaceApproaches": 231,
+        "surfaceTrunks": 215,
+        "trunkTotal": 258,
+        "surfaceTrunkShare": 0.8333333333333334,
+        "surfaceTrunksShareOfSurface": 0.4820627802690583,
+        "levels": {
+          "0": 121,
+          "1": 131,
+          "2": 79,
+          "3": 85,
+          "4": 18,
+          "5": 9,
+          "6": 3,
+          "-1": 43
+        }
+      },
+      "neat": {
+        "accepted": true,
+        "rejected": false,
+        "length": 699,
+        "bends": 105,
+        "terminals": 102,
+        "connected": 102,
+        "warnings": [],
+        "surface": 228,
+        "surfaceApproaches": 183,
+        "surfaceTrunks": 45,
+        "trunkTotal": 516,
+        "surfaceTrunkShare": 0.0872093023255814,
+        "surfaceTrunksShareOfSurface": 0.19736842105263158,
+        "levels": {
+          "0": 100,
+          "1": 51,
+          "2": 20,
+          "3": 28,
+          "4": 14,
+          "5": 8,
+          "6": 7,
+          "-1": 345,
+          "-2": 101,
+          "-3": 25
+        }
+      }
+    },
+    {
+      "id": "02-small",
+      "budget": {
+        "iterations": 6000,
+        "refineSteps": 20,
+        "budgetMs": 10000
+      },
+      "original": {
+        "length": 34,
+        "bends": 6,
+        "terminals": 6,
+        "connected": 6,
+        "warnings": [],
+        "surface": 5,
+        "surfaceApproaches": 3,
+        "surfaceTrunks": 2,
+        "trunkTotal": 31,
+        "surfaceTrunkShare": 0.06451612903225806,
+        "surfaceTrunksShareOfSurface": 0.4,
+        "levels": {
+          "0": 4,
+          "1": 1,
+          "-1": 29
+        }
+      },
+      "neat": {
+        "accepted": true,
+        "rejected": false,
+        "length": 32,
+        "bends": 4,
+        "terminals": 6,
+        "connected": 6,
+        "warnings": [],
+        "surface": 6,
+        "surfaceApproaches": 4,
+        "surfaceTrunks": 2,
+        "trunkTotal": 28,
+        "surfaceTrunkShare": 0.07142857142857142,
+        "surfaceTrunksShareOfSurface": 0.3333333333333333,
+        "levels": {
+          "0": 5,
+          "1": 1,
+          "-1": 26
+        }
+      }
+    },
+    {
+      "id": "03-medium",
+      "budget": {
+        "iterations": 7500,
+        "refineSteps": 24,
+        "budgetMs": 10000
+      },
+      "original": {
+        "length": 124,
+        "bends": 16,
+        "terminals": 12,
+        "connected": 12,
+        "warnings": [],
+        "surface": 28,
+        "surfaceApproaches": 16,
+        "surfaceTrunks": 12,
+        "trunkTotal": 108,
+        "surfaceTrunkShare": 0.1111111111111111,
+        "surfaceTrunksShareOfSurface": 0.42857142857142855,
+        "levels": {
+          "0": 8,
+          "1": 5,
+          "2": 3,
+          "3": 7,
+          "4": 5,
+          "-1": 79,
+          "-2": 17
+        }
+      },
+      "neat": {
+        "accepted": true,
+        "rejected": false,
+        "length": 131,
+        "bends": 15,
+        "terminals": 12,
+        "connected": 12,
+        "warnings": [],
+        "surface": 29,
+        "surfaceApproaches": 16,
+        "surfaceTrunks": 13,
+        "trunkTotal": 115,
+        "surfaceTrunkShare": 0.11304347826086956,
+        "surfaceTrunksShareOfSurface": 0.4482758620689655,
+        "levels": {
+          "0": 8,
+          "1": 5,
+          "2": 3,
+          "3": 8,
+          "4": 5,
+          "-1": 95,
+          "-2": 7
+        }
+      }
+    },
+    {
+      "id": "04-crackers-towers",
+      "budget": {
+        "iterations": 6000,
+        "refineSteps": 20,
+        "budgetMs": 10000
+      },
+      "original": {
+        "length": 153,
+        "bends": 23,
+        "terminals": 14,
+        "connected": 14,
+        "warnings": [],
+        "surface": 32,
+        "surfaceApproaches": 24,
+        "surfaceTrunks": 8,
+        "trunkTotal": 129,
+        "surfaceTrunkShare": 0.06201550387596899,
+        "surfaceTrunksShareOfSurface": 0.25,
+        "levels": {
+          "0": 15,
+          "1": 8,
+          "2": 9,
+          "-1": 107,
+          "-2": 14
+        }
+      },
+      "neat": {
+        "accepted": true,
+        "rejected": false,
+        "length": 171,
+        "bends": 25,
+        "terminals": 14,
+        "connected": 14,
+        "warnings": [],
+        "surface": 30,
+        "surfaceApproaches": 24,
+        "surfaceTrunks": 6,
+        "trunkTotal": 147,
+        "surfaceTrunkShare": 0.04081632653061224,
+        "surfaceTrunksShareOfSurface": 0.2,
+        "levels": {
+          "0": 13,
+          "1": 8,
+          "2": 9,
+          "-1": 136,
+          "-2": 5
+        }
+      }
+    },
+    {
+      "id": "05-wallsharing",
+      "budget": {
+        "iterations": 4500,
+        "refineSteps": 16,
+        "budgetMs": 10000
+      },
+      "original": {
+        "length": 50,
+        "bends": 6,
+        "terminals": 6,
+        "connected": 6,
+        "warnings": [],
+        "surface": 10,
+        "surfaceApproaches": 4,
+        "surfaceTrunks": 6,
+        "trunkTotal": 46,
+        "surfaceTrunkShare": 0.13043478260869565,
+        "surfaceTrunksShareOfSurface": 0.6,
+        "levels": {
+          "0": 3,
+          "1": 1,
+          "2": 1,
+          "3": 5,
+          "-1": 40
+        }
+      },
+      "neat": {
+        "accepted": true,
+        "rejected": false,
+        "length": 50,
+        "bends": 6,
+        "terminals": 6,
+        "connected": 6,
+        "warnings": [],
+        "surface": 10,
+        "surfaceApproaches": 4,
+        "surfaceTrunks": 6,
+        "trunkTotal": 46,
+        "surfaceTrunkShare": 0.13043478260869565,
+        "surfaceTrunksShareOfSurface": 0.6,
+        "levels": {
+          "0": 3,
+          "1": 1,
+          "2": 1,
+          "3": 5,
+          "-1": 40
+        }
+      }
+    },
+    {
+      "id": "(3)-corrected",
+      "budget": {
+        "iterations": 43500,
+        "refineSteps": 96,
+        "budgetMs": 37500
+      },
+      "original": {
+        "length": 592,
+        "bends": 96,
+        "terminals": 102,
+        "connected": 102,
+        "warnings": [],
+        "surface": 237,
+        "surfaceApproaches": 180,
+        "surfaceTrunks": 57,
+        "trunkTotal": 412,
+        "surfaceTrunkShare": 0.1383495145631068,
+        "surfaceTrunksShareOfSurface": 0.24050632911392406,
+        "levels": {
+          "0": 83,
+          "1": 62,
+          "2": 31,
+          "3": 33,
+          "4": 14,
+          "5": 8,
+          "6": 6,
+          "-1": 242,
+          "-2": 113
+        }
+      },
+      "neat": {
+        "accepted": true,
+        "rejected": false,
+        "length": 701,
+        "bends": 106,
+        "terminals": 102,
+        "connected": 102,
+        "warnings": [],
+        "surface": 232,
+        "surfaceApproaches": 187,
+        "surfaceTrunks": 45,
+        "trunkTotal": 514,
+        "surfaceTrunkShare": 0.08754863813229571,
+        "surfaceTrunksShareOfSurface": 0.1939655172413793,
+        "levels": {
+          "0": 100,
+          "1": 54,
+          "2": 21,
+          "3": 32,
+          "4": 10,
+          "5": 8,
+          "6": 7,
+          "-1": 350,
+          "-2": 95,
+          "-3": 24
+        }
+      }
+    }
+  ]
+}
