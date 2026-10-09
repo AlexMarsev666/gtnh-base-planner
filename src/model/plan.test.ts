@@ -40,6 +40,28 @@ function resolve(id: string, count: number, limits = unlimited, below = false) {
 }
 
 describe('resolveLayout', () => {
+  it('preserves mandatory interfaces over a partial layout with more optional hatches', () => {
+    const def = getMultiblock('oil-cracking-unit')!;
+    const base = { units: [{ id: 0, origin: [0, 0, 0], rotation: 0 }] as Unit[], requested: 1, placed: 1 };
+    const alternate = [{ id: 0, origin: [6, 0, 0], rotation: 0 }] as Unit[];
+    const result = resolveLayout(def, base, [], unlimited, {
+      placeHatches: (_def, units) =>
+        units === base.units
+          ? { hatches: [], unplaced: [{ unitId: 0, kind: 'energy' }], unplacedMandatory: [1, 0] }
+          : {
+              hatches: [],
+              unplaced: [
+                { unitId: 0, kind: 'fluidIn' },
+                { unitId: 0, kind: 'fluidOut' },
+              ],
+              unplacedMandatory: [0, 0],
+            },
+      layoutCandidates: () => [alternate],
+    });
+    expect(result.pack.units).toBe(alternate);
+    expect(result.hatches.unplaced).toHaveLength(2);
+    expect(result.hatches.unplacedMandatory).toEqual([0, 0]);
+  });
   it('keeps the compact layout when every hatch fits', () => {
     const r = resolve('coke-oven', 12);
     expect(r.loosened).toBe(false);

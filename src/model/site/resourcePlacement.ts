@@ -8,7 +8,7 @@ import type { Demand, SiteHatch, Toward } from './group';
 import type { ResourceBinding, SiteGroup } from './types';
 import { rotateDir, step, unitCells } from '../geometry';
 import type { Rotation } from '../core/types';
-import { casingAllowance, validateCasings } from '../multiblock/casingConstraints';
+import { casingAllowance, hatchCapacity, validateCasings } from '../multiblock/casingConstraints';
 import { hasLayeredFluidOutputs, isOilCracker } from '../multiblock/structureAdapters';
 import { defaultHatchTier, supportsHatchTier } from '../hatches/tiers';
 import { BOROSILICATE_GLASS_TIERS, minimumGlassTier, structureGlassTier } from '../multiblock/glass';
@@ -41,6 +41,7 @@ interface Slot {
   region?: string;
   key: string;
   tier?: VoltageTier;
+  mandatory?: boolean;
 }
 
 function resourceRegion(
@@ -75,7 +76,8 @@ export function placeResourceHatches(
   toward: Toward,
   avoid?: HatchAvoid,
   towardPoints?: PlaceOptions['toward'],
-): { hatches: SiteHatch[]; unplaced: HatchResult['unplaced'] } {
+  structuralDef: MultiblockDef = def,
+): Omit<HatchResult, 'hatches'> & { hatches: SiteHatch[] } {
   const { sites } = findSites(def, units, below);
   const required = new Map<number, { pos: string; kinds: readonly HatchKind[] }[]>();
   const fixed = new Map<string, Set<string>>();
@@ -225,13 +227,45 @@ export function placeResourceHatches(
         unitId: unit.id,
         kind,
         key,
+        mandatory: true,
         tier: supportsHatchTier(def, kind)
           ? (settings.hatchTiers?.[key] ?? defaultHatchTier(def, kind, settings))
           : undefined,
       });
     }
   }
+  // Demand-inflated minima are not structural prerequisites. Protect only the original minimum
+  // and one representative per required region, allowing resource assignments to satisfy them.
+  const slotsByUnitKind = new Map<string, number[]>();
+  slots.forEach((slot, i) => {
+    const key = `${slot.unitId}:${slot.kind}`;
+    const indices = slotsByUnitKind.get(key) ?? [];
+    indices.push(i);
+    slotsByUnitKind.set(key, indices);
+  });
+  for (const unit of units)
+    for (const kind of enabled) {
+      const indices = slotsByUnitKind.get(`${unit.id}:${kind}`) ?? [];
+      for (const region of structuralDef.requiredHatches?.[kind]?.regions ?? []) {
+        const index = indices.find((i) => slots[i].region === region);
+        if (index !== undefined) slots[index].mandatory = true;
+      }
+      const minimum = quota(structuralDef, kind).target;
+      let marked = indices.filter((i) => slots[i].mandatory).length;
+      for (const i of indices) {
+        if (marked >= minimum) break;
+        if (!slots[i].mandatory) {
+          slots[i].mandatory = true;
+          marked++;
+        }
+      }
+    }
+  const priority = (slot: Slot) =>
+    !slot.mandatory ? 2 : slot.kind === 'energy' || slot.kind === 'maintenance' ? 0 : 1;
   const remaining = new Set(slots.map((_, i) => i));
+  const remainingTotals = [0, 0, 0];
+  slots.forEach((slot) => remainingTotals[priority(slot)]++);
+  let bestTotals = [...remainingTotals];
   const used = new Set<string>();
   const fronts = new Map<string, string>();
   const count = new Map<string, number>();
@@ -270,6 +304,15 @@ export function placeResourceHatches(
     };
     if (indices.every((i) => augment(i, new Set()))) capacityChecked.add(id);
   }
+  const capacities = new Map(units.map((unit) => [unit.id, hatchCapacity(def, unit)]));
+  const overCapacity = [...byUnit].some(([id, indices]) => indices.length > capacities.get(id)!.capacity);
+  const compareRemaining = () => {
+    for (const rank of [0, 1, 2]) {
+      const difference = remainingTotals[rank] - bestTotals[rank];
+      if (difference) return difference;
+    }
+    return 0;
+  };
   const matching = (c: Site, s: Slot, id: number): number | undefined =>
     (bySignature.get(signature(s, id)) ?? []).find((i) => {
       const t = slots[i];
@@ -389,6 +432,7 @@ export function placeResourceHatches(
         else fronts.set(front, previous);
         for (const i of covered) {
           remaining.add(i);
+          remainingTotals[priority(slots[i])]++;
           const key = `${slots[i].unitId}:${slot.kind}`;
           count.set(key, count.get(key)! - 1);
         }
@@ -410,6 +454,7 @@ export function placeResourceHatches(
       casings.replace(c.pos, c.unitIds);
       for (const i of covered) {
         remaining.delete(i);
+        remainingTotals[priority(slots[i])]--;
         const k = `${slots[i].unitId}:${slot.kind}`;
         count.set(k, (count.get(k) ?? 0) + 1);
       }
@@ -423,9 +468,10 @@ export function placeResourceHatches(
         assignments: covered.map((i) => slots[i].key),
         blocked: [...(c.blocked.get(slot.kind) ?? [])],
       });
-      if (remaining.size < bestRemaining.size) {
+      if (compareRemaining() < 0) {
         best = placed.map((h) => ({ ...h }));
         bestRemaining = new Set(remaining);
+        bestTotals = [...remainingTotals];
       }
       if (!remaining.size) return true;
       const child = choose();
@@ -435,7 +481,14 @@ export function placeResourceHatches(
   }
   // Most structures are solved in one pass. This also keeps the 2000-unit limit stack-safe: no recursive
   // frame per hatch on the ordinary path. Conflicts use an explicit restoring stack at any group size.
-  const order = [...remaining].sort((a, b) => candidates[a].length - candidates[b].length || a - b);
+  // Keep complete feasible layouts stable. A proven shortfall uses mandatory interfaces first;
+  // partial search results are also compared by that priority, never merely by total hatch count.
+  const order = [...remaining].sort(
+    (a, b) =>
+      (overCapacity ? Number(!slots[a].mandatory) - Number(!slots[b].mandatory) : 0) ||
+      candidates[a].length - candidates[b].length ||
+      a - b,
+  );
   for (const i of order) {
     if (!remaining.has(i)) continue;
     const choice = options(i)[0];
@@ -447,6 +500,7 @@ export function placeResourceHatches(
     casings.replace(c.pos, c.unitIds);
     for (const n of covered) {
       remaining.delete(n);
+      remainingTotals[priority(slots[n])]--;
       const k = `${slots[n].unitId}:${slot.kind}`;
       count.set(k, (count.get(k) ?? 0) + 1);
     }
@@ -463,6 +517,7 @@ export function placeResourceHatches(
   }
   best = placed.map((h) => ({ ...h }));
   bestRemaining = new Set(remaining);
+  bestTotals = [...remainingTotals];
   // A request exceeding a shared maximum cannot be completed by moving cells. Per controller take
   // the largest deficit (rules may overlap), then sum controllers whose assignment slots are distinct.
   const limits = alternativeHatchLimits(def);
@@ -484,9 +539,13 @@ export function placeResourceHatches(
         0,
       )
     : 0;
-  if (remaining.size > unavoidable) {
+  if (remaining.size > unavoidable && (!overCapacity || [...remaining].some((i) => slots[i].mandatory))) {
     remaining.clear();
-    slots.forEach((_, i) => remaining.add(i));
+    remainingTotals.fill(0);
+    slots.forEach((slot, i) => {
+      remaining.add(i);
+      remainingTotals[priority(slot)]++;
+    });
     placed.length = 0;
     used.clear();
     fronts.clear();
@@ -506,16 +565,43 @@ export function placeResourceHatches(
         kind: cell.kinds.find((kind) => enabled.includes(kind)) ?? cell.kinds[0],
       })),
   );
+  const capacityProblems = units.flatMap((unit) => {
+    if (
+      ![...bestRemaining].some((i) => slots[i].unitId === unit.id) &&
+      !missingCells.some((cell) => cell.unitId === unit.id)
+    )
+      return [];
+    const indices = byUnit.get(unit.id) ?? [];
+    const breakdown = new Map<HatchKind, number>();
+    indices.forEach((i) => breakdown.set(slots[i].kind, (breakdown.get(slots[i].kind) ?? 0) + 1));
+    const { hatchable, capacity, retained } = capacities.get(unit.id)!;
+    const placed = best.filter((hatch) => hatch.unitIds.includes(unit.id)).length;
+    return [
+      `Controller ${unit.id}: ${indices.length} hatches required; structure capacity ${capacity} ` +
+        `(${hatchable} hatchable casing cells, ${retained} must remain casings). ` +
+        `Required: ${[...breakdown].map(([kind, count]) => `${kind} ${count}`).join(', ')}; placed ${placed}. ` +
+        (indices.length > capacity
+          ? 'Demand exceeds casing capacity.'
+          : 'Allowed cells, roles or access prevent the remaining hatches.'),
+    ];
+  });
+  const fixedDeficits = missingCells.filter(
+    (cell) => ![...bestRemaining].some((i) => slots[i].unitId === cell.unitId && slots[i].kind === cell.kind),
+  );
+  const mandatoryDeficits: [number, number] = [0, 0];
+  for (const i of bestRemaining) {
+    const rank = priority(slots[i]);
+    if (rank !== 2) mandatoryDeficits[rank]++;
+  }
+  for (const cell of fixedDeficits)
+    mandatoryDeficits[cell.kind === 'energy' || cell.kind === 'maintenance' ? 0 : 1]++;
   return {
     hatches: best,
+    unplacedMandatory: mandatoryDeficits,
+    ...(capacityProblems.length ? { capacityProblems } : {}),
     unplaced: [...bestRemaining]
       .map((i) => ({ unitId: slots[i].unitId, kind: slots[i].kind }))
-      .concat(
-        missingCells.filter(
-          (cell) =>
-            ![...bestRemaining].some((i) => slots[i].unitId === cell.unitId && slots[i].kind === cell.kind),
-        ),
-      ),
+      .concat(fixedDeficits),
   };
 }
 

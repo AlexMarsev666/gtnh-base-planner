@@ -57,10 +57,15 @@ export function resolveLayout(
     if (tries++ >= maxTries) break;
     const hatches = deps.placeHatches(def, units, enabled);
     const h = layers(units);
-    // Fewest unplaced hatches first, then the lowest build (tall stacks are awkward in game), then rank.
+    const mandatory = hatches.unplacedMandatory ?? [0, 0];
+    const bestMandatory = best.hatches.unplacedMandatory ?? [0, 0];
+    const priority = mandatory[0] - bestMandatory[0] || mandatory[1] - bestMandatory[1];
+    // Never trade required interfaces for more optional resource hatches on another layout.
     const better =
-      hatches.unplaced.length < best.hatches.unplaced.length ||
-      (hatches.unplaced.length === best.hatches.unplaced.length && h < best.layers);
+      priority < 0 ||
+      (priority === 0 &&
+        (hatches.unplaced.length < best.hatches.unplaced.length ||
+          (hatches.unplaced.length === best.hatches.unplaced.length && h < best.layers)));
     if (better) best = { units, hatches, layers: h };
     // A layout with every hatch placed on as few layers as the limits allow cannot be beaten by a later
     // (less compact) one.

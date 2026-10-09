@@ -80,6 +80,39 @@ describe('RC2 Mega Oil Cracker resource dispatch', () => {
 });
 
 describe('RC2 resource-aware hatch placement', () => {
+  it('keeps energy, maintenance and mandatory regions when resource demand exceeds casing capacity', () => {
+    const raw = getMultiblock('oil-cracking-unit')!;
+    const fluidIn = ['f1', 'f2', 'f3', 'f4', 'a1', 'a2'];
+    const built = buildGroup(
+      raw,
+      1,
+      limits,
+      ['energy', 'maintenance'],
+      { fluidIn, fluidOut: ['p1', 'p2', 'p3', 'p4'] },
+      true,
+      {},
+      {
+        resourceBindings: fluidIn.map((resource, i) => ({
+          kind: 'fluidIn',
+          resource,
+          role: i < 4 ? 'feed' : 'catalyst',
+        })),
+      },
+    );
+    expect(built.hatches.filter((h) => h.kind === 'energy')).toHaveLength(1);
+    expect(built.hatches.filter((h) => h.kind === 'maintenance')).toHaveLength(1);
+    expect(built.hatches).toHaveLength(7);
+    expect(built.unplaced).toHaveLength(5);
+    expect(built.unplaced.every((h) => h.kind === 'fluidIn' || h.kind === 'fluidOut')).toBe(true);
+    expect(validateResourceHatches(raw, built.units, built.hatches)).toEqual([]);
+    expect(built.capacityProblems).toContainEqual(
+      expect.stringMatching(/12 hatches required; structure capacity 7.*25.*18/),
+    );
+    const missingMaintenance = built.hatches.filter((h) => h.kind !== 'maintenance');
+    expect(validateResourceHatches(raw, built.units, missingMaintenance)).toContain(
+      'Controller 0: maintenance count 0; requires 1–unlimited.',
+    );
+  });
   it('backtracks beyond 150 assignments without a recursive frame for each hatch', () => {
     const def: MultiblockDef = {
       id: 'matching-conflict',

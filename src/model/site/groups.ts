@@ -118,6 +118,8 @@ export function placeGroups(
       return { ...empty, def, error: built.error };
     }
     const b = built;
+    for (const message of b.capacityProblems ?? [])
+      warnings.push({ type: 'error', group: g.id, code: 'structure', message });
     const gid = (id: number) => index * GROUP_STRIDE + id;
     const units = b.units.map((u) => ({
       ...placeUnit(b.def, u, b.size, g.rotation, g.origin, g.elevation),

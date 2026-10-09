@@ -14,6 +14,8 @@ import { withRequiredAlternatives } from '../multiblock/rules';
 import { isOilCracker } from '../multiblock/structureAdapters';
 import { withAssemblyGrowth } from '../multiblock/circuitAssemblyLine';
 import { fixedHatchCounts, fixedHatchKinds } from '../multiblock/fixedHatches';
+import { hatchCapacity } from '../multiblock/casingConstraints';
+import { quota } from '../hatches/quota';
 
 /** Hatch kinds that carry a link's resource into or out of a group. */
 export const IN_KINDS: readonly HatchKind[] = [
@@ -114,6 +116,7 @@ export interface GroupBuild {
   pack: PackResult;
   loosened: boolean;
   unplaced: HatchResult['unplaced'];
+  capacityProblems?: string[];
   stats: WallStats;
   /** A unit that ended up without a hatch for one of the resources it needs. */
   missing: { kind: HatchKind; resource: string; unitId: number }[];
@@ -255,21 +258,22 @@ export function buildGroup(
       ...raw,
       legend: { ...raw.legend, l: { ...raw.legend.r }, r: { ...raw.legend.l } },
     };
-  let def = withDemand(
-    withSteamFrame(withAssemblyGrowth(raw, settings?.assemblyGrowth), settings?.steamFrameTier),
-    demand,
+  let structuralDef = withSteamFrame(
+    withAssemblyGrowth(raw, settings?.assemblyGrowth),
+    settings?.steamFrameTier,
   );
   const enabled = [...new Set([...base, ...(Object.keys(demand) as HatchKind[])])].filter(
-    (k) => def.hatchBlocks[k] !== undefined,
+    (k) => structuralDef.hatchBlocks[k] !== undefined,
   );
-  if (settings) def = withRequiredAlternatives(def, enabled);
+  if (settings) structuralDef = withRequiredAlternatives(structuralDef, enabled);
+  const def = withDemand(structuralDef, demand);
   const packed = packUnits(def, count, limits);
   const targets = towardPoints(def, packed.units, toward);
   // With `below`, hatches may face down from the lowest layer (see `PlaceOptions`); with `toward`, each
   // kind's hatches lean to the side its pipes leave by.
   const place: typeof placeHatches = (d, u, e, a) =>
     settings
-      ? placeResourceHatches(d, u, e, demand, settings, below, toward)
+      ? placeResourceHatches(d, u, e, demand, settings, below, toward, undefined, undefined, structuralDef)
       : placeHatches(d, u, e, a, { below, toward: targets });
   const resolved = resolveLayout(def, packed, enabled, limits, { placeHatches: place, layoutCandidates });
   const lo: [number, number, number] = [Infinity, Infinity, Infinity];
@@ -294,6 +298,33 @@ export function buildGroup(
     return out;
   });
   const unitIds = units.map((u) => u.id);
+  const capacityProblems = [...(resolved.hatches.capacityProblems ?? [])];
+  // A necessary group-wide bound, independent of the legacy per-controller resource copies.
+  // Shared cells can only reduce this physical capacity; they cannot make 15 fit into 14.
+  const requiredByKind = enabled.map((kind) => {
+    const resources = (demand[kind] ?? []).reduce(
+      (sum, resource) =>
+        sum +
+        Math.max(
+          1,
+          settings?.resourceBindings?.filter(
+            (binding) => binding.kind === kind && binding.resource === resource,
+          ).length ?? 0,
+        ),
+      0,
+    );
+    const shareable = structuralDef.wallshare && structuralDef.shareableHatches.includes(kind);
+    const minimum = quota(structuralDef, kind).target * (shareable ? Number(units.length > 0) : units.length);
+    return [kind, Math.max(resources, minimum)] as const;
+  });
+  const minimumRequired = requiredByKind.reduce((sum, [, n]) => sum + n, 0);
+  const totalCapacity = units.reduce((sum, unit) => sum + hatchCapacity(structuralDef, unit).capacity, 0);
+  if (minimumRequired > totalCapacity)
+    capacityProblems.unshift(
+      `Group demand: at least ${minimumRequired} hatches required; total structure capacity ${totalCapacity} ` +
+        `(${units.length} controllers). Required: ${requiredByKind.map(([kind, n]) => `${kind} ${n}`).join(', ')}. ` +
+        'A shared physical hatch consumes capacity in every controller containing its cell.',
+    );
   const missing: GroupBuild['missing'] = [];
   for (const [kind, list] of Object.entries(demand) as [HatchKind, string[]][]) {
     if (!list?.length) continue;
@@ -311,6 +342,7 @@ export function buildGroup(
     pack: resolved.pack,
     loosened: resolved.loosened,
     unplaced: resolved.hatches.unplaced,
+    capacityProblems: capacityProblems.length ? capacityProblems : undefined,
     stats: computeWallStats(def, units, hatches),
     missing,
   };

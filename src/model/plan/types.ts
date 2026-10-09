@@ -57,6 +57,10 @@ export interface HatchPlacement {
 
 export interface HatchResult {
   hatches: HatchPlacement[];
+  /** Numeric per-controller demand/capacity explanations for an incomplete placement. */
+  capacityProblems?: string[];
+  /** Missing essential interfaces, then other structural prerequisites, before optional resources. */
+  unplacedMandatory?: [number, number];
   /** Requested hatches that could not be placed. */
   unplaced: { unitId: number; kind: HatchKind }[];
 }

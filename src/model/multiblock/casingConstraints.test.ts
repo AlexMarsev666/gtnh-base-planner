@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getMultiblock } from '../../data/catalog';
 import type { MultiblockDef, Unit } from './types';
 import { casingRules } from './rules';
-import { casingAllowance, validateCasings } from './casingConstraints';
+import { casingAllowance, hatchCapacity, validateCasings } from './casingConstraints';
 
 // Independently transcribed checkCasingMin literals in the pinned RC2 controller sources.
 const minimums: Record<string, number[]> = {
@@ -72,6 +72,56 @@ const minimums: Record<string, number[]> = {
 const unit: Unit = { id: 42, origin: [0, 0, 0], rotation: 0 };
 
 describe('RC2 counted casing constraints', () => {
+  it('reports the cracker capacity independently of hatch demand, rotation and translation', () => {
+    const def = getMultiblock('oil-cracking-unit')!;
+    for (const rotation of [0, 1, 2, 3] as const)
+      expect(hatchCapacity(def, { id: 1, origin: [12, 7, 9], rotation })).toEqual({
+        hatchable: 25,
+        capacity: 7,
+        retained: 18,
+      });
+  });
+
+  it('combines independent casing counters instead of subtracting a minimum from unrelated cells', () => {
+    const original = getMultiblock('industrial-extrusion-machine')!;
+    const rules = casingRules(original);
+    const def: MultiblockDef = {
+      ...original,
+      size: [19, 1, 1],
+      layers: [['~AAAAABBBBBBBBBBBBB']],
+      legend: {
+        A: { blockId: rules[0].blocks[0], hatches: ['itemIn'] },
+        B: { blockId: rules[1].blocks[0], hatches: ['itemOut'] },
+      },
+      controller: { ...original.controller, pos: [0, 0, 0] },
+    };
+    expect(hatchCapacity(def, unit)).toEqual({ hatchable: 18, capacity: 7, retained: 11 });
+    const permitted = [1, 2, 6, 7, 8, 9, 10].map((x) => ({
+      kind: 'itemIn' as const,
+      cell: [x, 0, 0] as [number, number, number],
+      face: 'north' as const,
+      unitIds: [42],
+    }));
+    expect(validateCasings(def, [unit], permitted)).toEqual([]);
+    expect(validateCasings(def, [unit], [...permitted, { ...permitted[0], cell: [3, 0, 0] }])).toHaveLength(
+      1,
+    );
+  });
+
+  it('charges every physical owner even if the requested unitIds omit a controller', () => {
+    const original = getMultiblock('vacuum-freezer')!;
+    const def: MultiblockDef = {
+      ...original,
+      size: [18, 1, 1],
+      layers: [['~' + 'C'.repeat(17)]],
+      controller: { ...original.controller, pos: [0, 0, 0] },
+    };
+    const allowance = casingAllowance(def, [unit, { ...unit, id: 99 }]);
+    allowance.replace([1, 0, 0], [42]);
+    expect(allowance.canReplace([2, 0, 0], [99])).toBe(false);
+    allowance.replace([1, 0, 0], [42], -1);
+    expect(allowance.canReplace([2, 0, 0], [99])).toBe(true);
+  });
   for (const id of [
     'industrial-sledgehammer',
     'thorium-reactor-lftr',
