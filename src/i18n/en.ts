@@ -186,6 +186,7 @@ export const t = {
     searchMachines: 'Search machines',
     individualHatches: 'Individual buses and hatches',
     resourceRole: 'Resource role',
+    resourceMachine: 'Machine',
     crackingFeedSide: 'Hydrocarbon input side (local coordinates)',
     outputSlot: 'Fluid output slot',
     addOutputSlot: 'Add another output slot',
@@ -286,6 +287,7 @@ export const t = {
       `${name} ×${units}${source ? ` (${source})` : ''}`,
     warning: (w: SiteWarning, name: (groupId: string) => string, res: (key: string) => string): string => {
       switch (w.type) {
+        case 'assignment':
         case 'error':
           return `${name(w.group)}: ${w.message}`;
         case 'overlap':

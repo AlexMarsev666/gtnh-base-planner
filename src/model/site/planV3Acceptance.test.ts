@@ -63,7 +63,7 @@ function crackingSite(count: number, extraProduct = false): SiteState {
   };
 }
 
-describe('PLAN revision 3, stage 0 acceptance (intentionally failing until stages 1–3)', () => {
+describe('PLAN revision 3, stage 0 acceptance', () => {
   it('C1: explains the 12 versus 7 hatch deficit and retains energy and maintenance first', () => {
     // Expected capacity comes from the catalogue geometry and its casing rule, not the placer.
     const cells = unitCells(cracker, { id: 0, origin: [0, 0, 0], rotation: 0 });
@@ -115,7 +115,33 @@ describe('PLAN revision 3, stage 0 acceptance (intentionally failing until stage
     expect.soft(validateResourceHatches(placed.def!, placed.units, placed.hatches, placed.group)).toEqual([]);
     expect.soft(build.warnings).toEqual([]);
     expect.soft(build.stats.connected).toBe(build.stats.terminals);
-    // The layout is feasible; the current per-controller resource model still cannot find it.
+  }, 20_000);
+
+  it('C2g: supplies a single agent to both controllers through shared or separate ordinary hatches', () => {
+    const site = crackingSite(2);
+    const keep = new Set(['feed-1', 'feed-2', 'agent-1', 'product-1', 'product-2']);
+    site.links = site.links.filter((l) => keep.has(l.resource));
+    site.ports = site.ports.filter((p) => keep.has(p.resource));
+    site.resources = Object.fromEntries(Object.entries(site.resources).filter(([key]) => keep.has(key)));
+    site.groups[0].resourceBindings = site.groups[0].resourceBindings!.filter((b) => keep.has(b.resource));
+    const build = createSiteBuilder()(site, { pipes: true, cables: true });
+    const placed = build.groups[0];
+    expect(build.warnings).toEqual([]);
+    expect(build.stats.connected).toBe(build.stats.terminals);
+    for (const unit of placed.units) {
+      const agents = placed.hatches.filter((h) => h.resource === 'agent-1' && h.unitIds.includes(unit.id));
+      expect(agents.length).toBeGreaterThanOrEqual(1);
+      expect(agents.every((h) => h.kind === 'fluidIn')).toBe(true);
+    }
+    expect(
+      validateResourceHatches(placed.def!, placed.units, placed.hatches, placed.group, placed.demand),
+    ).toEqual([]);
+    const broken = placed.hatches.map((h) => (h.resource === 'agent-1' ? { ...h, resource: undefined } : h));
+    expect(
+      validateResourceHatches(placed.def!, placed.units, broken, placed.group, placed.demand).some((e) =>
+        e.includes('minimum in region middle needs an assigned resource'),
+      ),
+    ).toBe(true);
   }, 20_000);
 
   it('C2b: reports 15 required hatches versus capacity 14 for eleven fluids on two crackers', () => {

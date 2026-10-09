@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getMultiblock } from '../../data/catalog';
 import { validateMultiblockDef } from '../../data/validate';
 import { defaultPlan } from '../../state/store';
-import { defaultGroupHatches, buildGroup, withDemand } from '../site/group';
-import { placeHatches } from '../hatches/placement';
-import type { Unit } from './types';
+import { defaultGroupHatches, buildGroup } from '../site/group';
 import { hatchKindFor } from '../site/demand';
 import { createSiteBuilder } from '../site/build';
 import { validateResourceHatches } from '../site/resourcePlacement';
@@ -66,13 +64,17 @@ describe('RC2 locked fluid interfaces', () => {
     });
     it(`${id}: reserves counted casings even when demand exceeds every legal replacement`, () => {
       const demand = { fluidIn: Array.from({ length: 100 }, (_, i) => `feed-${i}`) };
-      const sized = withDemand(def, demand);
-      const units: Unit[] = [{ id: 0, origin: [0, 0, 0], rotation: 0 }];
-      const built = {
-        ...placeHatches(sized, units, [...def.defaultHatches, 'fluidIn'], undefined, { below: true }),
-        def: sized,
-        units,
-      };
+      // Group demand no longer changes the source minima; exercise the resource placer itself.
+      const built = buildGroup(
+        def,
+        1,
+        { x: 1, y: 1, z: 1 },
+        [...def.defaultHatches, 'fluidIn'],
+        demand,
+        true,
+        {},
+        { voltageTier: 'LV' },
+      );
       expect(built.unplaced.length).toBeGreaterThan(0);
       expect(validateCasings(built.def, built.units, built.hatches)).toEqual([]);
       const remaining = unitCells(built.def, built.units[0]).find(

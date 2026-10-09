@@ -55,7 +55,7 @@ export function createSiteBuilder(): SiteBuilder {
             message: `${hatch.kind} has no ${hatch.tier} variant in RC2 at (${hatch.cell.join(', ')}). Choose a supported individual tier.`,
           });
       }
-      const messages = new Set(validateResourceHatches(pg.def, pg.units, pg.hatches, pg.group));
+      const messages = new Set(validateResourceHatches(pg.def, pg.units, pg.hatches, pg.group, pg.demand));
       validateAlternativeCounts(pg.def, pg.units, pg.hatches).forEach((message) => messages.add(message));
       for (const message of messages)
         structureWarnings.push({ type: 'error', group: pg.group.id, code: 'structure', message });

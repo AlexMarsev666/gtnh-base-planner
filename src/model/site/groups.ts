@@ -118,6 +118,14 @@ export function placeGroups(
       return { ...empty, def, error: built.error };
     }
     const b = built;
+    for (const binding of g.resourceBindings ?? [])
+      if (binding.unitId !== undefined && !b.units.some((u) => u.id === binding.unitId))
+        warnings.push({
+          type: 'assignment',
+          group: g.id,
+          message: `Machine ${binding.unitId + 1} for ${binding.resource} no longer exists; using automatic assignment.`,
+        });
+
     for (const message of b.capacityProblems ?? [])
       warnings.push({ type: 'error', group: g.id, code: 'structure', message });
     const gid = (id: number) => index * GROUP_STRIDE + id;

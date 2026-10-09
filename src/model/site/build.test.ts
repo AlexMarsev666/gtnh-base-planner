@@ -84,16 +84,14 @@ describe('group transform', () => {
 });
 
 describe('hatch demand', () => {
-  it('places one hatch per resource on every unit and tags it', () => {
+  it('covers resources across the group without raising per-controller structural minima', () => {
     const def = withDemand(ebf, { itemIn: ['item:dust'], fluidIn: ['fluid:o2'], itemOut: ['item:hot'] });
-    expect(def.requiredHatches?.itemIn?.min).toBe(1);
+    expect(def).toBe(ebf);
     const b = buildGroup(ebf, 2, noLimits, [], { itemIn: ['item:dust', 'item:x'], itemOut: ['item:hot'] });
     expect(b.missing).toEqual([]);
-    for (const u of b.units)
-      for (const r of ['item:dust', 'item:x'])
-        expect(
-          b.hatches.some((h) => h.kind === 'itemIn' && h.resource === r && h.unitIds.includes(u.id)),
-        ).toBe(true);
+    for (const resource of ['item:dust', 'item:x'])
+      expect(b.hatches.some((h) => h.kind === 'itemIn' && h.resource === resource)).toBe(true);
+    expect(b.hatches.filter((h) => h.kind === 'itemIn')).toHaveLength(2);
   });
 
   it('picks the hatch kind a machine has', () => {

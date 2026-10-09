@@ -99,7 +99,7 @@ export function scoreBuild(build: SiteBuild): LayoutScore {
   }
   return {
     // Unrouted nets are counted by `unconnected`, terminal by terminal; `problems` are the rest.
-    problems: build.warnings.filter((w) => w.type !== 'unrouted').length,
+    problems: build.warnings.filter((w) => w.type !== 'unrouted' && w.type !== 'assignment').length,
     unconnected: build.stats.terminals - build.stats.connected,
     blocks: build.stats.pipeBlocks + build.stats.cableBlocks,
     span: x1 > x0 ? x1 - x0 + (z1 - z0) : 0,

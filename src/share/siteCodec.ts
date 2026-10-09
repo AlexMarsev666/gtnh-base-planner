@@ -230,6 +230,8 @@ function validateGroup(value: unknown, index: number): SiteGroup {
             throw new PlanFormatError('Invalid resource role.');
           out.role = role as ResourceRole;
         }
+        const unit = field(binding, 'unitId');
+        if (unit !== undefined) out.unitId = expectInt(unit, 'Binding machine', 0, MAX_COUNT - 1);
         const slot = field(binding, 'outputSlot');
         if (slot !== undefined) out.outputSlot = expectInt(slot, 'Output slot', 0, 63);
         return out;

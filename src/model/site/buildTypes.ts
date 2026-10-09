@@ -69,6 +69,7 @@ export interface SiteNet {
 }
 
 export type SiteWarning =
+  | { type: 'assignment'; group: string; message: string }
   | { type: 'error'; group: string; message: string; code?: 'electrical' | 'structure' | 'tier' }
   | { type: 'overlap'; groups: [string, string] }
   | { type: 'outside'; group: string }

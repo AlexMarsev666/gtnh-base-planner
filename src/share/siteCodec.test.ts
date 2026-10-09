@@ -53,6 +53,45 @@ function sample(): SiteState {
   };
 }
 
+describe('resource machine assignments', () => {
+  it('round-trips manual and automatic assignments through files, links and localStorage', async () => {
+    const input = sample();
+    input.groups[0].resourceBindings = [
+      { kind: 'itemIn', resource: 'item:dust', unitId: 2 },
+      { kind: 'itemOut', resource: 'item:dust' },
+    ];
+    const expected = validateSiteState(input);
+    expect(siteFromJson(siteToJson(input))).toEqual(expected);
+    expect(await decodeSite(await encodeSite(input))).toEqual(expected);
+    const map = new Map<string, string>();
+    const storage = {
+      get length() {
+        return map.size;
+      },
+      key: (index: number) => [...map.keys()][index] ?? null,
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        map.set(key, value);
+      },
+    };
+    expect(saveStoredSite(input, storage)).toBe(true);
+    expect(loadStoredSite(storage)).toEqual(expected);
+    // Shrinking a group does not erase the stored selection; rebuilding ignores it with a warning.
+    input.groups[0].count = 1;
+    expect(siteFromJson(siteToJson(input)).groups[0].resourceBindings![0].unitId).toBe(2);
+    const legacy = sample();
+    legacy.groups[0].resourceBindings = [{ kind: 'itemIn', resource: 'item:dust' }];
+    expect(
+      (await decodeSite(await encodeSite(legacy))).groups[0].resourceBindings![0].unitId,
+    ).toBeUndefined();
+  });
+  it.each([-1, 0.5, '1', null, 2000])('rejects malformed machine assignment %s', (unitId) => {
+    const input = sample();
+    input.groups[0].resourceBindings = [{ kind: 'itemIn', resource: 'item:dust', unitId: unitId as number }];
+    expect(() => validateSiteState(input)).toThrow(PlanFormatError);
+  });
+});
+
 describe('validateSiteState', () => {
   it('accepts a valid site and normalises it', () => {
     const s = validateSiteState(sample());

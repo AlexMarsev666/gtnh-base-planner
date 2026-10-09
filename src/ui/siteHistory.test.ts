@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import { afterEach, describe, expect, it } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import { site, siteGroup } from '../state/site';
-import { withGroupAdded, withGroupMoved } from './siteActions';
+import { withGroupAdded, withGroupMoved, withGroupPatched } from './siteActions';
 import {
   COALESCE_MS,
   MAX_STEPS,
@@ -62,6 +62,30 @@ describe('site history', () => {
     stop?.();
     site.set(emptySite());
     siteGroup.set(null);
+  });
+
+  it('restores manual resource assignments and machine count with undo/redo', () => {
+    site.set(withGroupAdded(emptySite(), 'oil-cracking-unit'));
+    const id = get(site).groups[0].id;
+    site.update((s) => withGroupPatched(s, id, { count: 2 }));
+    stop = startSiteHistory();
+    site.update((s) =>
+      withGroupPatched(s, id, {
+        resourceBindings: [{ kind: 'fluidIn', resource: 'hydrogen', role: 'catalyst', unitId: 1 }],
+      }),
+    );
+    site.update((s) => withGroupPatched(s, id, { count: 1 }));
+    expect(get(site).groups[0].resourceBindings![0].unitId).toBe(1);
+    expect(undo()).toBe(true);
+    expect(get(site).groups[0].count).toBe(2);
+    expect(get(site).groups[0].resourceBindings![0].unitId).toBe(1);
+    expect(undo()).toBe(true);
+    expect(get(site).groups[0].resourceBindings).toBeUndefined();
+    expect(redo()).toBe(true);
+    expect(get(site).groups[0].resourceBindings![0].unitId).toBe(1);
+    expect(redo()).toBe(true);
+    expect(get(site).groups[0].count).toBe(1);
+    expect(get(site).groups[0].resourceBindings![0].unitId).toBe(1);
   });
 
   it('undoes site changes and clears a selection that no longer exists', () => {

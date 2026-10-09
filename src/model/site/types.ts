@@ -114,6 +114,8 @@ export interface ResourceBinding {
   kind: HatchKind;
   resource: string;
   role?: ResourceRole;
+  /** Local machine id required to serve this resource; absent or stale means automatic. */
+  unitId?: number;
   /** Zero-based recipe fluid output index. */
   outputSlot?: number;
 }
