@@ -31,7 +31,7 @@ export function layoutKey(input: {
     limits.x ?? null,
     limits.y ?? null,
     limits.z ?? null,
-    manualUnits?.map((u) => [u.id, u.origin[0], u.origin[1], u.origin[2], u.rotation]) ?? null,
+    manualUnits?.map((u) => [u.id, u.origin[0], u.origin[1], u.origin[2], u.rotation, !!u.mirrored]) ?? null,
   ]);
 }
 

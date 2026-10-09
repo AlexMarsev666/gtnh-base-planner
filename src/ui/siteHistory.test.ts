@@ -64,6 +64,25 @@ describe('site history', () => {
     siteGroup.set(null);
   });
 
+  it('undoes and redoes wallsharing preferences, mirror overrides and count without erasing unavailable IDs', () => {
+    site.set(withGroupAdded(emptySite(), 'oil-cracking-unit'));
+    const id = get(site).groups[0].id;
+    site.update((s) => withGroupPatched(s, id, { count: 2 }));
+    stop = startSiteHistory();
+    site.update((s) => withGroupPatched(s, id, { wallsharing: 'side', unitMirrors: { '1': true } }));
+    site.update((s) => withGroupPatched(s, id, { count: 1 }));
+    expect(get(site).groups[0].unitMirrors).toEqual({ '1': true });
+    undo();
+    expect(get(site).groups[0].count).toBe(2);
+    expect(get(site).groups[0].wallsharing).toBe('side');
+    undo();
+    expect(get(site).groups[0].unitMirrors).toBeUndefined();
+    redo();
+    expect(get(site).groups[0].unitMirrors).toEqual({ '1': true });
+    redo();
+    expect(get(site).groups[0].count).toBe(1);
+  });
+
   it('restores manual resource assignments and machine count with undo/redo', () => {
     site.set(withGroupAdded(emptySite(), 'oil-cracking-unit'));
     const id = get(site).groups[0].id;

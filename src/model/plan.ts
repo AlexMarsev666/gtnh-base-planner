@@ -85,6 +85,7 @@ function sameLayout(a: Unit[], b: Unit[]): boolean {
   return a.every(
     (u, i) =>
       u.rotation === b[i].rotation &&
+      !!u.mirrored === !!b[i].mirrored &&
       u.origin[0] === b[i].origin[0] &&
       u.origin[1] === b[i].origin[1] &&
       u.origin[2] === b[i].origin[2],

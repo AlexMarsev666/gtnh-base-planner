@@ -3,7 +3,8 @@ import {
   controllerFacing,
   localCells,
   packCell,
-  rotateDir,
+  unitDir,
+  orientationIndex,
   rotatedSize,
   rotateLocal,
   step,
@@ -90,7 +91,9 @@ function rotatedOffsets(def: MultiblockDef): Vec3[][] {
   let out = offsetCache.get(def);
   if (!out) {
     const cells = localCells(def);
-    out = ([0, 1, 2, 3] as const).map((r) => cells.map((c) => rotateLocal(def, c.local, r)));
+    out = Array.from({ length: 8 }, (_, i) =>
+      cells.map((c) => rotateLocal(def, c.local, (i % 4) as 0 | 1 | 2 | 3, i >= 4)),
+    );
     offsetCache.set(def, out);
   }
   return out;
@@ -177,7 +180,7 @@ export function findSites(
   const controllerFronts = new Set<CellKey>();
   let ground = Infinity;
   for (const unit of units) {
-    const rotated = offsets[unit.rotation];
+    const rotated = offsets[orientationIndex(unit)];
     const [ux, uy, uz] = unit.origin;
     for (let ci = 0; ci < cells.length; ci++) {
       const cell = cells[ci];
@@ -225,7 +228,7 @@ export function findSites(
         for (const [kind, dirs] of Object.entries(legend.disallowFaces) as [HatchKind, Dir[]][]) {
           let set = blocked.get(kind);
           if (!set) blocked.set(kind, (set = new Set()));
-          for (const d of dirs) set.add(rotateDir(d, unit.rotation));
+          for (const d of dirs) set.add(unitDir(d, unit));
         }
       }
     }

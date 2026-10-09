@@ -61,13 +61,17 @@ function independent(site: SiteState, build: SiteBuild) {
 }
 
 function assignments(site: SiteState) {
-  return site.groups.map(({ id, resourceBindings, voltageTier, hatchTiers, structureGlassTier }) => ({
-    id,
-    resourceBindings,
-    voltageTier,
-    hatchTiers,
-    structureGlassTier,
-  }));
+  return site.groups.map(
+    ({ id, resourceBindings, voltageTier, hatchTiers, structureGlassTier, wallsharing, unitMirrors }) => ({
+      id,
+      resourceBindings,
+      voltageTier,
+      hatchTiers,
+      structureGlassTier,
+      wallsharing,
+      unitMirrors,
+    }),
+  );
 }
 
 // Position-bearing errors are compared by their semantic kind, retaining multiplicity and group.

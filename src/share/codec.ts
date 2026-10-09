@@ -147,10 +147,14 @@ function validateUnit(value: unknown, index: number): Unit {
   const pos = origin.map((c, i) =>
     expectInt(c, `${what} ${'xyz'[i]}`, -MAX_COORD, MAX_COORD),
   ) as unknown as Vec3;
+  const mirrored = field(obj, 'mirrored');
+  if (mirrored !== undefined && typeof mirrored !== 'boolean')
+    throw new PlanFormatError(`${what} mirror must be boolean.`);
   return {
     id: expectInt(field(obj, 'id'), `${what} id`, 0, MAX_UNIT_ID),
     origin: [pos[0], pos[1], pos[2]],
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
+    ...(mirrored === undefined ? {} : { mirrored }),
   };
 }
 
@@ -304,6 +308,7 @@ interface CompactPlan {
   c?: Record<string, string>;
   u?: number[];
   i?: number[];
+  um?: (boolean | null)[];
   s?: number;
   r?: string;
   t?: VoltageTier;
@@ -316,6 +321,7 @@ interface CompactPlan {
 }
 
 const COMPACT_KEYS = new Set([
+  'um',
   'v',
   'm',
   'n',
@@ -363,6 +369,8 @@ function toCompact(plan: PlanState): CompactPlan {
   if (plan.manualUnits && plan.manualUnits.length > 0) {
     out.u = plan.manualUnits.flatMap((u) => [u.origin[0], u.origin[1], u.origin[2], u.rotation]);
     if (plan.manualUnits.some((u, i) => u.id !== i)) out.i = plan.manualUnits.map((u) => u.id);
+    if (plan.manualUnits.some((u) => u.mirrored !== undefined))
+      out.um = plan.manualUnits.map((u) => u.mirrored ?? null);
   }
   if (plan.size !== undefined) out.s = plan.size;
   if (plan.rulesVersion !== undefined) out.r = plan.rulesVersion;
@@ -437,18 +445,24 @@ function fromCompact(input: unknown): PlanState {
   if (field(obj, 'g') !== undefined) plan.structureGlassTier = field(obj, 'g');
   if (field(obj, 'a') !== undefined) plan.hatchTiers = field(obj, 'a');
   const ids = field(obj, 'i');
+  const mirrors = field(obj, 'um');
   if (u !== undefined) {
     const flat = expectArray(u, 'Manual units', MAX_COUNT * 4);
     if (flat.length % 4 !== 0) throw new PlanFormatError('Manual units are damaged.');
     const unitCount = flat.length / 4;
     const idList = ids === undefined ? null : expectArray(ids, 'Unit ids', MAX_COUNT);
     if (idList && idList.length !== unitCount) throw new PlanFormatError('Unit ids are damaged.');
+    const mirrorList = mirrors === undefined ? null : expectArray(mirrors, 'Unit mirrors', MAX_COUNT);
+    if (mirrorList && mirrorList.length !== unitCount) throw new PlanFormatError('Unit mirrors are damaged.');
+    if (mirrorList?.some((mirror) => mirror !== null && typeof mirror !== 'boolean'))
+      throw new PlanFormatError('Invalid unit mirror.');
     plan.manualUnits = Array.from({ length: unitCount }, (_, k) => ({
       id: idList ? idList[k] : k,
       origin: [flat[4 * k], flat[4 * k + 1], flat[4 * k + 2]],
       rotation: flat[4 * k + 3],
+      ...(mirrorList && mirrorList[k] !== null ? { mirrored: mirrorList[k] } : {}),
     }));
-  } else if (ids !== undefined) {
+  } else if (ids !== undefined || mirrors !== undefined) {
     throw new PlanFormatError('Unit ids without units.');
   }
   const size = field(obj, 's');

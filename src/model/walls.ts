@@ -5,6 +5,7 @@ import {
   rotatedSize,
   unitBounds,
   unitCells,
+  orientationIndex,
   type CellKey,
 } from './geometry';
 import type { CellRole, Dir, Rotation, Vec3 } from './core/types';
@@ -43,12 +44,12 @@ function sideCounts(def: MultiblockDef): number[][] {
   if (cached) return cached;
   const cells = localCells(def);
   const out: number[][] = [];
-  for (let r = 0; r < 4; r++) {
-    const rot = r as Rotation;
+  for (let r = 0; r < 8; r++) {
+    const rot = (r % 4) as Rotation;
     const size = rotatedSize(def, rot);
     const counts = [0, 0, 0, 0, 0, 0];
     for (const c of cells) {
-      const p = rotateLocal(def, c.local, rot);
+      const p = rotateLocal(def, c.local, rot, r >= 4);
       for (let a = 0; a < 3; a++) {
         if (p[a] === 0) counts[a * 2]++;
         if (p[a] === size[a] - 1) counts[a * 2 + 1]++;
@@ -89,8 +90,8 @@ function isFaceContact(def: MultiblockDef, pair: PairInfo, units: Map<number, Un
     ];
     for (const [low, lowB, high, highB] of orders) {
       if (lowB.max[axis] - 1 !== v || highB.min[axis] !== v) continue;
-      const lowSide = sides[low.rotation][axis * 2 + 1];
-      const highSide = sides[high.rotation][axis * 2];
+      const lowSide = sides[orientationIndex(low)][axis * 2 + 1];
+      const highSide = sides[orientationIndex(high)][axis * 2];
       if (pair.count === lowSide || pair.count === highSide) return true;
     }
   }

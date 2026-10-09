@@ -27,7 +27,7 @@ export function defCache(def: MultiblockDef): DefCache {
 
 export function cloneResult(r: PackResult): PackResult {
   const units = r.units.map((u) => ({
-    id: u.id,
+    ...u,
     origin: [u.origin[0], u.origin[1], u.origin[2]] as Vec3,
     rotation: u.rotation,
   }));

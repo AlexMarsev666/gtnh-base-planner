@@ -27,6 +27,17 @@ async function rawLink(data: unknown): Promise<string> {
 }
 
 describe('encodePlan / decodePlan', () => {
+  it('preserves reflected manual units in links and rejects non-boolean mirrors', async () => {
+    const plan = manualPlan(2);
+    plan.manualUnits![1].mirrored = true;
+    expect(await decodePlan(await encodePlan(plan))).toEqual(validatePlanState(plan));
+    expect(() =>
+      validatePlanState({ ...plan, manualUnits: [{ ...plan.manualUnits![0], mirrored: 1 }] }),
+    ).toThrow(PlanFormatError);
+    expect(
+      (await decodePlan(await encodePlan(manualPlan(2)))).manualUnits!.every((u) => u.mirrored === undefined),
+    ).toBe(true);
+  });
   it('round-trips the default plan in a tiny fragment', async () => {
     const plan = defaultPlan();
     const encoded = await encodePlan(plan);

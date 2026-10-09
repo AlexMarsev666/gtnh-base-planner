@@ -6,7 +6,7 @@ import type { VoltageTier } from '../tiers';
 import { VOLTAGE_TIERS } from '../tiers';
 import type { Demand, SiteHatch, Toward } from './group';
 import type { SiteGroup } from './types';
-import { rotateDir, step, unitCells } from '../geometry';
+import { rotateDir, step, unitCells, mirrorDir } from '../geometry';
 import type { Rotation } from '../core/types';
 import { casingAllowance, hatchCapacity, validateCasings } from '../multiblock/casingConstraints';
 import { hasLayeredFluidOutputs } from '../multiblock/structureAdapters';
@@ -44,6 +44,8 @@ export type HatchSettings = Pick<
   | 'assemblyGrowth'
   | 'steamFrameTier'
   | 'structureGlassTier'
+  | 'wallsharing'
+  | 'unitMirrors'
 >;
 
 interface Slot {
@@ -1032,7 +1034,9 @@ export function validateResourceHatches(
         cell &&
         unit &&
         def.legend[cell.char]?.disallowFaces?.[h.kind]?.includes(
-          rotateDir(h.face, ((4 - unit.rotation) % 4) as Rotation),
+          unit.mirrored
+            ? mirrorDir(rotateDir(h.face, ((4 - unit.rotation) % 4) as Rotation))
+            : rotateDir(h.face, ((4 - unit.rotation) % 4) as Rotation),
         )
       )
         errors.push(`Controller ${id}: ${h.kind} cannot face ${h.face} under the source rules.`);

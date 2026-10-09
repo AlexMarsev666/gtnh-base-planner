@@ -51,6 +51,8 @@
     setSelectedOrigin,
   } from './siteEditing';
   import ToggleRow from './ToggleRow.svelte';
+  import { matchesWallsharing } from '../model/layout/wallsharing';
+  import type { WallsharingVariant } from '../model/multiblock/types';
 
   /** The editor of the selected template group: Machine, Packing and Placement. */
   interface Props {
@@ -686,6 +688,48 @@
           ><option value="left">−X</option><option value="right">+X</option></select
         ></label
       >{/if}
+    {#if def?.wallshare && group.count > 1}
+      <label class="col"
+        ><span>Wallsharing arrangement</span><select
+          class="field"
+          data-testid="wallsharing-variant"
+          value={group.wallsharing ?? 'auto'}
+          onchange={(e) => patch({ wallsharing: e.currentTarget.value as WallsharingVariant })}
+        >
+          <option value="auto">Automatic</option>
+          <option value="side">Side walls{isOilCracker(def) ? ' · alternating mirrors' : ''}</option>
+          <option value="stack">Stack</option>
+          <option value="back">Back walls</option>
+          <option value="none">Separate machines</option>
+        </select></label
+      >
+      {#if placed?.build && !matchesWallsharing(def, placed.build.units, group.wallsharing)}
+        <p class="hint" data-testid="wallsharing-fallback">
+          The preferred arrangement could not fit the structure and hatches within the limits. An alternative
+          is used.
+        </p>
+      {/if}
+    {/if}
+    {#if isOilCracker(def)}
+      {#each Array.from({ length: group.count }, (_, id) => id) as id}
+        <label class="col"
+          ><span>Machine {id + 1} · mirror X</span><select
+            class="field"
+            data-testid="unit-mirror"
+            value={group.unitMirrors?.[id] === undefined ? 'auto' : String(group.unitMirrors[id])}
+            onchange={(e) => {
+              const unitMirrors = { ...group.unitMirrors };
+              if (e.currentTarget.value === 'auto') delete unitMirrors[id];
+              else unitMirrors[id] = e.currentTarget.value === 'true';
+              patch({ unitMirrors });
+            }}
+          >
+            <option value="auto">Automatic{placed?.build?.units[id]?.mirrored ? ' · mirrored' : ''}</option>
+            <option value="false">Normal</option><option value="true">Mirrored</option>
+          </select></label
+        >
+      {/each}
+    {/if}
   </div>
 
   {#if ioHatches.length}

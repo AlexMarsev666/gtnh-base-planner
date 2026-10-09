@@ -1,11 +1,13 @@
 import { key } from '../geometry';
-import type { MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
+import type { MultiblockDef, PlanLimits, Unit, UnitLayoutSettings } from '../multiblock/types';
 import type { PackResult } from '../plan/types';
 import { cloneResult, defCache, RESULT_CACHE_SIZE } from './cache';
 import { candidates } from './candidates';
 import { modesFor, sanitizeLimits } from './modes';
 import { fitBound, realize, tryPack } from './realize';
 import type { Candidate } from './types';
+import { mirrorVariants, preferredCandidate } from './wallsharing';
+import { isOilCracker } from '../multiblock/structureAdapters';
 
 /**
  * UNIT 1 — Layout packing.
@@ -32,7 +34,12 @@ import type { Candidate } from './types';
  * chooses from, then looser ones (gaps between units, walkways) that leave more faces open for hatches.
  * Lazy, so callers can stop at the first layout that suits them. Identical layouts are yielded once.
  */
-export function* layoutCandidates(def: MultiblockDef, count: number, limits: PlanLimits): Generator<Unit[]> {
+export function* layoutCandidates(
+  def: MultiblockDef,
+  count: number,
+  limits: PlanLimits,
+  settings?: UnitLayoutSettings,
+): Generator<Unit[]> {
   const n = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
   if (n === 0) return;
   const lim = sanitizeLimits(limits);
@@ -52,21 +59,36 @@ export function* layoutCandidates(def: MultiblockDef, count: number, limits: Pla
   const total = lists.reduce((s, l) => s + l.length, 0);
   for (let round = 0; ordered.length < total; round++)
     for (const l of lists) if (round < l.length) ordered.push(l[round]);
-  for (const c of ordered) {
+  const preference = settings?.wallsharing ?? 'auto';
+  const ranked =
+    preference === 'auto'
+      ? ordered
+      : [
+          ...ordered.filter((c) => preferredCandidate(c, preference)),
+          ...ordered.filter((c) => !preferredCandidate(c, preference)),
+        ];
+  for (const c of ranked) {
     const units = realize(def, cache, n, c);
     if (!units) continue;
-    const k = units.map((u) => `${key(u.origin)}/${u.rotation}`).join(';');
-    if (seen.has(k)) continue;
-    seen.add(k);
-    yield units;
+    for (const variant of mirrorVariants(def, units, settings)) {
+      const k = variant.map((u) => `${key(u.origin)}/${u.rotation}/${!!u.mirrored}`).join(';');
+      if (seen.has(k)) continue;
+      seen.add(k);
+      yield variant;
+    }
   }
 }
 
-export function packUnits(def: MultiblockDef, count: number, limits: PlanLimits): PackResult {
+export function packUnits(
+  def: MultiblockDef,
+  count: number,
+  limits: PlanLimits,
+  settings?: UnitLayoutSettings,
+): PackResult {
   const requested = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
   const lim = sanitizeLimits(limits);
   const cache = defCache(def);
-  const cacheKey = `${requested}|${lim.x}|${lim.y}|${lim.z}`;
+  const cacheKey = `${requested}|${lim.x}|${lim.y}|${lim.z}|${settings?.wallsharing ?? 'auto'}|${JSON.stringify(settings?.unitMirrors ?? {})}`;
   const cached = cache.results.get(cacheKey);
   if (cached) {
     // Refresh recency (LRU).
@@ -75,7 +97,10 @@ export function packUnits(def: MultiblockDef, count: number, limits: PlanLimits)
     return cloneResult(cached);
   }
 
-  let units = tryPack(def, cache, requested, lim);
+  let units =
+    settings?.wallsharing && settings.wallsharing !== 'auto'
+      ? (layoutCandidates(def, requested, lim, settings).next().value ?? null)
+      : tryPack(def, cache, requested, lim);
   if (!units) {
     // Dropping units from a layout keeps it valid, so feasible counts are (practically) a prefix of 0..n:
     // binary search the largest, then probe upwards in case the lattice family skipped a count.
@@ -99,6 +124,12 @@ export function packUnits(def: MultiblockDef, count: number, limits: PlanLimits)
     units = best;
   }
 
+  if (
+    isOilCracker(def) &&
+    ((settings?.wallsharing && settings.wallsharing !== 'auto') ||
+      Object.keys(settings?.unitMirrors ?? {}).length)
+  )
+    units = mirrorVariants(def, units, settings).next().value ?? units;
   const result: PackResult = { units, requested, placed: units.length };
   if (units.length < requested) {
     // Without limits a single row along a non-facing axis always fits, so a shortfall means the limits.

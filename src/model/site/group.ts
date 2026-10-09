@@ -1,6 +1,6 @@
 import { withSteamFrame } from '../multiblock/steamWaterPump';
 import { isSingleBlock, TRANSFORMER_ID } from '../../data/generic';
-import { rotateDir, rotatedSize, unitCells } from '../geometry';
+import { rotateDir, rotatedSize, unitCells, unitDir } from '../geometry';
 import { layoutCandidates, packUnits } from '../layout/packer';
 import { resolveLayout } from '../plan';
 import { placeHatches } from '../hatches/placement';
@@ -154,7 +154,7 @@ function blockedFaces(def: MultiblockDef, units: Unit[], h: HatchPlacement): Dir
     (c) => c.pos[0] === h.cell[0] && c.pos[1] === h.cell[1] && c.pos[2] === h.cell[2],
   );
   const dirs = cell?.role === 'casing' ? def.legend[cell.char]?.disallowFaces?.[h.kind] : undefined;
-  return dirs?.map((d) => rotateDir(d, unit.rotation));
+  return dirs?.map((d) => unitDir(d, unit));
 }
 
 /**
@@ -188,7 +188,7 @@ export function buildGroup(
   const def = structuralDef;
   const bound = groupDemandBound(def, count, enabled, demand, settings?.resourceBindings);
   const manual = manualDemandProblems(def, count, enabled, demand, settings?.resourceBindings);
-  const packed = packUnits(def, count, limits);
+  const packed = packUnits(def, count, limits, settings);
   const place: typeof placeHatches = (d, u, e, avoid) =>
     placeResourceHatches(d, u, e, demand, settings ?? {}, below, toward, avoid);
   // A proven shortage cannot be repaired by another layout. Still show a single best-effort
@@ -196,7 +196,10 @@ export function buildGroup(
   const resolved =
     bound.message || manual.length
       ? { pack: packed, hatches: place(def, packed.units, enabled), loosened: false }
-      : resolveLayout(def, packed, enabled, limits, { placeHatches: place, layoutCandidates });
+      : resolveLayout(def, packed, enabled, limits, {
+          placeHatches: place,
+          layoutCandidates: (d, n, l) => layoutCandidates(d, n, l, settings),
+        });
   const lo: [number, number, number] = [Infinity, Infinity, Infinity];
   const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   for (const u of resolved.pack.units) {
@@ -362,7 +365,7 @@ export function placeUnit(
     elevation,
   );
   return {
-    id: u.id,
+    ...u,
     origin: [Math.min(a[0], b[0]), a[1], Math.min(a[2], b[2])],
     rotation: ((u.rotation + r) % 4) as Rotation,
   };

@@ -1,5 +1,5 @@
 import type { Rotation } from '../core/types';
-import type { HatchKind, PlanLimits } from '../multiblock/types';
+import type { HatchKind, PlanLimits, UnitLayoutSettings } from '../multiblock/types';
 import type { Dir } from '../core/types';
 import type { VoltageTier } from '../tiers';
 
@@ -39,7 +39,7 @@ export function iconUrl(path: string): string | null {
   return ICON_RE.test(path) && path.length <= 300 && !path.includes('..') ? ICON_HOST + path : null;
 }
 
-export interface SiteGroup {
+export interface SiteGroup extends UnitLayoutSettings {
   /** Stable id within the site (`[a-z0-9_-]`), used by links. */
   id: string;
   /** Display name override; defaults to the multiblock name. */

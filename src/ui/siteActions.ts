@@ -130,6 +130,8 @@ export interface GroupPatch {
   resourceBindings?: SiteGroup['resourceBindings'];
   transformer?: SiteGroup['transformer'];
   crackingFeedSide?: SiteGroup['crackingFeedSide'];
+  wallsharing?: SiteGroup['wallsharing'];
+  unitMirrors?: SiteGroup['unitMirrors'];
   manualTransformerMode?: SiteGroup['manualTransformerMode'];
   dataBankWireless?: boolean;
   assemblyGrowth?: SiteGroup['assemblyGrowth'];
@@ -148,6 +150,8 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
     if (patch.resourceBindings) next.resourceBindings = structuredClone(patch.resourceBindings);
     if (patch.transformer) next.transformer = { ...patch.transformer };
     if (patch.crackingFeedSide) next.crackingFeedSide = patch.crackingFeedSide;
+    if (patch.wallsharing) next.wallsharing = patch.wallsharing;
+    if (patch.unitMirrors) next.unitMirrors = { ...patch.unitMirrors };
     if (patch.manualTransformerMode === 'up' || patch.manualTransformerMode === 'down')
       next.manualTransformerMode = patch.manualTransformerMode;
     if (typeof patch.dataBankWireless === 'boolean') next.dataBankWireless = patch.dataBankWireless;
@@ -245,6 +249,7 @@ export function withGroupDuplicated(s: SiteState, id: string, origin: [number, n
     limits: { ...g.limits },
     enabledHatches: [...g.enabledHatches],
     ...(g.hatchTiers ? { hatchTiers: { ...g.hatchTiers } } : {}),
+    ...(g.unitMirrors ? { unitMirrors: { ...g.unitMirrors } } : {}),
     ...(g.resourceBindings ? { resourceBindings: structuredClone(g.resourceBindings) } : {}),
     ...(g.transformer ? { transformer: { ...g.transformer } } : {}),
   };

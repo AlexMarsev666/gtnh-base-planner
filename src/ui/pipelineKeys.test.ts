@@ -14,6 +14,19 @@ const layoutInput: LayoutInput = {
 const oneUnit: Unit[] = [{ id: 0, origin: [0, 0, 0], rotation: 0 }];
 
 describe('pipeline keys', () => {
+  it('invalidates every downstream stage when a manual unit changes its reflection', () => {
+    const original = layoutKey({ ...layoutInput, manualUnits: oneUnit });
+    const mirrored = layoutKey({
+      ...layoutInput,
+      manualUnits: oneUnit.map((u) => ({ ...u, mirrored: true })),
+    });
+    expect(mirrored).not.toBe(original);
+    expect(
+      sceneKey(pipesKey(hatchKey(mirrored, ['fluidIn'], null, true), ['fluidIn']), DEFAULT_HATCH_COLORS),
+    ).not.toBe(
+      sceneKey(pipesKey(hatchKey(original, ['fluidIn'], null, true), ['fluidIn']), DEFAULT_HATCH_COLORS),
+    );
+  });
   it('change the layout key with every packing input', () => {
     const base = layoutKey(layoutInput);
     const changed = (<LayoutInput[]>[

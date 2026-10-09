@@ -104,8 +104,9 @@ export function rotatedSize(def: MultiblockDef, r: Rotation): Vec3 {
 }
 
 /** Local cell -> offset inside the rotated bounding box. */
-export function rotateLocal(def: MultiblockDef, p: Vec3, r: Rotation): Vec3 {
+export function rotateLocal(def: MultiblockDef, p: Vec3, r: Rotation, mirrored = false): Vec3 {
   let [x, y, z] = p;
+  if (mirrored) x = def.size[0] - 1 - x;
   let sx = def.size[0];
   let sz = def.size[2];
   for (let i = 0; i < r; i++) {
@@ -122,7 +123,20 @@ export function rotateLocal(def: MultiblockDef, p: Vec3, r: Rotation): Vec3 {
 }
 
 export function toWorld(def: MultiblockDef, unit: Unit, local: Vec3): Vec3 {
-  return add(unit.origin, rotateLocal(def, local, unit.rotation));
+  return add(unit.origin, rotateLocal(def, local, unit.rotation, unit.mirrored));
+}
+
+/** Local direction transformed in the same order as cells: reflection, then rotation. */
+export function unitDir(d: Dir, unit: Pick<Unit, 'rotation' | 'mirrored'>): Dir {
+  return rotateDir(unit.mirrored ? mirrorDir(d) : d, unit.rotation);
+}
+
+export function mirrorDir(d: Dir): Dir {
+  return d === 'east' ? 'west' : d === 'west' ? 'east' : d;
+}
+
+export function orientationIndex(unit: Pick<Unit, 'rotation' | 'mirrored'>): number {
+  return unit.rotation + (unit.mirrored ? 4 : 0);
 }
 
 interface LocalCell {
@@ -172,13 +186,13 @@ export function unitCells(def: MultiblockDef, unit: Unit): UnitCell[] {
   return localCells(def).map((c) => ({
     ...c,
     pos: toWorld(def, unit, c.local),
-    ...(c.facing ? { facing: rotateDir(c.facing, unit.rotation) } : {}),
+    ...(c.facing ? { facing: unitDir(c.facing, unit) } : {}),
   }));
 }
 
 /** World direction the unit's controller faces. */
 export function controllerFacing(def: MultiblockDef, unit: Unit): Dir {
-  return rotateDir(def.controller.facing, unit.rotation);
+  return unitDir(def.controller.facing, unit);
 }
 
 /** World bounding box (inclusive min, exclusive max) of a unit. */

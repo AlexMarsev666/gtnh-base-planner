@@ -1,0 +1,105 @@
+{
+  "pack": "2.9.0-RC-2",
+  "sourceCommit": "a3e1e11241a814c9fa0dd0973d5699548428f689",
+  "loadedJars": [
+    {
+      "class": "gregtech.api.metatileentity.implementations.MTEMultiBlockBase",
+      "sha256": "8bada681d3190188bcef8583ae7c9bb447d6fd4ef8dc7ac50bcf4a744daf4b5a"
+    },
+    {
+      "class": "com.gtnewhorizon.structurelib.alignment.IAlignment",
+      "sha256": "d6eb9b4bc09efd0fc4d39a14e5000254b75fdae4b2eee7d2f51135d7dbe8cc5e"
+    }
+  ],
+  "results": [
+    {
+      "name": "oil-cracker-mirrored-shared-side-pair",
+      "machine": "oil-cracking-unit",
+      "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/a3e1e11241a814c9fa0dd0973d5699548428f689/src/main/java/gregtech/common/tileentities/machines/multi/MTEOilCracker.java",
+      "placementSha256": "5e3735982d09c0c955a020ec64bfea2984f73d940a89ae124005b607dec2a3de",
+      "controllers": [
+        {
+          "formed": true,
+          "casings": 20,
+          "sharedInput": true,
+          "errors": []
+        },
+        {
+          "formed": true,
+          "casings": 20,
+          "sharedInput": true,
+          "errors": []
+        }
+      ],
+      "hatches": [
+        {
+          "kind": "fluidOut",
+          "tier": 3,
+          "meta": 63,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchOutput",
+          "pos": [0, 0, 0]
+        },
+        {
+          "kind": "fluidIn",
+          "tier": 3,
+          "meta": 53,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchInput",
+          "pos": [2, 0, 0]
+        },
+        {
+          "kind": "fluidIn",
+          "tier": 3,
+          "meta": 53,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchInput",
+          "pos": [4, 0, 0]
+        },
+        {
+          "kind": "energy",
+          "tier": 3,
+          "meta": 43,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchEnergy",
+          "pos": [0, 1, 0]
+        },
+        {
+          "kind": "maintenance",
+          "tier": 3,
+          "meta": 90,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchMaintenance",
+          "pos": [0, 2, 0]
+        },
+        {
+          "kind": "fluidOut",
+          "tier": 3,
+          "meta": 63,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchOutput",
+          "pos": [8, 0, 0]
+        },
+        {
+          "kind": "fluidIn",
+          "tier": 3,
+          "meta": 53,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchInput",
+          "pos": [6, 0, 0]
+        },
+        {
+          "kind": "energy",
+          "tier": 3,
+          "meta": 43,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchEnergy",
+          "pos": [8, 1, 0]
+        },
+        {
+          "kind": "maintenance",
+          "tier": 3,
+          "meta": 90,
+          "class": "gregtech.api.metatileentity.implementations.MTEHatchMaintenance",
+          "pos": [6, 2, 0]
+        }
+      ],
+      "formed": true,
+      "passed": true
+    }
+  ],
+  "passed": 1,
+  "failed": 0
+}

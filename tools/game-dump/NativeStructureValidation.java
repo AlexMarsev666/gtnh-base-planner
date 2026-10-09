@@ -115,6 +115,7 @@ final class NativeStructureValidation {
             snapshot.add("circuit", test.get("circuit"));
             if (test.has("controllerFacing")) snapshot.add("controllerFacing", test.get("controllerFacing"));
             snapshot.add("cells", test.get("cells"));
+            if (test.has("crackingPair")) snapshot.add("crackingPair", test.get("crackingPair"));
             if (test.has("expectedHatchFields")) snapshot.add("expectedHatchFields", test.get("expectedHatchFields"));
             if (test.has("expectedBlockFacings")) snapshot.add("expectedBlockFacings", test.get("expectedBlockFacings"));
             if (test.has("expectedBeamRates")) snapshot.add("expectedBeamRates", test.get("expectedBeamRates"));
@@ -156,6 +157,7 @@ final class NativeStructureValidation {
         JsonArray cells = test.getAsJsonArray("cells");
         clear(world, cells);
         MTEMultiBlockBase controller = null;
+        List<MTEMultiBlockBase> crackingControllers = new ArrayList<>();
         IMetaTileEntity legacyBrickedController = null;
         Map<String, List<MTEHatchInput>> fluidInputs = new LinkedHashMap<>();
         Map<MTEHatchOutput, Integer> expectedSlots = new LinkedHashMap<>();
@@ -210,8 +212,14 @@ final class NativeStructureValidation {
                                 packet.get("particle").getAsInt(), packet.get("focus").getAsFloat()));
                     }
                     if (base.getMetaTileEntity() instanceof MTEMultiBlockBase) {
-                        if (controller != null || legacyBrickedController != null) throw new IllegalArgumentException("Several controllers in one native case");
-                        controller = (MTEMultiBlockBase) base.getMetaTileEntity();
+                        if (test.has("crackingPair")) {
+                            if (!base.getMetaTileEntity().getClass().getName().equals("gregtech.common.tileentities.machines.multi.MTEOilCracker"))
+                                throw new IllegalArgumentException("The pair exception only supports Oil Cracking Unit");
+                            crackingControllers.add((MTEMultiBlockBase) base.getMetaTileEntity());
+                        } else {
+                            if (controller != null || legacyBrickedController != null) throw new IllegalArgumentException("Several controllers in one native case");
+                            controller = (MTEMultiBlockBase) base.getMetaTileEntity();
+                        }
                     } else if (base.getMetaTileEntity().getClass().getName().equals("gregtech.common.tileentities.machines.multi.MTEBrickedBlastFurnace")) {
                         if (controller != null || legacyBrickedController != null) throw new IllegalArgumentException("Several controllers in one native case");
                         legacyBrickedController = base.getMetaTileEntity();
@@ -257,6 +265,30 @@ final class NativeStructureValidation {
             result.put("hatches", hatchData);
             result.put("errors", new ArrayList<>());
             return formed == test.get("expectedStructure").getAsBoolean();
+        }
+        if (test.has("crackingPair")) {
+            if (crackingControllers.size() != 2) throw new IllegalArgumentException("Expected exactly two crackers");
+            JsonObject pair = test.getAsJsonObject("crackingPair");
+            int[] sharedPos = position(pair);
+            IMetaTileEntity shared = ((BaseMetaTileEntity) world.getTileEntity(sharedPos[0], sharedPos[1], sharedPos[2])).getMetaTileEntity();
+            List<Map<String, Object>> checked = new ArrayList<>();
+            boolean passed = true;
+            for (MTEMultiBlockBase cracker : crackingControllers) {
+                BaseMetaTileEntity tile = (BaseMetaTileEntity) cracker.getBaseMetaTileEntity();
+                List<StructureError> errors = new ArrayList<>();
+                cracker.checkMachine(tile, GTUtility.getIntegratedCircuit(0), errors);
+                boolean sharedInput = ((List<?>) findField(cracker.getClass(), "mInputHatches").get(cracker)).contains(shared);
+                int casings = findField(cracker.getClass(), "mCasingAmount").getInt(cracker);
+                Map<String, Object> observed = new LinkedHashMap<>();
+                observed.put("formed", errors.isEmpty()); observed.put("casings", casings);
+                observed.put("sharedInput", sharedInput);
+                List<String> ids = new ArrayList<>();
+                for (StructureError error : errors) ids.add(error.getId().name());
+                observed.put("errors", ids); checked.add(observed);
+                passed &= errors.isEmpty() && casings >= 18 && sharedInput;
+            }
+            result.put("controllers", checked); result.put("hatches", hatchData);
+            result.put("formed", passed); return passed;
         }
         if (controller == null) throw new IllegalStateException("No controller");
         ItemStack circuit = GTUtility.getIntegratedCircuit(test.get("circuit").getAsInt());

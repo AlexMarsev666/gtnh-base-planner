@@ -13,7 +13,12 @@ import {
   type SiteState,
 } from '../model/site/types';
 import type { Rotation } from '../model/core/types';
-import type { HatchKind, PlanLimits } from '../model/multiblock/types';
+import {
+  WALLSHARING_VARIANTS,
+  type HatchKind,
+  type PlanLimits,
+  type WallsharingVariant,
+} from '../model/multiblock/types';
 import {
   MAX_PAYLOAD_BYTES,
   PlanFormatError,
@@ -155,6 +160,23 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
   };
   const label = optionalString(field(obj, 'label'), `${what} label`, MAX_NAME);
+  const wallsharing = field(obj, 'wallsharing');
+  if (wallsharing !== undefined) {
+    if (!WALLSHARING_VARIANTS.includes(wallsharing as WallsharingVariant))
+      throw new PlanFormatError(`${what} wallsharing variant is invalid.`);
+    group.wallsharing = wallsharing as WallsharingVariant;
+  }
+  const mirrors = field(obj, 'unitMirrors');
+  if (mirrors !== undefined) {
+    const entries = expectObject(mirrors, `${what} unit mirrors`);
+    if (Object.keys(entries).length > MAX_COUNT) throw new PlanFormatError('Too many unit mirrors.');
+    group.unitMirrors = {};
+    for (const id of Object.keys(entries).sort()) {
+      if (!/^(0|[1-9][0-9]*)$/.test(id) || Number(id) >= MAX_COUNT || typeof field(entries, id) !== 'boolean')
+        throw new PlanFormatError('Invalid unit mirror.');
+      group.unitMirrors[id] = field(entries, id) as boolean;
+    }
+  }
   const arrangeLimits = field(obj, 'arrangeLimits');
   if (arrangeLimits !== undefined) {
     const pref = expectObject(arrangeLimits, 'Arrange limits');

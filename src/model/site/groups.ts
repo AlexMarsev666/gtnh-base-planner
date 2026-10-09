@@ -101,6 +101,8 @@ export function placeGroups(
       g.assemblyGrowth,
       g.structureGlassTier,
       g.steamFrameTier,
+      g.wallsharing,
+      g.unitMirrors,
     ]);
     used.add(ck);
     let built = cache.get(ck);
@@ -118,6 +120,13 @@ export function placeGroups(
       return { ...empty, def, error: built.error };
     }
     const b = built;
+    for (const id of Object.keys(g.unitMirrors ?? {}))
+      if (!b.units.some((u) => u.id === Number(id)))
+        warnings.push({
+          type: 'assignment',
+          group: g.id,
+          message: `Machine ${Number(id) + 1} no longer exists; ignoring its mirror override.`,
+        });
     for (const binding of g.resourceBindings ?? [])
       for (const id of binding.unitIds ?? (binding.unitId === undefined ? [] : [binding.unitId]))
         if (!b.units.some((u) => u.id === id))

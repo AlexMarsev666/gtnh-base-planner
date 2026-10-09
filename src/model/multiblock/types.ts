@@ -169,6 +169,17 @@ export interface Unit {
   id: number;
   origin: Vec3;
   rotation: Rotation;
+  /** Reflect local X before rotation; absent in legacy layouts means false. */
+  mirrored?: boolean;
+}
+
+export const WALLSHARING_VARIANTS = ['auto', 'side', 'stack', 'back', 'none'] as const;
+export type WallsharingVariant = (typeof WALLSHARING_VARIANTS)[number];
+export interface UnitLayoutSettings {
+  /** Preferred arrangement; structural validity and hard limits take precedence. */
+  wallsharing?: WallsharingVariant;
+  /** Local unit IDs; absent means automatic. Retained when count temporarily shrinks. */
+  unitMirrors?: Record<string, boolean>;
 }
 
 /** A structure cell of a unit in world space. */

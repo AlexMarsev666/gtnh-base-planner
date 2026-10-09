@@ -45,11 +45,17 @@ export function* loosenings(def: MultiblockDef, units: readonly Unit[]): Generat
     list.push({ c, volume: volumeOf(c) });
   }
   list.sort((a, b) => a.volume - b.volume || a.c.mode.seq - b.c.mode.seq);
-  const layoutKey = (us: readonly Unit[]) => us.map((u) => `${key(u.origin)}/${u.rotation}`).join(';');
+  const layoutKey = (us: readonly Unit[]) =>
+    us.map((u) => `${key(u.origin)}/${u.rotation}/${!!u.mirrored}`).join(';');
   const seen = new Set([layoutKey(units)]);
   for (const { c } of list) {
-    const out = realize(def, cache, n, c);
-    if (!out) continue;
+    const realized = realize(def, cache, n, c);
+    if (!realized) continue;
+    const out = realized.map((u, i) => ({
+      ...u,
+      ...(units[i].mirrored === undefined ? {} : { mirrored: units[i].mirrored }),
+    }));
+    sourceOf.set(out, c);
     const k = layoutKey(out);
     if (seen.has(k)) continue;
     seen.add(k);

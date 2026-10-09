@@ -54,6 +54,43 @@ function sample(): SiteState {
 }
 
 describe('resource machine assignments', () => {
+  it('preserves wallsharing preference and per-unit mirrors in files, links and localStorage, including unavailable IDs', async () => {
+    const input = sample();
+    input.groups[0].multiblockId = 'oil-cracking-unit';
+    input.groups[0].wallsharing = 'side';
+    input.groups[0].unitMirrors = { '0': false, '1': true, '7': true };
+    const expected = validateSiteState(input);
+    expect(siteFromJson(siteToJson(input))).toEqual(expected);
+    expect(await decodeSite(await encodeSite(input))).toEqual(expected);
+    const values = new Map<string, string>();
+    const storage = {
+      get length() {
+        return values.size;
+      },
+      key: (index: number) => [...values.keys()][index] ?? null,
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        values.set(key, value);
+      },
+    };
+    expect(saveStoredSite(input, storage)).toBe(true);
+    expect(loadStoredSite(storage)).toEqual(expected);
+    const legacy = siteFromJson(siteToJson(sample())).groups[0];
+    expect(legacy.unitMirrors).toBeUndefined();
+    expect(legacy.wallsharing).toBeUndefined();
+  });
+
+  it.each([
+    { wallsharing: 'invalid' },
+    { unitMirrors: { '0': 'true' } },
+    { unitMirrors: { '-1': true } },
+    { unitMirrors: { '01': true } },
+    { unitMirrors: JSON.parse('{"__proto__":true}') },
+  ])('rejects malformed mirror/layout settings %j', (patch) => {
+    const input = sample();
+    Object.assign(input.groups[0], patch);
+    expect(() => validateSiteState(input)).toThrow(PlanFormatError);
+  });
   it('round-trips manual and automatic assignments through files, links and localStorage', async () => {
     const input = sample();
     input.groups[0].resourceBindings = [

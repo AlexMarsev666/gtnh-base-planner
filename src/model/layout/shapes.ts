@@ -1,4 +1,4 @@
-import { add, dirVec, key, localCells, rotateDir, rotatedSize, rotateLocal } from '../geometry';
+import { add, dirVec, key, localCells, unitDir, rotatedSize, rotateLocal } from '../geometry';
 import type { Vec3 } from '../core/types';
 import type { MultiblockDef } from '../multiblock/types';
 import type { DefCache, Shape } from './types';
@@ -30,19 +30,21 @@ export function buildShapes(def: MultiblockDef): Shape[] {
   const blockIndex = new Map<string, number>();
   const cells = localCells(def);
   const shapes: Shape[] = [];
-  for (const r of [0, 1, 2, 3] as const) {
+  for (let i = 0; i < 8; i++) {
+    const r = (i % 4) as 0 | 1 | 2 | 3;
+    const unit = { rotation: r, mirrored: i >= 4 };
     const size = rotatedSize(def, r);
     const grid = new Int32Array(size[0] * size[1] * size[2]);
     let front: Vec3 | null = null;
     for (const c of cells) {
-      const p = rotateLocal(def, c.local, r);
+      const p = rotateLocal(def, c.local, r, unit.mirrored);
       let code: number;
       if (c.role === 'air') code = AIR;
       else if (c.role === 'controller') {
         code = CONTROLLER;
-        front = add(p, dirVec(rotateDir(def.controller.facing, r)));
+        front = add(p, dirVec(unitDir(def.controller.facing, unit)));
       } else {
-        const id = c.facing ? JSON.stringify([c.blockId, rotateDir(c.facing, r)]) : (c.blockId ?? '');
+        const id = c.facing ? JSON.stringify([c.blockId, unitDir(c.facing, unit)]) : (c.blockId ?? '');
         let idx = blockIndex.get(id);
         if (idx === undefined) {
           idx = blockIndex.size;
