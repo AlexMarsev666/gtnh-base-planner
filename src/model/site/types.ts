@@ -48,6 +48,8 @@ export interface SiteGroup {
   multiblockId: string;
   count: number;
   limits: PlanLimits;
+  /** User packing preference retained when an algorithm temporarily repacks an unlocked group. */
+  arrangeLimits?: PlanLimits;
   /** Height / length of a resizable multiblock (see `PlanState.size`). */
   size?: number;
   /**
@@ -116,12 +118,15 @@ export interface ResourceBinding {
   role?: ResourceRole;
   /** Local machine id required to serve this resource; absent or stale means automatic. */
   unitId?: number;
+  /** One physical shared hatch must serve these local machine IDs. Mutually exclusive with unitId. */
+  unitIds?: number[];
   /** Zero-based recipe fluid output index. */
   outputSlot?: number;
 }
 
 export interface RoutingSettings {
   mode: 'compact' | 'neat';
+  /** Maximum underground depth; neat routing prefers -1 before deeper layers. */
   depth: number;
 }
 
@@ -168,6 +173,8 @@ export interface SiteState {
   colors: Partial<Record<HatchKind, string>>;
   /** Absent in old files means the former compact routing. */
   routing?: RoutingSettings;
+  /** Fixed base seed for Optimize. Absent in old plans means zero. */
+  optimizationSeed?: number;
   /** Document version and game rules version are deliberately independent. */
   rulesVersion?: string;
 }

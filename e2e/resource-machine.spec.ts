@@ -86,6 +86,25 @@ test('manual resource machine survives roles, count changes, undo, reload and du
   await page.getByTestId('site-panel-toggle').click();
   await page.getByTestId('site-group').first().click();
   await expect(machine).toHaveValue('1');
+  await machine.selectOption('shared');
+  await expect(machine.locator('option:checked')).toContainText('Both machines (shared hatch)');
+  await role.selectOption('catalyst');
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        JSON.parse(localStorage.getItem('gtnh-planner:site:v1')!).groups[0].resourceBindings.find(
+          (b: { resource: string }) => b.resource === 'hydrogen',
+        ),
+      ),
+    )
+    .toEqual({ kind: 'fluidIn', resource: 'hydrogen', role: 'catalyst', unitIds: [0, 1] });
+  await machine.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'e2e/screenshots/resource-shared-hatch.png' });
+  await page.reload();
+  await page.getByTestId('site-panel-toggle').click();
+  await page.getByTestId('site-group').first().click();
+  await expect(machine).toHaveValue('shared');
+  await machine.selectOption('1');
   await page.getByTestId('site-group-duplicate').click();
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('gtnh-planner:site:v1')!).groups))

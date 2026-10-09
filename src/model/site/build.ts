@@ -84,13 +84,17 @@ export function createSiteBuilder(): SiteBuilder {
       nets,
       scene: buildSiteScene(site, groups, ports, routing.routed, occupancy.conflictCells, opts.isolate),
       warnings: [
-        ...demand.warnings,
-        ...placed.warnings,
-        ...occupancy.warnings,
-        ...portWarnings,
-        ...routing.warnings,
-        ...electricalWarnings,
-        ...structureWarnings,
+        ...new Map(
+          [
+            ...demand.warnings,
+            ...placed.warnings,
+            ...occupancy.warnings,
+            ...portWarnings,
+            ...routing.warnings,
+            ...electricalWarnings,
+            ...structureWarnings,
+          ].map((warning) => [JSON.stringify(warning), warning]),
+        ).values(),
       ],
       stats: siteStats(groups, ports, routing.routed, site.routing?.mode === 'neat'),
     };
@@ -115,6 +119,15 @@ function siteStats(
   return {
     ...(neat
       ? {
+          depthPenalty: routed.reduce(
+            (sum, n) =>
+              sum +
+              [...new Set((n.route?.paths ?? []).flat().map((p) => p.join()))].reduce(
+                (cost, cell) => cost + Math.max(0, -Number(cell.split(',')[1]) - 1) * 0.25,
+                0,
+              ),
+            0,
+          ),
           surfaceBlocks: routed.reduce(
             (sum, n) =>
               sum +

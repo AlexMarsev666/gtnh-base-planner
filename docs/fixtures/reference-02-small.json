@@ -1,0 +1,113 @@
+{
+  "v": 2,
+  "kind": "site",
+  "size": [30, 24],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "reactor",
+      "multiblockId": "large-chemical-reactor",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+      "origin": [5, 8],
+      "rotation": 0,
+      "voltageTier": "HV"
+    },
+    {
+      "id": "tower",
+      "multiblockId": "distillation-tower",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+      "origin": [19, 8],
+      "rotation": 0,
+      "voltageTier": "HV",
+      "resourceBindings": [
+        {
+          "kind": "fluidOut",
+          "resource": "product",
+          "role": "product",
+          "outputSlot": 0
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "id": "l0",
+      "from": {
+        "port": "p-feed"
+      },
+      "to": {
+        "group": "reactor"
+      },
+      "resource": "feed"
+    },
+    {
+      "id": "l1",
+      "from": {
+        "group": "reactor"
+      },
+      "to": {
+        "group": "tower"
+      },
+      "resource": "mixture"
+    },
+    {
+      "id": "l2",
+      "from": {
+        "group": "tower"
+      },
+      "to": {
+        "port": "p-product"
+      },
+      "resource": "product"
+    }
+  ],
+  "ports": [
+    {
+      "id": "p-feed",
+      "dir": "in",
+      "resource": "feed",
+      "pos": [0, 8]
+    },
+    {
+      "id": "p-product",
+      "dir": "out",
+      "resource": "product",
+      "pos": [29, 10]
+    }
+  ],
+  "resources": {
+    "feed": {
+      "kind": "fluid",
+      "name": "feed",
+      "color": "#5678ab"
+    },
+    "mixture": {
+      "kind": "fluid",
+      "name": "mixture",
+      "color": "#5678ab"
+    },
+    "product": {
+      "kind": "fluid",
+      "name": "product",
+      "color": "#5678ab"
+    }
+  },
+  "colors": {},
+  "rulesVersion": "GTNH-2.9.0-RC-2/GT5U-5.09.54.205",
+  "routing": {
+    "mode": "neat",
+    "depth": 3
+  }
+}

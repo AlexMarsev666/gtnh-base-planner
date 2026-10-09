@@ -1,0 +1,214 @@
+{
+  "v": 2,
+  "kind": "site",
+  "size": [44, 32],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "crackers",
+      "multiblockId": "oil-cracking-unit",
+      "count": 2,
+      "limits": {
+        "x": 1,
+        "y": 2,
+        "z": 1
+      },
+      "enabledHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+      "origin": [6, 10],
+      "rotation": 0,
+      "voltageTier": "HV",
+      "resourceBindings": [
+        {
+          "kind": "fluidIn",
+          "resource": "feed-a",
+          "role": "feed"
+        },
+        {
+          "kind": "fluidIn",
+          "resource": "feed-b",
+          "role": "feed"
+        },
+        {
+          "kind": "fluidIn",
+          "resource": "agent",
+          "role": "catalyst"
+        }
+      ]
+    },
+    {
+      "id": "towers",
+      "multiblockId": "distillation-tower",
+      "count": 2,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+      "origin": [27, 10],
+      "rotation": 0,
+      "voltageTier": "HV",
+      "resourceBindings": [
+        {
+          "kind": "fluidOut",
+          "resource": "product-0",
+          "role": "product",
+          "outputSlot": 0
+        },
+        {
+          "kind": "fluidOut",
+          "resource": "product-1",
+          "role": "product",
+          "outputSlot": 1
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "id": "l0",
+      "from": {
+        "port": "p-feed-a"
+      },
+      "to": {
+        "group": "crackers"
+      },
+      "resource": "feed-a"
+    },
+    {
+      "id": "l1",
+      "from": {
+        "port": "p-feed-b"
+      },
+      "to": {
+        "group": "crackers"
+      },
+      "resource": "feed-b"
+    },
+    {
+      "id": "l2",
+      "from": {
+        "port": "p-agent"
+      },
+      "to": {
+        "group": "crackers"
+      },
+      "resource": "agent"
+    },
+    {
+      "id": "l3",
+      "from": {
+        "group": "crackers"
+      },
+      "to": {
+        "group": "towers"
+      },
+      "resource": "cracked-a"
+    },
+    {
+      "id": "l4",
+      "from": {
+        "group": "towers"
+      },
+      "to": {
+        "port": "p-product-0"
+      },
+      "resource": "product-0"
+    },
+    {
+      "id": "l5",
+      "from": {
+        "group": "crackers"
+      },
+      "to": {
+        "group": "towers"
+      },
+      "resource": "cracked-b"
+    },
+    {
+      "id": "l6",
+      "from": {
+        "group": "towers"
+      },
+      "to": {
+        "port": "p-product-1"
+      },
+      "resource": "product-1"
+    }
+  ],
+  "ports": [
+    {
+      "id": "p-feed-a",
+      "dir": "in",
+      "resource": "feed-a",
+      "pos": [0, 6]
+    },
+    {
+      "id": "p-feed-b",
+      "dir": "in",
+      "resource": "feed-b",
+      "pos": [0, 10]
+    },
+    {
+      "id": "p-agent",
+      "dir": "in",
+      "resource": "agent",
+      "pos": [0, 14]
+    },
+    {
+      "id": "p-product-0",
+      "dir": "out",
+      "resource": "product-0",
+      "pos": [43, 8]
+    },
+    {
+      "id": "p-product-1",
+      "dir": "out",
+      "resource": "product-1",
+      "pos": [43, 12]
+    }
+  ],
+  "resources": {
+    "agent": {
+      "kind": "fluid",
+      "name": "agent",
+      "color": "#5678ab"
+    },
+    "cracked-a": {
+      "kind": "fluid",
+      "name": "cracked-a",
+      "color": "#5678ab"
+    },
+    "cracked-b": {
+      "kind": "fluid",
+      "name": "cracked-b",
+      "color": "#5678ab"
+    },
+    "feed-a": {
+      "kind": "fluid",
+      "name": "feed-a",
+      "color": "#5678ab"
+    },
+    "feed-b": {
+      "kind": "fluid",
+      "name": "feed-b",
+      "color": "#5678ab"
+    },
+    "product-0": {
+      "kind": "fluid",
+      "name": "product-0",
+      "color": "#5678ab"
+    },
+    "product-1": {
+      "kind": "fluid",
+      "name": "product-1",
+      "color": "#5678ab"
+    }
+  },
+  "colors": {},
+  "rulesVersion": "GTNH-2.9.0-RC-2/GT5U-5.09.54.205",
+  "routing": {
+    "mode": "neat",
+    "depth": 3
+  }
+}

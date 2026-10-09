@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { key } from '../geometry';
+import { DIRS, dirVec, key } from '../geometry';
 import type { Vec3 } from '../core/types';
 import { routeNets, type RouteNetSpec } from './router';
 
@@ -10,7 +10,73 @@ function adjacent(a: Vec3, b: Vec3): boolean {
 }
 
 describe('routeNets', () => {
-  it('keeps neat trunks underground even when the correct detour exceeds a weighted surface shortcut', () => {
+  it('matches an independent shortest-path oracle for mixed surface and underground routes', () => {
+    const start: Vec3 = [0, -1, 1];
+    const goal: Vec3 = [4, -1, 1];
+    const stepCost = (y: number) => 1 + (y >= 0 ? 1 : Math.max(0, -y - 1) * 0.25);
+    for (let variant = 0; variant < 16; variant++) {
+      const terminals: RouteNetSpec['terminals'] = [
+        { cell: [0, 0, 1], faces: ['down'], role: 'source' },
+        { cell: [4, 0, 1], faces: ['down'], role: 'sink' },
+      ];
+      const solids: Vec3[] = terminals.map((t) => t.cell);
+      for (let y = -3; y <= 0; y++) if (variant & (1 << (y + 3))) solids.push([2, y, 1]);
+      const blocked = new Set(solids.map(key));
+      const queue = [{ cell: start, dir: -1, cost: 0 }];
+      const best = new Map<string, number>();
+      let optimum = Infinity;
+      while (queue.length) {
+        queue.sort((a, b) => b.cost - a.cost);
+        const current = queue.pop()!;
+        if (key(current.cell) === key(goal)) {
+          optimum = current.cost;
+          break;
+        }
+        for (let dir = 0; dir < DIRS.length; dir++) {
+          const v = dirVec(DIRS[dir]);
+          const cell: Vec3 = [current.cell[0] + v[0], current.cell[1] + v[1], current.cell[2] + v[2]];
+          if (
+            cell[0] < 0 ||
+            cell[0] >= 5 ||
+            cell[1] < -3 ||
+            cell[1] >= 1 ||
+            cell[2] < 0 ||
+            cell[2] >= 3 ||
+            blocked.has(key(cell))
+          )
+            continue;
+          const cost =
+            current.cost + stepCost(cell[1]) + Number(current.dir !== -1 && current.dir !== dir) * 2;
+          const state = `${key(cell)}:${dir}`;
+          if ((best.get(state) ?? Infinity) <= cost) continue;
+          best.set(state, cost);
+          queue.push({ cell, dir, cost });
+        }
+      }
+      const [route] = routeNets({
+        box: { min: [0, -3, 0], max: [5, 1, 3] },
+        solids,
+        keepFree: [],
+        nets: [{ terminals }],
+        neat: { y: -3, x: [], z: [] },
+        turnCost: 2,
+        rounds: 0,
+      });
+      expect(route.connected).toBe(2);
+      const path = route.paths[0];
+      let actual = 0;
+      for (let i = 1; i < path.length; i++) {
+        actual += stepCost(path[i][1]);
+        if (
+          i > 1 &&
+          path[i].some((c, axis) => c - path[i - 1][axis] !== path[i - 1][axis] - path[i - 2][axis])
+        )
+          actual += 2;
+      }
+      expect(actual, `wall mask ${variant}`).toBe(optimum);
+    }
+  });
+  it('chooses a short surface crossing instead of a very long underground detour', () => {
     const terminals: RouteNetSpec['terminals'] = [
       { cell: [1, 0, 1], faces: ['down'], role: 'source' },
       { cell: [9, 0, 1], faces: ['down'], role: 'sink' },
@@ -29,17 +95,34 @@ describe('routeNets', () => {
     expect(compact.connected).toBe(2);
     expect(compact.paths.flat().some((p) => p[1] >= 0)).toBe(true);
     expect(neat.connected).toBe(2);
-    expect(neat.paths.flat().every((p) => p[1] === -1)).toBe(true);
-    expect(neat.length).toBeGreaterThan(550);
+    expect(neat.paths.flat().some((p) => p[1] >= 0)).toBe(true);
+    expect(neat.length).toBeLessThan(20);
   });
 
-  it('uses a surface fallback when the requested underground trunk layer is blocked', () => {
+  it('keeps a short direct surface connection instead of adding underground risers and bends', () => {
+    const terminals: RouteNetSpec['terminals'] = [
+      { cell: [1, 0, 1], faces: ['east'], role: 'source' },
+      { cell: [5, 0, 1], faces: ['west'], role: 'sink' },
+    ];
+    const [route] = routeNets({
+      box: { min: [0, -3, 0], max: [7, 1, 3] },
+      solids: terminals.map((t) => t.cell),
+      keepFree: [],
+      nets: [{ terminals }],
+      neat: { y: -3, x: [], z: [] },
+    });
+    expect(route.connected).toBe(2);
+    expect(route.length).toBe(3);
+    expect(route.paths.flat().every((p) => p[1] === 0)).toBe(true);
+  });
+
+  it('can cross on the surface when every available underground layer is blocked', () => {
     const terminals: RouteNetSpec['terminals'] = [
       { cell: [1, 0, 1], faces: ['down'], role: 'source' },
       { cell: [9, 0, 1], faces: ['down'], role: 'sink' },
     ];
     const solids: Vec3[] = terminals.map((t) => t.cell);
-    for (let z = 0; z < 3; z++) solids.push([5, -3, z]);
+    for (let y = -1; y >= -3; y--) for (let z = 0; z < 3; z++) solids.push([5, y, z]);
     const [route] = routeNets({
       box: { min: [0, -3, 0], max: [11, 1, 3] },
       solids,
@@ -50,10 +133,86 @@ describe('routeNets', () => {
     });
     expect(route.connected).toBe(2);
     expect(route.paths.flat().some((p) => p[1] >= 0)).toBe(true);
-    for (const path of route.paths)
-      for (let i = 1; i < path.length; i++)
-        if (path[i][1] < 0 && path[i][1] === path[i - 1][1]) expect(path[i][1]).toBe(-3);
+    expect(route.paths.flat().every((p) => p[1] >= -3)).toBe(true);
   });
+
+  it('starts at -1 even when the maximum underground depth and routing box allow deeper layers', () => {
+    const terminals: RouteNetSpec['terminals'] = [
+      { cell: [1, 0, 1], faces: ['down'], role: 'source' },
+      { cell: [9, 0, 1], faces: ['down'], role: 'sink' },
+    ];
+    const [route] = routeNets({
+      box: { min: [0, -6, 0], max: [11, 1, 3] },
+      solids: terminals.map((t) => t.cell),
+      keepFree: [],
+      nets: [{ terminals }],
+      neat: { y: -3, x: [], z: [] },
+      rounds: 0,
+    });
+    expect(route.connected).toBe(2);
+    expect(route.paths.flat().every((p) => p[1] === -1)).toBe(true);
+  });
+
+  it('can choose a much shorter shortcut at -3 over a long detour at -2', () => {
+    const terminals: RouteNetSpec['terminals'] = [
+      { cell: [1, 0, 1], faces: ['down'], role: 'source' },
+      { cell: [9, 0, 1], faces: ['down'], role: 'sink' },
+    ];
+    const solids: Vec3[] = terminals.map((t) => t.cell);
+    for (let z = 0; z < 8; z++) solids.push([5, -1, z]);
+    for (let z = 0; z < 8; z++) solids.push([5, 0, z]);
+    for (let z = 0; z < 7; z++) solids.push([5, -2, z]);
+    const [route] = routeNets({
+      box: { min: [0, -3, 0], max: [11, 1, 8] },
+      solids,
+      keepFree: [],
+      nets: [{ terminals }],
+      neat: { y: -3, x: [], z: [] },
+      rounds: 0,
+    });
+    expect(route.connected).toBe(2);
+    expect(Math.min(...route.paths.flat().map((p) => p[1]))).toBe(-3);
+    expect(route.length).toBeLessThan(20);
+    expect(route.paths.flat().every((p) => p[1] < 0)).toBe(true);
+  });
+
+  for (const blockedSecondLayer of [false, true])
+    it(`keeps crossing independent nets underground and apart, using -${blockedSecondLayer ? 3 : 2}`, () => {
+      const nets: RouteNetSpec[] = [
+        {
+          terminals: [
+            { cell: [0, 0, 3], faces: ['down'], role: 'source' },
+            { cell: [6, 0, 3], faces: ['down'], role: 'sink' },
+          ],
+        },
+        {
+          terminals: [
+            { cell: [3, 0, 0], faces: ['down'], role: 'source' },
+            { cell: [3, 0, 6], faces: ['down'], role: 'sink' },
+          ],
+        },
+      ];
+      const solids: Vec3[] = nets.flatMap((n) => n.terminals.map((t) => t.cell));
+      if (blockedSecondLayer) for (let x = 0; x < 7; x++) solids.push([x, -2, 3]);
+      const input = {
+        box: { min: [0, -3, 0] as Vec3, max: [7, 1, 7] as Vec3 },
+        solids,
+        keepFree: [],
+        nets,
+        neat: { y: -3, x: [], z: [] },
+      };
+      const routes = routeNets(input);
+      expect(routes.map((r) => r.connected)).toEqual([2, 2]);
+      expect(routes[0].paths.flat().every((p) => p[1] === -1)).toBe(true);
+      expect(Math.min(...routes[1].paths.flat().map((p) => p[1]))).toBe(blockedSecondLayer ? -3 : -2);
+      const used = new Set(routes[0].paths.flat().map(key));
+      expect(routes[1].paths.flat().some((p) => used.has(key(p)))).toBe(false);
+      expect(routes.flatMap((r) => r.paths.flat()).every((p) => p[1] < 0 && p[1] >= -3)).toBe(true);
+      for (const route of routes)
+        for (const path of route.paths)
+          for (let i = 1; i < path.length; i++) expect(adjacent(path[i - 1], path[i])).toBe(true);
+      expect(routeNets(input)).toEqual(routes);
+    });
 
   it('connects two terminals with a straight pipe and orients the flow', () => {
     const net: RouteNetSpec = {

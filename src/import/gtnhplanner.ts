@@ -528,8 +528,22 @@ export function arrangeOnFloors(
       }),
     };
   };
-  let laid = onFloors(site);
-  let out = site;
+  // Packing measurements must not depend on where a preceding optimizer left the groups.
+  const canonical: SiteState = {
+    ...site,
+    groups: site.groups.map((g) => {
+      const copy = {
+        ...g,
+        origin: [0, 0] as [number, number],
+        rotation: 0 as const,
+        limits: { ...(g.limitsLocked ? g.limits : (g.arrangeLimits ?? g.limits)) },
+      };
+      delete copy.elevation;
+      return copy;
+    }),
+  };
+  let laid = onFloors(canonical);
+  let out = canonical;
   if (!laid.arranged.fits) {
     const gap = Math.max(1, site.corridor);
     const room: [number, number] = [
@@ -545,11 +559,19 @@ export function arrangeOnFloors(
         .map((g) => g.id),
     );
     if (tooBig.size > 0) {
-      out = { ...site, groups: stackGroups(site, builder, below, { only: tooBig, room }) };
+      out = { ...canonical, groups: stackGroups(canonical, builder, below, { only: tooBig, room }) };
       laid = onFloors(out);
     }
   }
-  return { site: { ...out, groups: laid.arranged.groups }, arranged: laid.arranged };
+  const groups = laid.arranged.groups.map((g, i) => {
+    const preference = site.groups[i].arrangeLimits ?? site.groups[i].limits;
+    const copy = { ...g };
+    if (!g.limitsLocked && JSON.stringify(g.limits) !== JSON.stringify(preference))
+      copy.arrangeLimits = { ...preference };
+    else delete copy.arrangeLimits;
+    return copy;
+  });
+  return { site: { ...out, groups }, arranged: { ...laid.arranged, groups } };
 }
 
 export interface ImportOptions {

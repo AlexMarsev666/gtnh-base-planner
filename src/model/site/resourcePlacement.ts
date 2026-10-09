@@ -27,6 +27,8 @@ import {
   resourceMinimum,
   resourceAllocations,
   type ResourceRequest,
+  assignedMachineIds,
+  manualDemandProblems,
 } from './resourceAllocation';
 export { hatchAssignmentKey } from '../hatches/assignments';
 
@@ -46,6 +48,7 @@ export type HatchSettings = Pick<
 
 interface Slot {
   unitId: number;
+  sharedIds?: number[];
   kind: HatchKind;
   resource?: string;
   region?: string;
@@ -109,7 +112,10 @@ export function placeResourceHatches(
       full,
     );
   const { sites } = findSites(def, units, below);
-  const impossible = boundImpossible || !minimumFits(def, units, enabled, demand, sites);
+  const impossible =
+    boundImpossible ||
+    manualDemandProblems(def, units.length, enabled, demand, settings.resourceBindings).length > 0 ||
+    !minimumFits(def, units, enabled, demand, sites);
   const budget = { remaining: 20_000 };
   let best: ReturnType<typeof placeAssignedResourceHatches> | undefined;
   function complete(result: ReturnType<typeof placeAssignedResourceHatches>) {
@@ -120,6 +126,7 @@ export function placeResourceHatches(
             h.kind === r.kind &&
             h.resource === r.resource &&
             (!units.some((u) => u.id === r.unitId) || h.unitIds.includes(r.unitId!)) &&
+            (!r.unitIds || assignedMachineIds(r, units.length).every((id) => h.unitIds.includes(id))) &&
             (!r.region ||
               sites.some(
                 (site) =>
@@ -274,6 +281,7 @@ function placeAssignedResourceHatches(
           key = hatchAssignmentKey(unit.id, kind, request.resource, ++ordinal);
         slots.push({
           unitId: unit.id,
+          sharedIds: request.unitIds ? assignedMachineIds(request, units.length) : undefined,
           kind,
           resource: request.resource,
           region: request.region,
@@ -331,6 +339,7 @@ function placeAssignedResourceHatches(
     candidates = sites.filter(
       (c) =>
         c.unitIds.includes(s.unitId) &&
+        (!s.sharedIds || s.sharedIds.every((id) => c.unitIds.includes(id))) &&
         c.kinds.has(s.kind) &&
         !avoid?.get(s.kind)?.has(c.pos.join()) &&
         (!s.region || c.regions.get(s.unitId) === s.region) &&
@@ -435,7 +444,11 @@ function placeAssignedResourceHatches(
         ),
       ];
   const priority = (slot: Slot) =>
-    !slot.mandatory ? 2 : slot.kind === 'energy' || slot.kind === 'maintenance' ? 0 : 1;
+    slot.mandatory && (slot.kind === 'energy' || slot.kind === 'maintenance')
+      ? 0
+      : slot.mandatory || (slot.sharedIds?.length ?? 0) > 1
+        ? 1
+        : 2;
   const remaining = new Set(slots.map((_, i) => i));
   const remainingTotals = [0, 0, 0];
   slots.forEach((slot) => remainingTotals[priority(slot)]++);
@@ -720,7 +733,7 @@ function placeAssignedResourceHatches(
   // partial search results are also compared by that priority, never merely by total hatch count.
   const order = [...remaining].sort(
     (a, b) =>
-      (overCapacity ? Number(!slots[a].mandatory) - Number(!slots[b].mandatory) : 0) ||
+      (overCapacity ? priority(slots[a]) - priority(slots[b]) : 0) ||
       candidates[a].length - candidates[b].length ||
       a - b,
   );
@@ -1060,13 +1073,15 @@ export function validateResourceHatches(
       errors.push(`Choose a structural role or output slot for ${binding.resource}.`);
       continue;
     }
-    const target = units.find((u) => u.id % GROUP_STRIDE === binding.unitId);
+    const targets = units.filter((u) =>
+      assignedMachineIds(binding, units.length).includes(u.id % GROUP_STRIDE),
+    );
     if (
       !hatches.some(
         (hatch) =>
           hatch.kind === binding.kind &&
           hatch.resource === binding.resource &&
-          (!target || hatch.unitIds.includes(target.id)) &&
+          targets.every((target) => hatch.unitIds.includes(target.id)) &&
           (!region ||
             hatch.unitIds.some((id) => {
               const cell = cellsOf(id).get(hatch.cell.join());
@@ -1077,7 +1092,9 @@ export function validateResourceHatches(
       errors.push(
         `Group: ${binding.resource} needs an assigned ${binding.kind}` +
           (region ? ` in region ${region}` : '') +
-          (target ? ` on controller ${target.id}` : '') +
+          (targets.length
+            ? ` on controller ${targets.map((u) => u.id).join(',')}${binding.unitIds ? ' in one shared hatch' : ''}`
+            : '') +
           '.',
       );
   }
@@ -1130,5 +1147,26 @@ export function validateResourceHatches(
     }
   }
   errors.push(...validateCasings(def, units, hatches));
-  return errors;
+  const overloads = manualDemandProblems(
+    def,
+    units.length,
+    enabled,
+    demand ?? {},
+    settings?.resourceBindings,
+  );
+  const bound = groupDemandBound(def, units.length, enabled, demand ?? {}, settings?.resourceBindings);
+  const causes = bound.message ? [bound.message] : overloads.map((p) => p.message);
+  // Infeasible demand causes missing interfaces across the allocation. Retain physical,
+  // role, tier and casing errors, but report this proven capacity cause once instead of its deficits.
+  return causes.length
+    ? [
+        ...causes,
+        ...errors.filter(
+          (message) =>
+            !/ count \d+; requires | is required in region | needs an assigned | needs an assigned resource/.test(
+              message,
+            ),
+        ),
+      ]
+    : errors;
 }

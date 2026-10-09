@@ -1,0 +1,13 @@
+{
+  "commit": "d2de3e27eb5ddc55caf7026e02b9d90376dfcc53",
+  "title": "Нефтепереработка пользователя, 27 групп, исправлены два назначения g9",
+  "tolerance": 0,
+  "metrics": {
+    "bends": 79,
+    "surfaceBlocks": 446,
+    "length": 489,
+    "width": 59,
+    "depth": 30,
+    "unconnectedHatches": 0
+  }
+}

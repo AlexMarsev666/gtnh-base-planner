@@ -155,6 +155,15 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
   };
   const label = optionalString(field(obj, 'label'), `${what} label`, MAX_NAME);
+  const arrangeLimits = field(obj, 'arrangeLimits');
+  if (arrangeLimits !== undefined) {
+    const pref = expectObject(arrangeLimits, 'Arrange limits');
+    group.arrangeLimits = {
+      x: expectLimit(field(pref, 'x'), 'Arrange limit X'),
+      y: expectLimit(field(pref, 'y'), 'Arrange limit Y'),
+      z: expectLimit(field(pref, 'z'), 'Arrange limit Z'),
+    };
+  }
   if (label !== undefined) group.label = label;
   const machine = field(obj, 'machine');
   // A look this version does not know (a newer list) is left out rather than refused: it is only cosmetic.
@@ -232,6 +241,16 @@ function validateGroup(value: unknown, index: number): SiteGroup {
         }
         const unit = field(binding, 'unitId');
         if (unit !== undefined) out.unitId = expectInt(unit, 'Binding machine', 0, MAX_COUNT - 1);
+        const shared = field(binding, 'unitIds');
+        if (shared !== undefined) {
+          if (unit !== undefined) throw new PlanFormatError('Choose a machine or a shared hatch, not both.');
+          const ids = expectArray(shared, 'Shared hatch machines', MAX_COUNT).map((id) =>
+            expectInt(id, 'Shared hatch machine', 0, MAX_COUNT - 1),
+          );
+          if (ids.length < 2 || new Set(ids).size !== ids.length)
+            throw new PlanFormatError('A shared hatch requires at least two distinct machines.');
+          out.unitIds = ids.sort((a, b) => a - b);
+        }
         const slot = field(binding, 'outputSlot');
         if (slot !== undefined) out.outputSlot = expectInt(slot, 'Output slot', 0, 63);
         return out;
@@ -417,6 +436,8 @@ export function validateSiteState(input: unknown): SiteState {
   const rulesVersion = optionalString(field(obj, 'rulesVersion'), 'Game rules version', 64);
   if (rulesVersion !== undefined) site.rulesVersion = rulesVersion;
   const routing = field(obj, 'routing');
+  const seed = field(obj, 'optimizationSeed');
+  if (seed !== undefined) site.optimizationSeed = expectInt(seed, 'Optimization seed', 0, 1000000);
   if (routing !== undefined) {
     const settings = expectObject(routing, 'Routing');
     const mode = field(settings, 'mode');

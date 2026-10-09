@@ -1,0 +1,13 @@
+{
+  "commit": "d2de3e27eb5ddc55caf7026e02b9d90376dfcc53",
+  "title": "Два крекера и две башни",
+  "tolerance": 0,
+  "metrics": {
+    "bends": 28,
+    "surfaceBlocks": 32,
+    "length": 253,
+    "width": 44,
+    "depth": 32,
+    "unconnectedHatches": 0
+  }
+}

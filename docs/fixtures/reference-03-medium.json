@@ -1,0 +1,142 @@
+{
+  "v": 2,
+  "kind": "site",
+  "size": [64, 40],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "pyro",
+      "multiblockId": "pyrolyse-oven",
+      "count": 4,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["itemIn", "itemOut", "fluidOut", "energy", "maintenance", "muffler"],
+      "origin": [5, 8],
+      "rotation": 0,
+      "voltageTier": "HV"
+    },
+    {
+      "id": "ebf",
+      "multiblockId": "electric-blast-furnace",
+      "count": 4,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "origin": [27, 8],
+      "rotation": 0,
+      "voltageTier": "HV"
+    },
+    {
+      "id": "tower",
+      "multiblockId": "distillation-tower",
+      "count": 4,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+      "origin": [48, 8],
+      "rotation": 0,
+      "voltageTier": "HV",
+      "resourceBindings": [
+        {
+          "kind": "fluidOut",
+          "resource": "product",
+          "role": "product",
+          "outputSlot": 0
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "id": "l0",
+      "from": {
+        "port": "p-feed"
+      },
+      "to": {
+        "group": "pyro"
+      },
+      "resource": "feed"
+    },
+    {
+      "id": "l1",
+      "from": {
+        "group": "pyro"
+      },
+      "to": {
+        "group": "ebf"
+      },
+      "resource": "gas"
+    },
+    {
+      "id": "l2",
+      "from": {
+        "group": "ebf"
+      },
+      "to": {
+        "group": "tower"
+      },
+      "resource": "mixture"
+    },
+    {
+      "id": "l3",
+      "from": {
+        "group": "tower"
+      },
+      "to": {
+        "port": "p-product"
+      },
+      "resource": "product"
+    }
+  ],
+  "ports": [
+    {
+      "id": "p-feed",
+      "dir": "in",
+      "resource": "feed",
+      "pos": [0, 10]
+    },
+    {
+      "id": "p-product",
+      "dir": "out",
+      "resource": "product",
+      "pos": [63, 12]
+    }
+  ],
+  "resources": {
+    "feed": {
+      "kind": "fluid",
+      "name": "feed",
+      "color": "#5678ab"
+    },
+    "gas": {
+      "kind": "fluid",
+      "name": "gas",
+      "color": "#5678ab"
+    },
+    "mixture": {
+      "kind": "fluid",
+      "name": "mixture",
+      "color": "#5678ab"
+    },
+    "product": {
+      "kind": "fluid",
+      "name": "product",
+      "color": "#5678ab"
+    }
+  },
+  "colors": {},
+  "rulesVersion": "GTNH-2.9.0-RC-2/GT5U-5.09.54.205",
+  "routing": {
+    "mode": "neat",
+    "depth": 3
+  }
+}

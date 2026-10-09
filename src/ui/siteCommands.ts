@@ -69,7 +69,12 @@ export async function arrange(optimize = false): Promise<void> {
   }
   // The template was edited while it was being arranged: the result no longer fits it.
   if (get(site) !== s) return;
-  site.set(r.site);
+  // Worker messages clone documents: identity alone cannot tell a no-op from an edit.
+  const changed =
+    !r.rejected &&
+    (!optimize || r.optimized?.improved === true) &&
+    JSON.stringify(r.site) !== JSON.stringify(s);
+  if (changed) site.set(r.site);
   notify(
     r.rejected
       ? t.site.arrangementRejected
@@ -82,13 +87,17 @@ export async function arrange(optimize = false): Promise<void> {
           : t.site.needs(r.needed[0], r.needed[1]),
     r.fits ? 6000 : 8000,
     'arrange',
-    undoAction(),
+    changed ? undoAction() : undefined,
   );
 }
 
 /** What optimising did, in the router's numbers (pipe and cable blocks). */
 function optimizedNotice(o: NonNullable<Arranged['optimized']>): string {
-  return o.improved ? t.site.optimized(o.start.blocks, o.result.blocks, o.reshaped) : t.site.optimizedSame;
+  return o.stopped
+    ? t.site.optimizedTimedOut
+    : o.improved
+      ? t.site.optimized(o.start.blocks, o.result.blocks, o.reshaped)
+      : t.site.optimizedSame;
 }
 
 /** Results belong to a source revision and the latest request, never just reusable group ids. */

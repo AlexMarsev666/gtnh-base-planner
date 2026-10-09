@@ -8,7 +8,7 @@ import type { SiteGroup, SiteState } from './types';
  * 2. Layers by longest path: a group sits one column east of everything that feeds it.
  * 3. Within a column, groups are ordered by the barycenter of their neighbours (a few sweeps both ways),
  *    which keeps crossings down.
- * 4. Columns are stacked north to south with `corridor` free blocks between groups and around the
+ * 4. Columns share row bands sized by their tallest footprint, with `corridor` free blocks between rows and around the
  *    edges; the west and east edges keep one more block for the boundary ports. A column that is too deep
  *    for the site is split into several columns.
  *
@@ -159,7 +159,7 @@ export function arrangeSite(
   /** Rotations for a column: as they are, all narrow (min x), or all short (min z); the first that fits. */
   const chooseRotations = (c: number[]): Rotation[] => {
     const options: Rotation[][] = [
-      c.map((v) => site.groups[v].rotation),
+      c.map(() => 0 as Rotation),
       c.map((v) => (foot(v, 0)[0] <= foot(v, 1)[0] ? 0 : 1) as Rotation),
       c.map((v) => (foot(v, 0)[1] <= foot(v, 1)[1] ? 0 : 1) as Rotation),
     ];
@@ -173,44 +173,49 @@ export function arrangeSite(
     delete copy.elevation;
     return copy;
   });
+  // Every flow column uses the same row bands. Independent centring would stagger groups
+  // of different depths and close the straight corridors between neighbouring columns.
+  const entries = cols.map((c) => {
+    const rots = chooseRotations(c);
+    return c.map((v, i) => ({ v, r: rots[i] }));
+  });
+  const rowHeights: number[] = [];
+  for (const c of entries)
+    c.forEach((e, row) => (rowHeights[row] = Math.max(rowHeights[row] ?? 0, foot(e.v, e.r)[1])));
+  const bands: { start: number; end: number; height: number }[] = [];
+  rowHeights.forEach((height, row) => {
+    const last = bands[bands.length - 1];
+    if (!last || last.height + gap + height > depth) bands.push({ start: row, end: row + 1, height });
+    else {
+      last.end = row + 1;
+      last.height += gap + height;
+    }
+  });
+  const zStart = Math.max(Math.max(1, gap), Math.floor((d - Math.max(0, ...bands.map((b) => b.height))) / 2));
   let x = edge;
   let maxZ = 0;
   /** Where each group stands on its floor, for the floors' mirroring and heights. */
   const onFloor = new Map<number, { floor: number; x: number; fx: number }>();
   let floor = 0;
-  for (const c of cols) {
-    const rots = chooseRotations(c);
-    // Split into sub-columns that fit the depth.
-    const subs: { v: number; r: Rotation }[][] = [[]];
-    let used = 0;
-    c.forEach((v, i) => {
-      const fz = foot(v, rots[i])[1];
-      const cur = subs[subs.length - 1];
-      if (cur.length > 0 && used + gap + fz > depth) {
-        subs.push([]);
-        used = 0;
-      }
-      subs[subs.length - 1].push({ v, r: rots[i] });
-      used += (subs[subs.length - 1].length > 1 ? gap : 0) + fz;
-    });
-    for (const sub of subs) {
+  for (const c of entries) {
+    for (const band of bands) {
+      const sub = c.slice(band.start, band.end);
+      if (!sub.length) continue;
       const width = Math.max(...sub.map((e) => foot(e.v, e.r)[0]));
-      const height = sub.reduce((s, e) => s + foot(e.v, e.r)[1], 0) + gap * (sub.length - 1);
       // Too wide for what is left of this floor: the next floor starts over from the west edge.
       if (opts.floors && x > edge && x + width + edge > w) {
         floor++;
         x = edge;
       }
-      // Centre the column in the depth when it fits, else start at the corridor.
-      let z = Math.max(Math.max(1, gap), Math.floor((d - height) / 2));
-      for (const e of sub) {
+      let z = zStart;
+      for (const [row, e] of sub.entries()) {
         const [fx, fz] = foot(e.v, e.r);
         out[e.v].rotation = e.r;
-        const gx = x + Math.floor((width - fx) / 2);
+        const gx = x;
         out[e.v].origin = [gx, z];
         onFloor.set(e.v, { floor, x: gx, fx });
-        z += fz + gap;
-        maxZ = Math.max(maxZ, z - gap);
+        maxZ = Math.max(maxZ, z + fz);
+        z += rowHeights[band.start + row] + gap;
       }
       x += width + gap;
     }

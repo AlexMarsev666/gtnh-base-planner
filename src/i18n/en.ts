@@ -125,7 +125,8 @@ export const t = {
       `Blocks, ${min} to ${max}. The template grows when a group is moved past an edge. Corridor: free blocks between groups.`,
     arrange: 'Arrange',
     arranged: 'Arranged along the flow.',
-    arrangementRejected: 'Kept the original layout: the proposed arrangement introduced build violations.',
+    arrangementRejected:
+      'Kept the original layout: the proposed arrangement introduced build violations or disconnected terminals.',
     arranging: 'Arranging…',
     optimize: 'Optimize',
     optimizeHint:
@@ -134,7 +135,8 @@ export const t = {
     optimized: (from: number, to: number, reshaped: number) =>
       `Optimized: ${from} → ${to} pipe and cable blocks, tested with the router.` +
       (reshaped > 0 ? ` ${reshaped} ${reshaped === 1 ? 'group' : 'groups'} packed another way.` : ''),
-    optimizedSame: 'Arranged along the flow; nothing tried beat it.',
+    optimizedSame: 'No improvements; nothing tried beat it. Layout unchanged.',
+    optimizedTimedOut: 'No improvements applied; time limit reached. Layout unchanged.',
     arrangedFloors: (n: number) => `Arranged along the flow, on ${n} floors.`,
     building: 'Laying out and routing…',
     needs: (w: number, d: number) => `Does not fit: needs ${w} × ${d}.`,
@@ -200,7 +202,10 @@ export const t = {
     routingMode: 'Routing style',
     routingCompact: 'Compact',
     routingNeat: 'Underground trunks',
-    routingDepth: 'Underground depth',
+    routingDepth: 'Maximum underground depth',
+    routingDepthHint:
+      'Prefer −1, then deeper layers up to this limit. Shorter routes with fewer bends can also use the surface.',
+    legacyRoutingHint: 'Enable neat routing: choose Underground trunks above. This older plan uses Compact.',
     undergroundView: 'Hide surface / inspect underground lines',
     packing: 'Packing',
     placement: 'Placement',

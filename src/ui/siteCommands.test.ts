@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
-import { optimizeAfterImport, whenBuilt } from './siteCommands';
+import { arrange, optimizeAfterImport, whenBuilt } from './siteCommands';
+import * as pipeline from './sitePipeline';
+import { get } from 'svelte/store';
 import type { SiteResult } from './sitePipeline';
 import { withGroupAdded } from './siteActions';
 import { registerBuild, sourceRevisionOf } from './buildIdentity';
@@ -117,4 +119,44 @@ describe('optimizeAfterImport', () => {
     await optimizeAfterImport(s, run, async () => false);
     expect(run).toHaveBeenCalledTimes(1);
   });
+});
+
+describe('worker command no-ops', () => {
+  it.each(['no improvement', 'time limit', 'already arranged'] as const)(
+    '%s does not republish the cloned document',
+    async (reason) => {
+      const { site } = await import('../state/site');
+      const original = imported();
+      site.set(original);
+      const score = { problems: 0, unconnected: 0, blocks: 5, span: 10 };
+      const spy = vi.spyOn(pipeline, 'arrangeInSize').mockResolvedValueOnce({
+        site: structuredClone(original),
+        fits: true,
+        needed: [20, 20],
+        floors: 1,
+        ...(reason === 'already arranged'
+          ? {}
+          : {
+              optimized: {
+                improved: false,
+                start: score,
+                result: score,
+                reshaped: 0,
+                ...(reason === 'time limit' ? { stopped: 'time-limit' as const } : {}),
+              },
+            }),
+      });
+      const published = vi.fn();
+      const unsubscribe = site.subscribe(published);
+      published.mockClear();
+      try {
+        await arrange(reason !== 'already arranged');
+        expect(get(site)).toBe(original);
+        expect(published).not.toHaveBeenCalled();
+      } finally {
+        unsubscribe();
+        spy.mockRestore();
+      }
+    },
+  );
 });

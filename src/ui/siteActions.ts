@@ -145,7 +145,7 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
     if (patch.voltageTier === null) delete next.voltageTier;
     else if (isVoltageTier(patch.voltageTier)) next.voltageTier = patch.voltageTier;
     if (patch.hatchTiers) next.hatchTiers = { ...patch.hatchTiers };
-    if (patch.resourceBindings) next.resourceBindings = patch.resourceBindings.map((b) => ({ ...b }));
+    if (patch.resourceBindings) next.resourceBindings = structuredClone(patch.resourceBindings);
     if (patch.transformer) next.transformer = { ...patch.transformer };
     if (patch.crackingFeedSide) next.crackingFeedSide = patch.crackingFeedSide;
     if (patch.manualTransformerMode === 'up' || patch.manualTransformerMode === 'down')
@@ -180,9 +180,11 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
       if (size !== undefined) next.size = size;
     }
     if (patch.limits) {
+      delete next.arrangeLimits;
       next.limits = { ...patch.limits };
       next.limitsLocked = true;
     }
+    if (patch.limitsLocked !== undefined) delete next.arrangeLimits;
     if (patch.limitsLocked === false) delete next.limitsLocked;
     else if (patch.limitsLocked) next.limitsLocked = true;
     if (patch.origin)
@@ -243,7 +245,7 @@ export function withGroupDuplicated(s: SiteState, id: string, origin: [number, n
     limits: { ...g.limits },
     enabledHatches: [...g.enabledHatches],
     ...(g.hatchTiers ? { hatchTiers: { ...g.hatchTiers } } : {}),
-    ...(g.resourceBindings ? { resourceBindings: g.resourceBindings.map((b) => ({ ...b })) } : {}),
+    ...(g.resourceBindings ? { resourceBindings: structuredClone(g.resourceBindings) } : {}),
     ...(g.transformer ? { transformer: { ...g.transformer } } : {}),
   };
   delete copy.source;

@@ -14,7 +14,7 @@ import { withRequiredAlternatives } from '../multiblock/rules';
 import { isOilCracker } from '../multiblock/structureAdapters';
 import { withAssemblyGrowth } from '../multiblock/circuitAssemblyLine';
 import { fixedHatchCounts, fixedHatchKinds } from '../multiblock/fixedHatches';
-import { groupDemandBound } from './resourceAllocation';
+import { groupDemandBound, manualDemandProblems } from './resourceAllocation';
 
 /** Hatch kinds that carry a link's resource into or out of a group. */
 export const IN_KINDS: readonly HatchKind[] = [
@@ -85,6 +85,8 @@ export interface GroupBuild {
   loosened: boolean;
   unplaced: HatchResult['unplaced'];
   capacityProblems?: string[];
+  /** Proven per-machine or group overload; absent-interface messages are consequences of this cause. */
+  overassigned?: number[];
   stats: WallStats;
   /** A unit that ended up without a hatch for one of the resources it needs. */
   missing: { kind: HatchKind; resource: string; unitId: number }[];
@@ -185,14 +187,16 @@ export function buildGroup(
   if (settings) structuralDef = withRequiredAlternatives(structuralDef, enabled);
   const def = structuralDef;
   const bound = groupDemandBound(def, count, enabled, demand, settings?.resourceBindings);
+  const manual = manualDemandProblems(def, count, enabled, demand, settings?.resourceBindings);
   const packed = packUnits(def, count, limits);
   const place: typeof placeHatches = (d, u, e, avoid) =>
     placeResourceHatches(d, u, e, demand, settings ?? {}, below, toward, avoid);
   // A proven shortage cannot be repaired by another layout. Still show a single best-effort
   // placement, retaining mandatory interfaces, without invoking alternative-layout search.
-  const resolved = bound.message
-    ? { pack: packed, hatches: place(def, packed.units, enabled), loosened: false }
-    : resolveLayout(def, packed, enabled, limits, { placeHatches: place, layoutCandidates });
+  const resolved =
+    bound.message || manual.length
+      ? { pack: packed, hatches: place(def, packed.units, enabled), loosened: false }
+      : resolveLayout(def, packed, enabled, limits, { placeHatches: place, layoutCandidates });
   const lo: [number, number, number] = [Infinity, Infinity, Infinity];
   const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   for (const u of resolved.pack.units) {
@@ -214,8 +218,11 @@ export function buildGroup(
     if (blocked?.length) out.blocked = blocked;
     return out;
   });
-  const capacityProblems = [...(resolved.hatches.capacityProblems ?? [])];
-  if (bound.message) capacityProblems.unshift(bound.message);
+  const capacityProblems = bound.message
+    ? [bound.message]
+    : manual.length
+      ? manual.map((p) => p.message)
+      : [...(resolved.hatches.capacityProblems ?? [])];
   const missing: GroupBuild['missing'] = [];
   for (const [kind, list] of Object.entries(demand) as [HatchKind, string[]][])
     for (const resource of list ?? [])
@@ -230,6 +237,9 @@ export function buildGroup(
     loosened: resolved.loosened,
     unplaced: resolved.hatches.unplaced,
     capacityProblems: capacityProblems.length ? capacityProblems : undefined,
+    ...(bound.message || manual.length
+      ? { overassigned: bound.message ? units.map((u) => u.id) : manual.map((p) => p.unitId) }
+      : {}),
     stats: computeWallStats(def, units, hatches),
     missing,
   };

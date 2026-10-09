@@ -397,7 +397,9 @@ test('keeps the original layout when Arrange would cover a pinned port', async (
   await page.getByTestId('site-panel-toggle').click();
   await page.getByTestId('site-panel').getByTestId('site-arrange').click();
   await expect(
-    page.getByText('Kept the original layout: the proposed arrangement introduced build violations.'),
+    page.getByText(
+      'Kept the original layout: the proposed arrangement introduced build violations or disconnected terminals.',
+    ),
   ).toBeVisible();
   await page.screenshot({ path: 'e2e/screenshots/site-arrange-rejected.png' });
   await expect

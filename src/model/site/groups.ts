@@ -119,12 +119,15 @@ export function placeGroups(
     }
     const b = built;
     for (const binding of g.resourceBindings ?? [])
-      if (binding.unitId !== undefined && !b.units.some((u) => u.id === binding.unitId))
-        warnings.push({
-          type: 'assignment',
-          group: g.id,
-          message: `Machine ${binding.unitId + 1} for ${binding.resource} no longer exists; using automatic assignment.`,
-        });
+      for (const id of binding.unitIds ?? (binding.unitId === undefined ? [] : [binding.unitId]))
+        if (!b.units.some((u) => u.id === id))
+          warnings.push({
+            type: 'assignment',
+            group: g.id,
+            message: binding.unitIds
+              ? `Machine ${id + 1} for ${binding.resource} no longer exists; ignoring this shared owner.`
+              : `Machine ${id + 1} for ${binding.resource} no longer exists; using automatic assignment.`,
+          });
 
     for (const message of b.capacityProblems ?? [])
       warnings.push({ type: 'error', group: g.id, code: 'structure', message });
@@ -141,9 +144,11 @@ export function placeGroups(
     const elevation = g.elevation ?? 0;
     if (b.pack.placed < b.pack.requested)
       warnings.push({ type: 'fewer', group: g.id, placed: b.pack.placed, requested: b.pack.requested });
-    if (b.unplaced.length) warnings.push({ type: 'unplaced', group: g.id, count: b.unplaced.length });
+    if (b.unplaced.length && !b.overassigned)
+      warnings.push({ type: 'unplaced', group: g.id, count: b.unplaced.length });
     const missingBy = new Map<string, number>();
-    for (const m of b.missing) missingBy.set(m.resource, (missingBy.get(m.resource) ?? 0) + 1);
+    for (const m of b.overassigned ? [] : b.missing)
+      missingBy.set(m.resource, (missingBy.get(m.resource) ?? 0) + 1);
     for (const [resource, n] of missingBy)
       warnings.push({ type: 'missing', group: g.id, resource, units: n });
     return {

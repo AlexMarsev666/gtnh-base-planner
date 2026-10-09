@@ -1,0 +1,13 @@
+{
+  "commit": "d2de3e27eb5ddc55caf7026e02b9d90376dfcc53",
+  "title": "Малый: химический реактор и башня",
+  "tolerance": 0,
+  "metrics": {
+    "bends": 8,
+    "surfaceBlocks": 5,
+    "length": 46,
+    "width": 30,
+    "depth": 24,
+    "unconnectedHatches": 0
+  }
+}

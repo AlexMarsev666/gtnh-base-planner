@@ -1,0 +1,77 @@
+{
+  "v": 2,
+  "kind": "site",
+  "size": [30, 24],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "furnaces",
+      "multiblockId": "electric-blast-furnace",
+      "count": 4,
+      "limits": {
+        "x": 4,
+        "y": 1,
+        "z": 1
+      },
+      "enabledHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "origin": [9, 8],
+      "rotation": 0,
+      "voltageTier": "HV",
+      "limitsLocked": true
+    }
+  ],
+  "links": [
+    {
+      "id": "l0",
+      "from": {
+        "port": "p-feed"
+      },
+      "to": {
+        "group": "furnaces"
+      },
+      "resource": "feed"
+    },
+    {
+      "id": "l1",
+      "from": {
+        "group": "furnaces"
+      },
+      "to": {
+        "port": "p-product"
+      },
+      "resource": "product"
+    }
+  ],
+  "ports": [
+    {
+      "id": "p-feed",
+      "dir": "in",
+      "resource": "feed",
+      "pos": [0, 8]
+    },
+    {
+      "id": "p-product",
+      "dir": "out",
+      "resource": "product",
+      "pos": [29, 12]
+    }
+  ],
+  "resources": {
+    "feed": {
+      "kind": "fluid",
+      "name": "feed",
+      "color": "#5678ab"
+    },
+    "product": {
+      "kind": "fluid",
+      "name": "product",
+      "color": "#5678ab"
+    }
+  },
+  "colors": {},
+  "rulesVersion": "GTNH-2.9.0-RC-2/GT5U-5.09.54.205",
+  "routing": {
+    "mode": "neat",
+    "depth": 3
+  }
+}

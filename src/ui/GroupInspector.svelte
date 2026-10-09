@@ -187,8 +187,10 @@
   function setBindingMachine(kind: HatchKind, resource: string, index: number, value: string) {
     const resourceBindings = (group.resourceBindings ?? []).map((b) => ({ ...b }));
     const binding = index < 0 ? ({ kind, resource } as ResourceBinding) : resourceBindings[index];
-    if (value === '') delete binding.unitId;
-    else binding.unitId = Number(value);
+    delete binding.unitId;
+    delete binding.unitIds;
+    if (value === 'shared') binding.unitIds = Array.from({ length: group.count }, (_, id) => id);
+    else if (value !== '') binding.unitId = Number(value);
     if (index < 0) resourceBindings.push(binding);
     patch({ resourceBindings });
   }
@@ -247,27 +249,35 @@
     }
     patch({ hatchTiers });
   }
+  function machineSelection(binding?: ResourceBinding) {
+    return binding?.unitIds
+      ? { unitIds: [...binding.unitIds] }
+      : binding?.unitId === undefined
+        ? {}
+        : { unitId: binding.unitId };
+  }
   function setBinding(kind: HatchKind, resource: string, value: string, index: number) {
     const old = group.resourceBindings ?? [];
     const resourceBindings = [...old];
-    const unitId = old[index]?.unitId;
+    const selection = machineSelection(old[index]);
     if (index >= 0) resourceBindings.splice(index, 1);
     if (value) {
       resourceBindings.splice(
         index < 0 ? resourceBindings.length : index,
         0,
         isOilCracker(def) || resourceRoles[kind]
-          ? { kind, resource, role: value as ResourceRole, ...(unitId === undefined ? {} : { unitId }) }
+          ? { kind, resource, role: value as ResourceRole, ...selection }
           : {
               kind,
               resource,
               role: 'product',
               outputSlot: Number(value),
-              ...(unitId === undefined ? {} : { unitId }),
+              ...selection,
             },
       );
     }
-    if (!value && unitId !== undefined) resourceBindings.push({ kind, resource, unitId });
+    if (!value && (selection.unitId !== undefined || selection.unitIds))
+      resourceBindings.push({ kind, resource, ...selection });
     patch({ resourceBindings });
   }
   function addOutputSlot(resource: string) {
@@ -279,12 +289,12 @@
     const resourceBindings = (group.resourceBindings ?? []).filter(
       (b) => b.resource !== resource || (b.kind !== 'fluidIn' && !lockedInputKinds.includes(b.kind)),
     );
-    const unitId = group.resourceBindings?.find((b) => b.resource === resource)?.unitId;
+    const selection = machineSelection(group.resourceBindings?.find((b) => b.resource === resource));
     if (value)
       resourceBindings.push({
         kind: value as HatchKind,
         resource,
-        ...(unitId === undefined ? {} : { unitId }),
+        ...selection,
       });
     patch({ resourceBindings });
   }
@@ -292,12 +302,12 @@
     const resourceBindings = (group.resourceBindings ?? []).filter(
       (b) => b.resource !== resource || (b.kind !== 'itemIn' && !lockedItemKinds.includes(b.kind)),
     );
-    const unitId = group.resourceBindings?.find((b) => b.resource === resource)?.unitId;
+    const selection = machineSelection(group.resourceBindings?.find((b) => b.resource === resource));
     if (value)
       resourceBindings.push({
         kind: value as HatchKind,
         resource,
-        ...(unitId === undefined ? {} : { unitId }),
+        ...selection,
       });
     patch({ resourceBindings });
   }
@@ -305,17 +315,18 @@
     const bindings = (group.resourceBindings ?? []).filter(
       (b) => !(b.kind === 'fluidOut' && b.resource === resource),
     );
-    const unitId = group.resourceBindings?.find(
-      (b) => b.kind === 'fluidOut' && b.resource === resource,
-    )?.unitId;
+    const selection = machineSelection(
+      group.resourceBindings?.find((b) => b.kind === 'fluidOut' && b.resource === resource),
+    );
     if (value === 'water')
       bindings.push({
         kind: 'fluidOut',
         resource,
         role: 'water',
-        ...(unitId === undefined ? {} : { unitId }),
+        ...selection,
       });
-    else if (unitId !== undefined) bindings.push({ kind: 'fluidOut', resource, unitId });
+    else if (selection.unitId !== undefined || selection.unitIds)
+      bindings.push({ kind: 'fluidOut', resource, ...selection });
     patch({ resourceBindings: bindings });
   }
 </script>
@@ -629,11 +640,24 @@
         <select
           class="field"
           data-testid="resource-machine"
-          value={assignment.binding?.unitId?.toString() ?? ''}
+          value={assignment.binding?.unitIds ? 'shared' : (assignment.binding?.unitId?.toString() ?? '')}
           onchange={(e) =>
             setBindingMachine(assignment.kind, assignment.resource, assignment.index, e.currentTarget.value)}
         >
           <option value="">Automatic</option>
+          {#if group.count > 1 || assignment.binding?.unitIds}
+            <option
+              value="shared"
+              disabled={!def?.wallshare || !def.shareableHatches.includes(assignment.kind)}
+              >{assignment.binding?.unitIds &&
+              (assignment.binding.unitIds.length !== group.count ||
+                assignment.binding.unitIds.some((id) => id >= group.count))
+                ? `Machines ${assignment.binding.unitIds.map((id) => id + 1).join(', ')} (shared hatch)`
+                : group.count === 2
+                  ? 'Both machines (shared hatch)'
+                  : 'All machines (shared hatch)'}</option
+            >
+          {/if}
           {#if assignment.binding?.unitId !== undefined && assignment.binding.unitId >= group.count}
             <option value={String(assignment.binding.unitId)}
               >Machine {assignment.binding.unitId + 1} · unavailable (automatic)</option

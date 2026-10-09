@@ -1,0 +1,13 @@
+{
+  "commit": "d2de3e27eb5ddc55caf7026e02b9d90376dfcc53",
+  "title": "Четыре EBF с общими стенами и жёсткими limits",
+  "tolerance": 0,
+  "metrics": {
+    "bends": 7,
+    "surfaceBlocks": 10,
+    "length": 59,
+    "width": 30,
+    "depth": 24,
+    "unconnectedHatches": 0
+  }
+}

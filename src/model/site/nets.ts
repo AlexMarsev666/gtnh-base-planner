@@ -152,7 +152,7 @@ export function routeSiteNetworks(
   const depth = neat ? site.routing!.depth : opts.below ? 1 : 0;
   const results = routed.length
     ? routeNets({
-        // One layer under the ground for pipes that come from below.
+        // Neat mode may use every layer from -1 down to the configured maximum depth.
         box: { min: [0, -depth, 0], max: [w, height, d] },
         trenchBelow: !neat && opts.below ? 0 : undefined,
         neat: neat

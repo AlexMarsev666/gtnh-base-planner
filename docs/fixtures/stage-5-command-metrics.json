@@ -1,0 +1,162 @@
+[
+  {
+    "id": "01-oil-refinery",
+    "arrangeRejected": false,
+    "optimizeImproved": false,
+    "original": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 508,
+      "span": 53,
+      "surface": 339,
+      "bends": 75,
+      "routingCost": 1455
+    },
+    "arranged": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 641,
+      "span": 59,
+      "surface": 376,
+      "bends": 88,
+      "routingCost": 1728
+    },
+    "optimized": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 508,
+      "span": 53,
+      "surface": 339,
+      "bends": 75,
+      "routingCost": 1455
+    }
+  },
+  {
+    "id": "02-small",
+    "arrangeRejected": false,
+    "optimizeImproved": true,
+    "original": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 28,
+      "span": 20,
+      "surface": 28,
+      "bends": 2,
+      "routingCost": 72
+    },
+    "arranged": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 30,
+      "span": 11,
+      "surface": 14,
+      "bends": 2,
+      "routingCost": 60
+    },
+    "optimized": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 30,
+      "span": 11,
+      "surface": 14,
+      "bends": 2,
+      "routingCost": 60
+    }
+  },
+  {
+    "id": "03-medium",
+    "arrangeRejected": false,
+    "optimizeImproved": false,
+    "original": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 118,
+      "span": 57,
+      "surface": 43,
+      "bends": 14,
+      "routingCost": 277.25
+    },
+    "arranged": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 131,
+      "span": 36,
+      "surface": 29,
+      "bends": 15,
+      "routingCost": 281.75
+    },
+    "optimized": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 118,
+      "span": 57,
+      "surface": 43,
+      "bends": 14,
+      "routingCost": 277.25
+    }
+  },
+  {
+    "id": "04-crackers-towers",
+    "arrangeRejected": false,
+    "optimizeImproved": false,
+    "original": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 145,
+      "span": 29,
+      "surface": 68,
+      "bends": 17,
+      "routingCost": 349
+    },
+    "arranged": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 165,
+      "span": 15,
+      "surface": 69,
+      "bends": 19,
+      "routingCost": 386
+    },
+    "optimized": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 145,
+      "span": 29,
+      "surface": 68,
+      "bends": 17,
+      "routingCost": 349
+    }
+  },
+  {
+    "id": "05-wallsharing",
+    "arrangeRejected": false,
+    "optimizeImproved": true,
+    "original": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 50,
+      "span": 12,
+      "surface": 10,
+      "bends": 6,
+      "routingCost": 108
+    },
+    "arranged": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 50,
+      "span": 12,
+      "surface": 10,
+      "bends": 6,
+      "routingCost": 108
+    },
+    "optimized": {
+      "problems": 0,
+      "unconnected": 0,
+      "blocks": 46,
+      "span": 12,
+      "surface": 20,
+      "bends": 5,
+      "routingCost": 106
+    }
+  }
+]

@@ -97,6 +97,7 @@ export interface SiteBuild {
     terminals: number;
     surfaceBlocks?: number;
     bends?: number;
+    depthPenalty?: number;
   };
 }
 

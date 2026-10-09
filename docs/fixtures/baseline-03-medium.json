@@ -1,0 +1,13 @@
+{
+  "commit": "d2de3e27eb5ddc55caf7026e02b9d90376dfcc53",
+  "title": "Средний: по четыре Pyrolyse Oven, EBF и DT",
+  "tolerance": 0,
+  "metrics": {
+    "bends": 18,
+    "surfaceBlocks": 28,
+    "length": 149,
+    "width": 64,
+    "depth": 40,
+    "unconnectedHatches": 0
+  }
+}

@@ -195,6 +195,74 @@ describe('group resource allocation invariants', () => {
     expect(validateResourceHatches(def, built.units, built.hatches, options, flows)).toEqual([]);
   });
 
+  it('counts two explicitly shared catalysts against both controllers before allocating auto resources', () => {
+    const fluidIn = ['f1', 'f2', 'f3', 'f4', 'hydrogen', 'steam'];
+    const flows = { fluidIn, fluidOut: ['p1', 'p2', 'p3', 'p4'] };
+    const resourceBindings = fluidIn.map((resource, i) => ({
+      kind: 'fluidIn' as const,
+      resource,
+      role: i < 4 ? ('feed' as const) : ('catalyst' as const),
+      ...(i < 4 ? {} : { unitIds: [0, 1] }),
+    }));
+    expect(groupDemandBound(def, 2, enabled, flows, resourceBindings)).toMatchObject({
+      needed: 16,
+      capacity: 14,
+      message: expect.stringMatching(/16.*14/),
+    });
+    const resolve = vi.spyOn(plan, 'resolveLayout');
+    const built = buildGroup(def, 2, { x: 1, y: 2, z: 1 }, enabled, flows, true, {}, { resourceBindings });
+    expect(resolve).not.toHaveBeenCalled();
+    expect(built.capacityProblems).toHaveLength(1);
+    for (const resource of ['hydrogen', 'steam'])
+      expect(built.hatches.filter((h) => h.resource === resource)).toEqual([
+        expect.objectContaining({ unitIds: [0, 1] }),
+      ]);
+    for (const unit of built.units)
+      for (const kind of ['energy', 'maintenance'])
+        expect(built.hatches.some((h) => h.kind === kind && h.unitIds.includes(unit.id))).toBe(true);
+  });
+
+  it('deduplicates explicit shared slots and ignores owners that no longer exist in the bound', () => {
+    const shared = { kind: 'fluidIn' as const, resource: 'hydrogen', role: 'catalyst' as const };
+    expect(
+      groupDemandBound(def, 2, enabled, demand, [
+        ...bindings.filter((b) => b.resource !== 'hydrogen'),
+        { ...shared, unitIds: [0, 1] },
+        { ...shared, unitIds: [0, 1] },
+      ]).needed,
+    ).toBe(10);
+    expect(
+      groupDemandBound(def, 2, enabled, demand, [
+        ...bindings.filter((b) => b.resource !== 'hydrogen'),
+        { ...shared, unitIds: [0, 2] },
+      ]).needed,
+    ).toBe(9);
+  });
+
+  it('still fits two separate shared catalysts when the auto resources fit both casing budgets', () => {
+    const fluidIn = ['f1', 'f2', 'f3', 'hydrogen', 'steam'];
+    const flows = { fluidIn, fluidOut: ['p1', 'p2', 'p3'] };
+    const resourceBindings = fluidIn.map((resource, i) => ({
+      kind: 'fluidIn' as const,
+      resource,
+      role: i < 3 ? ('feed' as const) : ('catalyst' as const),
+      ...(i < 3 ? {} : { unitIds: [0, 1] }),
+    }));
+    expect(groupDemandBound(def, 2, enabled, flows, resourceBindings)).toMatchObject({
+      needed: 14,
+      capacity: 14,
+      message: undefined,
+    });
+    const built = buildGroup(def, 2, { x: 1, y: 2, z: 1 }, enabled, flows, true, {}, { resourceBindings });
+    expect(built.unplaced).toEqual([]);
+    expect(built.capacityProblems).toBeUndefined();
+    expect(validateResourceHatches(def, built.units, built.hatches, { resourceBindings }, flows)).toEqual([]);
+    for (const resource of ['hydrogen', 'steam'])
+      expect(built.hatches.filter((h) => h.resource === resource)).toEqual([
+        expect.objectContaining({ unitIds: [0, 1] }),
+      ]);
+  });
+
   it('falls back when total capacity fits but the full set exceeds the cells of one hatch kind', () => {
     const base = getMultiblock('vacuum-freezer')!;
     const limited = {

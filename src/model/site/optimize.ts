@@ -13,23 +13,23 @@ import type { SiteGroup, SiteState } from './types';
  *    see hatches or walls, so it is only good for finding candidates: its best layout often routes worse than
  *    the start.
  * 2. Polish: anneal again from the best layout found, this time judging every step by the router itself
- *    (`scoreBuild`, cached per layout), for a number of steps or what is left of the time budget.
+ *    (`scoreBuild`, cached per layout), for a fixed number of iterations and runs.
  *
- * One time budget covers it all. Routing one layout takes from milliseconds to seconds (a plan of a thousand
- * machines needs several), so the first routing of the start layout sets the pace: fewer candidates are
- * routed and the polish is skipped when it could make only a few steps. The budget is met to within one
- * routing.
+ * The seed, calibration counts, iteration counts and shape order determine the complete search. The shared
+ * time limit is only a safety cutoff (within one synchronous routing). An interrupted search publishes no
+ * partial winner and returns its input unchanged; elapsed time never changes temperature or iteration quotas.
  *
  * Groups of several units may also be packed another way (other `limits`: rows, layers; see `groupShapes`), and
  * the result says how many were. Runs alternate between allowing that and keeping every packing: repacking
  * widens the spread of results more than it moves the median, and the best layout wins either way.
  *
- * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, surface
- * blocks, bends, pipe and cable blocks, then the width + depth of the layout. The start wins ties, so the result is never worse than
+ * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, neat
+ * routing cost (length + surface + 8 per bend + depth penalty), surface, bends, length, then span.
+ * Compact routing retains its existing length ranking. The start wins ties, so the result is never worse than
  * the arrangement it was given.
  */
 
-export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now'> {
+export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now' | 'alignRows'> {
   /** Milliseconds for the whole search, including the routing of the start layout. Default `DEFAULT_BUDGET_MS`. */
   budgetMs?: number;
   /** Shifts every random seed, so a run can be repeated differently. Default 0. */
@@ -49,17 +49,9 @@ export interface OptimizeOptions extends Pick<AnnealOptions, 'iterations' | 'now
 }
 
 export const DEFAULT_SEEDS = 4;
-export const DEFAULT_REFINE_STEPS = 500;
+export const DEFAULT_REFINE_STEPS = 24;
 export const DEFAULT_REFINE_RUNS = 2;
 export const DEFAULT_BUDGET_MS = 10000;
-
-/** Shares of the budget: the estimate runs, and all routing of candidates, may use this much before the polish. */
-/** Share of the budget for measuring other packings of the groups. */
-const SHAPES_SHARE = 0.15;
-const EXPLORE_SHARE = 0.3;
-const CANDIDATE_SHARE = 0.5;
-/** The polish is skipped when what is left of the budget would buy fewer router-judged steps than this. */
-const MIN_POLISH_STEPS = 8;
 
 /** Start temperature of a polish run, as a share of the typical uphill step of a random move. */
 export const DEFAULT_REFINE_HEAT = 0.2;
@@ -72,6 +64,7 @@ export interface LayoutScore {
   span: number;
   surface?: number;
   bends?: number;
+  routingCost?: number;
 }
 
 export interface OptimizeResult {
@@ -85,6 +78,8 @@ export interface OptimizeResult {
   tried: number;
   /** Groups that were repacked (their limits differ from the start's). */
   reshaped: number;
+  /** Interrupted searches retain the original, never a machine-speed-dependent partial winner. */
+  stopped?: 'time-limit';
 }
 
 export function scoreBuild(build: SiteBuild): LayoutScore {
@@ -106,13 +101,22 @@ export function scoreBuild(build: SiteBuild): LayoutScore {
     span: x1 > x0 ? x1 - x0 + (z1 - z0) : 0,
     ...(build.stats.surfaceBlocks === undefined
       ? {}
-      : { surface: build.stats.surfaceBlocks, bends: build.stats.bends ?? 0 }),
+      : {
+          surface: build.stats.surfaceBlocks,
+          bends: build.stats.bends ?? 0,
+          routingCost:
+            build.stats.pipeBlocks +
+            build.stats.cableBlocks +
+            build.stats.surfaceBlocks +
+            8 * (build.stats.bends ?? 0) +
+            (build.stats.depthPenalty ?? 0),
+        }),
   };
 }
 
 /** Whether `a` is strictly better than `b`. */
 export function better(a: LayoutScore, b: LayoutScore): boolean {
-  for (const k of ['problems', 'unconnected', 'surface', 'bends', 'blocks', 'span'] as const)
+  for (const k of ['problems', 'unconnected', 'routingCost', 'surface', 'bends', 'blocks', 'span'] as const)
     if ((a[k] ?? 0) !== (b[k] ?? 0)) return (a[k] ?? 0) < (b[k] ?? 0);
   return false;
 }
@@ -122,9 +126,9 @@ export function scoreValue(s: LayoutScore): number {
   return (
     s.problems * 1e12 +
     s.unconnected * 1e8 +
-    (s.surface ?? 0) * 1e5 +
-    (s.bends ?? 0) * 100 +
-    s.blocks +
+    (s.routingCost === undefined
+      ? (s.surface ?? 0) * 1e5 + (s.bends ?? 0) * 100 + s.blocks
+      : s.routingCost * 1000) +
     0.1 * s.span
   );
 }
@@ -142,16 +146,16 @@ export function optimizeSite(
   // Many layouts of one site are built: keep every pack, then prune once at the end.
   const measured = builder(site, { pipes: true, cables: true, below, keepCache: true });
   const start = scoreBuild(measured);
-  const routeMs = Math.max(1, used());
-  if (used() >= budget)
-    return {
-      site,
-      improved: false,
-      start,
-      result: start,
-      tried: 0,
-      reshaped: 0,
-    };
+  const unchanged = (tried = 0): OptimizeResult => ({
+    site,
+    improved: false,
+    start,
+    result: start,
+    tried,
+    reshaped: 0,
+    stopped: 'time-limit',
+  });
+  if (used() >= budget) return unchanged();
   const footprints = localFootprints(measured);
   const heights = localHeights(measured);
   const sizeOf = (id: string) => footprints.get(id);
@@ -159,23 +163,26 @@ export function optimizeSite(
     opts.reshape === false
       ? undefined
       : groupShapes(site, builder, below, {
-          budgetMs: Math.min(budget - used(), budget * SHAPES_SHARE),
           now,
-          deadline: Math.min(began + budget, now() + budget * SHAPES_SHARE),
+          deadline: began + budget,
           baseline: measured,
         });
   const heightOf = (id: string) => heights.get(id) ?? 1;
+  if (used() >= budget) return unchanged();
 
   /** The router's verdict on a layout, remembered: the annealer comes back to the same layouts often. */
   const scores = new Map<string, LayoutScore>();
   scores.set(layoutKey(site.groups), start);
   let best = { groups: site.groups, score: start };
+  const interrupted = Symbol('search deadline');
   const route = (groups: SiteGroup[]): LayoutScore => {
+    if (used() >= budget) throw interrupted;
     const key = layoutKey(groups);
     let score = scores.get(key);
     if (!score) {
       score = scoreBuild(builder({ ...site, groups }, { pipes: true, cables: true, below, keepCache: true }));
       scores.set(key, score);
+      if (used() >= budget) throw interrupted;
     }
     // The scalar guides random search; every evaluated candidate is retained using the exact priorities.
     if (better(score, best.score)) best = { groups, score };
@@ -183,52 +190,55 @@ export function optimizeSite(
   };
 
   const consider = (groups: SiteGroup[]) => {
-    if (!scores.has(layoutKey(groups)) && used() >= budget) return;
     const score = route(groups);
     if (better(score, best.score)) best = { groups, score };
   };
 
-  const offset = (opts.seedOffset ?? 0) * 1000;
+  const offset = (opts.seedOffset ?? site.optimizationSeed ?? 0) * 1000;
   const seeds = Math.max(1, opts.seeds ?? DEFAULT_SEEDS);
   const candidates: { groups: SiteGroup[]; estimate: number }[] = [];
-  for (let seed = 1; seed <= seeds; seed++) {
-    if (used() >= budget * EXPLORE_SHARE) break;
-    const r = annealGroups(site, sizeOf, {
-      seed: seed + offset,
-      heightOf,
-      shapes: seed % 2 === 1 ? shapes : undefined,
-      iterations: opts.iterations,
-      budgetMs: (budget * EXPLORE_SHARE) / seeds,
-      deadline: began + budget * EXPLORE_SHARE,
-      now: opts.now,
-    });
-    if (r.improved) candidates.push({ groups: r.groups, estimate: r.after });
-  }
-  // The best estimates first; at least one is routed, more while the budget allows.
-  candidates.sort((a, b) => a.estimate - b.estimate);
-  candidates.forEach((c, i) => {
-    if ((i === 0 && used() < budget) || used() < budget * CANDIDATE_SHARE) consider(c.groups);
-  });
-
-  const steps = opts.refineSteps ?? DEFAULT_REFINE_STEPS;
-  const runs = Math.max(1, opts.refineRuns ?? DEFAULT_REFINE_RUNS);
-  if (steps > 0) {
-    for (let run = 1; run <= runs; run++) {
-      const left = budget - used();
-      if (left < MIN_POLISH_STEPS * routeMs) break;
-      const r = annealGroups({ ...site, groups: best.groups }, sizeOf, {
-        seed: run + offset,
+  try {
+    for (let seed = 1; seed <= seeds; seed++) {
+      if (used() >= budget) throw interrupted;
+      const r = annealGroups(site, sizeOf, {
+        seed: seed + offset,
         heightOf,
-        shapes: run % 2 === 1 ? shapes : undefined,
-        iterations: steps,
-        budgetMs: left / (runs - run + 1),
+        shapes: seed % 2 === 1 ? shapes : undefined,
+        iterations: opts.iterations,
         deadline: began + budget,
-        now: opts.now,
-        heat: opts.refineHeat ?? DEFAULT_REFINE_HEAT,
-        evaluate: (groups) => scoreValue(route(groups)),
+        now,
+        alignRows: opts.alignRows,
       });
-      if (r.improved) consider(r.groups);
+      if (used() >= budget) throw interrupted;
+      if (r.improved) candidates.push({ groups: r.groups, estimate: r.after });
     }
+    // Route every candidate in a fixed order; a safety interruption discards the incomplete search.
+    candidates.sort((a, b) => a.estimate - b.estimate);
+    candidates.forEach((c) => consider(c.groups));
+
+    const steps = opts.refineSteps ?? DEFAULT_REFINE_STEPS;
+    const runs = Math.max(1, opts.refineRuns ?? DEFAULT_REFINE_RUNS);
+    if (steps > 0) {
+      for (let run = 1; run <= runs; run++) {
+        if (used() >= budget) throw interrupted;
+        const r = annealGroups({ ...site, groups: best.groups }, sizeOf, {
+          seed: run + offset,
+          heightOf,
+          shapes: run % 2 === 1 ? shapes : undefined,
+          iterations: steps,
+          deadline: began + budget,
+          now,
+          alignRows: opts.alignRows,
+          heat: opts.refineHeat ?? DEFAULT_REFINE_HEAT,
+          evaluate: (groups) => scoreValue(route(groups)),
+        });
+        if (used() >= budget) throw interrupted;
+        if (r.improved) consider(r.groups);
+      }
+    }
+  } catch (err) {
+    if (err !== interrupted) throw err;
+    return unchanged(scores.size - 1);
   }
 
   const improved = best.groups !== site.groups;
@@ -236,7 +246,16 @@ export function optimizeSite(
   if (used() < budget)
     builder(improved ? { ...site, groups: best.groups } : site, { pipes: false, cables: false, below });
   return {
-    site: improved ? { ...site, groups: best.groups } : site,
+    site: improved
+      ? {
+          ...site,
+          groups: best.groups.map((g, i) =>
+            limitsKey(g) !== limitsKey(site.groups[i])
+              ? { ...g, arrangeLimits: { ...(site.groups[i].arrangeLimits ?? site.groups[i].limits) } }
+              : g,
+          ),
+        }
+      : site,
     improved,
     start,
     result: best.score,

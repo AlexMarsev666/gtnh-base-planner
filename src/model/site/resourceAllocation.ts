@@ -14,6 +14,58 @@ export interface ResourceRequest {
   region?: string;
   ordinal: number;
   unitId?: number;
+  unitIds?: number[];
+}
+
+/** Stale IDs retain their document value but do not constrain placement. */
+export function assignedMachineIds(request: Pick<ResourceBinding, 'unitId' | 'unitIds'>, count: number) {
+  return [...new Set(request.unitIds ?? (request.unitId === undefined ? [] : [request.unitId]))].filter(
+    (id) => id >= 0 && id < count,
+  );
+}
+
+/** A necessary per-machine bound, before any placement/search. Shared requests load every owner. */
+export function manualDemandProblems(
+  def: MultiblockDef,
+  count: number,
+  enabled: readonly HatchKind[],
+  demand: Demand,
+  bindings: readonly ResourceBinding[] = [],
+) {
+  const requests = groupRequests(def, demand, bindings);
+  const capacity = hatchCapacity(def, { id: 0, origin: [0, 0, 0], rotation: 0 }).capacity;
+  return Array.from({ length: count }, (_, id) => {
+    const own = [
+      ...new Map(
+        requests
+          .filter((r) => assignedMachineIds(r, count).includes(id))
+          .map((r) => [JSON.stringify([r.kind, r.resource, r.region, r.ordinal]), r]),
+      ).values(),
+    ];
+    const fluids = own.filter((r) => r.kind === 'fluidIn' || r.kind === 'fluidOut').length;
+    const mandatory = enabled.reduce((sum, kind) => {
+      const resources = own.filter((r) => r.kind === kind);
+      const missingRoles = (def.requiredHatches?.[kind]?.regions ?? []).filter(
+        (region) => !resources.some((r) => r.region === region),
+      ).length;
+      return sum + Math.max(missingRoles, resourceMinimum(def, kind, demand) - resources.length, 0);
+    }, 0);
+    const needed = own.length + mandatory;
+    const assigned =
+      fluids === own.length ? `${fluids} fluids` : `${own.length} resource hatches (${fluids} fluids)`;
+    return needed > capacity
+      ? [
+          {
+            unitId: id,
+            fluids,
+            mandatory,
+            capacity,
+            excess: needed - capacity,
+            message: `Machine ${id + 1}: assigned ${assigned}, mandatory hatches ${mandatory}, capacity ${capacity}; remove ${needed - capacity} assignments.`,
+          },
+        ]
+      : [];
+  }).flat();
 }
 
 /** Links enable an interface for the group; they do not invent a per-controller minimum.
@@ -50,6 +102,7 @@ export function groupRequests(def: MultiblockDef, demand: Demand, bindings: read
                     ? (binding?.outputSlot ?? slots.indexOf(JSON.stringify([binding?.role ?? null, null])))
                     : 0,
                 unitId: binding?.unitId,
+                unitIds: binding?.unitIds,
               },
             ];
       });
@@ -115,11 +168,20 @@ export function fullResourcePlan(
     return false;
   };
   if (!choices.every((_, i) => augment(i, new Set()))) return;
-  return new Map(units.map((unit) => [unit.id, requests]));
+  return new Map(
+    units.map((unit) => [
+      unit.id,
+      requests.map((r) =>
+        r.unitIds && !assignedMachineIds(r, units.length).includes(unit.id)
+          ? { ...r, unitIds: undefined }
+          : r,
+      ),
+    ]),
+  );
 }
 
-/** Necessary physical bound before packing or exploring any hatch/layout choices. Sharing can only
- * reduce the number of physical prerequisites, never give more capacity than the sum of controllers.
+/** Necessary bound on casing replacements summed across controllers. An explicitly shared hatch
+ * consumes one slot in every requested owner, even though it is one physical block.
  */
 export function groupDemandBound(
   def: MultiblockDef,
@@ -129,19 +191,20 @@ export function groupDemandBound(
   bindings: readonly ResourceBinding[] = [],
 ) {
   const breakdown = enabled.map((kind) => {
-    const resources = [...new Set(demand[kind])].reduce(
-      (sum, resource) =>
-        sum +
-        Math.max(
-          1,
-          new Set(
-            bindings
-              .filter((b) => b.kind === kind && b.resource === resource)
-              .map((b) => JSON.stringify([b.role ?? null, b.outputSlot ?? null])),
-          ).size,
-        ),
-      0,
-    );
+    const resources = [...new Set(demand[kind])].reduce((sum, resource) => {
+      const slots = new Map<string, Set<number>>();
+      for (const binding of bindings.filter((b) => b.kind === kind && b.resource === resource)) {
+        const key = JSON.stringify([binding.role ?? null, binding.outputSlot ?? null]);
+        const owners = slots.get(key) ?? new Set<number>();
+        // Separate unitId requests may share a physical cell opportunistically. Explicit unitIds
+        // require that one hatch serve every live owner, so all those casing replacements count.
+        if (binding.unitIds) for (const id of assignedMachineIds(binding, count)) owners.add(id);
+        slots.set(key, owners);
+      }
+      return (
+        sum + (slots.size ? [...slots.values()].reduce((n, owners) => n + Math.max(1, owners.size), 0) : 1)
+      );
+    }, 0);
     const shared = def.wallshare && def.shareableHatches.includes(kind);
     return [
       kind,
@@ -149,14 +212,19 @@ export function groupDemandBound(
     ] as const;
   });
   const needed = breakdown.reduce((n, [, value]) => n + value, 0);
-  const capacity = count * hatchCapacity(def, { id: 0, origin: [0, 0, 0], rotation: 0 }).capacity;
+  const perController = hatchCapacity(def, { id: 0, origin: [0, 0, 0], rotation: 0 });
+  const capacity = count * perController.capacity;
   return {
     needed,
     capacity,
     message:
       needed > capacity
-        ? `Group demand: at least ${needed} hatches required; total structure capacity ${capacity} ` +
-          `(${count} controllers). Required: ${breakdown.map(([kind, n]) => `${kind} ${n}`).join(', ')}. ` +
+        ? `Group demand: at least ${needed} ${count === 1 ? 'hatches' : 'hatch slots'} required; ` +
+          `${count === 1 ? 'structure' : 'total structure'} capacity ${capacity} ` +
+          `(${count} ${count === 1 ? 'controller' : 'controllers'}). ` +
+          `Each controller: ${perController.capacity} hatch slots (${perController.hatchable} hatchable casing cells, ` +
+          `${perController.retained} must remain casings). ` +
+          `Required: ${breakdown.map(([kind, n]) => `${kind} ${n}`).join(', ')}. ` +
           'A shared physical hatch consumes capacity in every controller containing its cell.'
         : undefined,
   };
@@ -176,9 +244,11 @@ export function* resourceAllocations(
 ) {
   const plans = new Map(units.map((u) => [u.id, [] as ResourceRequest[]]));
   const capacity = hatchCapacity(def, units[0]).capacity;
+  const validIds = (r: ResourceRequest) => assignedMachineIds(r, units.length);
   const usable = new Map<string, boolean>();
   const privateCells = new Map<string, number>();
-  const siteKey = (r: ResourceRequest, id: number) => `${id}:${r.kind}:${r.region ?? ''}`;
+  const siteKey = (r: ResourceRequest, id: number) =>
+    `${id}:${r.kind}:${r.region ?? ''}:${r.unitIds ? validIds(r).join() : ''}`;
   const canUse = (request: ResourceRequest, id: number) => {
     const key = siteKey(request, id);
     const cached = usable.get(key);
@@ -186,6 +256,7 @@ export function* resourceAllocations(
     const candidates = sites.filter(
       (s) =>
         s.unitIds.includes(id) &&
+        (!request.unitIds || validIds(request).every((owner) => s.unitIds.includes(owner))) &&
         s.kinds.has(request.kind) &&
         (!request.region || s.regions.get(id) === request.region) &&
         (s.unitIds.length === 1 || (def.wallshare && def.shareableHatches.includes(request.kind))),
@@ -209,7 +280,7 @@ export function* resourceAllocations(
     }, 0);
   }
   // Manual assignments are required coverage, not a ban on role-minimum copies elsewhere.
-  const primary = (r: ResourceRequest) => (units.some((u) => u.id === r.unitId) ? r.unitId : undefined);
+  const primary = (r: ResourceRequest) => validIds(r)[0];
   const ordered = [...requests].sort(
     (a, b) => Number(primary(b) !== undefined) - Number(primary(a) !== undefined),
   );
@@ -247,7 +318,9 @@ export function* resourceAllocations(
   if (bestEffort) {
     for (const request of ordered) {
       const unit = choices(request)[0];
-      if (unit) plans.get(unit.id)!.push(request);
+      const ids = validIds(request);
+      if (unit)
+        for (const id of request.unitIds && ids.length ? ids : [unit.id]) plans.get(id)!.push(request);
     }
     yield complete();
     return;
@@ -257,13 +330,16 @@ export function* resourceAllocations(
   let depth = 0;
   let visited = 0;
   let yielded = 0;
-  const selected: number[] = [];
+  const selected: number[][] = [];
+  const removeSelected = (depth: number) => {
+    for (const id of selected[depth]) plans.get(id)!.pop();
+  };
   while (depth >= 0 && visited < 2 * requests.length + 512 && yielded < 8) {
     if (depth === ordered.length) {
       yield complete();
       yielded++;
       depth--;
-      if (depth >= 0) plans.get(selected[depth])!.pop();
+      if (depth >= 0) removeSelected(depth);
       continue;
     }
     const frame =
@@ -277,13 +353,16 @@ export function* resourceAllocations(
     if (frame.next === frame.ids.length) {
       frames.pop();
       depth--;
-      if (depth >= 0) plans.get(selected[depth])!.pop();
+      if (depth >= 0) removeSelected(depth);
       continue;
     }
     const id = frame.ids[frame.next++];
     visited++;
-    selected[depth] = id;
-    plans.get(id)!.push(ordered[depth]);
+    const request = ordered[depth];
+    const ids = request.unitIds && validIds(request).length ? validIds(request) : [id];
+    if (!ids.every((owner) => canUse(request, owner) && load(owner, request) <= capacity)) continue;
+    selected[depth] = ids;
+    for (const owner of ids) plans.get(owner)!.push(request);
     depth++;
   }
 }

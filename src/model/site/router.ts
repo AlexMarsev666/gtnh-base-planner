@@ -65,7 +65,7 @@ export interface RouterInput {
    * underground only where that saves pipe.
    */
   trenchBelow?: number;
-  /** Neat routing keeps trunks on this underground layer and beside row/corridor axes. */
+  /** Neat routing prefers -1, then deeper layers down to y, beside row/corridor axes. */
   neat?: { y: number; x: number[]; z: number[] };
 }
 
@@ -73,7 +73,7 @@ export interface RouterInput {
  * Above this many cells nothing is routed (every net reports unconnected). The largest site, 256 × 256,
  * with 18 layers of room is about 1.2M cells. Compact search keeps about 100 MB of state arrays;
  * neat search also keeps integer costs, indexed heap positions and cached heuristic bounds
- * (about 280 MB of state arrays at the same limit). Neither mode shortens the requested depth.
+ * (about 320 MB of state arrays at the same limit). Neither mode shortens the requested depth.
  */
 export const MAX_ROUTER_CELLS = 1_200_000;
 
@@ -93,6 +93,10 @@ const RIPUP_WORK_FACTOR = 0.5;
 const MIN_RIPUP_WORK = 1_000_000;
 /** Extra cost of a pipe block in the trench (see `RouterInput.trenchBelow`). */
 const TRENCH_COST = 1;
+/** A surface block costs one extra block in neat mode; short surface connections can still win. */
+const SURFACE_COST = 1;
+/** Each additional underground level adds a quarter block per step, preferring shallower runs. */
+const DEPTH_COST = 0.25;
 
 interface Grid {
   ox: number;
@@ -249,7 +253,13 @@ interface Search {
   neat?: RouterInput['neat'];
   guideX?: Float32Array;
   guideZ?: Float32Array;
-  neatCosts?: { crossings: Uint32Array; surface: Uint32Array; bends: Uint32Array; positions: Int32Array };
+  neatCosts?: {
+    crossings: Uint32Array;
+    surface: Uint32Array;
+    depths: Uint32Array;
+    bends: Uint32Array;
+    positions: Int32Array;
+  };
 }
 
 /** A terminal after resolving its faces against the grid. */
@@ -368,9 +378,8 @@ function search(
   return null;
 }
 
-/** Lexicographic A*: diagnostic crossings, surface cells, bends, length. Corridor guides only
- * break equal-cost ties. Every horizontal underground trunk stays at the requested depth;
- * vertical branches reach its terminals, and surface paths remain available as a fallback.
+/** Weighted A*: length, bends, surface blocks and depth. Diagnostic crossings are minimized first.
+ * Every permitted layer participates in the same search; corridor guides only break equal-cost ties.
  */
 function searchNeat(
   g: Grid,
@@ -389,10 +398,11 @@ function searchNeat(
   const costs = (s.neatCosts ??= {
     crossings: new Uint32Array(n),
     surface: new Uint32Array(n),
+    depths: new Uint32Array(n),
     bends: new Uint32Array(n),
     positions: new Int32Array(n).fill(-1),
   });
-  const { crossings, surface, bends, positions } = costs;
+  const { crossings, surface, depths, bends, positions } = costs;
   const targets: number[][] = [];
   const targetSet = new Set<number>();
   for (let i = 0; i < goals.length; i += 3) {
@@ -407,9 +417,8 @@ function searchNeat(
       targets.push([x, y + g.oy, (r - y) / g.dy]);
     }
   }
-  // A lower bound for paths adding no surface cells. Such paths can change horizontal axes
-  // only on the configured trunk layer. Paths that visit the surface have a larger primary
-  // cost, so this remains an admissible lexicographic bound even if their bend count is lower.
+  // Obstacle-free lower bounds allow horizontal travel on every underground layer.
+  // A forced trunk plane would overestimate paths on shallower layers.
   const hBends = new Uint8Array(n).fill(255);
   const hLength = new Float32Array(n);
   const prepare = (state: number): void => {
@@ -424,39 +433,35 @@ function searchNeat(
     for (let i = 0; i < targets.length; i++) {
       const [tx, ty, tz] = targets[i];
       const dx = tx - x,
+        dy = ty - y,
         dz = tz - z;
       const hx = dx ? (dx > 0 ? 2 : 3) : -1;
+      const hy = dy ? (dy > 0 ? 4 : 5) : -1;
       const hz = dz ? (dz > 0 ? 1 : 0) : -1;
-      const axes = Number(dx !== 0) + Number(dz !== 0);
-      const plane = dx || dz ? s.neat!.y : ty;
-      const first = plane === y ? -1 : plane > y ? 4 : 5;
-      const last = plane === ty ? -1 : ty > plane ? 4 : 5;
-      const length = Math.abs(dx) + Math.abs(dz) + Math.abs(y - plane) + Math.abs(ty - plane);
-      const turns = Number(axes > 0 && first !== -1) + Number(axes === 2) + Number(axes > 0 && last !== -1);
-      const firstX = first !== -1 ? first : hx !== -1 ? hx : hz !== -1 ? hz : last;
-      const firstZ = first !== -1 ? first : hz !== -1 ? hz : hx !== -1 ? hx : last;
+      const horizontal = Math.abs(dx) + Math.abs(dz);
+      const axes = Number(dx !== 0) + Number(dy !== 0) + Number(dz !== 0);
+      const length = horizontal + Math.abs(dy);
+      const turns = Math.max(0, axes - 1);
+      const surfaceSteps = y >= 0 ? (ty >= 0 ? Math.min(length, y + ty + 1) : y) : ty >= 0 ? ty + 1 : 0;
       for (let d = 0; d < STATES; d++) {
         const at = start + d;
-        const cost = turns + Number(firstX !== -1 && d !== NO_DIR && d !== firstX && d !== firstZ);
-        if (cost < hBends[at] || (cost === hBends[at] && length < hLength[at])) {
-          hBends[at] = cost;
-          hLength[at] = length;
-        }
+        const cost = turns + Number(axes > 0 && d !== NO_DIR && d !== hx && d !== hy && d !== hz);
+        hBends[at] = Math.min(hBends[at], cost);
+        hLength[at] = Math.min(hLength[at], length + cost * s.turnCost + surfaceSteps * SURFACE_COST);
       }
     }
-    if (!targets.length) for (let d = 0; d < STATES; d++) hBends[start + d] = hLength[start + d] = 0;
+    if (!targets.length) {
+      for (let d = 0; d < STATES; d++) hBends[start + d] = hLength[start + d] = 0;
+    }
   };
   const less = (a: number, b: number): boolean => {
     if (crossings[a] !== crossings[b]) return crossings[a] < crossings[b];
-    if (surface[a] !== surface[b]) return surface[a] < surface[b];
     prepare(a);
     prepare(b);
-    const ba = bends[a] + hBends[a],
-      bb = bends[b] + hBends[b];
-    if (ba !== bb) return ba < bb;
     const la = dist[a] + hLength[a],
       lb = dist[b] + hLength[b];
     if (la !== lb) return la < lb;
+    if (depths[a] !== depths[b]) return depths[a] < depths[b];
     const ga = guide(a),
       gb = guide(b);
     return ga !== gb ? ga < gb : a < b;
@@ -469,13 +474,13 @@ function searchNeat(
     const r = (cell - x) / g.dx;
     const y = r % g.dy;
     const z = (r - y) / g.dy;
-    return (guides[cell] =
-      s.hist[cell] + (y + g.oy === s.neat!.y ? Math.min(s.guideX![x], s.guideZ![z]) : 3));
+    return (guides[cell] = s.hist[cell] + (y + g.oy < 0 ? Math.min(s.guideX![x], s.guideZ![z]) : 3));
   };
   const heap = new CellHeap(less, positions);
   for (const cell of tree) {
     const state = cell * STATES + NO_DIR;
     crossings[state] = surface[state] = bends[state] = dist[state] = 0;
+    depths[state] = Math.max(0, -((Math.floor(cell / g.dx) % g.dy) + g.oy));
     parent[state] = -1;
     seen[state] = stamp;
     heap.update(state);
@@ -491,10 +496,7 @@ function searchNeat(
       return path.reverse();
     }
     const dir = state % STATES;
-    const y = (Math.floor(cell / g.dx) % g.dy) + g.oy;
     for (let d = 0; d < 6; d++) {
-      // The depth setting describes the trunk layer, not an optional weighted preference.
-      if (d < 4 && y < 0 && y !== s.neat!.y) continue;
       const next = cell + offsets[d],
         occupied = occ[next];
       const crossing = occupied !== FREE && occupied !== own;
@@ -503,19 +505,28 @@ function searchNeat(
       const nextY = (Math.floor(next / g.dx) % g.dy) + g.oy;
       const nc = crossings[state] + Number(crossing);
       const ns = surface[state] + Number(nextY >= 0);
+      const nd = Math.max(depths[state], -nextY);
       const nb = bends[state] + Number(dir !== NO_DIR && dir !== d);
-      const nl = dist[state] + 1;
+      const nl =
+        dist[state] +
+        1 +
+        (nextY >= 0 ? SURFACE_COST : Math.max(0, -nextY - 1) * DEPTH_COST) +
+        Number(dir !== NO_DIR && dir !== d) * s.turnCost +
+        s.hist[next];
       const to = next * STATES + d;
       if (
         seen[to] === stamp &&
         (crossings[to] < nc ||
           (crossings[to] === nc &&
-            (surface[to] < ns ||
-              (surface[to] === ns && (bends[to] < nb || (bends[to] === nb && dist[to] <= nl))))))
+            (dist[to] < nl ||
+              (dist[to] === nl &&
+                (depths[to] < nd ||
+                  (depths[to] === nd && (bends[to] < nb || (bends[to] === nb && surface[to] <= ns))))))))
       )
         continue;
       crossings[to] = nc;
       surface[to] = ns;
+      depths[to] = nd;
       bends[to] = nb;
       dist[to] = nl;
       parent[to] = state;
@@ -634,16 +645,23 @@ function connectedCount(st: NetState): number {
   return n;
 }
 
-function routingScore(states: NetState[], g: Grid, neat: boolean): [number, number, number, number] {
+function routingScore(states: NetState[], g: Grid, neat: boolean, turnCost: number): number[] {
   let conn = 0;
   let len = 0;
   let surface = 0;
   let bends = 0;
+  let depthCost = 0;
+  let deepest = 0;
   for (const st of states) {
     conn += connectedCount(st);
     len += st.cells.length;
     if (neat) {
       surface += st.cells.filter((c) => pos(g, c)[1] >= 0).length;
+      for (const c of st.cells) {
+        const depth = Math.max(0, -pos(g, c)[1]);
+        deepest = Math.max(deepest, depth);
+        depthCost += Math.max(0, depth - 1) * DEPTH_COST;
+      }
       for (const path of st.paths)
         for (let i = 2; i < path.length; i++) {
           if (
@@ -654,7 +672,7 @@ function routingScore(states: NetState[], g: Grid, neat: boolean): [number, numb
         }
     }
   }
-  return [conn, surface, bends, len];
+  return [conn, neat ? len + surface * SURFACE_COST + depthCost + bends * turnCost : len, deepest, bends];
 }
 
 /**
@@ -732,7 +750,11 @@ export function routeNets(input: RouterInput): RouteResult[] {
     attach: spec.terminals.map(() => null),
     flows: [],
   });
-  const g = makeGrid(input.box);
+  const g = makeGrid(
+    input.neat
+      ? { ...input.box, min: [input.box.min[0], Math.max(input.box.min[1], input.neat.y), input.box.min[2]] }
+      : input.box,
+  );
   if (!g || nets.length === 0) return nets.map(empty);
   if (nets.length > 0xffff - PIPE) return nets.map(empty);
 
@@ -818,7 +840,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
       states[i].via = x.via;
     });
   };
-  const score = (states: NetState[]) => routingScore(states, g, !!input.neat);
+  const score = (states: NetState[]) => routingScore(states, g, !!input.neat, s.turnCost);
   const beats = (a: ReturnType<typeof score>, b: ReturnType<typeof score>) => {
     if (a[0] !== b[0]) return a[0] > b[0];
     for (const i of [1, 2, 3]) if (a[i] !== b[i]) return a[i] < b[i];

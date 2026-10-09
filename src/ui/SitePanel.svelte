@@ -147,6 +147,53 @@
     </span>
   </div>
 
+  <section data-testid="routing-controls">
+    <h2>{t.site.routingMode}</h2>
+    <label class="row"
+      >{t.site.routingMode}<select
+        class="field"
+        value={$site.routing?.mode ?? 'compact'}
+        data-testid="routing-mode"
+        onchange={(e) =>
+          updateSite((s) => ({
+            ...s,
+            routing: { mode: e.currentTarget.value as 'compact' | 'neat', depth: s.routing?.depth ?? 3 },
+          }))}
+        ><option value="compact">{t.site.routingCompact}</option><option value="neat"
+          >{t.site.routingNeat}</option
+        ></select
+      ></label
+    >
+    <label class="row"
+      >{t.site.routingDepth}<NumberStepper
+        value={String($site.routing?.depth ?? 3)}
+        label={t.site.routingDepth}
+        min={1}
+        max={6}
+        testid="routing-depth"
+        oncommit={(v) =>
+          updateSite((s) => ({
+            ...s,
+            routing: { mode: s.routing?.mode ?? 'compact', depth: Math.max(1, Math.min(6, Number(v) || 3)) },
+          }))}
+      /></label
+    >
+    {#if $site.routing?.mode === 'neat'}
+      <p class="hint" data-testid="routing-depth-hint">{t.site.routingDepthHint}</p>
+    {/if}
+    <ul class="rows">
+      <ToggleRow
+        on={$undergroundView}
+        label={t.site.undergroundView}
+        testid="underground-view"
+        ontoggle={() => undergroundView.update((v) => !v)}
+      />
+    </ul>
+    {#if !$site.routing}
+      <p class="hint" data-testid="legacy-routing-hint">{t.site.legacyRoutingHint}</p>
+    {/if}
+  </section>
+
   {#if selected}
     <GroupInspector group={selected} {placed} onreplace={() => onpick('change')} />
   {/if}
@@ -373,47 +420,26 @@
       <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
       <li class="row narrow-only"><button class="link" onclick={onimport}>{t.site.importOpen}</button></li>
     </ul>
+    <label class="row"
+      >Optimization seed<NumberStepper
+        value={String($site.optimizationSeed ?? 0)}
+        label="Optimization seed"
+        min={0}
+        max={1000000}
+        testid="optimization-seed"
+        oncommit={(v) =>
+          updateSite((s) => ({
+            ...s,
+            optimizationSeed: Math.trunc(Math.max(0, Math.min(1000000, Number(v) || 0))),
+          }))}
+      /></label
+    >
   </section>
 
   <section>
     <h2>{t.view}</h2>
-    <label class="row"
-      >{t.site.routingMode}<select
-        class="field"
-        value={$site.routing?.mode ?? 'compact'}
-        data-testid="routing-mode"
-        onchange={(e) =>
-          updateSite((s) => ({
-            ...s,
-            routing: { mode: e.currentTarget.value as 'compact' | 'neat', depth: s.routing?.depth ?? 3 },
-          }))}
-        ><option value="compact">{t.site.routingCompact}</option><option value="neat"
-          >{t.site.routingNeat}</option
-        ></select
-      ></label
-    >
-    <label class="row"
-      >{t.site.routingDepth}<NumberStepper
-        value={String($site.routing?.depth ?? 3)}
-        label={t.site.routingDepth}
-        min={1}
-        max={6}
-        testid="routing-depth"
-        oncommit={(v) =>
-          updateSite((s) => ({
-            ...s,
-            routing: { mode: s.routing?.mode ?? 'neat', depth: Math.max(1, Math.min(6, Number(v) || 3)) },
-          }))}
-      /></label
-    >
     <ul class="rows">
       <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
-      <ToggleRow
-        on={$undergroundView}
-        label={t.site.undergroundView}
-        testid="underground-view"
-        ontoggle={() => undergroundView.update((v) => !v)}
-      />
       <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
       <ToggleRow
         on={$connectBelow}
@@ -429,7 +455,7 @@
         testid="site-icons"
         ontoggle={() => showIcons.update((v) => !v)}
       />
-      <ToggleRow on={$xray} label={t.xray} ontoggle={() => xray.update((v) => !v)} />
+      <ToggleRow on={$xray} label={t.xray} testid="site-xray" ontoggle={() => xray.update((v) => !v)} />
     </ul>
   </section>
 

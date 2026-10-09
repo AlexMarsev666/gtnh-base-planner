@@ -77,7 +77,11 @@ describe('optimizeSite', () => {
         evaluations++;
         build.stats.surfaceBlocks = evaluations === 1 ? 1 : 0;
         build.stats.bends = 0;
-        build.stats.pipeBlocks = evaluations === 1 ? 0 : 1000000;
+        build.stats.pipeBlocks = evaluations === 1 ? 0 : 1;
+        // Equal routing cost: the exact surface tie-break wins even when the scalar's
+        // compactness term is overwhelmed by an artificially enormous span.
+        if (evaluations > 1)
+          for (const pg of build.groups) pg.max = [pg.max[0] + 1000000, pg.max[1], pg.max[2]];
       }
       return build;
     };
@@ -91,6 +95,7 @@ describe('optimizeSite', () => {
     expect(evaluations).toBeGreaterThan(1);
     expect(result.improved).toBe(true);
     expect(result.result.surface).toBe(0);
+    expect(result.result.routingCost).toBe(1);
   });
   it('includes calibration in the overall budget and performs only the baseline at zero budget', () => {
     const start = arranged();
@@ -305,6 +310,8 @@ describe('optimizeSite with repacking', () => {
       (g, i) => JSON.stringify(g.limits) !== JSON.stringify(site.groups[i].limits),
     );
     expect(r.reshaped).toBe(changed.length);
+    for (const g of changed)
+      expect(g.arrangeLimits).toEqual(site.groups.find((original) => original.id === g.id)!.limits);
   });
 
   it('never changes the limits of a locked group, but still repacks the others', () => {
@@ -392,17 +399,20 @@ describe('optimizeSite time budget', () => {
     expect(routed).toBe(1);
   });
 
-  it('skips the polish when one routing is too slow for it to make a few steps', () => {
+  it('retains the input when slow routing interrupts the fixed iteration schedule', () => {
     let t = 0;
     const slow = stub(() => 5);
-    // Every routing takes 400 ms of the injected clock; the budget holds fewer than eight of them.
+    // Every routing takes 400 ms; elapsed time may interrupt but never shorten the completed schedule.
     const builder: SiteBuilder = (s, o) => {
       if (o.pipes) t += 400;
       return slow(s, o);
     };
-    const r = optimizeSite(arranged(), builder, { budgetMs: 2000, now: () => t, iterations: 3000 });
-    // The start, and candidates while half the budget lasts; never a run of polish steps.
-    expect(r.tried).toBeLessThanOrEqual(3);
+    const start = arranged();
+    const r = optimizeSite(start, builder, { budgetMs: 2000, now: () => t, iterations: 3000 });
+    expect(t).toBeLessThanOrEqual(2400);
+    expect(r.site).toBe(start);
+    expect(r.improved).toBe(false);
+    expect(r.stopped).toBe('time-limit');
   });
 });
 
