@@ -48,6 +48,11 @@ export function supportCode(entry) {
   }[entry.status];
 }
 
+export function supportStatus(entry) {
+  if (entry.machine === 'boldarnator') return 'limited';
+  return ['default-rejected', 'native-exception'].includes(entry.status) ? 'known-problem' : 'unverified';
+}
+
 const cell = (s) => String(s).replaceAll('|', '\\|').replaceAll('\n', '<br>');
 const json = async (path) => JSON.parse(await readFile(resolve(root, path), 'utf8'));
 
@@ -110,7 +115,8 @@ export async function generateStatus() {
       );
       const code = supportCode(entry);
       if (!code) throw new Error(`No support decision for ${def.id}.`);
-      support[def.id] = code;
+      const status = supportStatus(entry);
+      support[def.id] = { reason: code, status };
       const reason =
         code === 'liquid-zones'
           ? 'Зоны воды/лавы каталога не согласованы с динамическим поведением RC2; работа над Boldarnator остановлена пользователем.'
@@ -130,7 +136,11 @@ export async function generateStatus() {
           : 'Отдельной поправки withReviewedStructure нет; базовая форма и извлечённые количества',
         `${entry.status}; положительных адресных сценариев в сохранённом реестре: ${positive.length}`,
         [...(fixtureUse.get(def.id) ?? [])].join(', ') || 'Нет в сохранённых эталонах',
-        'Ограниченная поддержка',
+        status === 'limited'
+          ? 'Ограниченная поддержка'
+          : status === 'known-problem'
+            ? 'Известная проблема'
+            : 'Не проверено в игре',
         reason,
       ]);
     }
@@ -139,7 +149,7 @@ export async function generateStatus() {
       `Сгенерировано командой \`npm run catalog:status\`. Проверка актуальности: \`npm run catalog:status -- --check\`.\n\n` +
       `Источник: [catalog-results.rc2.json](../tools/game-dump/catalog-results.rc2.json), ${report.pack}, commit \`${report.sourceCommit}\`.\n` +
       `Данные частичные: по одной форме по умолчанию. Отказ или исключение сохранённого стенда не устанавливают ошибку всех вариантов; отсутствие экспорта не доказывает ошибку планировщика.\n\n` +
-      `В списке **${entries.length} уникальных записей**: ${report.rejected} отказов, ${report.exceptions} исключения, ${report.unresolved} без экспорта. Boldarnator и четыре сохранённые формы уже входят в список; не прибавляются повторно. Все отмечены как ограниченная поддержка, с причиной.\n\n` +
+      `В списке **${entries.length} уникальных записей**: ${report.rejected} отказов, ${report.exceptions} исключения, ${report.unresolved} без экспорта. Boldarnator и четыре сохранённые формы уже входят в список; не прибавляются повторно. Отказы формы и исключения отмечены «Известная проблема»; ограничения экспорта и старые формы — «Не проверено в игре». Boldarnator сохраняет «Ограниченная поддержка». Причины сохранены.\n\n` +
       `Форма и количества ниже — текущие данные планировщика с уже имеющимися адаптерами. Игровая колонка — историческая диагностика, её отказ не считается исправленным наличием адаптера. Ресурсы, рецепты, динамическое поведение мира и все конфигурации здесь не проверяются.\n\n` +
       `Реестры: [количества](../src/data/constraints.runtime.generated.json), [корпуса](../src/data/casings.runtime.generated.json), [правила](../src/model/multiblock/rules.ts), [адаптеры](../src/model/multiblock/structureAdapters.ts), [адресные игровые результаты](../tools/game-dump/native-results.rc2.json), [происхождение сохранённых форм](../tools/game-dump/README.md).\n\n` +
       `| Механизм | Форма | Количества на машину | Имеющийся адаптер | Игровая проверка | Эталонные планы | Статус | Причина |\n` +

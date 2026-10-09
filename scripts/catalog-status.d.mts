@@ -18,4 +18,5 @@ export interface CatalogEvidenceReport<T extends CatalogEvidenceEntry> {
 export const retainedShapes: readonly string[];
 export function problemEntries<T extends CatalogEvidenceEntry>(report: CatalogEvidenceReport<T>): T[];
 export function supportCode(entry: CatalogEvidenceEntry): CatalogSupportReason | undefined;
+export function supportStatus(entry: CatalogEvidenceEntry): 'limited' | 'known-problem' | 'unverified';
 export function generateStatus(): Promise<Record<string, string>>;

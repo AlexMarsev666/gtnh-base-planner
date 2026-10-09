@@ -19,7 +19,8 @@ test('limited support has a reason in the picker, machine settings and template 
   const tile = picker
     .getByTestId('picker-item')
     .filter({ has: page.getByText('Coke Oven', { exact: true }) });
-  await expect(tile.getByTestId('catalog-support')).toHaveText('Limited support');
+  await expect(tile.getByTestId('catalog-support')).toHaveText('Not verified in game');
+  await expect(tile.getByTestId('catalog-support')).toHaveAttribute('data-status', 'unverified');
   await expect(tile.getByTestId('catalog-support')).toHaveAttribute('title', /RC2 export is incomplete/);
   await page.screenshot({ path: 'e2e/screenshots/catalog-support-picker.png' });
   await tile.click();
@@ -65,4 +66,25 @@ test('retained legacy shape remains selectable and carries its integration-mod r
   await page.reload();
   await expect(page.getByTestId('multiblock-name')).toHaveText('Extreme Entity Crusher');
   await expect(page.getByTestId('count')).toHaveValue('1');
+});
+
+test('rejected shapes and exceptions carry known issues while Boldarnator retains its label', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByTestId('multiblock-name').click();
+  const picker = page.getByTestId('picker');
+  for (const [id, search, label, status] of [
+    ['elemental-duplicator', 'Elemental Duplicator', 'Known issue', 'known-problem'],
+    ['bose-einstein-condensate-maxwell-gate', 'Maxwell Gate', 'Known issue', 'known-problem'],
+    ['boldarnator', 'Boldarnator', 'Limited support', 'limited'],
+    ['pyrolyse-oven', 'Pyrolyse Oven', 'Not verified in game', 'unverified'],
+  ]) {
+    await picker.getByRole('searchbox').fill(search);
+    const exact = picker.locator(`[data-testid="catalog-support"][data-machine="${id}"]`);
+    await expect(exact).toHaveText(label);
+    await expect(exact).toHaveAttribute('data-status', status);
+    if (id === 'elemental-duplicator')
+      await page.screenshot({ path: 'e2e/screenshots/catalog-support-known-problem.png' });
+  }
 });

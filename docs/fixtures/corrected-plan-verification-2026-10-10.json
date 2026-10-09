@@ -1,0 +1,90 @@
+{
+  "original": "D:/Downloads/gtnh-site-site (3).json",
+  "sha256": "ab2e168c2cb3546175ad3b28ebb15b5d3cd2c516fc289b3bca261d85f9ed8d03",
+  "corrected": "docs/fixtures/gtnh-site-site (3)-corrected.json",
+  "g9warnings": [],
+  "allWarnings": [],
+  "stats": {
+    "depthPenalty": 15,
+    "surfaceBlocks": 328,
+    "bends": 81,
+    "groups": 27,
+    "units": 38,
+    "blocks": 346,
+    "hatches": 55,
+    "pipeBlocks": 449,
+    "cableBlocks": 113,
+    "connected": 102,
+    "terminals": 102
+  },
+  "g9hatches": [
+    {
+      "kind": "fluidIn",
+      "resource": "fluid:hydrogen",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "fluidIn",
+      "resource": "fluid:steam",
+      "unitIds": [80001]
+    },
+    {
+      "kind": "fluidOut",
+      "resource": "fluid:light-hydro-cracked-butadiene",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "fluidOut",
+      "resource": "fluid:lightly-hydro-craked-light-fuel",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "fluidIn",
+      "resource": "fluid:butadiene",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "fluidIn",
+      "resource": "fluid:light-fuel",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "fluidOut",
+      "resource": "fluid:light-steam-cracked-napthta",
+      "unitIds": [80001]
+    },
+    {
+      "kind": "fluidOut",
+      "resource": "fluid:modertely-steam-cracked-butene",
+      "unitIds": [80001]
+    },
+    {
+      "kind": "fluidIn",
+      "resource": "fluid:butene",
+      "unitIds": [80001]
+    },
+    {
+      "kind": "fluidIn",
+      "resource": "fluid:resource",
+      "unitIds": [80001]
+    },
+    {
+      "kind": "energy",
+      "resource": "power:eu",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "maintenance",
+      "unitIds": [80000]
+    },
+    {
+      "kind": "energy",
+      "resource": "power:eu",
+      "unitIds": [80001]
+    },
+    {
+      "kind": "maintenance",
+      "unitIds": [80001]
+    }
+  ]
+}

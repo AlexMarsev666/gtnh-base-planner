@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import reference from '../../../docs/fixtures/reference-01-oil-refinery.json';
 import sharedOverload from '../../../docs/fixtures/user-shared-cracker-overload.json';
+import corrected from '../../../docs/fixtures/gtnh-site-site (3)-corrected.json';
 import { siteFromJson } from '../../share/siteCodec';
 import { createSiteBuilder } from './build';
 import { validateResourceHatches } from './resourcePlacement';
@@ -14,6 +15,28 @@ export function refinerySite(fixed = false) {
 }
 
 describe('user reference refinery, g9 manual assignments', () => {
+  it('routes the approved separate-catalyst copy without warnings and preserves all other data', () => {
+    const site = siteFromJson(JSON.stringify(corrected));
+    const group = site.groups.find((g) => g.id === 'g9')!;
+    expect(group.resourceBindings).toHaveLength(10);
+    expect(group.resourceBindings!.every((b) => b.unitId !== undefined && !b.unitIds)).toBe(true);
+    const restored = JSON.parse(JSON.stringify(corrected)) as typeof sharedOverload;
+    restored.groups.find((g) => g.id === 'g9')!.resourceBindings = structuredClone(
+      sharedOverload.groups.find((g) => g.id === 'g9')!.resourceBindings,
+    );
+    expect(restored).toEqual(sharedOverload);
+    const built = createSiteBuilder()(site, { pipes: true, cables: true, below: true });
+    expect(built.warnings).toEqual([]);
+    expect(built.stats.connected).toBe(built.stats.terminals);
+    const placed = built.groups.find((g) => g.group.id === 'g9')!;
+    for (const binding of group.resourceBindings!) {
+      const unit = placed.units[binding.unitId!];
+      expect(placed.hatches.filter((h) => h.resource === binding.resource)).toEqual([
+        expect.objectContaining({ unitIds: [unit.id] }),
+      ]);
+    }
+  }, 20000);
+
   it('explains machine 1 overload once, with all four quantities', () => {
     const built = createSiteBuilder()(refinerySite(), { pipes: true, cables: true, below: true });
     const warnings = built.warnings.filter((w) => 'group' in w && w.group === 'g9');

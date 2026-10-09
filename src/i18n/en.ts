@@ -31,6 +31,8 @@ export const t = {
   generatedHint:
     'Game-derived structure. Some RC2 controller restrictions are still under review; verify the layout against the machine source before building.',
   catalogLimited: 'Limited support',
+  catalogUnverified: 'Not verified in game',
+  catalogKnownProblem: 'Known issue',
   catalogSupportReasons: {
     'liquid-zones': 'Catalog liquid zones differ from RC2 behavior. Construction in-game is not confirmed.',
     'retained-shape':

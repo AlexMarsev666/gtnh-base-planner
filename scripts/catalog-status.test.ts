@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import evidence from '../tools/game-dump/catalog-results.rc2.json';
 import support from '../src/data/catalog-support.generated.json';
-import { problemEntries, retainedShapes, supportCode } from './catalog-status.mjs';
+import { problemEntries, retainedShapes, supportCode, supportStatus } from './catalog-status.mjs';
 
 describe('bounded catalog support decisions', () => {
   it('covers the existing 15 rejects, four exceptions and 37 unresolved entries exactly once', () => {
@@ -11,16 +11,37 @@ describe('bounded catalog support decisions', () => {
     expect(entries.filter((e: { status: string }) => e.status === 'default-rejected')).toHaveLength(15);
     expect(entries.filter((e: { status: string }) => e.status === 'native-exception')).toHaveLength(4);
     expect(entries.filter((e: { status: string }) => e.status === 'unresolved')).toHaveLength(37);
-    expect(support).toEqual(Object.fromEntries(entries.map((e) => [e.machine, supportCode(e)])));
+    expect(support).toEqual(
+      Object.fromEntries(
+        entries.map((e) => [e.machine, { reason: supportCode(e), status: supportStatus(e) }]),
+      ),
+    );
   });
 
   it('retains distinct reasons for deferred liquid zones, old forms and historical checks', () => {
-    expect(support.boldarnator).toBe('liquid-zones');
-    for (const id of retainedShapes) expect(support[id as keyof typeof support]).toBe('retained-shape');
-    expect(Object.values(support).filter((code) => code === 'retained-shape')).toHaveLength(4);
-    expect(Object.values(support).filter((code) => code === 'rejected-default')).toHaveLength(14);
-    expect(Object.values(support).filter((code) => code === 'check-exception')).toHaveLength(4);
-    expect(Object.values(support).filter((code) => code === 'no-game-check')).toHaveLength(33);
+    expect(support.boldarnator).toEqual({ reason: 'liquid-zones', status: 'limited' });
+    for (const id of retainedShapes)
+      expect(support[id as keyof typeof support].reason).toBe('retained-shape');
+    expect(Object.values(support).filter((entry) => entry.reason === 'retained-shape')).toHaveLength(4);
+    expect(Object.values(support).filter((entry) => entry.reason === 'rejected-default')).toHaveLength(14);
+    expect(Object.values(support).filter((entry) => entry.reason === 'check-exception')).toHaveLength(4);
+    expect(Object.values(support).filter((entry) => entry.reason === 'no-game-check')).toHaveLength(33);
+  });
+
+  it('uses known problems only for rejected defaults and exceptions, retaining Boldarnator', () => {
+    const entries = problemEntries(evidence);
+    for (const entry of entries) {
+      if (entry.machine === 'boldarnator') expect(supportStatus(entry)).toBe('limited');
+      else
+        expect(supportStatus(entry)).toBe(
+          ['default-rejected', 'native-exception'].includes(entry.status) ? 'known-problem' : 'unverified',
+        );
+    }
+    expect(supportStatus(evidence.entries.find((entry) => entry.machine === 'pyrolyse-oven')!)).toBe(
+      'unverified',
+    );
+    expect(Object.values(support).filter((entry) => entry.status === 'known-problem')).toHaveLength(18);
+    expect(Object.values(support).filter((entry) => entry.status === 'unverified')).toHaveLength(37);
   });
 
   it('does not mark a successful catalog check as a failure', () => {
