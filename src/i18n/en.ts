@@ -93,6 +93,7 @@ export const t = {
   // Notices
   previewUnavailable: 'Preview unavailable.',
   viewUnavailable: '3D view unavailable.',
+  texturesUnavailable: 'Textures could not be loaded; showing flat colours. Reload the page to try again.',
   placedFewer: (placed: number, requested: number, reason?: 'limits' | 'geometry') =>
     `Placed ${placed} of ${requested}${reason === 'limits' ? ': limits too tight' : reason === 'geometry' ? ': no room' : ''}.`,
   spacedOut: (routed: boolean) =>

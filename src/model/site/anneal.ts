@@ -480,6 +480,15 @@ export function annealGroups(
   const rand = rng(opts.seed ?? 1);
   const randInt = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
   const pick = <T>(list: readonly T[]): T => list[Math.floor(rand() * list.length)];
+  /** Fisher-Yates on a copy: a fixed number of draws, unlike a `sort` with a random comparator. */
+  const shuffled = <T>(list: Iterable<T>): T[] => {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
   const now = opts.now ?? (() => performance.now());
   const iterations = opts.iterations ?? defaultIterations(m.n);
   const [w, d] = site.size;
@@ -535,11 +544,11 @@ export function annealGroups(
   const ruinAndRecreate = (): boolean => {
     const seed = randInt(0, m.n - 1);
     const chosen = [seed];
-    for (const p of [...m.partners[seed]].sort(() => rand() - 0.5)) if (chosen.length < 3) chosen.push(p);
+    for (const p of shuffled(m.partners[seed])) if (chosen.length < 3) chosen.push(p);
     if (chosen.length < 2 && m.n > 1) chosen.push((seed + randInt(1, m.n - 1)) % m.n);
     const old = chosen.map((i) => [i, m.x[i], m.z[i], m.rot[i]] as const);
     for (const i of chosen) m.setPresent(i, false);
-    chosen.sort(() => rand() - 0.5);
+    chosen.splice(0, chosen.length, ...shuffled(chosen));
     let ok = true;
     for (const i of chosen) {
       m.setPresent(i, true);

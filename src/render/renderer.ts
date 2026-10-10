@@ -5,6 +5,7 @@ import type { Dir, Vec3, ViewMode } from '../model/core/types';
 import type { SceneModel, Voxel } from '../model/render/types';
 import { DEFAULT_PHI, DEFAULT_THETA, fitPoints, fitView, OrbitControls } from './controls';
 import type { BlockVisual, MaterialProvider } from './materials';
+import { choosePick, type PickHit } from './pick';
 import { createSimpleProvider } from './simple';
 
 export interface RendererOptions {
@@ -21,6 +22,8 @@ export interface RendererOptions {
   onMoveSelection?: (dx: number, dz: number) => void;
   /** While dragging the selection: the offset so far (null when the drag ends). */
   onDragOffset?: (offset: [number, number] | null) => void;
+  /** Called when DETAILED was requested but SIMPLE is drawn instead (the textures could not be loaded). */
+  onViewModeFallback?: () => void;
   /** Keep the drawing buffer after compositing so tests can read pixels back. Default false. */
   preserveDrawingBuffer?: boolean;
 }
@@ -376,7 +379,7 @@ export function createRenderer(
   let points: THREE.Vector3[] = scenePoints(null);
   let batches: VoxelBatch[] = [];
   /** Pipe meshes and the net id of each instance, for picking. */
-  let pipeBatches: { mesh: THREE.InstancedMesh; netIds: number[] }[] = [];
+  let pipeBatches: { mesh: THREE.InstancedMesh; netIds: number[]; dim: boolean }[] = [];
   /** Flow arrows: one instance per directed step, moved every frame while animating. */
   let flows: {
     mesh: THREE.InstancedMesh;
@@ -411,6 +414,12 @@ export function createRenderer(
   };
   canvas.addEventListener('pointerdown', stopAutoFit);
   canvas.addEventListener('wheel', stopAutoFit, { passive: true });
+
+  // Rendering is on demand, so a restored context needs one explicit redraw.
+  const onContextLost = (e: Event): void => e.preventDefault(); // lets the browser restore the context
+  const onContextRestored = (): void => requestRender();
+  canvas.addEventListener('webglcontextlost', onContextLost);
+  canvas.addEventListener('webglcontextrestored', onContextRestored);
 
   const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => resize());
   resizeObserver?.observe(canvas);
@@ -605,9 +614,13 @@ export function createRenderer(
   }
 
   /** X-ray fades the casings; controllers, hatches and conflicts stay solid so they can be found. */
+  function isFaded(b: { conflict: boolean; kind: string }): boolean {
+    return xray && !(b.conflict || b.kind === 'hatch' || b.kind === 'controller');
+  }
+
   function applyXray(): void {
     for (const b of batches) {
-      if (b.conflict || b.kind === 'hatch' || b.kind === 'controller' || !xray) {
+      if (!isFaded(b)) {
         b.mesh.material = b.baseMaterials;
         b.mesh.renderOrder = 0;
         continue;
@@ -811,7 +824,7 @@ export function createRenderer(
       beams.computeBoundingSphere();
       if (dim) beams.renderOrder = 1;
       content.add(beams);
-      pipeBatches.push({ mesh: beams, netIds: list.map((s) => s.net) });
+      pipeBatches.push({ mesh: beams, netIds: list.map((s) => s.net), dim });
     }
     for (const dim of [false, true]) {
       const list = cubes.filter((c) => c.dim === dim);
@@ -826,7 +839,7 @@ export function createRenderer(
       mesh.computeBoundingSphere();
       if (dim) mesh.renderOrder = 1;
       content.add(mesh);
-      pipeBatches.push({ mesh, netIds: list.map((c) => c.net) });
+      pipeBatches.push({ mesh, netIds: list.map((c) => c.net), dim });
     }
     if (steps.length > 0) {
       const mesh = new THREE.InstancedMesh(flowGeo, flowMat, steps.length);
@@ -1000,14 +1013,36 @@ export function createRenderer(
     return true;
   }
 
-  function startDrag(e: PointerEvent): boolean {
-    if (!dragEnabled || !options.onMoveSelection || !model || selected.size === 0 || !aim(e)) return false;
-    const hits = raycaster.intersectObjects(
+  interface Found {
+    hit: THREE.Intersection;
+    pipes?: (typeof pipeBatches)[number];
+    voxels?: (typeof batches)[number];
+  }
+
+  /** What the (already aimed) ray hits: the nearest solid thing, else the nearest faded one. */
+  function hitsUnderPointer(): Found | undefined {
+    const hits: (Found & PickHit)[] = [];
+    for (const hit of raycaster.intersectObjects(
       [...batches.map((b) => b.mesh), ...pipeBatches.map((b) => b.mesh)],
       false,
-    );
-    const hit = hits.find((h) => h.instanceId !== undefined);
-    const batch = hit && batches.find((b) => b.mesh === hit.object);
+    )) {
+      if (hit.instanceId === undefined) continue;
+      const pipes = pipeBatches.find((b) => b.mesh === hit.object);
+      if (pipes) {
+        hits.push({ hit, pipes, translucent: pipes.dim });
+        continue;
+      }
+      const voxels = batches.find((b) => b.mesh === hit.object);
+      if (voxels) hits.push({ hit, voxels, translucent: isFaded(voxels) });
+    }
+    return choosePick(hits);
+  }
+
+  function startDrag(e: PointerEvent): boolean {
+    if (!dragEnabled || !options.onMoveSelection || !model || selected.size === 0 || !aim(e)) return false;
+    const found = hitsUnderPointer();
+    const hit = found?.hit;
+    const batch = found?.voxels;
     if (!hit || !batch) return false;
     const voxel = model.voxels[batch.indices[hit.instanceId!]];
     if (!voxel.unitIds.some((id) => selected.has(id))) return false;
@@ -1068,22 +1103,15 @@ export function createRenderer(
   function pick(e: PointerEvent): void {
     if (!options.onPick || !model) return;
     if (!aim(e)) return;
-    const hits = raycaster.intersectObjects(
-      [...batches.map((b) => b.mesh), ...pipeBatches.map((b) => b.mesh)],
-      false,
-    );
-    for (const hit of hits) {
-      if (hit.instanceId === undefined) continue;
-      const pipes = pipeBatches.find((b) => b.mesh === hit.object);
-      if (pipes) {
-        const id = pipes.netIds[hit.instanceId];
-        options.onPick([]);
-        options.onPickNet?.(id >= 0 ? id : null);
-        return;
-      }
-      const batch = batches.find((b) => b.mesh === hit.object);
-      if (!batch) continue;
-      const voxel = model.voxels[batch.indices[hit.instanceId]];
+    const found = hitsUnderPointer();
+    if (found?.pipes) {
+      const id = found.pipes.netIds[found.hit.instanceId!];
+      options.onPick([]);
+      options.onPickNet?.(id >= 0 ? id : null);
+      return;
+    }
+    if (found?.voxels) {
+      const voxel = model.voxels[found.voxels.indices[found.hit.instanceId!]];
       options.onPick([...voxel.unitIds]);
       options.onPickNet?.(null);
       return;
@@ -1137,6 +1165,7 @@ export function createRenderer(
           detailedLoad = null; // allow a retry later
           console.warn('DETAILED view is unavailable, falling back to SIMPLE.', err);
           next = simpleProvider;
+          if (!disposed && request === modeRequest) options.onViewModeFallback?.();
         }
       }
       if (disposed || request !== modeRequest || next === provider) return;
@@ -1242,6 +1271,8 @@ export function createRenderer(
       controls.dispose();
       canvas.removeEventListener('pointerdown', stopAutoFit);
       canvas.removeEventListener('wheel', stopAutoFit);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
       clearContent();
       disposeSelection();
       for (const g of sharedGeometries) g.dispose();

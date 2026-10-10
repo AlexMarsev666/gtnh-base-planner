@@ -14,6 +14,7 @@ npm run check          # svelte-check (type-checks TS and Svelte), --fail-on-war
 npm test               # Vitest (src/**, tools/**, scripts/** *.test.ts), node environment
 npx vitest run src/model/site/router.test.ts      # one file
 npx vitest run -t "name of test"                  # by test name
+PERF=1 npm test        # also run the wall-clock performance assertions (skipped by default)
 npm run e2e            # Playwright; first time: npx playwright install chromium
 npm run build          # npm run atlas (texture atlas) + vite build -> dist/
 npm run size           # bundle size budget (after build; scripts/check-size.mjs)

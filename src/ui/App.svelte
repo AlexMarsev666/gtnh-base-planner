@@ -14,6 +14,7 @@
   import ImportDialog from './ImportDialog.svelte';
   import Legend from './Legend.svelte';
   import Notices from './Notices.svelte';
+  import { notify } from './notices';
   import Picker from './Picker.svelte';
   import { build } from './pipeline';
   import Scene from './Scene.svelte';
@@ -188,6 +189,10 @@
     {onpick}
     {onpicknet}
     onfail={() => (rendererFailed = true)}
+    onviewfallback={() => {
+      viewMode.set('simple');
+      notify(t.texturesUnavailable);
+    }}
   />
 
   {#if siteMode}

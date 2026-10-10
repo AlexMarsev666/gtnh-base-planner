@@ -13,6 +13,8 @@
     selected: number[];
     onpick: (unitIds: number[]) => void;
     onfail: () => void;
+    /** DETAILED was requested but the textures failed to load, so SIMPLE is drawn. */
+    onviewfallback?: () => void;
     /** Site view: a pipe was clicked (net id), or something else (null). */
     onpicknet?: (netId: number | null) => void;
     /** Site view: animate flow arrows. */
@@ -35,6 +37,7 @@
     selected,
     onpick,
     onfail,
+    onviewfallback,
     onpicknet,
     flow = true,
     onview,
@@ -75,6 +78,7 @@
         onView: (theta) => onview?.(theta),
         onMoveSelection: (dx, dz) => onmove?.(dx, dz),
         onDragOffset: (o) => ondrag?.(o),
+        onViewModeFallback: () => onviewfallback?.(),
       });
     } catch (err) {
       warnOnce('createRenderer', err);

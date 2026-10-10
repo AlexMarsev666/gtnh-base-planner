@@ -265,8 +265,10 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
           atlas = pixels;
         },
         (err: unknown) => {
-          // Keep working with flat colours; the view stays usable without the atlas.
-          console.warn('DETAILED view: texture atlas failed to load, using flat colours', err);
+          // Forget the failure so the next load() retries; the caller falls back to flat colours.
+          loading = null;
+          console.warn('DETAILED view: texture atlas failed to load', err);
+          throw err;
         },
       );
       return loading;

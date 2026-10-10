@@ -181,10 +181,20 @@ describe('createDetailedProvider', () => {
     const p = createDetailedProvider({ loadAtlas: () => Promise.reject(new Error('404')) });
     const before = p.materials({ blockId: 'gt.cokeOvenBrick', kind: 'casing' }, colors);
     expect(mapOf(before[0])).toBeNull();
-    await expect(p.load()).resolves.toBeUndefined();
+    await expect(p.load()).rejects.toThrow('404');
     expect(warn).toHaveBeenCalled();
     const hatch = p.materials({ blockId: 'gt.cokeOvenHatch', kind: 'hatch', hatchKind: 'fluidOut' }, colors);
     expect('#' + (hatch[0] as THREE.MeshLambertMaterial).color.getHexString()).toBe(colors.fluidOut);
+    warn.mockRestore();
+  });
+
+  it('retries the atlas after a failed load', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const loader = vi.fn(loadAtlas).mockRejectedValueOnce(new Error('offline'));
+    const p = createDetailedProvider({ loadAtlas: loader });
+    await expect(p.load()).rejects.toThrow('offline');
+    await expect(p.load()).resolves.toBeUndefined();
+    expect(loader).toHaveBeenCalledTimes(2);
     warn.mockRestore();
   });
 

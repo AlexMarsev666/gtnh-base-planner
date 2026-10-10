@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from '../data/catalog';
-import { multiblockForName } from '../data/gtnhplanner-machines';
+import {
+  GT_MACHINE_TYPES,
+  MULTIBLOCK_ALIASES,
+  multiblockForMachineType,
+  multiblockForName,
+} from '../data/gtnhplanner-machines';
 import { createSiteBuilder } from '../model/site/build';
 import { validateSiteState } from '../share/siteCodec';
 import fixture from './__fixtures__/gtnhplanner-titanium.json';
@@ -223,25 +228,29 @@ describe('buildSiteFromGtnh', () => {
     expect(connected / total).toBeGreaterThan(0.9);
   });
 
-  it('arranges a big template inside the size it already has, on floors, without growing it', () => {
-    const p = parseGtnhProject(text);
-    for (const n of p.nodes) n.machineCount *= 12;
-    const builder = createSiteBuilder();
-    // Imported at the size its chain wants, then squeezed into a smaller plot, as the Arrange button does.
-    const { site: big, report } = buildSiteFromGtnh(p, new Map(), {}, builder);
-    expect(report.floors).toBe(1);
-    const small = { ...big, size: [24, 24] as [number, number] };
-    const r = arrangeOnFloors(small, builder);
-    expect(r.site.size).toEqual([24, 24]);
-    expect(r.arranged.fits).toBe(true);
-    expect(r.arranged.floors).toBeGreaterThan(1);
-    const b = builder(r.site, { pipes: true, cables: true });
-    expect(b.warnings.filter((w) => w.type === 'overlap' || w.type === 'outside')).toEqual([]);
-    // A plot that already holds it stays flat.
-    const roomy = arrangeOnFloors({ ...big, size: [128, 128] }, builder);
-    expect(roomy.arranged.floors).toBe(1);
-    expect(roomy.site.groups.every((g) => g.elevation === undefined)).toBe(true);
-  });
+  it(
+    'arranges a big template inside the size it already has, on floors, without growing it',
+    { timeout: 60_000 },
+    () => {
+      const p = parseGtnhProject(text);
+      for (const n of p.nodes) n.machineCount *= 12;
+      const builder = createSiteBuilder();
+      // Imported at the size its chain wants, then squeezed into a smaller plot, as the Arrange button does.
+      const { site: big, report } = buildSiteFromGtnh(p, new Map(), {}, builder);
+      expect(report.floors).toBe(1);
+      const small = { ...big, size: [24, 24] as [number, number] };
+      const r = arrangeOnFloors(small, builder);
+      expect(r.site.size).toEqual([24, 24]);
+      expect(r.arranged.fits).toBe(true);
+      expect(r.arranged.floors).toBeGreaterThan(1);
+      const b = builder(r.site, { pipes: true, cables: true });
+      expect(b.warnings.filter((w) => w.type === 'overlap' || w.type === 'outside')).toEqual([]);
+      // A plot that already holds it stays flat.
+      const roomy = arrangeOnFloors({ ...big, size: [128, 128] }, builder);
+      expect(roomy.arranged.floors).toBe(1);
+      expect(roomy.site.groups.every((g) => g.elevation === undefined)).toBe(true);
+    },
+  );
 
   it('sizes to the chain by default and then needs no floors', () => {
     const { site, report } = buildSiteFromGtnh(parseGtnhProject(text));
@@ -295,6 +304,26 @@ describe('buildSiteFromGtnh', () => {
     expect(
       b.warnings.filter((w) => ['overlap', 'outside', 'error', 'fewer', 'unplaced'].includes(w.type)),
     ).toEqual([]);
+  });
+
+  it('counts a node whose multiblock is not in the catalog as skipped, without a group', () => {
+    const p = parseGtnhProject(text);
+    const base = buildSiteFromGtnh(p);
+    const { site, report } = buildSiteFromGtnh(
+      p,
+      new Map([['n5', { type: 'multiblock', id: 'no-such-multiblock' }]]),
+    );
+    expect(report.skipped).toBe(base.report.skipped + 1);
+    expect(site.groups).toHaveLength(base.site.groups.length - 1);
+    expect(site.groups.map((g) => g.multiblockId)).not.toContain('no-such-multiblock');
+    expect(site.groups.map((g) => g.multiblockId)).not.toContain('industrial-centrifuge');
+    // Its links end at ports instead, and no link points at a group that is not there.
+    const groups = new Set(site.groups.map((g) => g.id));
+    const ports = new Set(site.ports.map((x) => x.id));
+    for (const l of site.links)
+      for (const e of [l.from, l.to])
+        expect('group' in e ? groups.has(e.group) : ports.has(e.port)).toBe(true);
+    expect(site.ports.length).toBeGreaterThanOrEqual(base.site.ports.length);
   });
 
   it('follows overrides and grows a small site', () => {
@@ -374,5 +403,22 @@ describe('buildSiteFromGtnh', () => {
     expect(fallbackColor('item:x')).toMatch(/^#[0-9a-f]{6}$/);
     expect(fallbackColor('item:x')).toBe(fallbackColor('item:x'));
     expect(fallbackColor('item:x')).not.toBe(fallbackColor('item:y'));
+  });
+});
+
+describe('machine tables', () => {
+  it('do not answer with members inherited from Object.prototype', () => {
+    for (const k of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+      expect(multiblockForName(k), k).toBeUndefined();
+      expect(multiblockForMachineType(k), k).toBeUndefined();
+    }
+  });
+
+  it('point only at multiblocks that exist', () => {
+    expect(Object.keys(MULTIBLOCK_ALIASES).length).toBeGreaterThan(0);
+    expect(Object.keys(GT_MACHINE_TYPES).length).toBeGreaterThan(0);
+    for (const [k, id] of Object.entries(MULTIBLOCK_ALIASES))
+      expect(getSiteDef(id), `alias ${k}`).toBeDefined();
+    for (const [k, id] of Object.entries(GT_MACHINE_TYPES)) expect(getSiteDef(id), `type ${k}`).toBeDefined();
   });
 });

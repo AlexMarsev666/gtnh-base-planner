@@ -137,6 +137,17 @@ describe('annealGroups', () => {
     expect(c.groups).not.toEqual(a.groups);
   });
 
+  it('repeats exactly for a seed on a linked web, where it also rebuilds groups around their partners', () => {
+    const site = web(4, 4);
+    const laid = { ...site, groups: arrangeSite(site, fixed).groups };
+    for (const seed of [1, 2, 3]) {
+      const a = annealGroups(laid, fixed, { seed, iterations: 12000 });
+      const b = annealGroups(laid, fixed, { seed, iterations: 12000 });
+      expect(b.groups).toEqual(a.groups);
+      expect(b.after).toBe(a.after);
+    }
+  });
+
   it('leaves floors alone: groups keep their elevation and stay clear of those under them', () => {
     const site = { ...web(4, 2, 24), size: [18, 30] as [number, number] };
     const start = arrangeSite(site, fixed, { floors: { heightOf: () => 5 } });

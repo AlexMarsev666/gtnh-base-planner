@@ -707,7 +707,10 @@ export function buildSiteFromGtnh(
     const multiblockId =
       choice.type === 'multiblock' ? choice.id : choice.type === 'single' ? SINGLE_BLOCK_ID : PLACEHOLDER_ID;
     const def = getSiteDef(multiblockId);
-    if (!def) continue;
+    if (!def) {
+      skipped++;
+      continue;
+    }
     if (choice.type === 'placeholder') placeholders.add(row.machine);
     const id = `g${groups.length + 1}`;
     const g: SiteGroup = {

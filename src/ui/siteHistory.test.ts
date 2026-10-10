@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import { site, siteGroup } from '../state/site';
 import { withGroupAdded, withGroupMoved } from './siteActions';
@@ -58,7 +58,12 @@ describe('history steps', () => {
 
 describe('site history', () => {
   let stop: (() => void) | undefined;
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+  });
   afterEach(() => {
+    vi.useRealTimers();
     stop?.();
     site.set(emptySite());
     siteGroup.set(null);
@@ -72,6 +77,7 @@ describe('site history', () => {
     siteGroup.set(gid);
     coalesceNext(`move:${gid}`);
     site.update((s) => withGroupMoved(s, gid, 1, 0));
+    vi.setSystemTime(COALESCE_MS / 2); // inside the window, so the second move joins the first step
     coalesceNext(`move:${gid}`);
     site.update((s) => withGroupMoved(s, gid, 1, 0));
     expect(get(site).groups[0].origin).toEqual([5, 3]);

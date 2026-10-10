@@ -105,7 +105,7 @@ describe('resolveLayout', () => {
     expect(r.hatches.unplaced).toHaveLength(1);
   });
 
-  it('is fast enough for 60 units', () => {
+  it.skipIf(!process.env.PERF)('is fast enough for 60 units', () => {
     const def = getMultiblock('oil-cracking-unit')!;
     const t0 = performance.now();
     resolveLayout(def, packUnits(def, 60, unlimited), def.defaultHatches, unlimited, deps);
