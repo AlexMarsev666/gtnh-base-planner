@@ -320,6 +320,8 @@ export const t = {
       'Keeps this size. What does not fit on the ground is built on floors above it, and big groups stack their machines up.',
     replaces: 'Replaces the current template.',
     skippedEntries: (n: number) => `${n} malformed ${n === 1 ? 'entry was' : 'entries were'} skipped.`,
+    adjustedValues: (n: number) =>
+      `${n} ${n === 1 ? 'value was' : 'values were'} out of range and ${n === 1 ? 'was' : 'were'} adjusted.`,
     done: (groups: number, ports: number, links: number) =>
       `Imported ${groups} groups, ${ports} ports and ${links} links.`,
     aspects: (n: number) => `${n} Thaumcraft ${n === 1 ? 'flow was' : 'flows were'} left out.`,

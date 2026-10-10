@@ -188,6 +188,7 @@
           {t.importer.newerSchema(project.schemaVersion ?? 0)}
         </p>{/if}
       {#if project.skipped}<p class="hint">{t.importer.skippedEntries(project.skipped)}</p>{/if}
+      {#if project.adjusted}<p class="hint">{t.importer.adjustedValues(project.adjusted)}</p>{/if}
       <table class="rows" data-testid="import-rows">
         <thead>
           <tr

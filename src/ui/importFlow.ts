@@ -51,6 +51,7 @@ export async function runImport(
   else if (!report.fits) notes.push(t.site.needs(report.needed[0], report.needed[1]));
   if (!fit && report.floors > 1) notes.push(t.importer.floors(report.floors));
   if (report.aspects) notes.push(t.importer.aspects(report.aspects));
+  if (report.adjusted) notes.push(t.importer.adjustedValues(report.adjusted));
   if (report.truncated) notes.push(t.importer.truncated);
   deps.notify(notes.join(' '), 9000, 'import');
   if (report.placeholders.length)

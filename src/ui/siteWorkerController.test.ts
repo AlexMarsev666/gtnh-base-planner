@@ -89,7 +89,15 @@ describe('site worker controller', () => {
   it('rejects an import that a newer one replaces', async () => {
     const w = fakeWorker();
     const { c } = setup(() => w as unknown as Worker);
-    const project = { name: 'p', recipes: new Map(), nodes: [], storages: [], edges: [], skipped: 0 };
+    const project = {
+      name: 'p',
+      recipes: new Map(),
+      nodes: [],
+      storages: [],
+      edges: [],
+      skipped: 0,
+      adjusted: 0,
+    };
     const first = c.importSite(project, new Map(), {});
     void c.importSite(project, new Map(), {});
     await expect(first).rejects.toEqual(new JobCancelled('import'));
@@ -149,7 +157,15 @@ describe('site worker controller', () => {
   });
 
   describe('cancelling', () => {
-    const project = { name: 'p', recipes: new Map(), nodes: [], storages: [], edges: [], skipped: 0 };
+    const project = {
+      name: 'p',
+      recipes: new Map(),
+      nodes: [],
+      storages: [],
+      edges: [],
+      skipped: 0,
+      adjusted: 0,
+    };
 
     it('stops an import whose signal is aborted, and uses a new worker afterwards', async () => {
       const workers: ReturnType<typeof fakeWorker>[] = [];

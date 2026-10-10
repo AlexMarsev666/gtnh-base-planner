@@ -60,7 +60,9 @@ export const MAX_RESOURCES = 512;
 const MAX_NAME = 120;
 const MAX_KEY = 160;
 const MAX_SITE_ID = 32;
-const MAX_RATE = 1e12;
+export const MAX_RATE = 1e12;
+/** Most machines a group may record as its source count. */
+export const MAX_MACHINE_COUNT = 1e6;
 /** Names with special meaning on plain objects; never resource keys. */
 const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
@@ -199,7 +201,7 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
     };
     const mc = field(s, 'machineCount');
     if (mc !== undefined && mc !== null)
-      source.machineCount = expectNumber(mc, `${what} machine count`, 0, 1e6);
+      source.machineCount = expectNumber(mc, `${what} machine count`, 0, MAX_MACHINE_COUNT);
     const tier = optionalString(field(s, 'tier'), `${what} tier`, 16);
     if (tier !== undefined) source.tier = tier;
     group.source = source;

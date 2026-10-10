@@ -13,6 +13,7 @@ const report = {
   links: 1,
   aspects: 0,
   skipped: 0,
+  adjusted: 0,
   placeholders: [],
   truncated: false,
   fits: true,

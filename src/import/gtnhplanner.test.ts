@@ -7,7 +7,7 @@ import {
   multiblockForName,
 } from '../data/gtnhplanner-machines';
 import { createSiteBuilder } from '../model/site/build';
-import { validateSiteState } from '../share/siteCodec';
+import { MAX_RATE, validateSiteState } from '../share/siteCodec';
 import fixture from './__fixtures__/gtnhplanner-titanium.json';
 import {
   IMPORT_LIMITS,
@@ -403,6 +403,90 @@ describe('buildSiteFromGtnh', () => {
     const p = parseGtnhProject(JSON.stringify(data));
     expect(p.nodes).toHaveLength(9);
     expect(p.skipped).toBe(2);
+  });
+
+  describe('out-of-range values', () => {
+    const edgeRate = (data: any, id: string) => data.edges.find((e: { id: string }) => e.id === id);
+    const build = (data: unknown) => {
+      const p = parseGtnhProject(JSON.stringify(data));
+      const built = buildSiteFromGtnh(p);
+      expect(() => validateSiteState(built.site)).not.toThrow();
+      return { p, ...built };
+    };
+
+    it('drops rates that are negative, huge or not numbers, and counts them', () => {
+      const data = JSON.parse(text);
+      edgeRate(data, 'e2').ratePerSecond = -1;
+      edgeRate(data, 'e3').ratePerSecond = 1e13;
+      edgeRate(data, 'e1').ratePerSecond = 'fast';
+      const { p, site, report } = build(data);
+      expect(p.adjusted).toBe(3);
+      expect(p.edges.find((e) => e.id === 'e2')!.ratePerSecond).toBeUndefined();
+      expect(p.edges.find((e) => e.id === 'e3')!.ratePerSecond).toBeUndefined();
+      expect(report.adjusted).toBe(3);
+      // The links still exist, without a rate.
+      expect(site.links.find((l) => l.resource === 'fluid:titaniumtetrachloride')!.rate).toBeUndefined();
+    });
+
+    it('clamps machine counts and counts them', () => {
+      const data = JSON.parse(text);
+      data.nodes[1].machineCount = 1e7;
+      data.nodes[2].machineCount = -3;
+      // Parse only: a million machines would take the packer minutes.
+      const p = parseGtnhProject(JSON.stringify(data));
+      expect(p.nodes[1].machineCount).toBe(1e6);
+      expect(p.nodes[2].machineCount).toBe(0);
+      expect(p.adjusted).toBe(2);
+    });
+
+    it('replaces control characters in names and ids', () => {
+      const data = JSON.parse(text);
+      data.recipes[1].name = 'Tab\there';
+      data.nodes[0].id = 'n\n0';
+      data.edges[0].source = 'n\n0';
+      data.storages[0].displayName = 'A\nB';
+      const rid = data.recipes[2].inputs[0].id;
+      data.recipes[2].inputs[0].id = `${rid}\u0000`;
+      const { p, site, report } = build(data);
+      expect(p.nodes[0].id).toBe('n 0');
+      expect(p.edges[0].source).toBe('n 0');
+      expect(p.recipes.get(data.recipes[1].id)!.name).toBe('Tab here');
+      expect(p.storages[0].displayName).toBe('A B');
+      expect(p.adjusted).toBe(0);
+      expect(report.adjusted).toBe(0);
+      expect(Object.keys(site.resources).some((k) => /[\u0000-\u001f]/.test(k))).toBe(false);
+    });
+
+    it('caps summed link rates at the codec limit', () => {
+      const data = JSON.parse(text);
+      const e2 = edgeRate(data, 'e2');
+      e2.ratePerSecond = 7e11;
+      data.edges.push({ ...e2, id: 'e2b' });
+      const { site, report } = build(data);
+      expect(site.links.find((l) => l.resource === 'fluid:titaniumtetrachloride')!.rate).toBe(MAX_RATE);
+      expect(report.adjusted).toBe(1);
+    });
+
+    it('reports skipped, adjusted and truncated exactly for one crafted file', () => {
+      const data = JSON.parse(text);
+      data.nodes.push({ id: 'bad' });
+      edgeRate(data, 'e2').ratePerSecond = -5;
+      data.nodes[0].machineCount = 1e7; // a port node: never packed
+      const p = parseGtnhProject(JSON.stringify(data));
+      expect(p.skipped).toBe(2);
+      expect(p.adjusted).toBe(2);
+      const { report } = buildSiteFromGtnh(p);
+      // The report counts nodes: n6 and n7 of the fixture, not the malformed entries.
+      expect(report).toMatchObject({ skipped: 2, adjusted: 2, truncated: false });
+    });
+
+    it('turns a failed validation into a readable import error', () => {
+      const p = parseGtnhProject(text);
+      expect(() => buildSiteFromGtnh(p, new Map(), { size: [1, 1] })).toThrow(ImportError);
+      expect(() => buildSiteFromGtnh(p, new Map(), { size: [1, 1] })).toThrow(
+        /^Could not build a valid template: /,
+      );
+    });
   });
 
   it('makes stable fallback colours', () => {

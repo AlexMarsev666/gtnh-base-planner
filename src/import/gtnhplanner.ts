@@ -27,12 +27,15 @@ import {
   DEFAULT_SITE_SIZE,
   MAX_GROUPS,
   MAX_LINKS,
+  MAX_MACHINE_COUNT,
   MAX_PORTS,
+  MAX_RATE,
   MAX_RESOURCES,
   SITE_MAX_SIZE,
   SITE_MIN_SIZE,
   validateSiteState,
 } from '../share/siteCodec';
+import { PlanFormatError } from '../share/binary';
 import { clampCount } from '../ui/fields';
 import { rotatedSize } from '../model/geometry';
 import { packUnits } from '../model/layout/packer';
@@ -45,7 +48,9 @@ import type { MultiblockDef, PlanLimits } from '../model/multiblock/types';
  *
  * Only what a layout needs is read: recipes (machine, inputs, outputs), nodes (recipe, machine count),
  * storages and edges. Everything else is ignored, and malformed entries are skipped rather than failing
- * the whole file. Nothing here touches the network.
+ * the whole file, and out-of-range numbers are clamped (machine counts) or dropped (rates) and counted in
+ * `adjusted`. Control characters in ids and names are replaced by spaces without being counted. Nothing here
+ * touches the network.
  */
 
 export const MAX_IMPORT_BYTES = 16 * 1024 * 1024;
@@ -124,6 +129,8 @@ export interface GtnhProject {
   edges: GtnhEdge[];
   /** Entries that were malformed and skipped. */
   skipped: number;
+  /** Numbers that were out of range and were clamped (machine counts) or dropped (rates). */
+  adjusted: number;
 }
 
 export class ImportError extends Error {
@@ -135,7 +142,17 @@ export class ImportError extends Error {
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
-const str = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined);
+/**
+ * A non-empty string with control characters (the site codec refuses them in names) replaced by spaces,
+ * trimmed; empty after that counts as missing.
+ * Applied wherever an id or name is read, so ids still match between recipes, nodes and edges. Silent: not
+ * counted in `adjusted`.
+ */
+const str = (v: unknown): string | undefined => {
+  if (typeof v !== 'string') return undefined;
+  const s = v.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  return s.length > 0 ? s : undefined;
+};
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 const KINDS: readonly GtnhKind[] = ['item', 'fluid', 'aspect', 'power'];
 const kindOf = (v: unknown): GtnhKind | undefined =>
@@ -183,12 +200,30 @@ export function parseGtnhProject(text: string): GtnhProject {
       throw new ImportError(`Too many ${section} (${n}); at most ${IMPORT_LIMITS[section]} can be imported.`);
   }
   let skipped = 0;
+  let adjusted = 0;
+  /** A machine count: finite and within the site codec's limit; anything else is clamped (default 1). */
+  const count = (v: unknown): number => {
+    if (v === undefined) return 1;
+    const c = Math.min(MAX_MACHINE_COUNT, Math.max(0, num(v) ?? 1));
+    if (c !== v) adjusted++;
+    return c;
+  };
+  /** A rate per second: finite, 0 to `MAX_RATE`; otherwise dropped (a clamped nonsense rate would mislead). */
+  const rate = (v: unknown): number | undefined => {
+    if (v === undefined || v === null) return undefined;
+    const n = num(v);
+    if (n !== undefined && n >= 0 && n <= MAX_RATE) return n;
+    adjusted++;
+    return undefined;
+  };
   const recipes = new Map<string, GtnhRecipe>();
   for (const r of list(data.recipes)) {
+    const rid = isObj(r) ? str(r.id) : undefined;
+    const machineType = isObj(r) ? str(r.machineType) : undefined;
     if (
       !isObj(r) ||
-      !str(r.id) ||
-      !str(r.machineType) ||
+      !rid ||
+      !machineType ||
       list(r.inputs).length > IMPORT_LIMITS.stacks ||
       list(r.outputs).length > IMPORT_LIMITS.stacks
     ) {
@@ -199,37 +234,39 @@ export function parseGtnhProject(text: string): GtnhProject {
       list(v)
         .map(stack)
         .filter((s): s is GtnhStack => s !== null);
-    recipes.set(r.id as string, {
-      id: r.id as string,
-      name: str(r.name) ?? (r.id as string),
+    recipes.set(rid, {
+      id: rid,
+      name: str(r.name) ?? rid,
       kind: str(r.kind),
-      machineType: r.machineType as string,
+      machineType,
       minimumTier: str(r.minimumTier),
       inputs: stacks(r.inputs),
       outputs: stacks(r.outputs),
       handlers: list(r.machineHandlers)
         .filter(isObj)
-        .flatMap((h) =>
-          str(h.id) && str(h.label)
-            ? [{ id: h.id as string, label: h.label as string, kind: str(h.kind) }]
-            : [],
-        ),
+        .flatMap((h) => {
+          const id = str(h.id);
+          const label = str(h.label);
+          return id && label ? [{ id, label, kind: str(h.kind) }] : [];
+        }),
       generator: isObj(r.power),
     });
   }
   const nodes: GtnhNode[] = [];
   const nodeIds = new Set<string>();
   for (const n of list(data.nodes)) {
+    const id = isObj(n) ? str(n.id) : undefined;
+    const recipeId = isObj(n) ? str(n.recipeId) : undefined;
     // A repeated node id would make every link to it ambiguous.
-    if (!isObj(n) || !str(n.id) || !str(n.recipeId) || nodeIds.has(n.id as string)) {
+    if (!isObj(n) || !id || !recipeId || nodeIds.has(id)) {
       skipped++;
       continue;
     }
-    nodeIds.add(n.id as string);
+    nodeIds.add(id);
     nodes.push({
-      id: n.id as string,
-      recipeId: n.recipeId as string,
-      machineCount: Math.max(0, num(n.machineCount) ?? 1),
+      id,
+      recipeId,
+      machineCount: count(n.machineCount),
       overclockTier: str(n.overclockTier),
       machineHandlerId: str(n.machineHandlerId),
       enabled: n.enabled !== false,
@@ -238,16 +275,18 @@ export function parseGtnhProject(text: string): GtnhProject {
   const storages: GtnhStorage[] = [];
   for (const s of list(data.storages)) {
     const kind = isObj(s) ? kindOf(s.kind) : undefined;
-    if (!isObj(s) || !str(s.id) || !kind || !str(s.resourceId)) {
+    const id = isObj(s) ? str(s.id) : undefined;
+    const resourceId = isObj(s) ? str(s.resourceId) : undefined;
+    if (!isObj(s) || !id || !kind || !resourceId) {
       skipped++;
       continue;
     }
     const color = str(s.dominantColor);
     const icon = str(s.iconPath);
     storages.push({
-      id: s.id as string,
+      id,
       kind,
-      resourceId: s.resourceId as string,
+      resourceId,
       displayName: str(s.displayName),
       dominantColor: color && COLOR.test(color) ? color.toLowerCase() : undefined,
       iconPath: icon && iconUrl(icon) ? icon : undefined,
@@ -257,17 +296,21 @@ export function parseGtnhProject(text: string): GtnhProject {
   const edges: GtnhEdge[] = [];
   for (const e of list(data.edges)) {
     const kind = isObj(e) ? kindOf(e.resourceKind) : undefined;
-    if (!isObj(e) || !str(e.id) || !str(e.source) || !str(e.target) || !kind || !str(e.resourceId)) {
+    const id = isObj(e) ? str(e.id) : undefined;
+    const source = isObj(e) ? str(e.source) : undefined;
+    const target = isObj(e) ? str(e.target) : undefined;
+    const resourceId = isObj(e) ? str(e.resourceId) : undefined;
+    if (!isObj(e) || !id || !source || !target || !kind || !resourceId) {
       skipped++;
       continue;
     }
     edges.push({
-      id: e.id as string,
-      source: e.source as string,
-      target: e.target as string,
+      id,
+      source,
+      target,
       resourceKind: kind,
-      resourceId: e.resourceId as string,
-      ratePerSecond: num(e.ratePerSecond),
+      resourceId,
+      ratePerSecond: rate(e.ratePerSecond),
     });
   }
   const schemaVersion = num(data.schemaVersion);
@@ -280,6 +323,7 @@ export function parseGtnhProject(text: string): GtnhProject {
     storages,
     edges,
     skipped,
+    adjusted,
   };
 }
 
@@ -564,6 +608,8 @@ export interface ImportReport {
   skipped: number;
   /** Machines shown as placeholders. */
   placeholders: string[];
+  /** Numbers that were out of range and were clamped or dropped (in the file, or rates summed too high). */
+  adjusted: number;
   /** Limits hit (too many groups, links, ports or resources). */
   truncated: boolean;
   /** Whether the arranged groups fit the site. */
@@ -657,6 +703,7 @@ export function buildSiteFromGtnh(
   const rows = importRows(project);
   const resources: Record<string, ResourceDef> = {};
   let truncated = false;
+  let adjusted = project.adjusted;
   const addResource = (
     kind: GtnhKind,
     id: string,
@@ -766,7 +813,11 @@ export function buildSiteFromGtnh(
     const k = `${JSON.stringify(from)}|${JSON.stringify(to)}|${resource}`;
     const existing = linkByKey.get(k);
     if (existing) {
-      if (rate !== undefined) existing.rate = (existing.rate ?? 0) + rate;
+      if (rate !== undefined) {
+        const sum = (existing.rate ?? 0) + rate;
+        if (sum > MAX_RATE) adjusted++;
+        existing.rate = Math.min(MAX_RATE, sum);
+      }
       return;
     }
     if (linkByKey.size >= MAX_LINKS) {
@@ -849,18 +900,25 @@ export function buildSiteFromGtnh(
   for (const k of Object.keys(resources)) if (!usedRes.has(k)) delete resources[k];
 
   let size: [number, number] = opts.size ?? [...DEFAULT_SITE_SIZE];
-  let site: SiteState = validateSiteState({
-    v: 1,
-    kind: 'site',
-    name: project.name.slice(0, 120),
-    size,
-    corridor: opts.corridor ?? DEFAULT_CORRIDOR,
-    groups,
-    links: links(),
-    ports,
-    resources,
-    colors: {},
-  });
+  let site: SiteState;
+  try {
+    site = validateSiteState({
+      v: 1,
+      kind: 'site',
+      name: project.name.slice(0, 120),
+      size,
+      corridor: opts.corridor ?? DEFAULT_CORRIDOR,
+      groups,
+      links: links(),
+      ports,
+      resources,
+      colors: {},
+    });
+  } catch (err) {
+    // Only a validation refusal is the import's fault; anything else is a bug and keeps its own stack.
+    if (!(err instanceof PlanFormatError)) throw err;
+    throw new ImportError(`Could not build a valid template: ${err.message}`);
+  }
   site = { ...site, groups: stackGroups(site, builder, opts.below) };
   const sizes = localFootprints(builder(site, { pipes: false, cables: false, below: opts.below }));
   let arranged = arrangeSite(site, (id) => sizes.get(id));
@@ -884,6 +942,7 @@ export function buildSiteFromGtnh(
       links: site.links.length,
       aspects,
       skipped,
+      adjusted,
       placeholders: [...placeholders],
       truncated,
       fits: arranged.fits,
