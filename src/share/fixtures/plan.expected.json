@@ -1,0 +1,33 @@
+{
+  "v": 1,
+  "multiblockId": "distillation-tower",
+  "count": 3,
+  "limits": {
+    "x": 2,
+    "y": null,
+    "z": 3
+  },
+  "enabledHatches": ["itemIn", "fluidOut", "energy", "maintenance"],
+  "colors": {
+    "fluidOut": "#1166aa",
+    "energy": "#ff8800"
+  },
+  "manualUnits": [
+    {
+      "id": 0,
+      "origin": [0, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": 2,
+      "origin": [6, 0, 1],
+      "rotation": 1
+    },
+    {
+      "id": 5,
+      "origin": [-4, 0, 9],
+      "rotation": 3
+    }
+  ],
+  "size": 8
+}

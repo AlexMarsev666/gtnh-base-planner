@@ -20,3 +20,24 @@ export type Rotation = 0 | 1 | 2 | 3;
 export type ViewMode = 'simple' | 'detailed';
 
 export type CellRole = 'casing' | 'controller' | 'air';
+
+/** GregTech voltage tier, lowest first. Append only: share links store the index. */
+export const TIERS = [
+  'ULV',
+  'LV',
+  'MV',
+  'HV',
+  'EV',
+  'IV',
+  'LuV',
+  'ZPM',
+  'UV',
+  'UHV',
+  'UEV',
+  'UIV',
+  'UMV',
+  'UXV',
+  'MAX',
+] as const;
+
+export type Tier = (typeof TIERS)[number];

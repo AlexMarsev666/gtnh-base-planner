@@ -1,0 +1,180 @@
+{
+  "v": 1,
+  "kind": "site",
+  "size": [40, 36],
+  "corridor": 3,
+  "groups": [
+    {
+      "id": "dt",
+      "multiblockId": "distillation-tower",
+      "count": 2,
+      "limits": {
+        "x": 2,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["energy", "maintenance"],
+      "origin": [3, 4],
+      "rotation": 1,
+      "label": "Cracker tower",
+      "elevation": 5,
+      "limitsLocked": true,
+      "size": 7
+    },
+    {
+      "id": "sb",
+      "multiblockId": "single-block",
+      "count": 4,
+      "limits": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "enabledHatches": ["energy"],
+      "origin": [20, 4],
+      "rotation": 2,
+      "machine": "macerator",
+      "source": {
+        "name": "Macerator",
+        "machineCount": 3.2,
+        "tier": "HV"
+      }
+    },
+    {
+      "id": "ph",
+      "multiblockId": "placeholder",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [20, 14],
+      "rotation": 0,
+      "label": "Mystery"
+    },
+    {
+      "id": "ebf",
+      "multiblockId": "electric-blast-furnace",
+      "count": 3,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": ["energy", "maintenance", "muffler"],
+      "origin": [3, 20],
+      "rotation": 0,
+      "elevation": 5
+    }
+  ],
+  "links": [
+    {
+      "id": "l1",
+      "from": {
+        "port": "in1"
+      },
+      "to": {
+        "group": "sb"
+      },
+      "resource": "item:dust",
+      "rate": 2.5
+    },
+    {
+      "id": "l2",
+      "from": {
+        "group": "sb"
+      },
+      "to": {
+        "group": "ebf"
+      },
+      "resource": "item:dust",
+      "rate": 1
+    },
+    {
+      "id": "l3",
+      "from": {
+        "port": "in2"
+      },
+      "to": {
+        "group": "dt"
+      },
+      "resource": "fluid:water"
+    },
+    {
+      "id": "l4",
+      "from": {
+        "group": "ebf"
+      },
+      "to": {
+        "port": "out1"
+      },
+      "resource": "item:ingot",
+      "rate": 0.5
+    },
+    {
+      "id": "l5",
+      "from": {
+        "group": "dt"
+      },
+      "to": {
+        "port": "trash"
+      },
+      "resource": "fluid:waste",
+      "rate": 100
+    }
+  ],
+  "ports": [
+    {
+      "id": "in1",
+      "dir": "in",
+      "resource": "item:dust"
+    },
+    {
+      "id": "in2",
+      "dir": "in",
+      "resource": "fluid:water",
+      "pos": [0, 10]
+    },
+    {
+      "id": "out1",
+      "dir": "out",
+      "resource": "item:ingot"
+    },
+    {
+      "id": "trash",
+      "dir": "out",
+      "resource": "fluid:waste",
+      "void": true
+    }
+  ],
+  "resources": {
+    "fluid:waste": {
+      "kind": "fluid",
+      "name": "Waste",
+      "color": "#445500"
+    },
+    "fluid:water": {
+      "kind": "fluid",
+      "name": "Water",
+      "color": "#2244ff",
+      "icon": "/datasets/fluids/water.png"
+    },
+    "item:dust": {
+      "kind": "item",
+      "name": "Iron Dust",
+      "color": "#aabbcc",
+      "icon": "/datasets/items/iron_dust.png"
+    },
+    "item:ingot": {
+      "kind": "item",
+      "name": "Iron Ingot",
+      "color": "#ccccdd"
+    }
+  },
+  "colors": {
+    "energy": "#ff8800"
+  },
+  "name": "Fixture site"
+}

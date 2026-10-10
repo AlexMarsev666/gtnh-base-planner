@@ -1,9 +1,9 @@
 import { getMultiblock } from '../data/catalog';
 import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { effectiveSize } from '../model/resize';
-import type { Rotation, Vec3 } from '../model/core/types';
+import { TIERS, type Rotation, type Tier, type Vec3 } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
-import type { PlanState } from '../model/plan/types';
+import { WALLSHARE_MODES, type HatchTiers, type PlanState, type WallshareMode } from '../model/plan/types';
 import {
   LinkTooLargeError,
   MAX_LINK_CODE_CHARS,
@@ -38,6 +38,10 @@ export { LinkTooLargeError, MAX_PAYLOAD_BYTES, PlanFormatError } from './binary'
  *   i  [id, ...]                manual unit ids; omitted when they are 0, 1, 2, ...
  *   s  size                     height / length of a resizable multiblock; omitted = `resize.default`
  *                               (so a multiblock's `resize.default` must never change)
+ *   t  tier index               index into `TIERS` (append only); omitted = default
+ *   k  { "<key>": tier index }  hatch tier overrides, keys as in `HatchTiers`; omitted when empty
+ *   f  1                        mirrored; omitted = not mirrored
+ *   w  wallshare index          index into `WALLSHARE_MODES`; omitted = auto
  */
 
 export const PLAN_VERSION = 1;
@@ -113,6 +117,51 @@ export function expectHatchKind(value: unknown, what: string): HatchKind {
     throw new PlanFormatError(`${what} is not a known hatch kind.`);
   }
   return value as HatchKind;
+}
+
+export function expectTier(value: unknown, what: string): Tier {
+  if (typeof value !== 'string' || !(TIERS as readonly string[]).includes(value)) {
+    throw new PlanFormatError(`${what} is not a known tier.`);
+  }
+  return value as Tier;
+}
+
+export function expectWallshare(value: unknown, what: string): WallshareMode {
+  if (typeof value !== 'string' || !(WALLSHARE_MODES as readonly string[]).includes(value)) {
+    throw new PlanFormatError(`${what} is not a known wall sharing mode.`);
+  }
+  return value as WallshareMode;
+}
+
+/** `true` stays, `false` and absent mean "off" and are not stored. */
+export function expectFlag(value: unknown, what: string): true | undefined {
+  if (value === undefined || value === null || value === false) return undefined;
+  if (value !== true) throw new PlanFormatError(`${what} must be true or false.`);
+  return true;
+}
+
+const MAX_HATCH_TIERS = 512;
+const PLAN_HATCH_TIER_KEY_RE = new RegExp(`^(${HATCH_KINDS.join('|')}):\\d{1,4}$`);
+
+/**
+ * Hatch tier overrides: an object of `key -> tier`. `keyOk` decides which keys are valid (plans and site
+ * groups use different key shapes). Returns keys in sorted order, or `undefined` when there are none.
+ */
+export function validateHatchTiers(
+  value: unknown,
+  what: string,
+  keyOk: (key: string) => boolean = (k) => PLAN_HATCH_TIER_KEY_RE.test(k),
+): HatchTiers | undefined {
+  if (value === undefined || value === null) return undefined;
+  const obj = expectObject(value, what);
+  const keys = Object.keys(obj);
+  if (keys.length > MAX_HATCH_TIERS) throw new PlanFormatError(`${what} has too many entries.`);
+  const out: HatchTiers = {};
+  for (const key of keys.sort()) {
+    if (!keyOk(key)) throw new PlanFormatError(`${what} has an invalid hatch key "${key.slice(0, 40)}".`);
+    out[key] = expectTier(field(obj, key), `${what} tier for "${key.slice(0, 40)}"`);
+  }
+  return keys.length > 0 ? out : undefined;
 }
 
 function expectMultiblockId(value: unknown): string {
@@ -218,6 +267,17 @@ export function validatePlanState(input: unknown): PlanState {
     const size = effectiveSize(getMultiblock(multiblockId)!, expectInt(sizeRaw, 'Size', 1, MAX_SIZE));
     if (size !== undefined) plan.size = size;
   }
+
+  const tier = field(obj, 'tier');
+  if (tier !== undefined && tier !== null) plan.tier = expectTier(tier, 'Tier');
+  const hatchTiers = validateHatchTiers(field(obj, 'hatchTiers'), 'Hatch tiers');
+  if (hatchTiers) plan.hatchTiers = hatchTiers;
+  if (expectFlag(field(obj, 'mirror'), 'Mirror')) plan.mirror = true;
+  const wallshareRaw = field(obj, 'wallshare');
+  if (wallshareRaw !== undefined && wallshareRaw !== null) {
+    const wallshare = expectWallshare(wallshareRaw, 'Wall sharing');
+    if (wallshare !== 'auto') plan.wallshare = wallshare;
+  }
   return plan;
 }
 
@@ -235,9 +295,13 @@ interface CompactPlan {
   u?: number[];
   i?: number[];
   s?: number;
+  t?: number;
+  k?: Record<string, number>;
+  f?: 1;
+  w?: number;
 }
 
-const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's']);
+const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's', 't', 'k', 'f', 'w']);
 
 function hatchMask(kinds: readonly HatchKind[]): number {
   let mask = 0;
@@ -269,6 +333,14 @@ function toCompact(plan: PlanState): CompactPlan {
     if (plan.manualUnits.some((u, i) => u.id !== i)) out.i = plan.manualUnits.map((u) => u.id);
   }
   if (plan.size !== undefined) out.s = plan.size;
+  if (plan.tier !== undefined) out.t = TIERS.indexOf(plan.tier);
+  if (plan.hatchTiers) {
+    out.k = {};
+    for (const key of Object.keys(plan.hatchTiers).sort()) out.k[key] = TIERS.indexOf(plan.hatchTiers[key]);
+  }
+  if (plan.mirror) out.f = 1;
+  if (plan.wallshare !== undefined && plan.wallshare !== 'auto')
+    out.w = WALLSHARE_MODES.indexOf(plan.wallshare);
   return out;
 }
 
@@ -340,6 +412,31 @@ function fromCompact(input: unknown): PlanState {
   }
   const size = field(obj, 's');
   if (size !== undefined) plan.size = size;
+  const t = field(obj, 't');
+  if (t !== undefined) plan.tier = TIERS[expectInt(t, 'Tier', 0, TIERS.length - 1)];
+  const k = field(obj, 'k');
+  if (k !== undefined) {
+    const kObj = expectObject(k, 'Hatch tiers');
+    const tiers: Record<string, Tier> = {};
+    for (const key of Object.keys(kObj)) {
+      // defineProperty, so a key such as "__proto__" stays an own key and is refused by validation.
+      Object.defineProperty(tiers, key, {
+        value: TIERS[expectInt(field(kObj, key), 'Hatch tier', 0, TIERS.length - 1)],
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    }
+    plan.hatchTiers = tiers;
+  }
+  const f = field(obj, 'f');
+  if (f !== undefined) {
+    if (f !== 1) throw new PlanFormatError('Mirror flag is damaged.');
+    plan.mirror = true;
+  }
+  const w = field(obj, 'w');
+  if (w !== undefined)
+    plan.wallshare = WALLSHARE_MODES[expectInt(w, 'Wall sharing', 0, WALLSHARE_MODES.length - 1)];
   return validatePlanState(plan);
 }
 

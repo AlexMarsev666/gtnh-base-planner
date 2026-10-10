@@ -1,7 +1,21 @@
-import type { Dir, Vec3 } from '../core/types';
+import type { Dir, Tier, Vec3 } from '../core/types';
 import type { HatchKind, PlanLimits, Unit } from '../multiblock/types';
 
 /** A machine plan and what building it produces: packed units, placed hatches, shared walls. */
+
+/**
+ * How units may share walls. `auto` (the default, stored as absent) tries everything the multiblock allows;
+ * the others restrict the contact to one side or turn sharing off. Append only: share links store the index.
+ */
+export const WALLSHARE_MODES = ['auto', 'side', 'stack', 'back', 'separate'] as const;
+export type WallshareMode = (typeof WALLSHARE_MODES)[number];
+
+/**
+ * Hatch tier overrides, keyed by an identity that never depends on positions: `"<kind>:<ordinal>"` in the
+ * machine view (ordinal among hatches of that kind, from 0); in a template group
+ * `"<kind>:<resource>:<unit index>"` or `"<kind>:<resource>:shared"`.
+ */
+export type HatchTiers = Record<string, Tier>;
 
 /** Everything that defines a plan. Derived data is never stored. */
 export interface PlanState {
@@ -19,6 +33,14 @@ export interface PlanState {
    * means `resize.default`.
    */
   size?: number;
+  /** Machine tier = tier of its energy hatches; absent = the planner's default. */
+  tier?: Tier;
+  /** Tier of single hatches that differ from `tier` (see `HatchTiers`). */
+  hatchTiers?: HatchTiers;
+  /** Every unit is built mirrored in X. Absent = not mirrored. */
+  mirror?: boolean;
+  /** Wall sharing mode; absent = `auto`. */
+  wallshare?: WallshareMode;
 }
 
 export interface PackResult {

@@ -4,12 +4,19 @@ import { getSingleMachine } from '../data/single-machines';
 import { effectiveSize } from '../model/resize';
 import {
   iconUrl,
+  ROUTING_STYLES,
+  TRANSFORMER_AMPS,
   type Endpoint,
+  type HatchAssign,
   type ResourceDef,
+  type RoutingDepth,
+  type RoutingStyle,
   type SiteGroup,
   type SiteLink,
   type SitePort,
+  type SiteRouting,
   type SiteState,
+  type TransformerAmps,
 } from '../model/site/types';
 import type { Rotation } from '../model/core/types';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
@@ -34,8 +41,12 @@ import {
   expectArray,
   expectHatchKind,
   expectInt,
+  expectFlag,
   expectObject,
+  expectTier,
+  expectWallshare,
   field,
+  validateHatchTiers,
 } from './codec';
 
 /**
@@ -142,6 +153,47 @@ export interface SiteLoad {
   replaced: ReplacedGroup[];
 }
 
+const GROUP_HATCH_TIER_KEY_RE = new RegExp(`^(${HATCH_KINDS.join('|')}):(.+):(\\d{1,4}|shared)$`);
+const ZONE_RE = /^[A-Za-z0-9_-]{1,32}$/;
+
+const NO_RESOURCE_KEY_RE = /^(energy|dynamo|maintenance|muffler):\d{1,4}$/;
+
+/**
+ * `"<kind>:<resource>:<unit index>"` or `"<kind>:<resource>:shared"` (the resource key may hold colons); kinds
+ * without a resource (energy, dynamo, maintenance, muffler) use `"<kind>:<ordinal>"`.
+ */
+function isGroupHatchTierKey(key: string): boolean {
+  if (key.length > MAX_KEY || /[\u0000-\u001f\u007f]/.test(key)) return false;
+  return NO_RESOURCE_KEY_RE.test(key) || GROUP_HATCH_TIER_KEY_RE.test(key);
+}
+
+/** Hatch assignments by resource key; empty entries are dropped, keys come out sorted. */
+function validateAssign(value: unknown, what: string): NonNullable<SiteGroup['assign']> | undefined {
+  if (value === undefined || value === null) return undefined;
+  const obj = expectObject(value, `${what} assignments`);
+  const keys = Object.keys(obj);
+  if (keys.length > MAX_RESOURCES) throw new PlanFormatError(`${what} has too many assignments.`);
+  const out: NonNullable<SiteGroup['assign']> = {};
+  for (const key of keys.sort()) {
+    expectString(key, `${what} assignment key`, MAX_KEY);
+    if (RESERVED_KEYS.has(key)) throw new PlanFormatError(`Assignment key "${key}" is not allowed.`);
+    const entry = expectObject(field(obj, key), `${what} assignment "${key}"`);
+    const assign: HatchAssign = {};
+    const unit = field(entry, 'unit');
+    if (unit === 'all') assign.unit = 'all';
+    else if (unit !== undefined && unit !== null)
+      assign.unit = expectInt(unit, `${what} assignment unit`, 0, MAX_COUNT - 1);
+    const zone = field(entry, 'zone');
+    if (zone !== undefined && zone !== null) {
+      if (typeof zone !== 'string' || !ZONE_RE.test(zone))
+        throw new PlanFormatError(`${what} assignment zone must be 1 to 32 of a-z, 0-9, _ and -.`);
+      assign.zone = zone;
+    }
+    if (assign.unit !== undefined || assign.zone !== undefined) out[key] = assign;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[]): SiteGroup {
   const what = `Group ${index + 1}`;
   const obj = expectObject(value, what);
@@ -188,6 +240,30 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
     if (e > 0) group.elevation = e;
   }
   if (field(obj, 'limitsLocked') === true) group.limitsLocked = true;
+  const tier = field(obj, 'tier');
+  if (tier !== undefined && tier !== null) group.tier = expectTier(tier, `${what} tier`);
+  const hatchTiers = validateHatchTiers(field(obj, 'hatchTiers'), `${what} hatch tiers`, isGroupHatchTierKey);
+  if (hatchTiers) group.hatchTiers = hatchTiers;
+  if (expectFlag(field(obj, 'mirror'), `${what} mirror`)) group.mirror = true;
+  const wallshare = field(obj, 'wallshare');
+  if (wallshare !== undefined && wallshare !== null) {
+    const mode = expectWallshare(wallshare, `${what} wall sharing`);
+    if (mode !== 'auto') group.wallshare = mode;
+  }
+  const assign = validateAssign(field(obj, 'assign'), what);
+  if (assign) group.assign = assign;
+  // Transformer settings only mean something on a single-block machine; elsewhere they are left out.
+  const step = field(obj, 'step');
+  if (step !== undefined && step !== null) {
+    if (step !== 'up' && step !== 'down') throw new PlanFormatError(`${what} step must be up or down.`);
+    if (isSingleBlock(def)) group.step = step;
+  }
+  const amps = field(obj, 'amps');
+  if (amps !== undefined && amps !== null) {
+    if (typeof amps !== 'number' || !(TRANSFORMER_AMPS as readonly number[]).includes(amps))
+      throw new PlanFormatError(`${what} amps must be ${TRANSFORMER_AMPS.join(', ')}.`);
+    if (isSingleBlock(def)) group.amps = amps as TransformerAmps;
+  }
   const sizeRaw = field(obj, 'size');
   if (sizeRaw !== undefined && sizeRaw !== null) {
     const size = effectiveSize(def, expectInt(sizeRaw, `${what} size`, 1, MAX_SIZE));
@@ -352,7 +428,47 @@ export function validateSiteStateWithReport(input: unknown): SiteLoad {
   };
   const name = optionalString(field(obj, 'name'), 'Site name', MAX_NAME);
   if (name !== undefined) site.name = name;
+  const routing = field(obj, 'routing');
+  if (routing !== undefined && routing !== null) {
+    const r = expectObject(routing, 'Routing');
+    const style = field(r, 'style');
+    if (!(ROUTING_STYLES as readonly unknown[]).includes(style))
+      throw new PlanFormatError('Routing style must be classic or neat.');
+    site.routing = {
+      style: style as RoutingStyle,
+      depth: expectInt(field(r, 'depth'), 'Routing depth', 0, 3) as RoutingDepth,
+    };
+  }
+  const seed = field(obj, 'seed');
+  if (seed !== undefined && seed !== null) site.seed = expectInt(seed, 'Seed', 0, MAX_SEED);
+  // An assignment or hatch tier for a resource the site no longer has is stale: drop it rather than refuse the
+  // site. Unit indices at or above `count` are kept: the count can grow back and the setting must survive.
+  for (const g of groups) {
+    if (g.assign) {
+      for (const k of Object.keys(g.assign)) if (!hasResource(k)) delete g.assign[k];
+      if (Object.keys(g.assign).length === 0) delete g.assign;
+    }
+    if (g.hatchTiers) {
+      for (const k of Object.keys(g.hatchTiers)) {
+        const resource = GROUP_HATCH_TIER_KEY_RE.exec(k)?.[2];
+        if (!NO_RESOURCE_KEY_RE.test(k) && (resource === undefined || !hasResource(resource)))
+          delete g.hatchTiers[k];
+      }
+      if (Object.keys(g.hatchTiers).length === 0) delete g.hatchTiers;
+    }
+  }
   return { site, replaced };
+}
+
+/** Largest seed: any unsigned 32-bit integer. */
+export const MAX_SEED = 0xffffffff;
+
+/**
+ * Routing in effect: the site's own setting, or - for sites saved before it existed - the classic router
+ * with the depth the browser-wide "connect below" switch gave (one layer when on, none when off).
+ */
+export function effectiveRouting(site: Pick<SiteState, 'routing'>, connectBelow: boolean): SiteRouting {
+  return site.routing ?? { style: 'classic', depth: connectBelow ? 1 : 0 };
 }
 
 export function emptySite(): SiteState {
