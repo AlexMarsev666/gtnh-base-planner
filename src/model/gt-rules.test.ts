@@ -10,7 +10,7 @@ import type { MultiblockDef, PlanLimits, Unit } from './multiblock/types';
 const handMade = catalog.filter((d) => !d.generated);
 
 /**
- * Game rules checked against GT5-Unofficial 5.09.54.133 (GT:NH 2.9.0-beta-3) on whole plans, pipes included.
+ * Game rules checked against GT5-Unofficial 5.09.54.205 (GT:NH 2.9.0-RC-2) on whole plans, pipes included.
  * See the structure definitions linked from each multiblock's `source`.
  */
 

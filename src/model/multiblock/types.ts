@@ -91,6 +91,12 @@ export interface MultiblockDef {
   requiredHatches?: Partial<Record<HatchKind, HatchRequirement>>;
   /** Hatch kinds enabled by default in a new plan. */
   defaultHatches: HatchKind[];
+  /**
+   * Hatch zones by `LegendEntry.region` (generated entries name them `dot<N>` after the hint dot GT's tooltip
+   * uses): the kinds the zone's cells are meant for and the tooltip lines describing it, as the game prints them.
+   * Informational; it only constrains a plan where a user assigns a zone to a hatch.
+   */
+  zones?: Record<string, { kinds: HatchKind[]; text?: string }>;
   /** Whether casings of two units may overlap (shared walls) when the blocks match. */
   wallshare: boolean;
   /** Present when the structure has a variable size (see `ResizeRule`). */

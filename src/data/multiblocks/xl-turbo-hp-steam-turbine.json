@@ -2,7 +2,7 @@
   "id": "xl-turbo-hp-steam-turbine",
   "name": "XL Turbo HP Steam Turbine",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbineHPSteam.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/xlturbines/MTEXLTurbineHPSteam.java",
   "size": [9, 9, 29],
   "layers": [
     [
@@ -288,7 +288,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockspecialcasings.1@2",
-      "hatches": ["itemIn", "fluidIn", "fluidOut", "dynamo", "maintenance"]
+      "hatches": ["itemIn", "fluidIn", "fluidOut", "dynamo", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockframes@28" },
     "C": { "blockId": "gregtech:gt.blockcasings2@14" },
@@ -305,8 +306,19 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": { "dynamo": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "dynamo", "maintenance"],
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 },
+    "dynamo": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "dynamo", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "fluidIn", "fluidOut", "dynamo", "maintenance"],
+      "text": "1+ Dynamo Hatch: Any turbine casing\n1 Maintenance Hatch: Any turbine casing\n0+ Input Bus: Any turbine casing\n1+ Input Hatch: Any turbine casing\n1+ Output Hatch: Any turbine casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTEXLTurbineHPSteam (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTEXLTurbineHPSteam (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

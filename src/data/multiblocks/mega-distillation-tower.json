@@ -2,7 +2,7 @@
   "id": "mega-distillation-tower",
   "name": "Mega Distillation Tower",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaDistillationTower.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaDistillationTower.java",
   "size": [15, 30, 9],
   "layers": [
     [
@@ -338,18 +338,26 @@
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings4@1" },
-    "B": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["itemIn", "energy", "maintenance"] },
+    "B": {
+      "blockId": "gregtech:gt.blockcasings14@5",
+      "hatches": ["itemIn", "energy", "maintenance"],
+      "region": "dot1"
+    },
     "C": { "blockId": "gregtech:gt.sheetmetal@324" },
     "D": { "blockId": "gregtech:gt.blockcasings2@13" },
     "E": { "blockId": "gregtech:gt.blockcasings2@12" },
     "F": { "blockId": "gregtech:gt.blockcasings2@0" },
     "G": { "blockId": "gregtech:gt.blockcasings14@5" },
     "H": { "blockId": "gregtech:gt.blockframes@306" },
-    "I": { "blockId": "miscutils:gtplusplus.blockspecialcasings.2@0", "hatches": ["fluidIn"] },
+    "I": {
+      "blockId": "miscutils:gtplusplus.blockspecialcasings.2@0",
+      "hatches": ["fluidIn"],
+      "region": "dot3"
+    },
     "J": { "blockId": "miscutils:gtplusplus.blockspecialcasings.2@0" },
-    "K": { "blockId": "gregtech:gt.blockcasings2@13", "hatches": ["itemOut"] },
-    "L": { "blockId": "gregtech:gt.blockcasings2@12", "hatches": ["fluidIn"] },
-    "M": { "blockId": "gregtech:gt.blockcasings2@12", "hatches": ["fluidOut"] }
+    "K": { "blockId": "gregtech:gt.blockcasings2@13", "hatches": ["itemOut"], "region": "dot2" },
+    "L": { "blockId": "gregtech:gt.blockcasings2@12", "hatches": ["fluidIn"], "region": "dot3" },
+    "M": { "blockId": "gregtech:gt.blockcasings2@12", "hatches": ["fluidOut"], "region": "dot4" }
   },
   "controller": { "pos": [8, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15516" },
   "hatchBlocks": {
@@ -361,8 +369,22 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 3, "max": 11 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "energy", "maintenance"],
+      "text": "1+ Energy Hatch: Any base reinforced distillation casing\n1+ Maintenance Hatch: Any base reinforced distillation casing\n0+ Input Bus: Any base reinforced distillation casing"
+    },
+    "dot2": { "kinds": ["itemOut"], "text": "0+ Output Bus: Steel pipe casing on base structure" },
+    "dot3": { "kinds": ["fluidIn"], "text": "1+ Input Hatch: Bronze pipe casing on base structure" },
+    "dot4": { "kinds": ["fluidOut"], "text": "3-11 Output Hatch: Two per middle layer, one on top layer" }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEMegaDistillationTower (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEMegaDistillationTower (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

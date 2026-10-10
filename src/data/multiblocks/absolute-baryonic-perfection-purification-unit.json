@@ -2,7 +2,7 @@
   "id": "absolute-baryonic-perfection-purification-unit",
   "name": "Absolute Baryonic Perfection Purification Unit",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitBaryonicPerfection.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitBaryonicPerfection.java",
   "size": [17, 17, 17],
   "layers": [
     [
@@ -332,7 +332,8 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings10@2",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockframes@395" },
     "C": { "blockId": "gregtech:gt.blockcasings9@15" },
@@ -347,8 +348,19 @@
     "fluidOut": "gt.hatch.outputHatch"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": {},
-  "defaultHatches": ["itemIn", "itemOut"],
+  "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+      "text": "1+ Input Bus: Any quark exclusion casing (no stocking bus)\n1+ Input Hatch: Any quark exclusion casing\n1+ Output Bus: Any quark exclusion casing\n1+ Output Hatch: Any quark exclusion casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPurificationUnitBaryonicPerfection (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPurificationUnitBaryonicPerfection (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

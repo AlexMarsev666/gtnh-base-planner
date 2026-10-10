@@ -5,8 +5,8 @@ import { catalog } from './catalog';
 import generatedShapes from './gt-shapes.generated.json';
 
 /**
- * Every hand-made catalog structure, cell by cell, against the StructureLib shape in GT5-Unofficial 5.09.54.133
- * (the version in GT:NH 2.9.0-beta-3). Entries built from the game dump (tools/game-dump) are the game's own
+ * Every hand-made catalog structure, cell by cell, against the StructureLib shape in GT5-Unofficial 5.09.54.205
+ * (the version in GT:NH 2.9.0-RC-2). Entries built from the game dump (tools/game-dump) are the game's own
  * placement and are not listed here. Shapes and elements are copied from the Java sources linked in each JSON
  * `source`: which block each character is and which hatches (`buildHatchAdder(...).atLeast(...)`) may replace it.
  * The few entries still converted from the sources (tools/gt-source) bring their GT shape along in

@@ -2,7 +2,7 @@
   "id": "boldarnator",
   "name": "Boldarnator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialRockBreaker.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialRockBreaker.java",
   "size": [7, 5, 5],
   "layers": [
     ["  ABA  ", "BBBBBBB", "BBBBBBB", "BBBBBBB", "  ABA  "],
@@ -15,7 +15,8 @@
     "A": { "blockId": "gregtech:gt.blockframes@81" },
     "B": {
       "blockId": "miscutils:gtplusplus.blockcasings.2@0",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "minecraft:lava@1" },
@@ -32,11 +33,18 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": {
+    "itemOut": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any casing\n1 Maintenance Hatch: Any casing\n1 Muffler Hatch: Any casing\n0+ Input Bus: Any casing\n1+ Output Bus: Any casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialRockBreaker (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialRockBreaker (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

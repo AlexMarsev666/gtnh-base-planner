@@ -2,7 +2,7 @@
   "id": "data-bank",
   "name": "Data Bank",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/MTEDataBank.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEDataBank.java",
   "size": [5, 3, 3],
   "layers": [
     ["ABBBA", "ACCCA", "ACCCA"],
@@ -11,7 +11,11 @@
   ],
   "legend": {
     "A": { "blockId": "tectech:gt.blockcasingsTT@2" },
-    "B": { "blockId": "tectech:gt.blockcasingsTT@0", "hatches": ["energy", "dynamo", "maintenance"] },
+    "B": {
+      "blockId": "tectech:gt.blockcasingsTT@0",
+      "hatches": ["energy", "dynamo", "maintenance"],
+      "region": "dot1"
+    },
     "C": { "blockId": "tectech:gt.blockcasingsTT@1" }
   },
   "controller": { "pos": [2, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15313" },
@@ -21,8 +25,18 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": [],
-  "requiredHatches": { "dynamo": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "energy": { "min": 1 },
+    "dynamo": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["energy", "dynamo", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["energy", "maintenance"],
+      "text": "1+ Energy Hatch: Any High Power Casing\n1 Maintenance Hatch: Any High Power Casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTEDataBank (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTEDataBank (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

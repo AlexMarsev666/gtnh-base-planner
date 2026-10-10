@@ -2,7 +2,7 @@
   "id": "steam-grinder",
   "name": "Steam Grinder",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamMacerator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamMacerator.java",
   "size": [3, 4, 3],
   "layers": [
     ["AAA", "AAA", "AAA"],

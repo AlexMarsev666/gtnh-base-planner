@@ -2,7 +2,7 @@
   "id": "hot-isostatic-pressurization-unit",
   "name": "Hot Isostatic Pressurization Unit",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEHIPCompressor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/compressor/MTEHIPCompressor.java",
   "size": [15, 10, 7],
   "layers": [
     [
@@ -97,11 +97,19 @@
     ]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings10@4", "hatches": ["energy", "maintenance"] },
+    "A": {
+      "blockId": "gregtech:gt.blockcasings10@4",
+      "hatches": ["energy", "maintenance"],
+      "region": "dot1"
+    },
     "B": { "blockId": "gregtech:gt.blockcasings10@5" },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "gregtech:gt.blockcasings5@0" },
-    "E": { "blockId": "gregtech:gt.blockcasings10@5", "hatches": ["itemIn", "itemOut", "fluidIn"] },
+    "E": {
+      "blockId": "gregtech:gt.blockcasings10@5",
+      "hatches": ["itemIn", "itemOut", "fluidIn"],
+      "region": "dot2"
+    },
     "F": { "blockId": "gregtech:gt.blockcasings10@10" },
     "G": { "blockId": "gregtech:gt.blockcasings10@9" }
   },
@@ -114,8 +122,23 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["energy", "maintenance"],
+      "text": "0+ Heat Sensor Hatch: Any electric compressor casing\n1+ Energy Hatch: Any electric compressor casing\n1 Maintenance Hatch: Any electric compressor casing"
+    },
+    "dot2": {
+      "kinds": ["itemIn", "itemOut", "fluidIn"],
+      "text": "1+ Input Bus: Any side pipe casing\n0+ Input Hatch: Any side pipe casing\n1+ Output Bus: Any side pipe casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEHIPCompressor (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEHIPCompressor (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

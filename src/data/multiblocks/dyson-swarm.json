@@ -2,7 +2,7 @@
   "id": "dyson-swarm",
   "name": "Dyson Swarm Ground Unit",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhintergalactic/tile/multi/TileEntityDysonSwarm.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/TileEntityDysonSwarm.java",
   "size": [16, 20, 16],
   "layers": [
     [
@@ -371,9 +371,13 @@
     "B": { "blockId": "gtnhintergalactic:dysonswarmparts@0" },
     "C": { "blockId": "gtnhintergalactic:dysonswarmparts@5" },
     "D": { "blockId": "gtnhintergalactic:dysonswarmparts@2" },
-    "E": { "blockId": "gtnhintergalactic:dysonswarmparts@0", "hatches": ["dynamo"] },
+    "E": { "blockId": "gtnhintergalactic:dysonswarmparts@0", "hatches": ["dynamo"], "region": "dot1" },
     "F": { "blockId": "gregtech:gt.blockcasings5@8" },
-    "G": { "blockId": "gtnhintergalactic:dysonswarmparts@2", "hatches": ["itemIn", "fluidIn"] },
+    "G": {
+      "blockId": "gtnhintergalactic:dysonswarmparts@2",
+      "hatches": ["itemIn", "fluidIn"],
+      "region": "dot2"
+    },
     "H": { "blockId": "gtnhintergalactic:dysonswarmparts@6" },
     "I": { "blockId": "gtnhintergalactic:dysonswarmparts@3" },
     "J": { "blockId": "gregtech:gt.blockframes@374" },
@@ -393,8 +397,15 @@
     "dynamo": "gt.hatch.dynamo"
   },
   "shareableHatches": ["itemIn", "fluidIn"],
-  "requiredHatches": { "dynamo": { "min": 1 } },
-  "defaultHatches": ["itemIn", "dynamo"],
+  "requiredHatches": { "itemIn": { "min": 1 }, "fluidIn": { "min": 1 }, "dynamo": { "min": 1 } },
+  "defaultHatches": ["itemIn", "fluidIn", "dynamo"],
+  "zones": {
+    "dot1": { "kinds": ["dynamo"], "text": "1+ Laser Source Hatch: Any center side casing on receiver" },
+    "dot2": {
+      "kinds": ["itemIn", "fluidIn"],
+      "text": "1+ Input Bus: Any center side casing on deployment unit\n1+ Input Hatch: Any center side casing on deployment unit"
+    }
+  },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: TileEntityDysonSwarm (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: TileEntityDysonSwarm (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

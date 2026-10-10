@@ -2,7 +2,7 @@
   "id": "source-chamber",
   "name": "Source Chamber",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhlanth/common/tileentity/MTESourceChamber.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTESourceChamber.java",
   "size": [5, 5, 6],
   "layers": [
     ["AA~AA", "BBCBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB"],
@@ -12,13 +12,17 @@
     ["BBBBB", "BDDDB", "BDDDB", "BDDDB", "BDDDB", "BBBBB"]
   ],
   "legend": {
-    "A": { "blockId": "gtnhlanth:casing.shielded_accelerator@0", "hatches": ["energy", "maintenance"] },
+    "A": {
+      "blockId": "gtnhlanth:casing.shielded_accelerator@0",
+      "hatches": ["energy", "maintenance"],
+      "region": "dot3"
+    },
     "B": { "blockId": "gtnhlanth:casing.shielded_accelerator@0" },
-    "C": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"] },
+    "C": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"], "region": "dot2" },
     "D": { "blockId": "gtnhlanth:tile.casing.shielded_accelerator_glass@0" },
     "E": { "blockId": "gtnhlanth:casing.electrode@0" },
     "F": { "blockId": "gt.hatch.special" },
-    "G": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn", "fluidIn"] }
+    "G": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn", "fluidIn"], "region": "dot1" }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@10506" },
   "hatchBlocks": {
@@ -28,9 +32,17 @@
     "energy": "gt.hatch.energy",
     "maintenance": "gt.hatch.maintenance"
   },
-  "shareableHatches": ["itemIn", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "energy", "maintenance"],
+  "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
+  "requiredHatches": { "itemOut": { "min": 1, "max": 1 }, "energy": { "min": 1, "max": 1 } },
+  "defaultHatches": ["itemIn", "itemOut", "energy"],
+  "zones": {
+    "dot1": { "kinds": ["itemIn", "fluidIn"], "text": "1 Input Bus/Hatch: Front center casing" },
+    "dot2": { "kinds": ["itemOut"], "text": "1 Output Bus: Behind controller" },
+    "dot3": {
+      "kinds": ["energy", "maintenance"],
+      "text": "1 Energy Hatch: Any front bottom casing\n1 Maintenance Hatch: Any front bottom casing"
+    }
+  },
   "wallshare": true,
-  "notes": "The structure has no open face for: itemOut (left out of the plan). Built by the game itself: MTESourceChamber (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTESourceChamber (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

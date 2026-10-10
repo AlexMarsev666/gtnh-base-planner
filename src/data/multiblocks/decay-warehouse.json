@@ -2,7 +2,7 @@
   "id": "decay-warehouse",
   "name": "Decay Warehouse",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEDecayWarehouse.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEDecayWarehouse.java",
   "size": [5, 3, 5],
   "layers": [
     ["AAAAA", "AAAAA", "AAAAA", "AAAAA", "AAAAA"],
@@ -12,7 +12,8 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings3@12",
-      "hatches": ["itemIn", "itemOut", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "energy", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "minecraft:water@0" },
     "C": { "blockId": "minecraft:flowing_water@0" },
@@ -26,8 +27,19 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "itemIn": { "min": 1, "max": 1 },
+    "itemOut": { "min": 1, "max": 1 },
+    "energy": { "min": 1, "max": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "energy", "maintenance"],
+      "text": "1 Energy Hatch: Any casing\n1 Maintenance Hatch: Any casing\n1 Input Bus: Any casing\n1 Output Bus: Any casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEDecayWarehouse (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEDecayWarehouse (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

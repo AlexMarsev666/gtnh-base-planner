@@ -29,7 +29,7 @@ export const t = {
   /** Picker tag of catalog entries generated from the game (tools/game-dump) rather than checked by hand. */
   generatedTag: 'From game',
   generatedHint:
-    'Built by the game itself (the hologram projector of GregTech 5.09.54.133) and not checked by hand: hatch counts are estimated, check the tooltip in game.',
+    'Built by the game itself (the hologram projector of GregTech 5.09.54.205) and not checked by hand: hatch counts follow the controller tooltip and structure check; check it in game.',
 
   // Settings drawer
   limits: 'Limits',

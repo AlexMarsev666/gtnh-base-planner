@@ -2,7 +2,7 @@
   "id": "industrial-autoclave",
   "name": "Industrial Autoclave",
   "tier": "IV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiAutoclave.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiAutoclave.java",
   "size": [7, 7, 9],
   "layers": [
     ["A A~A A", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "A AAA A"],

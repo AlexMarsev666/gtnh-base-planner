@@ -2,7 +2,7 @@
   "id": "bose-einstein-condensate-observation-array",
   "name": "Bose-Einstein Condensate Observation Array",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECAssembler.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECAssembler.java",
   "size": [61, 31, 31],
   "layers": [
     [
@@ -1035,7 +1035,7 @@
     "C": { "blockId": "gregtech:gt.blockcasings.bec@2" },
     "D": { "blockId": "gregtech:gt.blockcasings.bec@3" },
     "E": { "blockId": "gregtech:gt.blockcasings.bec@0" },
-    "F": { "blockId": "gregtech:gt.blockcasings.bec@1", "hatches": ["energy"] },
+    "F": { "blockId": "gregtech:gt.blockcasings.bec@1", "hatches": ["energy"], "region": "dot1" },
     "G": { "blockId": "gregtech:gt.blockglass1@9" },
     "H": { "blockId": "gregtech:gt.blockcasings.bec@5" },
     "I": { "blockId": "gregtech:gt.blockcasings.bec@6" }
@@ -1045,6 +1045,12 @@
   "shareableHatches": [],
   "requiredHatches": { "energy": { "min": 1 } },
   "defaultHatches": ["energy"],
+  "zones": {
+    "dot1": {
+      "kinds": ["energy"],
+      "text": "1+ Energy Hatch: Any outer electromagnetically-isolated casing, every other IO port ring\n1+ Nanite Containment Bus: Any outer electromagnetically-isolated casing, every other IO port ring"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEBECAssembler (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEBECAssembler (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

@@ -2,7 +2,7 @@
   "id": "steam-fuser",
   "name": "Steam Fuser",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamAlloySmelter.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamAlloySmelter.java",
   "size": [3, 3, 4],
   "layers": [
     ["CCC", "CCC", "CCC", "CCC"],

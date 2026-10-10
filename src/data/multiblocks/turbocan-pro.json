@@ -2,7 +2,7 @@
   "id": "turbocan-pro",
   "name": "TurboCan Pro",
   "tier": "HV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiCanner.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiCanner.java",
   "size": [7, 5, 7],
   "layers": [
     ["  AAA  ", " AAAAA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA ", "  AAA  "],

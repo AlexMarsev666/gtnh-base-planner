@@ -2,7 +2,7 @@
   "id": "nuclear-salt-processing-plant",
   "name": "Nuclear Salt Processing Plant",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTENuclearSaltProcessingPlant.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTENuclearSaltProcessingPlant.java",
   "size": [9, 5, 3],
   "layers": [
     ["AAA   AAA", "ABA   ABA", "AAA   AAA"],
@@ -13,11 +13,27 @@
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings@5" },
-    "B": { "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8", "hatches": ["energy"] },
-    "C": { "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8", "hatches": ["itemOut", "fluidOut"] },
-    "D": { "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8", "hatches": ["itemIn", "fluidIn"] },
-    "E": { "blockId": "gt.hatch.maintenance", "hatches": ["maintenance"] },
-    "F": { "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8", "hatches": ["muffler"] }
+    "B": {
+      "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8",
+      "hatches": ["energy"],
+      "region": "dot5"
+    },
+    "C": {
+      "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8",
+      "hatches": ["itemOut", "fluidOut"],
+      "region": "dot3"
+    },
+    "D": {
+      "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8",
+      "hatches": ["itemIn", "fluidIn"],
+      "region": "dot2"
+    },
+    "E": { "blockId": "gt.hatch.maintenance", "hatches": ["maintenance"], "region": "dot1" },
+    "F": {
+      "blockId": "miscutils:gtplusplus.blockspecialcasings.1@8",
+      "hatches": ["muffler"],
+      "region": "dot4"
+    }
   },
   "controller": { "pos": [4, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@749" },
   "hatchBlocks": {
@@ -30,8 +46,27 @@
     "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": { "maintenance": { "min": 1, "max": 1 }, "muffler": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "maintenance", "muffler"],
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 },
+    "energy": { "min": 2, "max": 2 },
+    "maintenance": { "min": 1, "max": 1 },
+    "muffler": { "min": 2, "max": 2 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": { "kinds": ["maintenance"], "text": "1 Maintenance Hatch: Casing behind controller" },
+    "dot2": {
+      "kinds": ["itemIn", "fluidIn"],
+      "text": "0+ Input Bus: Any left side insulated casing\n0+ Input Hatch: Any left side insulated casing"
+    },
+    "dot3": {
+      "kinds": ["itemOut", "fluidOut"],
+      "text": "0+ Output Bus: Any right side insulated casing\n0+ Output Hatch: Any right side insulated casing"
+    },
+    "dot4": { "kinds": ["muffler"], "text": "2 Muffler Hatch: Top insulated casings" },
+    "dot5": { "kinds": ["energy"], "text": "2 Energy Hatch: Bottom insulated casings" }
+  },
   "wallshare": true,
-  "notes": "The structure has no open face for: energy (left out of the plan). Built by the game itself: MTENuclearSaltProcessingPlant (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTENuclearSaltProcessingPlant (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

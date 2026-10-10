@@ -2,7 +2,7 @@
   "id": "drone-centre",
   "name": "Drone Centre",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/drone/MTEDroneCentre.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/drone/MTEDroneCentre.java",
   "size": [11, 4, 11],
   "layers": [
     [
@@ -59,7 +59,7 @@
     ]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings2@0", "hatches": ["itemIn"] },
+    "A": { "blockId": "gregtech:gt.blockcasings2@0", "hatches": ["itemIn"], "region": "dot1" },
     "B": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"] },
     "C": { "blockId": "gregtech:gt.blockcasings2@13" },
     "D": { "blockId": "gregtech:gt.blockframes@305" },
@@ -69,8 +69,9 @@
   "controller": { "pos": [5, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@9400" },
   "hatchBlocks": { "itemIn": "gt.hatch.inputBus" },
   "shareableHatches": ["itemIn"],
-  "requiredHatches": {},
+  "requiredHatches": { "itemIn": { "min": 1 } },
   "defaultHatches": ["itemIn"],
+  "zones": { "dot1": { "kinds": ["itemIn"], "text": "1+ Input Bus: Any machine casing" } },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEDroneCentre (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEDroneCentre (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

@@ -2,7 +2,7 @@
   "id": "bricked-blast-furnace",
   "name": "Bricked Blast Furnace",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEBrickedBlastFurnace.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEBrickedBlastFurnace.java",
   "size": [3, 4, 3],
   "layers": [
     ["ccc", "ccc", "ccc"],

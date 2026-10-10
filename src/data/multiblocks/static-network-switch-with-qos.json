@@ -2,7 +2,7 @@
   "id": "static-network-switch-with-qos",
   "name": "Static Network Switch With QoS",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitchAdv.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTENetworkSwitchAdv.java",
   "size": [3, 3, 3],
   "layers": [
     ["AAA", "ABA", "AAA"],
@@ -10,15 +10,25 @@
     ["AAA", "ABA", "AAA"]
   ],
   "legend": {
-    "A": { "blockId": "tectech:gt.blockcasingsTT@1", "hatches": ["energy", "dynamo"] },
-    "B": { "blockId": "tectech:gt.blockcasingsTT@3", "hatches": ["energy", "dynamo"] },
+    "A": { "blockId": "tectech:gt.blockcasingsTT@1", "hatches": ["energy", "dynamo"], "region": "dot2" },
+    "B": { "blockId": "tectech:gt.blockcasingsTT@3", "hatches": ["energy", "dynamo"], "region": "dot1" },
     "C": { "blockId": "tectech:gt.blockcasingsTT@3" }
   },
   "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15315" },
   "hatchBlocks": { "energy": "gt.hatch.energy", "dynamo": "gt.hatch.dynamo" },
   "shareableHatches": [],
-  "requiredHatches": { "dynamo": { "min": 1 } },
+  "requiredHatches": { "energy": { "min": 1 }, "dynamo": { "min": 1 } },
   "defaultHatches": ["energy", "dynamo"],
+  "zones": {
+    "dot1": {
+      "kinds": ["energy"],
+      "text": "1+ Optical Reception Connector: Any advanced computer casing\n1+ Optical Transmission Connector: Any casing\n1+ Energy Hatch: Any casing"
+    },
+    "dot2": {
+      "kinds": ["energy"],
+      "text": "1+ Optical Transmission Connector: Any casing\n1+ Energy Hatch: Any casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTENetworkSwitchAdv (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTENetworkSwitchAdv (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

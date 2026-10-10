@@ -47,7 +47,7 @@ const section = [
   '',
   'The front overlays of the GT single-block machines (`tools/texture-sources/SINGLE_*.png`, see',
   '[`tools/game-dump/single-machines.mjs`](tools/game-dump/single-machines.mjs)) are these sprites of the',
-  'GT5-Unofficial `5.09.54.133` jar, drawn over the machine hull:',
+  'GT5-Unofficial `5.09.54.205` jar, drawn over the machine hull:',
   '',
   ...[...wanted.keys()].sort().map((p) => `- \`src/main/resources/${p}\``),
   '',

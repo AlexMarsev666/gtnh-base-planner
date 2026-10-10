@@ -2,7 +2,7 @@
   "id": "steam-purifier",
   "name": "Steam Purifier",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamWasher.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamWasher.java",
   "size": [9, 6, 5],
   "layers": [
     ["AAAAA    ", "ABBBA AAA", "ABABA AAA", "ABBBA AAA", "AAAAA    "],

@@ -2,7 +2,7 @@
   "id": "mega-alloy-blast-smelter",
   "name": "Mega Alloy Blast Smelter",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/mega/MTEMegaAlloyBlastSmelter.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/mega/MTEMegaAlloyBlastSmelter.java",
   "size": [11, 20, 11],
   "layers": [
     [
@@ -269,14 +269,15 @@
   "legend": {
     "A": {
       "blockId": "miscutils:miscutils.blockcasings@15",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy"],
+      "region": "dot1"
     },
     "B": { "blockId": "miscutils:miscutils.blockcasings@14" },
     "C": { "blockId": "gregtech:gt.blockcasings5@0" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "E": { "blockId": "miscutils:miscutils.blockcasings@15", "hatches": ["maintenance"] },
+    "E": { "blockId": "miscutils:miscutils.blockcasings@15", "hatches": ["maintenance"], "region": "dot2" },
     "F": { "blockId": "miscutils:miscutils.blockcasings@15" },
-    "G": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"] }
+    "G": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"], "region": "dot3" }
   },
   "controller": { "pos": [5, 3, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31150" },
   "hatchBlocks": {
@@ -290,11 +291,20 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {
+    "fluidOut": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "defaultHatches": ["itemIn", "itemOut", "fluidOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "fluidIn", "fluidOut", "energy"],
+      "text": "1+ Energy Hatch: Any bottom casing\n1+ Input Bus/Hatch: Any bottom casing\n1+ Output Hatch: Any bottom casing"
+    },
+    "dot2": { "kinds": ["maintenance"], "text": "1 Maintenance Hatch: Any casing around controller" },
+    "dot3": { "kinds": ["muffler"], "text": "1 Muffler Hatch: Top center casing" }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEMegaAlloyBlastSmelter (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEMegaAlloyBlastSmelter (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

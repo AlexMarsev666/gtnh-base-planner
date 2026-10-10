@@ -2,7 +2,7 @@
   "id": "void-miner-ii",
   "name": "Void Miner II",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/bwcrossmod/galacticgreg/MTEVoidMiners.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bwcrossmod/galacticgreg/MTEVoidMiners.java",
   "size": [9, 13, 8],
   "layers": [
     ["   A A   ", "  BBBBB  ", "A B   B A", "  B C B  ", "A B   B A", "  BBBBB  ", "         ", "   A A   "],
@@ -22,7 +22,8 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings8@3",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockframes@325" },
     "C": { "blockId": "bartworks:bw.werkstoffblockscasingadvanced.01@32091" },
@@ -39,8 +40,18 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "itemOut": { "min": 1 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "text": "1+ Energy Hatch\n1 Maintenance Hatch: Any leg casing\n0+ Input Bus: Any leg casing\n0+ Input Hatch: Any leg casing\n1+ Output Bus: Any leg casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: VMZPM (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: VMZPM (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

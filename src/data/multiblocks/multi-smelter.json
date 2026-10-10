@@ -1,7 +1,7 @@
 {
   "id": "multi-smelter",
   "name": "Multi Smelter",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiFurnace.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiFurnace.java",
   "size": [3, 3, 3],
   "layers": [
     ["b~b", "bbb", "bbb"],

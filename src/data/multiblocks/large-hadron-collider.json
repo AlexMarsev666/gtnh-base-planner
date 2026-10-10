@@ -2,7 +2,7 @@
   "id": "large-hadron-collider",
   "name": "Large Hadron Collider",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTELargeHadronCollider.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTELargeHadronCollider.java",
   "size": [80, 13, 70],
   "layers": [
     [
@@ -943,16 +943,17 @@
     ]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings13@10", "hatches": ["energy"] },
+    "A": { "blockId": "gregtech:gt.blockcasings13@10", "hatches": ["fluidIn", "energy"], "region": "dot1" },
     "B": { "blockId": "gt.hatch.special" },
     "C": { "blockId": "gtnhlanth:casing.shielded_accelerator@0" },
     "D": { "blockId": "gtnhlanth:tile.casing.shielded_accelerator_glass@0" }
   },
   "controller": { "pos": [54, 8, 1], "facing": "north", "blockId": "gregtech:gt.blockmachines@3013" },
-  "hatchBlocks": { "energy": "gt.hatch.energy" },
-  "shareableHatches": [],
-  "requiredHatches": { "energy": { "min": 1 } },
-  "defaultHatches": ["energy"],
+  "hatchBlocks": { "fluidIn": "gt.hatch.inputHatch", "energy": "gt.hatch.energy" },
+  "shareableHatches": ["fluidIn"],
+  "requiredHatches": { "fluidIn": { "min": 1, "max": 1 }, "energy": { "min": 1 } },
+  "defaultHatches": ["fluidIn", "energy"],
+  "zones": { "dot1": { "kinds": ["energy"], "text": "1+ Energy Hatch: Any casing" } },
   "wallshare": true,
-  "notes": "Built by the game itself: MTELargeHadronCollider (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTELargeHadronCollider (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

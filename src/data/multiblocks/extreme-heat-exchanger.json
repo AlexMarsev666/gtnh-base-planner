@@ -2,7 +2,7 @@
   "id": "extreme-heat-exchanger",
   "name": "Extreme Heat Exchanger",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/MTEExtremeHeatExchanger.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEExtremeHeatExchanger.java",
   "size": [5, 6, 11],
   "layers": [
     [" A~A ", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB", " AAA "],
@@ -13,14 +13,22 @@
     [" AAA ", "HHHHH", "HHHHH", "HHHHH", "HHHHH", "HHHHH", "HHHHH", "HHHHH", "HHHHH", "HHHHH", " AAA "]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings4@0", "hatches": ["maintenance"] },
-    "B": { "blockId": "gregtech:gt.blockcasings4@0", "hatches": ["fluidIn", "maintenance"] },
+    "A": { "blockId": "gregtech:gt.blockcasings4@0", "hatches": ["maintenance"], "region": "dot5" },
+    "B": {
+      "blockId": "gregtech:gt.blockcasings4@0",
+      "hatches": ["fluidIn", "maintenance"],
+      "region": "dot1"
+    },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "gregtech:gt.blockcasings2@15" },
     "E": { "blockId": "GoodGenerator:pressureResistantWalls@0" },
-    "F": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"] },
-    "G": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"] },
-    "H": { "blockId": "gregtech:gt.blockcasings4@0", "hatches": ["fluidOut", "maintenance"] }
+    "F": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"], "region": "dot3" },
+    "G": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"], "region": "dot4" },
+    "H": {
+      "blockId": "gregtech:gt.blockcasings4@0",
+      "hatches": ["fluidOut", "maintenance"],
+      "region": "dot2"
+    }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32017" },
   "hatchBlocks": {
@@ -29,8 +37,31 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["fluidIn", "fluidOut"],
-  "requiredHatches": { "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["fluidIn", "fluidOut", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "maintenance"],
+      "text": "1 Maintenance Hatch: Any casing\n2+ Input Hatch: Front center casing (hot fluid), any bottom casing (distilled water)"
+    },
+    "dot2": {
+      "kinds": ["fluidOut", "maintenance"],
+      "text": "1 Maintenance Hatch: Any casing\n2+ Output Hatch: Back center casing (cool fluid), any top casing (steam)"
+    },
+    "dot3": {
+      "kinds": ["fluidIn"],
+      "text": "2+ Input Hatch: Front center casing (hot fluid), any bottom casing (distilled water)"
+    },
+    "dot4": {
+      "kinds": ["fluidOut"],
+      "text": "2+ Output Hatch: Back center casing (cool fluid), any top casing (steam)"
+    },
+    "dot5": { "kinds": ["maintenance"], "text": "1 Maintenance Hatch: Any casing" }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEExtremeHeatExchanger (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEExtremeHeatExchanger (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

@@ -141,7 +141,7 @@ casing blocks (`BlockCasings1/2/3/4/8/10/11/12.java`, `BlockCasingsNH.java`), `M
 ### Files used by the generated catalog entries
 
 The face tiles of the generated catalog entries (`tools/texture-sources/DUMP_*.png`, see
-[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.133` jar (the
+[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.205` jar (the
 resources under `src/main/resources/` in the repository), tinted and layered the way the game draws them:
 
 - `src/main/resources/assets/goodgenerator/textures/blocks/supercriticalFluidTurbineCasing.png`
@@ -152,7 +152,6 @@ resources under `src/main/resources/` in the repository), tinted and layered the
 - `src/main/resources/assets/bartworks/textures/blocks/NickelFerriteBlocks.png`
 - `src/main/resources/assets/bartworks/textures/blocks/OsmiumReinforcedBoronSilicateGlassBlock.png`
 - `src/main/resources/assets/bartworks/textures/blocks/RhodiumPlatedPalladiumReinforcedBoronSilicateGlassBlock.png`
-- `src/main/resources/assets/bartworks/textures/blocks/TitaniumReinforcedBoronSilicateGlassBlock.png`
 - `src/main/resources/assets/bartworks/textures/blocks/TranscendentallyReinforcedBoronSilicateGlassBlock.png`
 - `src/main/resources/assets/bartworks/textures/blocks/TransformerCoil.png`
 - `src/main/resources/assets/ggfab/textures/blocks/iconsets/OVERLAY_FRONT_ADV_ASSLINE.png`
@@ -440,10 +439,10 @@ resources under `src/main/resources/` in the repository), tinted and layered the
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_OPTICAL_ORGANIZER.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_ORE_DRILL.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_ORE_FACTORY.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PART_PROCESSOR.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PLANETARYSIPHON.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PURIFICATION_PLANT.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PYROLYSE_OVEN.png`
-- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SMD_PROCESSOR.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SOLAR_FACTORY_INACTIVE.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SPLITTER.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_STEAM_ALLOY_SMELTER_MULTI.png`
@@ -641,7 +640,7 @@ material icon multiplied by the material colour:
 
 The front overlays of the GT single-block machines (`tools/texture-sources/SINGLE_*.png`, see
 [`tools/game-dump/single-machines.mjs`](tools/game-dump/single-machines.mjs)) are these sprites of the
-GT5-Unofficial `5.09.54.133` jar, drawn over the machine hull:
+GT5-Unofficial `5.09.54.205` jar, drawn over the machine hull:
 
 - `src/main/resources/assets/gregtech/textures/blocks/basicmachines/alloy_smelter/OVERLAY_FRONT.png`
 - `src/main/resources/assets/gregtech/textures/blocks/basicmachines/amplifab/OVERLAY_FRONT.png`

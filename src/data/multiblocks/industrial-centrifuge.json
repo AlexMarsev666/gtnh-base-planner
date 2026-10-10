@@ -2,7 +2,7 @@
   "id": "industrial-centrifuge",
   "name": "Industrial Centrifuge",
   "tier": "MV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialCentrifuge.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialCentrifuge.java",
   "size": [5, 5, 5],
   "layers": [
     [" CCC ", " AAA ", "  C  ", "  C  ", " AAA "],

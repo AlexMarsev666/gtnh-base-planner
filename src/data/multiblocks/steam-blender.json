@@ -2,7 +2,7 @@
   "id": "steam-blender",
   "name": "Steam Blender",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamMixer.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamMixer.java",
   "size": [5, 4, 5],
   "layers": [
     [" AAA ", "AAAAA", "AAAAA", "AAAAA", " AAA "],

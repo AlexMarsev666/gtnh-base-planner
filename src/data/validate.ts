@@ -187,6 +187,23 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
       err(`requiredHatches.${k}.min >= 1 but "${k}" is not in defaultHatches`);
   }
 
+  // zones
+  for (const [region, zone] of Object.entries(def.zones ?? {})) {
+    const cellKinds = regions.get(region);
+    if (!cellKinds) {
+      err(`zones names "${region}" but no legend cell has that region`);
+      continue;
+    }
+    if (!Array.isArray(zone?.kinds) || zone.kinds.length === 0)
+      err(`zones.${region}.kinds must be a non-empty array`);
+    for (const k of Array.isArray(zone?.kinds) ? zone.kinds : []) {
+      if (!isHatchKind(k)) err(`zones.${region} has invalid hatch kind "${k}"`);
+      else if (!cellKinds.has(k)) err(`zones.${region} lists "${k}" but no cell of the region allows it`);
+    }
+    if (zone?.text !== undefined && typeof zone.text !== 'string')
+      err(`zones.${region}.text must be a string`);
+  }
+
   if (typeof def.wallshare !== 'boolean') err('wallshare must be a boolean');
 
   if (def.resize !== undefined) checkResize(def, err, fileName !== undefined);

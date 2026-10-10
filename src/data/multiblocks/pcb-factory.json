@@ -2,7 +2,7 @@
   "id": "pcb-factory",
   "name": "PCB Factory",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBFactory.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/pcb/MTEPCBFactory.java",
   "size": [7, 6, 7],
   "layers": [
     ["ABB~BBA", "BCCCCCB", "BCCCCCB", "BCCCCCB", "BCCCCCB", "BCCCCCB", "ADDDDDA"],
@@ -18,7 +18,8 @@
     "C": { "blockId": "gregtech:gt.blockreinforced@2" },
     "D": {
       "blockId": "gregtech:gt.blockcasings8@11",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "region": "dot1"
     },
     "E": { "blockId": "bartworks:BW_TieredGlass@0" },
     "F": { "blockId": "gt.hatch.special" },
@@ -34,8 +35,20 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
+    "fluidIn": { "min": 1 },
+    "energy": { "min": 1, "max": 2 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "text": "1-2 Energy Hatch: Any lower back casing\n1 Maintenance Hatch: Any lower back casing\n1+ Input Bus: Any lower back casing\n1+ Input Hatch: Any lower back casing\n1+ Output Bus: Any lower back casing\n0-1 Nanite Containment Bus: Any lower back casing\n0-1 Nanite Containment Bus: Any photolithographic casing\n1-2 Energy Hatch: Any photolithographic casing\n1 Maintenance Hatch: Any photolithographic casing\n1+ Input Bus: Any photolithographic casing\n1+ Input Hatch: Any photolithographic casing\n1+ Output Bus: Any photolithographic casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPCBFactory (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPCBFactory (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

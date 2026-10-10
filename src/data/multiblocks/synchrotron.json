@@ -2,7 +2,7 @@
   "id": "synchrotron",
   "name": "Synchrotron",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhlanth/common/tileentity/MTESynchrotron.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTESynchrotron.java",
   "size": [36, 7, 34],
   "layers": [
     [
@@ -260,16 +260,20 @@
   ],
   "legend": {
     "A": { "blockId": "gtnhlanth:casing.shielded_accelerator@0" },
-    "B": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"] },
+    "B": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"], "region": "dot3" },
     "C": { "blockId": "gt.hatch.special" },
     "D": { "blockId": "gregtech:gt.blockcasings@15" },
     "E": { "blockId": "gtnhlanth:casing.coolant_delivery@0" },
     "F": { "blockId": "gtnhlanth:casing.niobium_cavity@0" },
     "G": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "H": { "blockId": "gtnhlanth:casing.shielded_accelerator@0", "hatches": ["maintenance"] },
+    "H": {
+      "blockId": "gtnhlanth:casing.shielded_accelerator@0",
+      "hatches": ["maintenance"],
+      "region": "dot5"
+    },
     "I": { "blockId": "gtnhlanth:casing.antenna_t1@0" },
-    "J": { "blockId": "gt.hatch.energy", "hatches": ["energy"] },
-    "K": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"] }
+    "J": { "blockId": "gt.hatch.energy", "hatches": ["energy"], "region": "dot4" },
+    "K": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"], "region": "dot2" }
   },
   "controller": { "pos": [19, 3, 1], "facing": "north", "blockId": "gregtech:gt.blockmachines@10507" },
   "hatchBlocks": {
@@ -278,9 +282,20 @@
     "energy": "gt.hatch.energy",
     "maintenance": "gt.hatch.maintenance"
   },
-  "shareableHatches": ["fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["fluidIn", "energy", "maintenance"],
+  "shareableHatches": ["fluidIn", "fluidOut"],
+  "requiredHatches": {
+    "fluidIn": { "min": 2, "max": 2 },
+    "fluidOut": { "min": 2, "max": 2 },
+    "energy": { "min": 4, "max": 4 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot2": { "kinds": ["fluidIn"], "text": "2 Input Hatch: Between the energy hatches" },
+    "dot3": { "kinds": ["fluidOut"], "text": "2 Output Hatch: Opposite the input hatches" },
+    "dot4": { "kinds": ["energy"], "text": "4 Energy Hatch: Above each antenna casing" },
+    "dot5": { "kinds": ["maintenance"], "text": "1 Maintenance Hatch: Around controller" }
+  },
   "wallshare": true,
-  "notes": "The structure has no open face for: fluidOut (left out of the plan). Built by the game itself: MTESynchrotron (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTESynchrotron (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

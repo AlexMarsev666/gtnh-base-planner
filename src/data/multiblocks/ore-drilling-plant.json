@@ -2,7 +2,7 @@
   "id": "ore-drilling-plant",
   "name": "Ore Drilling Plant",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreDrillingPlant1.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEOreDrillingPlant1.java",
   "size": [3, 7, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
@@ -16,7 +16,8 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings2@0",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockframes@305" },
     "C": { "blockId": "gregtech:gt.blockcasings2@0" }
@@ -30,8 +31,20 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "requiredHatches": {
+    "itemIn": { "min": 0, "max": 1 },
+    "itemOut": { "min": 1, "max": 1 },
+    "fluidIn": { "min": 1, "max": 1 },
+    "energy": { "min": 1, "max": 2 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "text": "1-2 Energy Hatch\n1 Maintenance Hatch: Any bottom casing\n0-1 Input Bus: Any bottom casing\n1 Input Hatch: Any bottom casing\n1 Output Bus: Any bottom casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEOreDrillingPlant1 (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEOreDrillingPlant1 (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

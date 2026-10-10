@@ -2,7 +2,7 @@
   "id": "space-elevator",
   "name": "Space Elevator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhintergalactic/tile/multi/elevator/TileEntitySpaceElevator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevator/TileEntitySpaceElevator.java",
   "size": [35, 43, 35],
   "layers": [
     [
@@ -1598,43 +1598,21 @@
     ]
   ],
   "legend": {
-    "F": {
-      "blockId": "gt5u.gtBlockcasingsSE.2"
-    },
-    "A": {
-      "blockId": "gt5u.sBlockCasingsDyson.9"
-    },
-    "D": {
-      "blockId": "gt5u.gtBlockcasingsSE.0"
-    },
-    "E": {
-      "blockId": "gt5u.gtBlockcasingsSE.1"
-    },
-    "H": {
-      "blockId": "gt.frame.neutronium"
-    },
-    "M": {
-      "blockId": "gt5u.gtBlockcasingsSE.0"
-    },
-    "I": {
-      "blockId": "gt5u.gtBlockcasingsSE.0"
-    },
+    "F": { "blockId": "gt5u.gtBlockcasingsSE.2" },
+    "A": { "blockId": "gt5u.sBlockCasingsDyson.9" },
+    "D": { "blockId": "gt5u.gtBlockcasingsSE.0" },
+    "E": { "blockId": "gt5u.gtBlockcasingsSE.1" },
+    "H": { "blockId": "gt.frame.neutronium" },
+    "M": { "blockId": "gt5u.gtBlockcasingsSE.0" },
+    "I": { "blockId": "gt5u.gtBlockcasingsSE.0" },
     "X": {
       "blockId": "gt5u.gtBlockcasingsSE.0",
       "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "dynamo", "maintenance", "muffler"]
     },
-    "C": {
-      "blockId": "gt5u.tieredCasing"
-    },
-    "B": {
-      "blockId": "gt5u.sSpaceElevatorCable.0"
-    }
+    "C": { "blockId": "gt5u.tieredCasing" },
+    "B": { "blockId": "gt5u.sSpaceElevatorCable.0" }
   },
-  "controller": {
-    "pos": [17, 3, 14],
-    "facing": "north",
-    "blockId": "gt5u.controller.spaceElevator"
-  },
+  "controller": { "pos": [17, 3, 14], "facing": "north", "blockId": "gt5u.controller.spaceElevator" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "itemOut": "gt.hatch.outputBus",
@@ -1646,20 +1624,8 @@
     "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": {
-    "dynamo": {
-      "min": 1
-    },
-    "maintenance": {
-      "min": 1,
-      "max": 1
-    },
-    "muffler": {
-      "min": 1,
-      "max": 1
-    }
-  },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "dynamo", "maintenance", "muffler"],
+  "requiredHatches": { "energy": { "min": 1 } },
+  "defaultHatches": ["itemIn", "itemOut", "energy"],
   "wallshare": true,
-  "notes": "Generated from TileEntitySpaceElevator (GT5-Unofficial 5.09.54.133) by tools/gt-source: the structure is copied cell by cell; hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows), so check the tooltip in game. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
+  "notes": "Generated from TileEntitySpaceElevator (GT5-Unofficial 5.09.54.205) by tools/gt-source: the structure is copied cell by cell; hatch counts follow the controller's tooltip and structure check. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
 }

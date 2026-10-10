@@ -2,7 +2,7 @@
   "id": "assembly-line",
   "name": "Assembly Line",
   "tier": "LuV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEAssemblyLine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEAssemblyLine.java",
   "size": [5, 4, 3],
   "layers": [
     ["Bbbbb", "iiiii", "Bbbbb"],

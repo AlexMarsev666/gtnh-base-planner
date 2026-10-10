@@ -145,6 +145,18 @@ describe('validateMultiblockDef', () => {
     expect(validateMultiblockDef(r).join()).toMatch(/regions lists "nowhere"/);
   });
 
+  it('checks zones against the regions of the legend', () => {
+    const cracker = getMultiblock('mega-oil-cracker')!;
+    expect(Object.keys(cracker.zones ?? {})).toEqual(['dot1', 'dot2', 'dot3', 'dot4']);
+    expect(validateMultiblockDef(cracker)).toEqual([]);
+    const d = clone(cracker);
+    d.zones = { ...d.zones, nowhere: { kinds: ['energy'] } };
+    expect(validateMultiblockDef(d).join()).toMatch(/zones names "nowhere"/);
+    const k = clone(cracker);
+    k.zones = { dot3: { kinds: ['steamIn'] } };
+    expect(validateMultiblockDef(k).join()).toMatch(/zones\.dot3 lists "steamIn"/);
+  });
+
   it('rejects a max below min', () => {
     const d = clone(base);
     d.requiredHatches = { ...d.requiredHatches, energy: { min: 2, max: 1 } };

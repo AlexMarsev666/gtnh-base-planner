@@ -2,7 +2,7 @@
   "id": "planetary-gas-siphon",
   "name": "Planetary Gas Siphon",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhintergalactic/tile/multi/MTEPlanetaryGasSiphon.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/MTEPlanetaryGasSiphon.java",
   "size": [13, 23, 13],
   "layers": [
     [
@@ -356,7 +356,8 @@
     "B": { "blockId": "gregtech:gt.blockframes@316" },
     "C": {
       "blockId": "gtnhintergalactic:gassiphoncasing@0",
-      "hatches": ["itemIn", "fluidOut", "energy", "maintenance"]
+      "hatches": ["itemIn", "fluidOut", "energy", "maintenance"],
+      "region": "dot1"
     },
     "D": { "blockId": "gregtech:gt.blockcasings5@0" }
   },
@@ -368,8 +369,19 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "energy", "maintenance"],
+  "requiredHatches": {
+    "itemIn": { "min": 1, "max": 1 },
+    "fluidOut": { "min": 1, "max": 1 },
+    "energy": { "min": 1, "max": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "fluidOut", "energy", "maintenance"],
+      "text": "1 Energy Hatch: Any siphon casing\n1 Maintenance Hatch: Any siphon casing\n1 Input Bus: Any siphon casing\n1 Output Hatch: Any siphon casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPlanetaryGasSiphon (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPlanetaryGasSiphon (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

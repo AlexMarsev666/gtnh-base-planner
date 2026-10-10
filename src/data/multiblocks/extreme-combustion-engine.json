@@ -2,7 +2,7 @@
   "id": "extreme-combustion-engine",
   "name": "Extreme Combustion Engine",
   "tier": "IV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEExtremeCombustionEngine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEExtremeCombustionEngine.java",
   "size": [10, 5, 5],
   "layers": [
     ["FEEEEFEFEF", "FEEEEFEFEF", "FEEEEFEFEF", "FEEEEFEFEF", "FEEEEFEFEF"],

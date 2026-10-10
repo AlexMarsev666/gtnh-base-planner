@@ -2,7 +2,7 @@
   "id": "steam-squasher",
   "name": "Steam Squasher",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamCompressor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamCompressor.java",
   "size": [3, 3, 7],
   "layers": [
     ["CCC", "AAA", "AAA", "AAA", "AAA", "AAA", "AAA"],

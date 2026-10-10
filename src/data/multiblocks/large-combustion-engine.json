@@ -2,7 +2,7 @@
   "id": "large-combustion-engine",
   "name": "Large Combustion Engine",
   "tier": "EV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeCombustionEngine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeCombustionEngine.java",
   "size": [8, 3, 4],
   "layers": [
     ["        ", "EDDDDEDE", "DDDDDDDD", "EDDDDEDE"],

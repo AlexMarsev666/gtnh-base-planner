@@ -2,7 +2,7 @@
   "id": "matter-fabrication-cpu",
   "name": "Matter Fabrication CPU",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEMassFabricator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEMassFabricator.java",
   "size": [5, 4, 5],
   "layers": [
     ["AA~AA", "ABBBA", "ABBBA", "ABBBA", "AAAAA"],
@@ -13,7 +13,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:miscutils.blockcasings@9",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "miscutils:miscutils.blockcasings@8" },
     "C": { "blockId": "miscutils:gtplusplus.blockcasings.3@15" },
@@ -36,6 +37,12 @@
     "muffler": { "min": 1, "max": 1 }
   },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any fabricator casing\n1 Maintenance Hatch: Any fabricator casing\n1 Muffler Hatch: Any fabricator casing\n0+ Input Bus: Any fabricator casing\n0+ Input Hatch: Any fabricator casing\n1+ Output Bus/Hatch: Any fabricator casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEMassFabricator (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEMassFabricator (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

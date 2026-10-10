@@ -17,8 +17,8 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
   reactors, drilling rigs, TecTech, Bartworks, Good Generator, the Water Purification Plant and its units, the
   Nanochip Assembly Complex and its modules, Forge of the Gods, the Space Elevator modules, Large Hadron Collider,
   Antimatter Forge, ...) are built by the game itself and dumped block by block by
-  [`tools/game-dump`](tools/game-dump/README.md); they are tagged "From game" in the picker, because their hatch
-  counts are estimated. Almost every GT multiblock can share walls in game (structure checks do not claim
+  [`tools/game-dump`](tools/game-dump/README.md); they are tagged "From game" in the picker, because they are not
+  checked by hand (hatch counts follow the controller's tooltip and structure check). Almost every GT multiblock can share walls in game (structure checks do not claim
   casings).
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).
 - **Auto-packing** of N units with optional limits counted in multiblocks (at most N along X, N layers, N along Z); controllers always face outward, and rows that cannot share a back wall get a one-block walkway. Example: 15 Pyrolyse Ovens with X 5, Layers 1, Z 3 give three rows of five.

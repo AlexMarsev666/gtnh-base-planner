@@ -2,7 +2,7 @@
   "id": "neutron-activator",
   "name": "Neutron Activator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/MTENeutronActivator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTENeutronActivator.java",
   "size": [5, 6, 5],
   "layers": [
     ["AA~AA", "ABBBA", "ABBBA", "ABBBA", "AAAAA"],
@@ -13,12 +13,20 @@
     ["FFFFF", "FBBBF", "FBBBF", "FBBBF", "FFFFF"]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings4@1", "hatches": ["itemOut", "fluidOut", "maintenance"] },
+    "A": {
+      "blockId": "gregtech:gt.blockcasings4@1",
+      "hatches": ["itemOut", "fluidOut", "maintenance"],
+      "region": "dot2"
+    },
     "B": { "blockId": "gregtech:gt.blockcasings2@6" },
     "C": { "blockId": "gregtech:gt.blockframes@305" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "GoodGenerator:speedingPipe@0" },
-    "F": { "blockId": "gregtech:gt.blockcasings4@1", "hatches": ["itemIn", "fluidIn", "maintenance"] }
+    "F": {
+      "blockId": "gregtech:gt.blockcasings4@1",
+      "hatches": ["itemIn", "fluidIn", "maintenance"],
+      "region": "dot1"
+    }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32013" },
   "hatchBlocks": {
@@ -31,6 +39,13 @@
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "maintenance": { "min": 1, "max": 1 } },
   "defaultHatches": ["itemIn", "itemOut", "maintenance"],
+  "zones": {
+    "dot1": { "kinds": ["itemIn", "fluidIn"], "text": "1+ Input Bus/Hatch: Any top edge casing" },
+    "dot2": {
+      "kinds": ["itemOut", "fluidOut", "maintenance"],
+      "text": "1+ Neutron Accelerator: Any bottom edge casing\n0+ Neutron Sensor: Any bottom edge casing\n1 Maintenance Hatch: Any bottom edge casing\n1+ Output Bus/Hatch: Any bottom edge casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTENeutronActivator (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTENeutronActivator (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

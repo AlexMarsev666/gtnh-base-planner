@@ -2,7 +2,7 @@
   "id": "yottank",
   "name": "YOTTank",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/MTEYottaFluidTank.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEYottaFluidTank.java",
   "size": [5, 5, 5],
   "layers": [
     ["     ", " AAA ", " AAA ", " AAA ", "     "],
@@ -12,18 +12,25 @@
     ["FFFFF", "F   F", "F   F", "F   F", "FFFFF"]
   ],
   "legend": {
-    "A": { "blockId": "GoodGenerator:yottaFluidTankCasing@0", "hatches": ["fluidOut"] },
+    "A": { "blockId": "GoodGenerator:yottaFluidTankCasing@0", "hatches": ["fluidOut"], "region": "dot2" },
     "B": { "blockId": "GoodGenerator:yottaFluidTankCasing@0" },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "GoodGenerator:yottaFluidTankCells@0" },
-    "E": { "blockId": "GoodGenerator:yottaFluidTankCasing@0", "hatches": ["fluidIn"] },
+    "E": { "blockId": "GoodGenerator:yottaFluidTankCasing@0", "hatches": ["fluidIn"], "region": "dot1" },
     "F": { "blockId": "gregtech:gt.blockframes@305" }
   },
   "controller": { "pos": [2, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32014" },
   "hatchBlocks": { "fluidIn": "gt.hatch.inputHatch", "fluidOut": "gt.hatch.outputHatch" },
   "shareableHatches": ["fluidIn", "fluidOut"],
-  "requiredHatches": {},
+  "requiredHatches": { "fluidIn": { "min": 1 }, "fluidOut": { "min": 1 } },
   "defaultHatches": ["fluidIn", "fluidOut"],
+  "zones": {
+    "dot1": { "kinds": ["fluidIn"], "text": "1+ Input Hatch: Any top center casing" },
+    "dot2": {
+      "kinds": ["fluidOut"],
+      "text": "0-1 YOTHatch: Any bottom center casing (replaces other hatches)\n1+ Output Hatch: Any bottom center casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEYottaFluidTank (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEYottaFluidTank (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

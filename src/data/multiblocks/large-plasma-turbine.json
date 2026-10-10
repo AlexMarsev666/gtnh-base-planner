@@ -1,7 +1,7 @@
 {
   "id": "large-plasma-turbine",
   "name": "Large Plasma Turbine",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/turbines/MTELargeTurbinePlasma.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/turbines/MTELargeTurbinePlasma.java",
   "size": [3, 3, 7],
   "layers": [
     ["---", "CCC", " B ", " B ", "AEA", "AEA", "B B"],
