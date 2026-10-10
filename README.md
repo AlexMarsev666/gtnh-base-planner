@@ -2,14 +2,14 @@
 
 A 3D planner for [GregTech: New Horizons](https://github.com/GTNewHorizons/GT-New-Horizons-Modpack) multiblocks that share walls, hatches and pipes. Pick a multiblock, set how many you want, and the planner packs them so compatible casings overlap, places shared hatches and routes pipes between them.
 
-It is a layout tool, not a recipe or production-chain calculator. Structures follow GT:NH **2.9.0-beta-3**
-(GT5-Unofficial 5.09.54.133).
+It is a layout tool, not a recipe or production-chain calculator. Structures follow GT:NH **2.9.0-RC-2**
+(GT5-Unofficial 5.09.54.205).
 
 **Live:** <https://gtnh-base-planner.pages.dev/>
 
 ## Features
 
-- **Catalog of 244 multiblocks** with a picker: every multiblock of GT5-Unofficial 5.09.54.133 but the Mega
+- **Catalog of 244 multiblocks** with a picker: every multiblock of GT5-Unofficial 5.09.54.205 but the Mega
   Industrial Apiary and the Cleanroom. 34 are transcribed and checked by hand: steam machines (Steam Separator,
   Grinder, Squasher, Presser, Hearth, Blender, Purifier, Fuser), Coke Oven, EBF, Vacuum Freezer, Distillation
   Tower, Pyrolyse Oven, Large Turbines, combustion engines, Assembly Line, Large Fluid Extractor, Industrial
