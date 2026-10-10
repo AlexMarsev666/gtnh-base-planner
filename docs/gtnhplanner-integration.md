@@ -111,7 +111,7 @@ interface LinkState {
 
 - `codec.ts`: `PLAN_VERSION = 2` with a validator for the new shape; v1 is still decoded and migrated. Only
   the fields above are stored. Recipes, icons and NEI data are dropped, so a 20-group import stays a few KB
-  compressed, well under `MAX_PAYLOAD_BYTES` (64 KB).
+  compressed, well under `MAX_LINK_CODE_CHARS` (64 KB).
 - `store.ts`: `plan` becomes the site. The current single-machine UI edits the selected group.
 
 ## 4. Pipeline changes

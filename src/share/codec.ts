@@ -4,7 +4,9 @@ import type { Rotation, Vec3 } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
 import type { PlanState } from '../model/plan/types';
 import {
-  MAX_PAYLOAD_BYTES,
+  LinkTooLargeError,
+  MAX_LINK_CODE_CHARS,
+  MAX_PLAN_LINK_JSON,
   PlanFormatError,
   deflateRaw,
   fromBase64Url,
@@ -13,7 +15,7 @@ import {
   type CompressOptions,
 } from './binary';
 
-export { MAX_PAYLOAD_BYTES, PlanFormatError } from './binary';
+export { LinkTooLargeError, MAX_PAYLOAD_BYTES, PlanFormatError } from './binary';
 
 /**
  * UNIT 5 — Share codec.
@@ -362,14 +364,17 @@ export function plansEqual(a: PlanState, b: PlanState): boolean {
 export async function encodePlan(state: PlanState, opts: CompressOptions = {}): Promise<string> {
   const json = JSON.stringify(toCompact(validatePlanState(state)));
   const bytes = new TextEncoder().encode(json);
-  return toBase64Url(await deflateRaw(bytes, opts));
+  if (bytes.length > MAX_PLAN_LINK_JSON) throw new LinkTooLargeError();
+  const code = toBase64Url(await deflateRaw(bytes, opts));
+  if (code.length > MAX_LINK_CODE_CHARS) throw new LinkTooLargeError();
+  return code;
 }
 
 export async function decodePlan(encoded: string, opts: CompressOptions = {}): Promise<PlanState> {
   if (typeof encoded !== 'string') throw new PlanFormatError('Plan link is missing.');
   if (encoded.length === 0) throw new PlanFormatError('Plan link is empty.');
   const compressed = fromBase64Url(encoded);
-  const bytes = await inflateRaw(compressed, { ...opts, limit: MAX_PAYLOAD_BYTES });
+  const bytes = await inflateRaw(compressed, { ...opts, limit: MAX_PLAN_LINK_JSON });
   let text: string;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);

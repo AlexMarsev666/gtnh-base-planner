@@ -62,6 +62,7 @@ export const t = {
     'Link copied. It is long: some chat apps cut such links, so send the JSON file if it fails.',
   linkFallback: 'Copy this link:',
   linkFailed: 'Could not create a link.',
+  planTooLargeForLink: 'This plan is too large for a link. Download the JSON file instead.',
   downloadJson: 'Download JSON',
   uploadJson: 'Open JSON',
   jsonLoaded: 'Plan opened.',
@@ -115,6 +116,7 @@ export const t = {
   modeLabel: 'Planner mode',
 
   site: {
+    tooLargeForLink: 'This template is too large for a link. Download the JSON file instead.',
     panel: 'Template',
     name: 'Name',
     unnamed: 'Template',

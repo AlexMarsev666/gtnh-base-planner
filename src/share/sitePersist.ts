@@ -1,14 +1,7 @@
 import type { SiteState } from '../model/site/types';
-import { PlanFormatError } from './binary';
+import { MAX_SITE_JSON_BYTES, PlanFormatError } from './binary';
 import type { LocationLike, StorageLike, WindowLike } from './persist';
-import {
-  MAX_SITE_FILE_BYTES,
-  decodeSite,
-  encodeSite,
-  siteFromJson,
-  siteToJson,
-  validateSiteState,
-} from './siteCodec';
+import { decodeSite, encodeSite, siteFromJson, siteToJson, validateSiteState } from './siteCodec';
 
 /** Site persistence, the same rules as plans (`persist.ts`) under its own storage key and `#s=` parameter. */
 
@@ -63,7 +56,10 @@ export function loadStoredSite(
 export function saveStoredSite(site: SiteState, storage: StorageLike | null = browserStorage()): boolean {
   if (!storage) return false;
   try {
-    storage.setItem(SITE_STORAGE_KEY, JSON.stringify(validateSiteState(site)));
+    const text = JSON.stringify(validateSiteState(site));
+    // Never write what `siteFromJson` would refuse to read back.
+    if (text.length > MAX_SITE_JSON_BYTES) return false;
+    storage.setItem(SITE_STORAGE_KEY, text);
     return true;
   } catch {
     return false;
@@ -120,7 +116,7 @@ export async function siteHashUrl(
 }
 
 export async function readSiteFile(file: Blob): Promise<SiteState> {
-  if (file.size > MAX_SITE_FILE_BYTES) throw new PlanFormatError('Site file is too large.');
+  if (file.size > MAX_SITE_JSON_BYTES) throw new PlanFormatError('Site file is too large.');
   return siteFromJson(await file.text());
 }
 

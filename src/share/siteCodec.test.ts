@@ -174,7 +174,7 @@ describe('malformed site links and files', () => {
     const bomb = toBase64Url(await deflateRaw(new Uint8Array(4 * 1024 * 1024).fill(32), { fallback: true }));
     await expect(decodeSite(bomb, { fallback: true })).rejects.toThrow(/too large/);
     await expect(decodeSite(await link('not a site'))).rejects.toThrow(PlanFormatError);
-    expect(() => siteFromJson('x'.repeat(1024 * 1024 + 1))).toThrow(/too large/);
+    expect(() => siteFromJson('x'.repeat(2 * 1024 * 1024 + 1))).toThrow(/too large/);
   });
 
   it('rejects bad fields with a readable error', () => {

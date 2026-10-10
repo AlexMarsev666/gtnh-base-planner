@@ -1,5 +1,6 @@
 import type { PlanState } from '../model/plan/types';
-import { MAX_PAYLOAD_BYTES, PlanFormatError, encodePlan, decodePlan, validatePlanState } from './codec';
+import { MAX_PLAN_JSON_BYTES } from './binary';
+import { PlanFormatError, encodePlan, decodePlan, validatePlanState } from './codec';
 
 /**
  * UNIT 5 — Persistence.
@@ -105,7 +106,10 @@ export function loadStoredPlan(
 export function saveStoredPlan(state: PlanState, storage: StorageLike | null = browserStorage()): boolean {
   if (!storage) return false;
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(validatePlanState(state)));
+    const text = JSON.stringify(validatePlanState(state));
+    // Never write what `planFromJson` would refuse to read back.
+    if (text.length > MAX_PLAN_JSON_BYTES) return false;
+    storage.setItem(STORAGE_KEY, text);
     return true;
   } catch {
     return false;
@@ -184,7 +188,7 @@ export function planToJson(state: PlanState): string {
 
 export function planFromJson(text: string): PlanState {
   if (typeof text !== 'string') throw new PlanFormatError('Plan file is not text.');
-  if (text.length > MAX_PAYLOAD_BYTES) throw new PlanFormatError('Plan file is too large.');
+  if (text.length > MAX_PLAN_JSON_BYTES) throw new PlanFormatError('Plan file is too large.');
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -196,7 +200,7 @@ export function planFromJson(text: string): PlanState {
 
 /** Reads an uploaded plan file (size-checked before reading). */
 export async function readPlanFile(file: Blob): Promise<PlanState> {
-  if (file.size > MAX_PAYLOAD_BYTES) throw new PlanFormatError('Plan file is too large.');
+  if (file.size > MAX_PLAN_JSON_BYTES) throw new PlanFormatError('Plan file is too large.');
   return planFromJson(await file.text());
 }
 

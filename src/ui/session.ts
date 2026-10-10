@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { t } from '../i18n/en';
 import type { PlanState } from '../model/plan/types';
+import { LinkTooLargeError } from '../share/binary';
 import { encodePlan } from '../share/codec';
 import {
   clearHash,
@@ -155,6 +156,10 @@ export async function copyShareLink(): Promise<void> {
     url = shareApi.planHashUrl ? await shareApi.planHashUrl(p) : shareUrl(await encodePlan(p));
   } catch (err) {
     warnOnce('encodePlan', err);
+    if (err instanceof LinkTooLargeError) {
+      notify(t.planTooLargeForLink, 0, 'link-too-large', { label: t.downloadJson, run: downloadJson });
+      return;
+    }
     notify(t.linkFailed);
     return;
   }

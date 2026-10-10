@@ -13,7 +13,9 @@ import {
 import type { Rotation } from '../model/core/types';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
 import {
-  MAX_PAYLOAD_BYTES,
+  LinkTooLargeError,
+  MAX_LINK_CODE_CHARS,
+  MAX_SITE_JSON_BYTES,
   PlanFormatError,
   deflateRaw,
   fromBase64Url,
@@ -347,12 +349,12 @@ export function siteToJson(site: SiteState): string {
   return `${JSON.stringify(validateSiteState(site), null, 2)}\n`;
 }
 
-/** Files and stored copies may be larger than links (the payload cap applies to links only). */
-export const MAX_SITE_FILE_BYTES = 1024 * 1024;
+/** Alias of the one site JSON limit (files, stored copies and decompressed links). */
+export const MAX_SITE_FILE_BYTES = MAX_SITE_JSON_BYTES;
 
 export function siteFromJson(text: string): SiteState {
   if (typeof text !== 'string') throw new PlanFormatError('Site file is not text.');
-  if (text.length > MAX_SITE_FILE_BYTES) throw new PlanFormatError('Site file is too large.');
+  if (text.length > MAX_SITE_JSON_BYTES) throw new PlanFormatError('Site file is too large.');
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -364,15 +366,15 @@ export function siteFromJson(text: string): SiteState {
 
 export async function encodeSite(site: SiteState, opts: CompressOptions = {}): Promise<string> {
   const bytes = new TextEncoder().encode(JSON.stringify(validateSiteState(site)));
+  if (bytes.length > MAX_SITE_JSON_BYTES) throw new LinkTooLargeError();
   const code = toBase64Url(await deflateRaw(bytes, opts));
-  if (code.length > MAX_PAYLOAD_BYTES)
-    throw new PlanFormatError('This site is too large for a link. Download JSON instead.');
+  if (code.length > MAX_LINK_CODE_CHARS) throw new LinkTooLargeError();
   return code;
 }
 
 export async function decodeSite(encoded: string, opts: CompressOptions = {}): Promise<SiteState> {
   if (typeof encoded !== 'string' || encoded.length === 0) throw new PlanFormatError('Site link is empty.');
-  const bytes = await inflateRaw(fromBase64Url(encoded), { ...opts, limit: MAX_PAYLOAD_BYTES });
+  const bytes = await inflateRaw(fromBase64Url(encoded), { ...opts, limit: MAX_SITE_JSON_BYTES });
   let text: string;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);

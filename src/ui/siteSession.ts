@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { t } from '../i18n/en';
 import type { SiteState } from '../model/site/types';
+import { LinkTooLargeError } from '../share/binary';
 import { sitesEqual } from '../share/siteCodec';
 import {
   clearSiteHash,
@@ -24,6 +25,11 @@ export const pendingSite = writable<SiteState | null>(null);
 export const siteShareFallback = writable<string | null>(null);
 
 const SAVE_DEBOUNCE_MS = 300;
+
+/** Writes the site right away; tells the user once if the browser refuses. */
+function saveSiteNow(s: SiteState): void {
+  if (!saveStoredSite(s)) notify(t.saveFailed, 8000);
+}
 
 /** Loads the stored site and mode, then a `#s=` link (which switches to the site view). */
 export async function initSiteSession(): Promise<void> {
@@ -51,6 +57,8 @@ export async function initSiteSession(): Promise<void> {
   const empty = !stored || stored.groups.length === 0;
   if (empty || sitesEqual(shared, stored!)) {
     replaceSite(shared);
+    // Autosave has not started yet and skips this value, so the shared site is written here.
+    saveSiteNow(shared);
     clearSiteHash();
   } else pendingSite.set(shared);
 }
@@ -108,6 +116,10 @@ export async function copySiteLink(): Promise<void> {
     url = await siteHashUrl(get(site));
   } catch (err) {
     warnOnce('encodeSite', err);
+    if (err instanceof LinkTooLargeError) {
+      notify(t.site.tooLargeForLink, 0, 'link-too-large', { label: t.downloadJson, run: downloadSite });
+      return;
+    }
     notify(err instanceof Error && err.name === 'PlanFormatError' ? err.message : t.linkFailed, 6000);
     return;
   }
