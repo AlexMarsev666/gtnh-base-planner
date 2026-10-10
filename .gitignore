@@ -1,12 +1,49 @@
-# Local editor and desktop launch settings
-/.claude/*
-!/.claude/agents/
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Test output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs and temp files
+*.log
+npm-debug.log*
+*.tmp
+*.bak
+
+# Editors and OS files
 /.vscode/
+.idea/
+*.swp
 .DS_Store
 Thumbs.db
 desktop.ini
 
-node_modules/
-dist/
-test-results/
-playwright-report/
+# AI coding tools: local settings, sessions, caches and worktrees.
+# Tracked agent definitions under .claude/agents/ are kept on purpose.
+/.claude/*
+!/.claude/agents/
+CLAUDE.local.md
+AGENTS.local.md
+.mcp.json
+.cursor/
+.windsurf/
+.aider*
+.continue/
+.codex/
+.serena/
+.superpowers/
+.worktrees/
+.playwright-mcp/
