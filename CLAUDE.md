@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-GTNH Base Planner: a fully client-side 3D layout tool (TypeScript, Svelte 5, Three.js, Vite) that packs GregTech: New Horizons multiblocks so compatible casings share walls, places hatches and routes pipes/cables. Structures follow GT:NH 2.9.0-beta-3 (GT5-Unofficial 5.09.54.133). No backend: plans live in `localStorage` and share links carry the compressed plan in the URL fragment (`#p=` machine plan, `#s=` template).
+GTNH Base Planner: a fully client-side 3D layout tool (TypeScript, Svelte 5, Three.js, Vite) that packs GregTech: New Horizons multiblocks so compatible casings share walls, places hatches and routes pipes/cables. Structures follow the current GT:NH release build, **2.9.0-RC-2** (the RC2 modpack release). Only released builds count: never target daily or nightly builds, and update this line when a newer release ships. The GT5-Unofficial version bundled with 2.9.0-RC-2 is not yet confirmed; check the GT5-Unofficial release notes before relying on a specific version. No backend: plans live in `localStorage` and share links carry the compressed plan in the URL fragment (`#p=` machine plan, `#s=` template).
 
 ## Commands
 
@@ -70,7 +70,7 @@ Each multiblock is `src/data/multiblocks/<id>.json` (type `MultiblockDef` in `sr
 | `algorithms-reviewer`      | sonnet | no         | `src/model/**`: geometry, packing, wallsharing, hatches, routing, site, Arrange/Optimize |
 | `graphics-reviewer`        | sonnet | no         | `src/render/**`, `Scene.svelte`, atlas and size scripts                                  |
 | `qa-reviewer`              | sonnet | no         | Tests, `src/import`, `src/share`, persistence, undo history, regressions                 |
-| `gtnh-expert`              | sonnet | no         | Game rules vs GT5-Unofficial 5.09.54.133 and repo data                                   |
+| `gtnh-expert`              | sonnet | no         | Game rules vs the GT:NH 2.9.0-RC-2 release (GT5-Unofficial bundled with it) and repo data                                   |
 | `algorithms-deep-reviewer` | opus   | no         | One hard, escalated `src/model/**` question; only with the user's permission (see below) |
 
 Built-in agent types (`general-purpose`, `Explore`, `Plan`) inherit the main agent's Opus model. Use the project agents above instead; if a built-in one is truly needed, pass `model: "sonnet"` or `"haiku"`.
