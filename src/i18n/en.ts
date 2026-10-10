@@ -147,6 +147,9 @@ export const t = {
     arrange: 'Arrange',
     arranged: 'Arranged along the flow.',
     arranging: 'Arranging…',
+    arrangeCancelled: (optimize: boolean) =>
+      `Template edited: ${optimize ? 'optimizing' : 'arranging'} stopped.`,
+    arrangeFailed: (msg: string) => `Arranging failed: ${msg}`,
     optimize: 'Optimize',
     optimizeHint:
       'Arrange, then search for a tighter layout with shorter pipes (simulated annealing) and keep it if the router agrees.',

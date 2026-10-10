@@ -1,16 +1,17 @@
-import { get, type Readable } from 'svelte/store';
+import { get, type Readable, type Writable } from 'svelte/store';
 import { getSiteDef } from '../data/generic';
 import { t } from '../i18n/en';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
 import { appMode, site, siteGroup } from '../state/site';
 import { connectBelow, plan } from '../state/store';
-import { notify } from './notices';
+import { clearSlot, notify, warnOnce, type NoticeAction } from './notices';
 import { withGroupAdded, withGrownToFit, withPlanAdded } from './siteActions';
 import { growAfterBuild } from './siteEditing';
 import { undoAction } from './siteHistory';
 import type { Arranged } from './siteArrange';
 import { arrangeInSize, peekSiteBuild, siteBuild, type SiteResult } from './sitePipeline';
+import { JobCancelled } from './siteWorkerController';
 
 /** Where a new group goes: east of every built group, or at the start of the site. */
 export function freeOrigin(s: SiteState, build: SiteBuild | null): [number, number] {
@@ -56,21 +57,45 @@ export function addPlanToSite(): void {
  * floors above it, and a group bigger than the ground stacks its machines up. The size is never changed. It
  * runs in the build worker, as a big template takes seconds to measure.
  */
-export async function arrange(optimize = false): Promise<void> {
-  const s = get(site);
+export async function arrange(
+  optimize = false,
+  {
+    arrangeInSize: run = arrangeInSize,
+    sites = site,
+    below = connectBelow,
+    notify: say = notify,
+    clearSlot: clear = clearSlot,
+    undo = undoAction,
+  }: ArrangeDeps = {},
+): Promise<void> {
+  const s = get(sites);
   if (!s.groups.length) return;
-  notify(optimize ? t.site.optimizing : t.site.arranging, 120000, 'arrange');
+  say(optimize ? t.site.optimizing : t.site.arranging, 0, 'arrange');
+  const cancelled = () => say(t.site.arrangeCancelled(optimize), 4000, 'arrange');
   let r;
   try {
-    r = await arrangeInSize(s, get(connectBelow), optimize);
-  } catch {
-    // Replaced by a newer job (an import, say): that one reports for itself.
+    r = await run(s, get(below), optimize);
+  } catch (err) {
+    // Replaced by a newer arrange: that one owns the notice now. An import has notices of its own.
+    if (err instanceof JobCancelled && err.reason === 'arrange') return;
+    if (err instanceof JobCancelled && err.reason === 'import') {
+      clear('arrange');
+      return;
+    }
+    if (err instanceof JobCancelled) cancelled();
+    else {
+      warnOnce('arrange', err);
+      say(t.site.arrangeFailed(err instanceof Error ? err.message : String(err)), 6000, 'arrange');
+    }
     return;
   }
   // The template was edited while it was being arranged: the result no longer fits it.
-  if (get(site) !== s) return;
-  site.set(r.site);
-  notify(
+  if (get(sites) !== s) {
+    cancelled();
+    return;
+  }
+  sites.set(r.site);
+  say(
     r.fits && r.optimized
       ? optimizedNotice(r.optimized)
       : r.fits
@@ -80,8 +105,18 @@ export async function arrange(optimize = false): Promise<void> {
         : t.site.needs(r.needed[0], r.needed[1]),
     r.fits ? 6000 : 8000,
     'arrange',
-    undoAction(),
+    undo(),
   );
+}
+
+/** What `arrange` uses, replaceable in tests. */
+interface ArrangeDeps {
+  arrangeInSize?: (site: SiteState, below: boolean, optimize: boolean) => Promise<Arranged>;
+  sites?: Writable<SiteState>;
+  below?: Readable<boolean>;
+  notify?: (text: string, ms?: number, slot?: string, action?: NoticeAction) => void;
+  clearSlot?: (slot: string) => void;
+  undo?: () => NoticeAction;
 }
 
 /** What optimising did, in the router's numbers (pipe and cable blocks). */

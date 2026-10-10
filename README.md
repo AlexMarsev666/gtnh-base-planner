@@ -63,6 +63,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    fewer pipe blocks; otherwise the plain arrangement stays. It runs against a time budget of about ten seconds (a second or two for small chains), and a plan that is slow
    to route gets fewer tries. A group's limits can be kept in its settings (editing them keeps them): Arrange and
    Optimize never change those.
+   Editing the template while Arrange or Optimize runs stops it (a notice says so); closing the import dialog stops an import in progress.
    Select a group (click it, or pick it in the panel)
    and drag it in the view, or move it with the arrow keys as seen on screen (Shift: 5 blocks) or the arrows in
    the panel; PageUp and PageDown raise and lower it (Shift: 5 blocks), R turns it (Shift+R back), F frames it

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
-import { createSiteWorkerController, type SiteResult } from './siteWorkerController';
+import { createSiteWorkerController, JobCancelled, type SiteResult } from './siteWorkerController';
 
 vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -92,7 +92,7 @@ describe('site worker controller', () => {
     const project = { name: 'p', recipes: new Map(), nodes: [], storages: [], edges: [], skipped: 0 };
     const first = c.importSite(project, new Map(), {});
     void c.importSite(project, new Map(), {});
-    await expect(first).rejects.toThrow(/replaced/);
+    await expect(first).rejects.toEqual(new JobCancelled('import'));
   });
 
   it('arranges in the worker and hands back what it answers', async () => {
@@ -145,6 +145,97 @@ describe('site worker controller', () => {
     const { c: c2 } = setup(() => w as unknown as Worker);
     const first = c2.arrange(named('a'), false);
     void c2.arrange(named('b'), false);
-    await expect(first).rejects.toThrow(/replaced/);
+    await expect(first).rejects.toEqual(new JobCancelled('arrange'));
+  });
+
+  describe('cancelling', () => {
+    const project = { name: 'p', recipes: new Map(), nodes: [], storages: [], edges: [], skipped: 0 };
+
+    it('stops an import whose signal is aborted, and uses a new worker afterwards', async () => {
+      const workers: ReturnType<typeof fakeWorker>[] = [];
+      const { c } = setup(() => {
+        workers.push(fakeWorker());
+        return workers.at(-1) as unknown as Worker;
+      });
+      const ac = new AbortController();
+      const imp = c.importSite(project, new Map(), {}, ac.signal);
+      ac.abort();
+      await expect(imp).rejects.toEqual(new JobCancelled('aborted'));
+      expect(workers[0].terminated).toBe(true);
+      c.submit(named('a'), opts, false);
+      expect(workers).toHaveLength(2);
+      expect(workers[1].sent[0]).toMatchObject({ type: 'build' });
+    });
+
+    it('does not touch a different job when an old import is aborted', async () => {
+      const w = fakeWorker();
+      const { c } = setup(() => w as unknown as Worker);
+      const ac = new AbortController();
+      const first = c.importSite(project, new Map(), {}, ac.signal);
+      const second = c.importSite(project, new Map(), {});
+      await expect(first).rejects.toEqual(new JobCancelled('import'));
+      w.terminated = false;
+      ac.abort();
+      expect(w.terminated).toBe(false);
+      void second;
+    });
+
+    it('rejects at once for a signal already aborted', async () => {
+      const w = fakeWorker();
+      const { c } = setup(() => w as unknown as Worker);
+      const ac = new AbortController();
+      ac.abort();
+      await expect(c.importSite(project, new Map(), {}, ac.signal)).rejects.toEqual(
+        new JobCancelled('aborted'),
+      );
+      expect(w.sent).toHaveLength(0);
+    });
+
+    it('cancels an arrange when another site is submitted, then sends that build', async () => {
+      const w = fakeWorker();
+      const { c } = setup(() => w as unknown as Worker);
+      const a = named('a');
+      const job = c.arrange(a, false);
+      c.submit(named('b'), opts, false);
+      await expect(job).rejects.toEqual(new JobCancelled('edit'));
+      expect(w.terminated).toBe(true);
+    });
+
+    it('sends the new build to a new worker after cancelling an arrange', async () => {
+      const workers: ReturnType<typeof fakeWorker>[] = [];
+      const { c } = setup(() => {
+        workers.push(fakeWorker());
+        return workers.at(-1) as unknown as Worker;
+      });
+      const job = c.arrange(named('a'), false);
+      c.submit(named('b'), opts, false);
+      await expect(job).rejects.toBeInstanceOf(JobCancelled);
+      expect(workers).toHaveLength(2);
+      expect(workers[1].sent[0]).toMatchObject({ type: 'build', site: { name: 'b' } });
+    });
+
+    it('keeps an arrange running when the same site is submitted again', async () => {
+      const w = fakeWorker();
+      const { c } = setup(() => w as unknown as Worker);
+      const a = named('a');
+      const job = c.arrange(a, false);
+      c.submit(a, { pipes: true, cables: false }, false);
+      expect(w.terminated).toBe(false);
+      const arranged = { site: a, fits: true, needed: [10, 10] as [number, number], floors: 1 };
+      w.reply({ id: w.sent[0].id, arranged });
+      await expect(job).resolves.toEqual(arranged);
+      expect(w.sent[1]).toMatchObject({ type: 'build' });
+    });
+
+    it('cancels an arrange when connecting from below changes', async () => {
+      const w = fakeWorker();
+      const { c } = setup(() => w as unknown as Worker);
+      const a = named('a');
+      const job = c.arrange(a, false);
+      c.submit(a, { ...opts, below: false }, false);
+      expect(w.terminated).toBe(false);
+      c.submit(a, { ...opts, below: true }, false);
+      await expect(job).rejects.toEqual(new JobCancelled('edit'));
+    });
   });
 });

@@ -7,7 +7,12 @@ import { isolate, site, siteCables, sitePipes } from '../state/site';
 import { connectBelow } from '../state/store';
 import { withDimensions } from './dimensions';
 import type { Arranged } from './siteArrange';
-import { createSiteWorkerController, type ImportResult, type SiteResult } from './siteWorkerController';
+import {
+  createSiteWorkerController,
+  JobCancelled,
+  type ImportResult,
+  type SiteResult,
+} from './siteWorkerController';
 
 export type { SiteResult } from './siteWorkerController';
 
@@ -90,6 +95,20 @@ function request(s: SiteState, opts: SiteBuildOptions): void {
   controller.submit(s, opts, false);
 }
 
+/** Builds the latest requested site again (what a dropped import or arrange left stale on screen). */
+export function resubmitLatest(): void {
+  if (latest) request(latest.site, latest.opts);
+}
+
+/**
+ * A failed or aborted job stopped the build of the displayed template; a job replaced by a newer one or by an
+ * edit leaves that to whatever replaced it.
+ */
+function rebuildAfter(err: unknown): never {
+  if (!(err instanceof JobCancelled) || err.reason === 'aborted') resubmitLatest();
+  throw err;
+}
+
 /**
  * Imports a GTNH Planner project into a new site (see `buildSiteFromGtnh`) in the build worker, so a large
  * chain does not freeze the page and the build that follows reuses the packed groups. The worker's current
@@ -99,8 +118,9 @@ export function importSite(
   project: GtnhProject,
   choices: Map<string, MachineChoice>,
   opts: ImportOptions,
+  signal?: AbortSignal,
 ): Promise<ImportResult> {
-  return controller.importSite(project, choices, opts);
+  return controller.importSite(project, choices, opts, signal).catch(rebuildAfter);
 }
 
 /**
@@ -109,7 +129,7 @@ export function importSite(
  * annealed and routed a few times, which takes longer.
  */
 export function arrangeInSize(site: SiteState, below: boolean, optimize = false): Promise<Arranged> {
-  return controller.arrange(site, below, optimize);
+  return controller.arrange(site, below, optimize).catch(rebuildAfter);
 }
 
 /** Pipes of the last routed build: shown faded while a pending build has none. */

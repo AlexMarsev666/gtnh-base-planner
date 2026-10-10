@@ -1,9 +1,10 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { describe, expect, it, vi } from 'vitest';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
-import { optimizeAfterImport, whenBuilt } from './siteCommands';
+import { arrange, optimizeAfterImport, whenBuilt } from './siteCommands';
+import { JobCancelled } from './siteWorkerController';
 import type { SiteResult } from './sitePipeline';
 import { withGroupAdded } from './siteActions';
 
@@ -90,5 +91,78 @@ describe('optimizeAfterImport', () => {
     site.set(s);
     await optimizeAfterImport(s, run, async () => false);
     expect(run).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('arrange', () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const undo = { label: 'Undo', run: () => {} };
+  function setup(job: (s: SiteState) => Promise<unknown>) {
+    const s = imported();
+    const sites = writable(s);
+    const cleared: string[] = [];
+    const said: [string, number | undefined, string | undefined][] = [];
+    const deps = {
+      arrangeInSize: job as never,
+      sites,
+      below: writable(false),
+      notify: (text: string, ms?: number, slot?: string) => void said.push([text, ms, slot]),
+      clearSlot: (slot: string) => void cleared.push(slot),
+      undo: () => undo,
+    };
+    return { s, sites, said, cleared, deps };
+  }
+  const arranged = (s: SiteState) => ({
+    site: { ...s, name: 'arranged' },
+    fits: true,
+    needed: [1, 1],
+    floors: 1,
+  });
+
+  it('shows a notice that stays while arranging, then replaces it with the outcome', async () => {
+    const { s, sites, said, deps } = setup(async (x) => arranged(x));
+    await arrange(false, deps);
+    expect(said[0]).toEqual([expect.stringMatching(/Arranging/), 0, 'arrange']);
+    expect(said[1][2]).toBe('arrange');
+    expect(get(sites).name).toBe('arranged');
+    expect(s.name).not.toBe('arranged');
+  });
+
+  it('reports an error instead of staying silent', async () => {
+    const { said, deps } = setup(async () => {
+      throw new Error('boom');
+    });
+    await arrange(true, deps);
+    expect(said[1]).toEqual([expect.stringContaining('boom'), 6000, 'arrange']);
+  });
+
+  it('says so when an edit stopped it, and when the result is discarded', async () => {
+    const stopped = setup(async () => {
+      throw new JobCancelled('edit');
+    });
+    await arrange(true, stopped.deps);
+    expect(stopped.said[1]).toEqual([expect.stringMatching(/optimizing stopped/), 4000, 'arrange']);
+    const later = setup(async (x) => {
+      later.sites.set({ ...x, name: 'edited' });
+      return arranged(x);
+    });
+    await arrange(false, later.deps);
+    expect(later.said[1]).toEqual([expect.stringMatching(/arranging stopped/), 4000, 'arrange']);
+    expect(get(later.sites).name).toBe('edited');
+  });
+
+  it('leaves the notice to a newer arrange, and clears it when an import replaced the job', async () => {
+    const newer = setup(async () => {
+      throw new JobCancelled('arrange');
+    });
+    await arrange(false, newer.deps);
+    expect(newer.said).toHaveLength(1);
+    expect(newer.cleared).toEqual([]);
+    const imp = setup(async () => {
+      throw new JobCancelled('import');
+    });
+    await arrange(false, imp.deps);
+    expect(imp.said).toHaveLength(1);
+    expect(imp.cleared).toEqual(['arrange']);
   });
 });

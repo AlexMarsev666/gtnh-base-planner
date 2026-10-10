@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
   import { catalog } from '../data/catalog';
   import { t } from '../i18n/en';
@@ -22,6 +23,7 @@
   import { importSite } from './sitePipeline';
   import { replaceSite } from './siteActions';
   import { optimizeAfterImport } from './siteCommands';
+  import { runImport } from './importFlow';
 
   interface Props {
     onclose: () => void;
@@ -89,36 +91,34 @@
     read(await file.text());
   }
 
+  /** Closing the dialog (Esc, Cancel, anything) stops an import still running. */
+  const ac = new AbortController();
+  onDestroy(() => ac.abort());
+
   let building = $state(false);
   async function build() {
     if (!project || building) return;
     const map = new Map(Object.entries(choices).map(([k, v]) => [k, decode(v)]));
     building = true;
     error = null;
-    let result: Awaited<ReturnType<typeof importSite>>;
-    try {
-      result = await importSite(project, map, { size: [width, depth], fit, below: get(connectBelow) });
-    } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
-      return;
-    } finally {
-      building = false;
-    }
-    const { site: next, report } = result;
-    releaseIfBackedUp('site');
-    replaceSite(next);
-    appMode.set('site');
-    const notes = [t.importer.done(report.groups, report.ports, report.links)];
-    if (fit) notes.push(t.importer.sized(next.size[0], next.size[1]));
-    else if (!report.fits) notes.push(t.site.needs(report.needed[0], report.needed[1]));
-    if (!fit && report.floors > 1) notes.push(t.importer.floors(report.floors));
-    if (report.aspects) notes.push(t.importer.aspects(report.aspects));
-    if (report.truncated) notes.push(t.importer.truncated);
-    notify(notes.join(' '), 9000, 'import');
-    if (report.placeholders.length)
-      notify(t.importer.placeholders(report.placeholders), 9000, 'import-placeholders');
-    onclose();
-    if (optimizeAfter) void optimizeAfterImport(next);
+    const message = await runImport(
+      project,
+      map,
+      { size: [width, depth], fit, below: get(connectBelow) },
+      optimizeAfter,
+      ac.signal,
+      {
+        importSite,
+        releaseIfBackedUp,
+        replaceSite,
+        showSite: () => appMode.set('site'),
+        notify,
+        close: onclose,
+        optimizeAfterImport,
+      },
+    );
+    building = false;
+    if (message !== null && !ac.signal.aborted) error = message;
   }
 
   /** Up to three item and fluid outputs of a row's recipe, each once (a recipe may list one twice). */

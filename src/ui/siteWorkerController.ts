@@ -21,6 +21,14 @@ export interface SiteResult {
   of?: SiteState;
 }
 
+/** Why a pending import or arrange was dropped: replaced by a newer job, by an edit, or aborted by the caller. */
+export class JobCancelled extends Error {
+  constructor(readonly reason: 'import' | 'arrange' | 'edit' | 'aborted') {
+    super(`Cancelled: ${reason}`);
+    this.name = 'JobCancelled';
+  }
+}
+
 export type ImportResult = { site: SiteState; report: ImportReport };
 
 /** What the controller reports back: finished builds, and whether a build is taking a while. */
@@ -33,15 +41,21 @@ export interface SiteWorkerEvents {
 export interface SiteWorkerController {
   /** Builds `site`, replacing any build not started yet. `pending`: a build without pipes while editing. */
   submit: (site: SiteState, opts: SiteBuildOptions, pending: boolean) => void;
-  /** Imports a project into a new site; drops the current job, which the import replaces. */
+  /**
+   * Imports a project into a new site; drops the current job, which the import replaces. Aborting `signal`
+   * while this import runs in the worker stops it (rejects with `JobCancelled('aborted')`); an import done
+   * right here cannot be interrupted.
+   */
   importSite: (
     project: GtnhProject,
     choices: Map<string, MachineChoice>,
     opts: ImportOptions,
+    signal?: AbortSignal,
   ) => Promise<ImportResult>;
   /**
    * Arranges `site` inside its own size, on floors if need be; drops the current job, which it replaces. With
-   * `optimize`, the arrangement is then annealed and the best layout by the router's numbers kept.
+   * `optimize`, the arrangement is then annealed and the best layout by the router's numbers kept. Submitting
+   * a different site (or another `below`) while it runs cancels it with `JobCancelled('edit')`.
    */
   arrange: (site: SiteState, below: boolean, optimize?: boolean) => Promise<Arranged>;
 }
@@ -136,13 +150,13 @@ export function createSiteWorkerController(
   }
 
   /** Drops whatever the worker is doing (its result is no longer wanted). */
-  function stopWorker(): void {
+  function stopWorker(reason: JobCancelled['reason']): void {
     worker?.terminate();
     worker = null;
     const was = inFlight;
     inFlight = null;
-    if (was && 'import' in was) was.import.reject(new Error('Import replaced by a newer one.'));
-    if (was && 'arrange' in was) was.arrange.reject(new Error('Arrange replaced by a newer job.'));
+    if (was && 'import' in was) was.import.reject(new JobCancelled(reason));
+    if (was && 'arrange' in was) was.arrange.reject(new JobCancelled(reason));
   }
 
   function startWorker(): Worker | null {
@@ -229,22 +243,43 @@ export function createSiteWorkerController(
       events.onBusy(true);
       // The worker is busy with a site that is gone (an import or an opened file replaced it): drop that
       // build rather than wait for it. Its group cache would not help the new site anyway.
-      if (inFlight && 'build' in inFlight && replaced(inFlight.build.site, site)) stopWorker();
+      if (inFlight && 'build' in inFlight && replaced(inFlight.build.site, site)) stopWorker('edit');
+      // An arrangement of another template (or another `below`) no longer fits what the user is editing.
+      else if (
+        inFlight &&
+        'arrange' in inFlight &&
+        (inFlight.arrange.site !== site || inFlight.arrange.below !== !!opts.below)
+      )
+        stopWorker('edit');
       if (inFlight === null) sendQueued();
     },
 
-    importSite(project, choices, opts) {
+    importSite(project, choices, opts, signal) {
       return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+          reject(new JobCancelled('aborted'));
+          return;
+        }
         const imp: PendingImport = { project, choices, opts, resolve, reject };
         // Builds of the current site are no longer wanted either: the imported site replaces it.
         queued = null;
-        if (inFlight) stopWorker();
+        if (inFlight) stopWorker('import');
         const w = workerFailed ? null : startWorker();
         if (!w) {
           importHere(imp);
           return;
         }
         inFlight = { id: ++nextId, import: imp };
+        signal?.addEventListener(
+          'abort',
+          () => {
+            // Only if the worker is still on this very import.
+            if (!inFlight || !('import' in inFlight) || inFlight.import !== imp) return;
+            stopWorker('aborted');
+            sendQueued();
+          },
+          { once: true },
+        );
         post(w, { id: inFlight.id, type: 'import', project, choices, opts });
       });
     },
@@ -254,7 +289,7 @@ export function createSiteWorkerController(
         const job: PendingArrange = { site, below, optimize, resolve, reject };
         // Builds of the current site wait: the arrangement changes it.
         queued = null;
-        if (inFlight) stopWorker();
+        if (inFlight) stopWorker('arrange');
         const w = workerFailed ? null : startWorker();
         if (!w) {
           arrangeLocally(job);
