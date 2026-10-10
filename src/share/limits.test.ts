@@ -12,6 +12,7 @@ function memory(): StorageLike {
   return {
     getItem: (k) => m.get(k) ?? null,
     setItem: (k, v) => void m.set(k, v),
+    removeItem: (k) => void m.delete(k),
     key: (i) => [...m.keys()][i] ?? null,
     get length() {
       return m.size;

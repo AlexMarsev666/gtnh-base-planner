@@ -17,6 +17,7 @@
   import { notify } from './notices';
   import NumberField from './NumberField.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
+  import { releaseIfBackedUp } from './recovery';
   import { fallbackColor } from '../import/gtnhplanner';
   import { importSite } from './sitePipeline';
   import { replaceSite } from './siteActions';
@@ -104,6 +105,7 @@
       building = false;
     }
     const { site: next, report } = result;
+    releaseIfBackedUp('site');
     replaceSite(next);
     appMode.set('site');
     const notes = [t.importer.done(report.groups, report.ports, report.links)];

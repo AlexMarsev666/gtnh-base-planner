@@ -5,15 +5,16 @@ import { LinkTooLargeError } from '../share/binary';
 import { encodePlan } from '../share/codec';
 import {
   clearHash,
-  loadStoredPlan,
   planFromJson,
   planToJson,
   readHashPlan,
+  readStoredPlan,
   saveStoredPlan,
 } from '../share/persist';
 import { appMode } from '../state/site';
 import { plan, selectedUnits } from '../state/store';
 import { LONG_LINK_CHARS, linkCopiedNotice, notify, warnOnce } from './notices';
+import { holdUnreadable, isHeld, releaseIfBackedUp } from './recovery';
 import { shareApi } from './shareApi';
 
 /** A shared plan from the URL waiting for the user's OPEN / KEEP MINE answer. */
@@ -63,9 +64,14 @@ function applyPlan(next: PlanState): void {
 export async function initSession(): Promise<void> {
   let stored: PlanState | null = null;
   try {
-    stored = loadStoredPlan();
+    const result = readStoredPlan();
+    stored = result.plan;
+    // The unreadable text stays where it is until the user decides (see recovery.ts).
+    if (result.error !== undefined) {
+      holdUnreadable('plan', { error: result.error, raw: result.raw ?? '', backupKey: result.backupKey });
+    }
   } catch (err) {
-    warnOnce('loadStoredPlan', err);
+    warnOnce('readStoredPlan', err);
   }
   if (stored) applyPlan(stored);
 
@@ -88,8 +94,10 @@ export async function initSession(): Promise<void> {
   // view before its first await, so this (after an await) always comes later.
   appMode.set('machine');
   if (!stored || samePlan(shared, stored)) {
+    releaseIfBackedUp('plan');
     applyPlan(shared);
-    safeClearHash();
+    // Still held: the link is the only copy of this plan outside memory, so a reload must find it.
+    if (!isHeld('plan')) safeClearHash();
   } else {
     pendingShared.set(shared);
   }
@@ -97,7 +105,10 @@ export async function initSession(): Promise<void> {
 
 export function answerShared(open: boolean): void {
   const shared = get(pendingShared);
-  if (open && shared) applyPlan(shared);
+  if (open && shared) {
+    releaseIfBackedUp('plan');
+    applyPlan(shared);
+  }
   pendingShared.set(null);
   safeClearHash();
 }
@@ -110,9 +121,15 @@ export function startAutosave(): () => void {
     if (timer !== undefined) clearTimeout(timer);
     timer = undefined;
     if (!latest) return;
+    // An unreadable stored plan is left alone until the user decides.
+    if (isHeld('plan')) {
+      latest = undefined;
+      return;
+    }
     try {
       // The share unit returns false when storage is full or blocked.
       if ((saveStoredPlan(latest) as unknown) === false) saveFailed();
+      else saveWarned = false;
     } catch (err) {
       warnOnce('saveStoredPlan', err);
     }
@@ -197,7 +214,9 @@ export function downloadJson(): void {
 
 export async function openJsonFile(file: File): Promise<void> {
   try {
-    applyPlan(shareApi.readPlanFile ? await shareApi.readPlanFile(file) : planFromJson(await file.text()));
+    const next = shareApi.readPlanFile ? await shareApi.readPlanFile(file) : planFromJson(await file.text());
+    releaseIfBackedUp('plan');
+    applyPlan(next);
     notify(t.jsonLoaded);
   } catch (err) {
     warnOnce('planFromJson', err);

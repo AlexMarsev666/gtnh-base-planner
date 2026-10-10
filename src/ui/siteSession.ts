@@ -8,15 +8,16 @@ import {
   downloadSiteJson,
   hashSiteParam,
   loadMode,
-  loadStoredSite,
   readHashSite,
   readSiteFile,
+  readStoredSite,
   saveMode,
   saveStoredSite,
   siteHashUrl,
 } from '../share/sitePersist';
 import { appMode, site } from '../state/site';
 import { LONG_LINK_CHARS, linkCopiedNotice, notify, warnOnce } from './notices';
+import { holdUnreadable, isHeld, releaseIfBackedUp } from './recovery';
 import { replaceSite } from './siteActions';
 
 /** A shared site from the URL waiting for the user's OPEN / KEEP MINE answer. */
@@ -26,9 +27,16 @@ export const siteShareFallback = writable<string | null>(null);
 
 const SAVE_DEBOUNCE_MS = 300;
 
-/** Writes the site right away; tells the user once if the browser refuses. */
+let saveWarned = false;
+
+/** Writes the site right away unless an unreadable stored one is held; tells the user once per failure streak. */
 function saveSiteNow(s: SiteState): void {
-  if (!saveStoredSite(s)) notify(t.saveFailed, 8000);
+  if (isHeld('site')) return;
+  if (saveStoredSite(s)) saveWarned = false;
+  else if (!saveWarned) {
+    saveWarned = true;
+    notify(t.saveFailed, 8000);
+  }
 }
 
 /** Loads the stored site and mode, then a `#s=` link (which switches to the site view). */
@@ -36,9 +44,14 @@ export async function initSiteSession(): Promise<void> {
   appMode.set(loadMode());
   let stored: SiteState | null = null;
   try {
-    stored = loadStoredSite();
+    const result = readStoredSite();
+    stored = result.site;
+    // The unreadable text stays where it is until the user decides (see recovery.ts).
+    if (result.error !== undefined) {
+      holdUnreadable('site', { error: result.error, raw: result.raw ?? '', backupKey: result.backupKey });
+    }
   } catch (err) {
-    warnOnce('loadStoredSite', err);
+    warnOnce('readStoredSite', err);
   }
   if (stored) site.set(stored);
   if (hashSiteParam(location.hash) === null) return;
@@ -56,16 +69,21 @@ export async function initSiteSession(): Promise<void> {
   appMode.set('site');
   const empty = !stored || stored.groups.length === 0;
   if (empty || sitesEqual(shared, stored!)) {
+    releaseIfBackedUp('site');
     replaceSite(shared);
     // Autosave has not started yet and skips this value, so the shared site is written here.
     saveSiteNow(shared);
-    clearSiteHash();
+    // Still held: the link is the only copy of this template outside memory, so a reload must find it.
+    if (!isHeld('site')) clearSiteHash();
   } else pendingSite.set(shared);
 }
 
 export function answerSharedSite(open: boolean): void {
   const shared = get(pendingSite);
-  if (open && shared) replaceSite(shared);
+  if (open && shared) {
+    releaseIfBackedUp('site');
+    replaceSite(shared);
+  }
   pendingSite.set(null);
   clearSiteHash();
 }
@@ -74,15 +92,11 @@ export function answerSharedSite(open: boolean): void {
 export function startSiteAutosave(): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let latest: SiteState | undefined;
-  let warned = false;
   const flush = () => {
     if (timer !== undefined) clearTimeout(timer);
     timer = undefined;
     if (!latest) return;
-    if (!saveStoredSite(latest) && !warned) {
-      warned = true;
-      notify(t.saveFailed, 8000);
-    }
+    saveSiteNow(latest);
     latest = undefined;
   };
   let first = true;
@@ -150,7 +164,9 @@ export function downloadSite(): void {
 
 export async function openSiteFile(file: File): Promise<void> {
   try {
-    replaceSite(await readSiteFile(file));
+    const next = await readSiteFile(file);
+    releaseIfBackedUp('site');
+    replaceSite(next);
     notify(t.site.opened);
   } catch (err) {
     warnOnce('siteFromJson', err);

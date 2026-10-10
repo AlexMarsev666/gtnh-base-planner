@@ -35,6 +35,9 @@ class FakeStorage implements StorageLike {
     if (this.failWrites) throw new Error('QuotaExceededError');
     this.map.set(k, v);
   }
+  removeItem(k: string): void {
+    this.map.delete(k);
+  }
 }
 
 function fakeWindow(href: string): WindowLike & { calls: string[] } {

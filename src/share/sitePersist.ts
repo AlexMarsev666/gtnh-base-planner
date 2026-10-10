@@ -1,4 +1,5 @@
 import type { SiteState } from '../model/site/types';
+import { keepBackup } from './backups';
 import { MAX_SITE_JSON_BYTES, PlanFormatError } from './binary';
 import type { LocationLike, StorageLike, WindowLike } from './persist';
 import { decodeSite, encodeSite, siteFromJson, siteToJson, validateSiteState } from './siteCodec';
@@ -23,34 +24,42 @@ function browserWindow(): WindowLike | null {
   return g.location && g.history ? { location: g.location, history: g.history } : null;
 }
 
-/** The stored site, or null. An unreadable copy is kept under a backup key, never overwritten. */
-export function loadStoredSite(
+export interface StoredSiteResult {
+  site: SiteState | null;
+  /** Set when a stored site existed but could not be read. */
+  error?: string;
+  /** Key the unreadable site was copied to (absent if the copy failed). */
+  backupKey?: string;
+  /** The unreadable stored text (for a download), when `error` is set. */
+  raw?: string;
+}
+
+/** The stored site. An unreadable copy is kept under a backup key, never overwritten; the reason is returned. */
+export function readStoredSite(
   storage: StorageLike | null = browserStorage(),
   now: () => number = Date.now,
-): SiteState | null {
-  if (!storage) return null;
+): StoredSiteResult {
+  if (!storage) return { site: null };
   let raw: string | null;
   try {
     raw = storage.getItem(SITE_STORAGE_KEY);
   } catch {
-    return null;
+    return { site: null };
   }
-  if (raw === null) return null;
+  if (raw === null) return { site: null };
   try {
-    return siteFromJson(raw);
-  } catch {
-    try {
-      let kept = false;
-      for (let i = 0; i < storage.length && !kept; i++) {
-        const k = storage.key(i);
-        kept = !!k?.startsWith(SITE_BACKUP_PREFIX) && storage.getItem(k) === raw;
-      }
-      if (!kept) storage.setItem(`${SITE_BACKUP_PREFIX}${now()}`, raw);
-    } catch {
-      // Storage full or blocked: nothing more to do.
-    }
-    return null;
+    return { site: siteFromJson(raw) };
+  } catch (err) {
+    const error = err instanceof Error ? err.message : 'Unreadable template.';
+    return { site: null, error, raw, backupKey: keepBackup(storage, SITE_STORAGE_KEY, raw, now) };
   }
+}
+
+export function loadStoredSite(
+  storage: StorageLike | null = browserStorage(),
+  now: () => number = Date.now,
+): SiteState | null {
+  return readStoredSite(storage, now).site;
 }
 
 export function saveStoredSite(site: SiteState, storage: StorageLike | null = browserStorage()): boolean {

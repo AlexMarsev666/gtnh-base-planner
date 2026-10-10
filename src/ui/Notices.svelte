@@ -1,11 +1,27 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import { dismissNotice, notices } from './notices';
+  import { downloadUnreadable, recovery, retryUnreadable, startNew } from './recovery';
   import { answerShared, pendingShared } from './session';
   import { answerSharedSite, pendingSite } from './siteSession';
 </script>
 
 <div class="notices" role="status" aria-live="polite">
+  {#each ['plan', 'site'] as const as kind (kind)}
+    {@const entry = $recovery[kind]}
+    {#if entry}
+      <p class="notice confirm" data-testid="recovery-{kind}">
+        <span>
+          {t.recovery[kind](entry.error)}
+          {entry.backupKey ? t.recovery.keptCopy : t.recovery.copyFailed}
+          {t.recovery.paused}
+        </span>
+        <button class="link active" onclick={() => downloadUnreadable(kind)}>{t.recovery.download}</button>
+        <button class="link" onclick={() => retryUnreadable(kind)}>{t.recovery.retry}</button>
+        <button class="link" onclick={() => startNew(kind)}>{t.recovery.startNew}</button>
+      </p>
+    {/if}
+  {/each}
   {#if $pendingShared}
     <p class="notice confirm" data-testid="shared-confirm">
       <span>{t.sharedPrompt}</span>

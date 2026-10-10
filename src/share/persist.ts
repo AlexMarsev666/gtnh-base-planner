@@ -1,5 +1,6 @@
 import type { PlanState } from '../model/plan/types';
 import { MAX_PLAN_JSON_BYTES } from './binary';
+import { keepBackup } from './backups';
 import { PlanFormatError, encodePlan, decodePlan, validatePlanState } from './codec';
 
 /**
@@ -20,7 +21,7 @@ export const STORAGE_KEY = 'gtnh-planner:v1';
 export const BACKUP_PREFIX = `${STORAGE_KEY}:backup-`;
 export const HASH_PARAM = 'p';
 
-export type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'key' | 'length'>;
+export type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>;
 export type LocationLike = Pick<Location, 'hash' | 'pathname' | 'search' | 'href'>;
 export interface WindowLike {
   location: LocationLike;
@@ -51,6 +52,8 @@ export interface StoredPlanResult {
   error?: string;
   /** Key the unreadable plan was copied to (absent if the copy failed). */
   backupKey?: string;
+  /** The unreadable stored text (for a download), when `error` is set. */
+  raw?: string;
 }
 
 /**
@@ -73,22 +76,7 @@ export function readStoredPlan(
     return { plan: planFromJson(raw) };
   } catch (err) {
     const error = err instanceof Error ? err.message : 'Unreadable plan.';
-    return { plan: null, error, backupKey: backupRaw(storage, raw, now) };
-  }
-}
-
-/** Copies an unreadable stored plan to a backup key (once per distinct value). */
-function backupRaw(storage: StorageLike, raw: string, now: () => number): string | undefined {
-  try {
-    for (let i = 0; i < storage.length; i++) {
-      const key = storage.key(i);
-      if (key?.startsWith(BACKUP_PREFIX) && storage.getItem(key) === raw) return key;
-    }
-    const key = `${BACKUP_PREFIX}${now()}`;
-    storage.setItem(key, raw);
-    return key;
-  } catch {
-    return undefined;
+    return { plan: null, error, raw, backupKey: keepBackup(storage, STORAGE_KEY, raw, now) };
   }
 }
 

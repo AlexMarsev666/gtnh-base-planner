@@ -112,6 +112,18 @@ export const t = {
   saveFailed: 'This browser is not saving the plan. Download JSON to keep it.',
   dismiss: 'Dismiss',
 
+  // A stored plan or template that could not be read
+  recovery: {
+    plan: (reason: string) => `Your saved plan could not be read (${reason}). It has not been changed.`,
+    site: (reason: string) => `Your saved template could not be read (${reason}). It has not been changed.`,
+    keptCopy: 'A copy is kept in this browser.',
+    copyFailed: 'A copy could not be kept (browser storage is full or blocked). Download it now.',
+    paused: 'Changes are not saved until you choose.',
+    download: 'Download copy',
+    retry: 'Try again',
+    startNew: 'Start new',
+  },
+
   // Mode switch
   modeMachine: 'Machine',
   modeSite: 'Template',
