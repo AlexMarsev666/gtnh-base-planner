@@ -1,15 +1,21 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import { selectedUnits } from '../state/store';
-  import type { PipelineResult } from './pipeline';
+  import { machineBusy, type BuildResult } from './pipeline';
   import { statsParts } from './statsText';
 
   interface Props {
-    result: PipelineResult;
+    result: BuildResult;
   }
   let { result }: Props = $props();
 
-  const parts = $derived(statsParts(result, $selectedUnits));
+  const parts = $derived.by(() => {
+    const p = statsParts(result, $selectedUnits);
+    // Pipes follow the first, unrouted build; a newer build is computing while the old one stays on screen.
+    if (result.pending) p.main.push(t.pipesRouting);
+    if ($machineBusy) p.main.unshift(t.site.building);
+    return p;
+  });
 </script>
 
 {#if parts.main.length || parts.selected}

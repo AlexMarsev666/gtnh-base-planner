@@ -17,7 +17,7 @@
   import Notices from './Notices.svelte';
   import { notify } from './notices';
   import Picker from './Picker.svelte';
-  import { build } from './pipeline';
+  import { build, machineBusy, machineDef } from './pipeline';
   import Scene from './Scene.svelte';
   import { isTyping, siteKeyAction } from './keys';
   import MoveHint from './MoveHint.svelte';
@@ -55,7 +55,7 @@
   /** Site view: what the multiblock picker is open for. */
   let sitePicker = $state<'add' | 'change' | null>(null);
 
-  const def = $derived($build.def);
+  const def = $derived($machineDef);
   const siteMode = $derived($appMode === 'site');
 
   onMount(startSessions);
@@ -265,7 +265,14 @@
   {:else}
     {#if !$build.scene || rendererFailed}
       <div class="placeholder" data-testid="preview-notice">
-        <span>{$build.scene ? t.viewUnavailable : t.previewUnavailable}</span>
+        <!-- Before the first build arrives from the worker there is simply nothing to show yet. -->
+        <span
+          >{$build.scene
+            ? t.viewUnavailable
+            : !$build.error && ($machineBusy || !$build.pack)
+              ? t.site.building
+              : t.previewUnavailable}</span
+        >
         {#if $build.error}<span class="detail">{$build.error}</span>{/if}
       </div>
     {/if}

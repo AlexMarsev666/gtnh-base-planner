@@ -234,7 +234,7 @@ describe('build store', () => {
   it('computes nothing while the template view is shown, and catches up on return', () => {
     const deps = fakeDeps();
     const mode = writable<AppMode>('machine');
-    const store = createBuildStore(createPipeline(deps), mode);
+    const store = createBuildStore(createPipeline(deps), mode).build;
     const stop = store.subscribe(() => {});
     const before = deps.packUnits.mock.calls.length;
     expect(before).toBeGreaterThan(0);
@@ -253,7 +253,7 @@ describe('build store', () => {
 
   it('has an empty result before the machine view was ever built', () => {
     const deps = fakeDeps();
-    const store = createBuildStore(createPipeline(deps), writable<AppMode>('site'));
+    const store = createBuildStore(createPipeline(deps), writable<AppMode>('site')).build;
     expect(get(store).scene).toBeNull();
     expect(get(store).error).toBeNull();
     expect(deps.packUnits).not.toHaveBeenCalled();

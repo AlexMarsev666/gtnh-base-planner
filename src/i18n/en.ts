@@ -105,6 +105,8 @@ export const t = {
   unconnectedPipes: (n: number) => `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected.`,
   routingTruncated: (n: number) =>
     `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected: routing stopped early because this build is very large.`,
+  pipesRouting: 'Routing pipes…',
+  machineWorkerStopped: 'The background worker stopped; pipes and cables are off until you reload.',
   sharedPrompt: 'Open shared plan? It replaces your current one.',
   sharedOpen: 'Open',
   sharedKeep: 'Keep mine',

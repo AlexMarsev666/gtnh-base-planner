@@ -166,3 +166,37 @@ test('required blocks checklist', async ({ page }) => {
 
   expect(errors).toEqual([]);
 });
+
+test('a large build with pipes keeps the page responsive while it computes', async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await expect(page.getByTestId('scene')).toBeVisible();
+
+  await page.getByTestId('multiblock-name').click();
+  await page
+    .getByTestId('picker')
+    .getByTestId('picker-item')
+    .filter({ has: page.getByText('Nanochip Assembly Complex', { exact: true }) })
+    .click();
+  await page.getByTestId('settings-toggle').click();
+  await page.getByTestId('toggle-pipes').click();
+  await page.getByTestId('settings').getByRole('button', { name: 'Close' }).click();
+  await page.getByTestId('count').fill('7');
+  await page.getByTestId('count').press('Enter');
+  await expect(page.getByTestId('count')).toHaveValue('7');
+
+  // The build runs in a worker: the page answers while it is busy (a blocked main thread would not).
+  const stats = page.getByTestId('stats');
+  await expect(stats).toContainText(/laying out/i);
+  for (let i = 0; i < 3; i++) {
+    const start = Date.now();
+    await page.evaluate(() => 1);
+    expect(Date.now() - start).toBeLessThan(500);
+  }
+
+  // The final build arrives: nothing is computing or waiting for pipes any more, and the scene is shown.
+  await expect(stats).not.toContainText(/laying out|routing pipes/i, { timeout: 180_000 });
+  await expect(page.getByTestId('preview-notice')).toBeHidden();
+  expect(errors).toEqual([]);
+});

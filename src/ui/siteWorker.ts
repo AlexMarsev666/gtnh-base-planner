@@ -9,6 +9,12 @@ import {
 import { createSiteBuilder } from '../model/site/build';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
+import {
+  createMachineHandler,
+  type MachineWorkerRequest,
+  type MachineWorkerResponse,
+} from './machineWorkerHandler';
+import { createPipeline } from './pipelineCore';
 import { arrangeHere, type Arranged } from './siteArrange';
 
 /**
@@ -39,10 +45,17 @@ export type SiteWorkerResponse =
 const PROGRESSIVE_TERMINALS = 200;
 
 const buildSite = createSiteBuilder();
+/** Machine builds; the pipelines keep their memos warm across requests (see `createMachineHandler`). */
+const handleMachine = createMachineHandler(createPipeline(), createPipeline());
 
-self.onmessage = (e: MessageEvent<SiteWorkerRequest>) => {
+self.onmessage = (e: MessageEvent<SiteWorkerRequest | MachineWorkerRequest>) => {
   const req = e.data;
-  const post = (out: SiteWorkerResponse) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
+  const post = (out: SiteWorkerResponse | MachineWorkerResponse) =>
+    (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
+  if (req.type === 'machine') {
+    handleMachine(req, post);
+    return;
+  }
   try {
     if (req.type === 'import') {
       post({ id: req.id, imported: buildSiteFromGtnh(req.project, req.choices, req.opts, buildSite) });
