@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { t } from '../i18n/en';
-  import { groupIndexOfUnit, portIndexOfUnit, portUnitId } from '../model/site/ids';
+  import { groupIndexOfUnit, portIndexOfUnit } from '../model/site/ids';
+  import { portIdForUnit, portUnitFor } from './siteSelection';
   import { appMode, flowAnimation, isolate, site, siteGroup, siteNet, sitePort } from '../state/site';
   import { plan, selectedUnits, viewMode, xray } from '../state/store';
   import { selectMultiblock } from './actions';
@@ -70,8 +71,8 @@
   const siteSelected = $derived.by(() => {
     // Only the site view needs the site built.
     if (!siteMode) return [];
-    const pi = $sitePort ? $site.ports.findIndex((p) => p.id === $sitePort) : -1;
-    if (pi >= 0) return [portUnitId(pi)];
+    const pu = $sitePort ? portUnitFor($siteBuild, $sitePort) : null;
+    if (pu !== null) return [pu];
     const g = $siteBuild.build?.groups.find((x) => x.group.id === $siteGroup);
     return g ? g.units.map((u) => u.id) : [];
   });
@@ -81,10 +82,13 @@
       selectedUnits.set(ids);
       return;
     }
-    const pi = ids.length ? portIndexOfUnit(ids[0]) : -1;
-    const g = ids.length && pi < 0 ? $siteBuild.build?.groups[groupIndexOfUnit(ids[0])] : undefined;
+    const portId = ids.length ? portIdForUnit($siteBuild, ids[0]) : null;
+    const g =
+      ids.length && portIndexOfUnit(ids[0]) < 0
+        ? $siteBuild.build?.groups[groupIndexOfUnit(ids[0])]
+        : undefined;
     // Selecting one clears the other (see `sitePort`); nothing picked clears both.
-    if (pi >= 0 && $site.ports[pi]) sitePort.set($site.ports[pi].id);
+    if (portId !== null) sitePort.set(portId);
     else if (g) siteGroup.set(g.group.id);
     else {
       siteGroup.set(null);

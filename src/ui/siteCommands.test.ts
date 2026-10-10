@@ -13,8 +13,14 @@ function imported(): SiteState {
   return s;
 }
 
-/** Just what `whenBuilt` reads of a build: the groups, in order. */
+/** Just what `whenBuilt` reads of a build: the groups, in order, and the site it was made from. */
 const builtFrom = (s: SiteState): SiteBuild => ({ groups: s.groups.map((group) => ({ group })) }) as never;
+const resultOf = (s: SiteState, pending?: boolean): SiteResult => ({
+  build: builtFrom(s),
+  error: null,
+  pending,
+  of: s,
+});
 
 describe('whenBuilt', () => {
   it('waits for the imported template to be built and routed, not for groups alone or for another site', async () => {
@@ -26,17 +32,29 @@ describe('whenBuilt', () => {
     await Promise.resolve();
     expect(result).not.toHaveBeenCalled();
     // The groups arrive first, routing still to come.
-    builds.set({ build: builtFrom(s), error: null, pending: true });
+    builds.set(resultOf(s, true));
     await Promise.resolve();
     expect(result).not.toHaveBeenCalled();
-    builds.set({ build: builtFrom(s), error: null });
+    builds.set(resultOf(s));
     await vi.waitFor(() => expect(result).toHaveBeenCalledWith(true));
   });
 
   it('is true at once when the build is already there', async () => {
     const s = imported();
-    const ok = await whenBuilt(s, writable(s), writable<SiteResult>({ build: builtFrom(s), error: null }));
+    const ok = await whenBuilt(s, writable(s), writable<SiteResult>(resultOf(s)));
     expect(ok).toBe(true);
+  });
+
+  it('does not count a build of another template with the same group ids', async () => {
+    const s = imported();
+    const other = { ...s, name: 'earlier' };
+    const builds = writable<SiteResult>(resultOf(other));
+    const result = vi.fn();
+    void whenBuilt(s, writable(s), builds).then(result);
+    await Promise.resolve();
+    expect(result).not.toHaveBeenCalled();
+    builds.set(resultOf(s));
+    await vi.waitFor(() => expect(result).toHaveBeenCalledWith(true));
   });
 
   it('is false when the template is edited or replaced first, or the build fails, or time runs out', async () => {

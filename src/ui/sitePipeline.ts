@@ -1,6 +1,6 @@
 import { derived, writable } from 'svelte/store';
 import type { GtnhProject, ImportOptions, MachineChoice } from '../import/gtnhplanner';
-import type { SiteBuildOptions } from '../model/site/buildTypes';
+import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
 import type { SceneModel } from '../model/render/types';
 import { isolate, site, siteCables, sitePipes } from '../state/site';
@@ -44,8 +44,21 @@ function setBusy(on: boolean, now = false): void {
   siteBusy.set(false);
 }
 
+let lastBuild: SiteBuild | null = null;
+
+/**
+ * The latest build, read without subscribing to `siteBuild` (a subscription starts building the whole
+ * template). Null before the first build, or after one that failed.
+ */
+export function peekSiteBuild(): SiteBuild | null {
+  return lastBuild;
+}
+
 const controller = createSiteWorkerController({
-  onBuild: (result) => siteBuild.set(result),
+  onBuild: (result) => {
+    lastBuild = result.build;
+    siteBuild.set(result);
+  },
   onBusy: setBusy,
 });
 

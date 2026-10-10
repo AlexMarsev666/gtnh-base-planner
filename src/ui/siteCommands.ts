@@ -10,7 +10,7 @@ import { withGroupAdded, withGrownToFit, withPlanAdded } from './siteActions';
 import { growAfterBuild } from './siteEditing';
 import { undoAction } from './siteHistory';
 import type { Arranged } from './siteArrange';
-import { arrangeInSize, siteBuild, type SiteResult } from './sitePipeline';
+import { arrangeInSize, peekSiteBuild, siteBuild, type SiteResult } from './sitePipeline';
 
 /** Where a new group goes: east of every built group, or at the start of the site. */
 export function freeOrigin(s: SiteState, build: SiteBuild | null): [number, number] {
@@ -30,7 +30,7 @@ function grownForNew(s: SiteState): SiteState {
 
 export function addGroup(multiblockId: string): void {
   const s = get(site);
-  const next = withGroupAdded(s, multiblockId, freeOrigin(s, get(siteBuild).build));
+  const next = withGroupAdded(s, multiblockId, freeOrigin(s, peekSiteBuild()));
   if (next === s) return;
   site.set(grownForNew(next));
   siteGroup.set(next.groups[next.groups.length - 1].id);
@@ -39,14 +39,15 @@ export function addGroup(multiblockId: string): void {
 /** The single-machine plan becomes a new group; the view switches to the site. */
 export function addPlanToSite(): void {
   const s = get(site);
-  const next = withPlanAdded(s, get(plan), freeOrigin(s, get(siteBuild).build));
+  const next = withPlanAdded(s, get(plan), freeOrigin(s, peekSiteBuild()));
   if (next === s) return;
   const id = next.groups[next.groups.length - 1].id;
-  // Several units take more room than one: grow again once the group is built.
-  growAfterBuild(id);
-  site.set(grownForNew(next));
+  const grown = grownForNew(next);
+  site.set(grown);
   siteGroup.set(id);
   appMode.set('site');
+  // Several units take more room than one: grow again once the group is built.
+  growAfterBuild(id, get(site));
   notify(t.site.addedToSite);
 }
 
@@ -88,15 +89,9 @@ function optimizedNotice(o: NonNullable<Arranged['optimized']>): string {
   return o.improved ? t.site.optimized(o.start.blocks, o.result.blocks, o.reshaped) : t.site.optimizedSame;
 }
 
-/** Whether `build` is the build of `s`: built, routed (not the groups alone) and of the same groups. */
+/** Whether `result` is the build of `s` itself: built and routed (not the groups alone). */
 function isBuildOf(result: SiteResult, s: SiteState): boolean {
-  const b = result.build;
-  return (
-    !!b &&
-    !result.pending &&
-    b.groups.length === s.groups.length &&
-    b.groups.every((pg, i) => pg.group.id === s.groups[i].id)
-  );
+  return !!result.build && !result.pending && !result.error && result.of === s;
 }
 
 /**

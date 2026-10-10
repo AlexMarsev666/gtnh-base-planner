@@ -20,11 +20,11 @@
   } from './fields';
   import NudgePad from './NudgePad.svelte';
   import NumberStepper from './NumberStepper.svelte';
-  import { groupLimitAxis, updateSite, withGroupPatched, type GroupPatch } from './siteActions';
+  import { groupLimitAxis, type GroupPatch } from './siteActions';
   import {
     duplicateSelected,
     frameSelected,
-    growAfterBuild,
+    patchGroup,
     removeSelected,
     rotateSelected,
     setSelectedOrigin,
@@ -63,9 +63,7 @@
 
   /** Changes that can make the group bigger grow the site once the group is rebuilt. */
   function patch(p: GroupPatch) {
-    const id = group.id;
-    growAfterBuild(id);
-    updateSite((s) => withGroupPatched(s, id, p));
+    patchGroup(group.id, p);
   }
   function commitOrigin(axis: 0 | 1, text: string) {
     const n = Number(text.trim());

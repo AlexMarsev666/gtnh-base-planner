@@ -1,7 +1,8 @@
-import { get, writable } from 'svelte/store';
+import { get, writable, type Readable } from 'svelte/store';
 import { getSiteDef } from '../data/generic';
 import { t } from '../i18n/en';
-import type { SiteState } from '../model/site/types';
+import type { SiteBuild } from '../model/site/buildTypes';
+import type { SiteGroup, SiteState } from '../model/site/types';
 import type { Vec3 } from '../model/core/types';
 import { SITE_MAX_ELEVATION } from '../share/siteCodec';
 import { site, siteGroup, sitePort } from '../state/site';
@@ -9,6 +10,7 @@ import { type ArrowKey, screenStep } from './keys';
 import { notify } from './notices';
 import { freeOrigin } from './siteCommands';
 import {
+  type GroupPatch,
   updateSite,
   withGroupDuplicated,
   withGroupMoved,
@@ -19,7 +21,7 @@ import {
   withPortPlaced,
 } from './siteActions';
 import { coalesceNext, mergeIntoLast, undoAction } from './siteHistory';
-import { holdRouting, siteBuild } from './sitePipeline';
+import { holdRouting, peekSiteBuild, siteBuild, type SiteResult } from './sitePipeline';
 
 /* Editing the selected template group: shared by the keyboard, the nudge pad and dragging in the view. */
 
@@ -37,9 +39,13 @@ let frameSeq = 0;
  * A group's ground footprint [x, z] in blocks, from the last build, for its current turn (the build may
  * still show an older one). Null before the group has been built.
  */
-function footprintOf(s: SiteState, id: string): [number, number] | null {
+function footprintOf(
+  s: SiteState,
+  id: string,
+  build: SiteBuild | null = peekSiteBuild(),
+): [number, number] | null {
   const g = s.groups.find((x) => x.id === id);
-  const pg = get(siteBuild).build?.groups.find((x) => x.group.id === id);
+  const pg = build?.groups.find((x) => x.group.id === id);
   if (!g || !pg?.def || pg.group.multiblockId !== g.multiblockId) return null;
   const w = pg.max[0] - pg.min[0];
   const d = pg.max[2] - pg.min[2];
@@ -62,37 +68,88 @@ function editGroup(id: string, fn: (s: SiteState) => SiteState): void {
   });
 }
 
-let stopGrowWatch: (() => void) | null = null;
 /**
- * The group's size is about to change (count, limits, height): once its new build arrives, grow the site
- * if the group no longer fits. The growth is part of the same undo step.
+ * Resolves with the first build made from a site in which group `id` is the object `group` (a patched group
+ * is a new object; unrelated edits keep it): the groups are placed before routing, so a pending build is
+ * enough. Null when the group is removed or replaced by another object, a build fails, `timeoutMs` passes
+ * or `signal` aborts. Its subscriptions end as soon as it settles.
  */
-export function growAfterBuild(id: string): void {
-  stopGrowWatch?.();
-  let done = false;
-  const unsub = siteBuild.subscribe(($b) => {
-    if (done || !$b.build) return;
-    const s = get(site);
-    const g = s.groups.find((x) => x.id === id);
-    const pg = $b.build.groups.find((x) => x.group.id === id);
-    if (!g) done = true;
-    // Wait for the build of the group as it is now.
-    else if (pg && JSON.stringify(pg.group) === JSON.stringify(g)) {
+export function whenBuiltGroup(
+  id: string,
+  group: SiteGroup,
+  builds: Readable<SiteResult> = siteBuild,
+  timeoutMs = 120000,
+  sites: Readable<SiteState> = site,
+  signal?: AbortSignal,
+): Promise<SiteBuild | null> {
+  return new Promise((resolve) => {
+    const stops: (() => void)[] = [];
+    let done = false;
+    let subscribed = false;
+    const finish = (build: SiteBuild | null) => {
+      if (done) return;
       done = true;
-      const next = grownFor(s, id, footprintOf(s, id));
-      if (next !== s) {
-        mergeIntoLast();
-        site.set(next);
-      }
-    }
-    // Unsubscribing inside the first, synchronous call is not possible yet: do it right after.
-    if (done) queueMicrotask(() => stop());
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      // While subscribing, the stop functions do not exist yet: they are called below.
+      if (subscribed) stops.forEach((stop) => stop());
+      resolve(build);
+    };
+    const onAbort = () => finish(null);
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    if (signal?.aborted) return finish(null);
+    signal?.addEventListener('abort', onAbort);
+    stops.push(
+      sites.subscribe((s) => {
+        if (s.groups.find((g) => g.id === id) !== group) finish(null);
+      }),
+    );
+    // A watch that ended on the first site does not start a build by subscribing.
+    if (!done)
+      stops.push(
+        builds.subscribe((r) => {
+          // A retained result of an earlier site says nothing about this group.
+          if (r.of?.groups.find((g) => g.id === id) !== group) return;
+          finish(r.error ? null : r.build);
+        }),
+      );
+    subscribed = true;
+    if (done) stops.forEach((stop) => stop());
   });
-  const stop = () => {
-    unsub();
-    if (stopGrowWatch === stop) stopGrowWatch = null;
-  };
-  stopGrowWatch = stop;
+}
+
+let growWatch: AbortController | null = null;
+/**
+ * Group `id` has just been changed (count, limits, height) and the site is `patched`: once a build of that
+ * state arrives, grow the site if the group no longer fits. The growth is part of the same undo step unless
+ * the user edited something else meanwhile. A newer call replaces this watch.
+ */
+export function growAfterBuild(
+  id: string,
+  patched: SiteState,
+  builds: Readable<SiteResult> = siteBuild,
+): void {
+  growWatch?.abort();
+  const group = patched.groups.find((g) => g.id === id);
+  if (!group) return;
+  const watch = (growWatch = new AbortController());
+  void whenBuiltGroup(id, group, builds, undefined, site, watch.signal).then((build) => {
+    if (growWatch === watch) growWatch = null;
+    if (!build || watch.signal.aborted) return;
+    const s = get(site);
+    const next = grownFor(s, id, footprintOf(s, id, build));
+    if (next === s) return;
+    if (s === patched) mergeIntoLast();
+    site.set(next);
+  });
+}
+
+/** Patch group `id` and, if that can make it bigger, grow the site once the group is rebuilt. */
+export function patchGroup(id: string, patch: GroupPatch): void {
+  const before = get(site);
+  updateSite((s) => withGroupPatched(s, id, patch));
+  const patched = get(site);
+  if (patched !== before) growAfterBuild(id, patched);
 }
 
 /** Set the selected group's X (`axis` 0) or Z (1) corner, growing the site if it leaves it. */
@@ -123,7 +180,7 @@ function selectedPortId(): string | null {
 
 /** A port's cell [x, z] from the last build, or null before it has been placed. */
 function portCell(id: string): [number, number] | null {
-  const pp = get(siteBuild).build?.ports.find((p) => p.port.id === id);
+  const pp = peekSiteBuild()?.ports.find((p) => p.port.id === id);
   return pp ? [pp.cell[0], pp.cell[2]] : null;
 }
 
@@ -194,7 +251,7 @@ export function duplicateSelected(): void {
   const gid = selectedId();
   if (!gid) return;
   const s = get(site);
-  const dup = withGroupDuplicated(s, gid, freeOrigin(s, get(siteBuild).build));
+  const dup = withGroupDuplicated(s, gid, freeOrigin(s, peekSiteBuild()));
   if (dup === s) return;
   const id = dup.groups[dup.groups.length - 1].id;
   site.set(grownFor(dup, id, footprintOf(s, gid)));
@@ -221,7 +278,7 @@ export function frameSelected(): void {
     return;
   }
   const gid = selectedId();
-  const g = get(siteBuild).build?.groups.find((x) => x.group.id === gid);
+  const g = peekSiteBuild()?.groups.find((x) => x.group.id === gid);
   if (!g) return;
   frameRequest.set({ min: g.min, max: g.max, seq: ++frameSeq });
 }

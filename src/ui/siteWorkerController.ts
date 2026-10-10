@@ -17,6 +17,8 @@ export interface SiteResult {
   error: string | null;
   /** The build has no pipes yet: they are routed once editing pauses (see `holdRouting`). */
   pending?: boolean;
+  /** The site object this was built from (the very reference passed to `submit`). */
+  of?: SiteState;
 }
 
 export type ImportResult = { site: SiteState; report: ImportReport };
@@ -94,10 +96,10 @@ export function createSiteWorkerController(
 
   function buildHere(req: BuildRequest): SiteResult {
     try {
-      return { build: here()(req.site, req.opts), error: null, pending: req.pending };
+      return { build: here()(req.site, req.opts), error: null, pending: req.pending, of: req.site };
     } catch (err) {
       warnOnce('buildSite', err);
-      return { build: null, error: err instanceof Error ? err.message : String(err) };
+      return { build: null, error: err instanceof Error ? err.message : String(err), of: req.site };
     }
   }
 
@@ -163,7 +165,8 @@ export function createSiteWorkerController(
       if (!job || msg.id !== job.id) return;
       if ('partial' in msg && msg.partial) {
         // Groups first; the routed build of the same request is still coming.
-        if (!queued) events.onBuild({ build: msg.build, error: null, pending: true });
+        if (!queued && 'build' in job)
+          events.onBuild({ build: msg.build, error: null, pending: true, of: job.build.site });
         events.onBusy(true, true);
         return;
       }
@@ -176,9 +179,9 @@ export function createSiteWorkerController(
         else job.arrange.reject(new Error('error' in msg ? msg.error : 'Arrange failed'));
       } else if ('error' in msg) {
         warnOnce('buildSite', msg.error);
-        events.onBuild({ build: null, error: msg.error });
+        events.onBuild({ build: null, error: msg.error, of: job.build.site });
       } else if ('build' in msg)
-        events.onBuild({ build: msg.build, error: null, pending: job.build.pending });
+        events.onBuild({ build: msg.build, error: null, pending: job.build.pending, of: job.build.site });
       sendQueued();
     };
     w.onerror = (e) => {
