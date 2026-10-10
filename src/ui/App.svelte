@@ -40,7 +40,7 @@
   import { addGroup } from './siteCommands';
   import SiteLegend from './SiteLegend.svelte';
   import SitePanel from './SitePanel.svelte';
-  import { siteBuild, siteScene } from './sitePipeline';
+  import { siteBuildInView, siteSceneInView } from './sitePipeline';
   import SiteStats from './SiteStats.svelte';
   import StatsLine from './StatsLine.svelte';
   import TopBar from './TopBar.svelte';
@@ -71,9 +71,9 @@
   const siteSelected = $derived.by(() => {
     // Only the site view needs the site built.
     if (!siteMode) return [];
-    const pu = $sitePort ? portUnitFor($siteBuild, $sitePort) : null;
+    const pu = $sitePort ? portUnitFor($siteBuildInView, $sitePort) : null;
     if (pu !== null) return [pu];
-    const g = $siteBuild.build?.groups.find((x) => x.group.id === $siteGroup);
+    const g = $siteBuildInView.build?.groups.find((x) => x.group.id === $siteGroup);
     return g ? g.units.map((u) => u.id) : [];
   });
 
@@ -82,10 +82,10 @@
       selectedUnits.set(ids);
       return;
     }
-    const portId = ids.length ? portIdForUnit($siteBuild, ids[0]) : null;
+    const portId = ids.length ? portIdForUnit($siteBuildInView, ids[0]) : null;
     const g =
       ids.length && portIndexOfUnit(ids[0]) < 0
-        ? $siteBuild.build?.groups[groupIndexOfUnit(ids[0])]
+        ? $siteBuildInView.build?.groups[groupIndexOfUnit(ids[0])]
         : undefined;
     // Selecting one clears the other (see `sitePort`); nothing picked clears both.
     if (portId !== null) sitePort.set(portId);
@@ -99,7 +99,7 @@
   function onpicknet(id: number | null) {
     if (!siteMode) return;
     siteNet.set(id);
-    const n = id === null ? undefined : $siteBuild.build?.nets.find((x) => x.id === id);
+    const n = id === null ? undefined : $siteBuildInView.build?.nets.find((x) => x.id === id);
     isolate.set(n?.resource ?? null);
   }
 
@@ -181,7 +181,7 @@
 
 <main>
   <Scene
-    scene={siteMode ? $siteScene : $build.scene}
+    scene={siteMode ? $siteSceneInView : $build.scene}
     mode={$viewMode}
     xray={$xray}
     selected={siteMode ? siteSelected : $selectedUnits}
@@ -200,17 +200,17 @@
   />
 
   {#if siteMode}
-    {#if rendererFailed || !$siteScene}
+    {#if rendererFailed || !$siteSceneInView}
       <div class="placeholder" data-testid="preview-notice">
         <!-- Before the first build arrives from the worker there is simply nothing to show yet. -->
         <span
-          >{$siteScene
+          >{$siteSceneInView
             ? t.viewUnavailable
-            : $siteBuild.error || $siteBuild.build
+            : $siteBuildInView.error || $siteBuildInView.build
               ? t.previewUnavailable
               : t.site.building}</span
         >
-        {#if $siteBuild.error}<span class="detail">{$siteBuild.error}</span>{/if}
+        {#if $siteBuildInView.error}<span class="detail">{$siteBuildInView.error}</span>{/if}
       </div>
     {/if}
 
@@ -245,7 +245,7 @@
       />
       {#if ($siteGroup || $sitePort) && !importOpen}<MoveHint port={!!$sitePort} />{/if}
       {#if blocksOpen}
-        <BlocksPanel scene={$siteScene} onclose={() => (blocksOpen = false)} />
+        <BlocksPanel scene={$siteSceneInView} onclose={() => (blocksOpen = false)} />
       {/if}
       {#if sitePanelOpen}
         <SitePanel

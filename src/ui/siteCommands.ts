@@ -13,10 +13,23 @@ import type { Arranged } from './siteArrange';
 import { arrangeInSize, peekSiteBuild, siteBuild, type SiteResult } from './sitePipeline';
 import { JobCancelled } from './siteWorkerController';
 
-/** Where a new group goes: east of every built group, or at the start of the site. */
+/** East edge of each group, estimated from its machine's size when the template was never built. */
+function estimatedEast(s: SiteState): number[] {
+  return s.groups.flatMap((g) => {
+    const def = getSiteDef(g.multiblockId);
+    if (!def) return [];
+    const across = g.rotation % 2 === 0 ? def.size[0] : def.size[2];
+    return [g.origin[0] + across * Math.max(1, Math.min(g.count, g.limits.x ?? g.count))];
+  });
+}
+
+/**
+ * Where a new group goes: east of every built group (of every group's estimated extent while the template was
+ * never built), or at the start of the site.
+ */
 export function freeOrigin(s: SiteState, build: SiteBuild | null): [number, number] {
   const edge = 1 + Math.max(1, s.corridor);
-  const xs = (build?.groups ?? []).filter((g) => g.def).map((g) => g.max[0]);
+  const xs = build ? build.groups.filter((g) => g.def).map((g) => g.max[0]) : estimatedEast(s);
   return [xs.length ? Math.max(...xs) + Math.max(1, s.corridor) : edge, edge];
 }
 

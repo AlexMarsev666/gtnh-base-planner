@@ -19,6 +19,7 @@ import {
 } from '../share/siteCodec';
 import { isolate, site, siteGroup, siteNet } from '../state/site';
 import { clampCount } from './fields';
+import { forgetPipes } from './sitePipeline';
 
 /* Pure site transforms (tested) + thin store wrappers used by the site components. */
 
@@ -385,6 +386,7 @@ const clearSelection = () => {
 
 export function replaceSite(next: SiteState): void {
   clearSelection();
+  forgetPipes();
   site.set(next);
 }
 

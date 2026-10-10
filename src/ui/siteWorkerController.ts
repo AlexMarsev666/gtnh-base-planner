@@ -41,6 +41,8 @@ export interface SiteWorkerEvents {
 export interface SiteWorkerController {
   /** Builds `site`, replacing any build not started yet. `pending`: a build without pipes while editing. */
   submit: (site: SiteState, opts: SiteBuildOptions, pending: boolean) => void;
+  /** Forgets the build waiting for the worker; one already running finishes. */
+  dropQueued: () => void;
   /**
    * Imports a project into a new site; drops the current job, which the import replaces. Aborting `signal`
    * while this import runs in the worker stops it (rejects with `JobCancelled('aborted')`); an import done
@@ -252,6 +254,10 @@ export function createSiteWorkerController(
       )
         stopWorker('edit');
       if (inFlight === null) sendQueued();
+    },
+
+    dropQueued() {
+      queued = null;
     },
 
     importSite(project, choices, opts, signal) {

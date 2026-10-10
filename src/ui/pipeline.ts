@@ -1,4 +1,4 @@
-import { derived } from 'svelte/store';
+import { derived, type Readable } from 'svelte/store';
 import { getMultiblock } from '../data/catalog';
 import { DEFAULT_HATCH_COLORS } from '../model/colors';
 import { layoutCandidates, packUnits } from '../model/layout/packer';
@@ -16,6 +16,8 @@ import type { HatchResult, PackResult, PlanState, WallStats } from '../model/pla
 import type { SceneModel } from '../model/render/types';
 import type { RouteNet } from '../model/routing/routeNet';
 import { computeWallStats } from '../model/walls';
+import type { AppMode } from '../share/sitePersist';
+import { appMode } from '../state/site';
 import { connectBelow, plan, showCables, showPipes } from '../state/store';
 import { withBuildDimensions } from './dimensions';
 import { warnOnce } from './notices';
@@ -236,10 +238,35 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
   };
 }
 
-const run = createPipeline();
+/** What the machine view shows before it has been built (the template view never builds it). */
+const NOT_BUILT: PipelineResult = {
+  def: undefined,
+  pack: null,
+  loosened: false,
+  hatches: null,
+  stats: null,
+  pipes: null,
+  scene: null,
+  error: null,
+};
 
-/** The derived build for the current plan; recomputes only when the plan or the view toggles change. */
-export const build = derived(
-  [plan, showPipes, showCables, connectBelow],
-  ([$plan, $showPipes, $showCables, $below]) => run($plan, $showPipes, $showCables, $below),
-);
+/**
+ * The derived build for the current plan; recomputes only when the plan or the view toggles change. While the
+ * template view is shown it keeps the last result and computes nothing (the machine view is not on screen);
+ * coming back to the machine view builds it again.
+ */
+export function createBuildStore(
+  run: ReturnType<typeof createPipeline> = createPipeline(),
+  mode: Readable<AppMode> = appMode,
+) {
+  let last: PipelineResult = NOT_BUILT;
+  return derived(
+    [plan, showPipes, showCables, connectBelow, mode],
+    ([$plan, $showPipes, $showCables, $below, $mode]) => {
+      if ($mode === 'machine') last = run($plan, $showPipes, $showCables, $below);
+      return last;
+    },
+  );
+}
+
+export const build = createBuildStore();

@@ -1,9 +1,9 @@
-import { derived, writable } from 'svelte/store';
+import { derived, readable, writable, type Readable } from 'svelte/store';
 import type { GtnhProject, ImportOptions, MachineChoice } from '../import/gtnhplanner';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
 import type { SceneModel } from '../model/render/types';
-import { isolate, site, siteCables, sitePipes } from '../state/site';
+import { appMode, isolate, site, siteCables, sitePipes } from '../state/site';
 import { connectBelow } from '../state/store';
 import { withDimensions } from './dimensions';
 import type { Arranged } from './siteArrange';
@@ -24,12 +24,21 @@ export type { SiteResult } from './siteWorkerController';
  * a worker that fails to load) it builds right here. While the user moves groups (`holdRouting`), builds
  * skip routing: the groups follow at once and the pipes are routed when input has been quiet for a moment.
  */
-export const siteBuild = writable<SiteResult>({ build: null, error: null }, () =>
+export const siteBuild = writable<SiteResult>({ build: null, error: null }, () => {
   // Only while something shows the site (the machine view never builds it).
-  derived([site, sitePipes, siteCables, connectBelow], (x) => x).subscribe(
+  const stop = derived([site, sitePipes, siteCables, connectBelow], (x) => x).subscribe(
     ([$site, $pipes, $cables, $below]) => request($site, { pipes: $pipes, cables: $cables, below: $below }),
-  ),
-);
+  );
+  return () => {
+    stop();
+    // Nothing shows the site any more: no stale request may be submitted later. A build already running
+    // finishes (its groups stay cached for coming back).
+    clearTimeout(idleTimer);
+    idleTimer = undefined;
+    latest = null;
+    controller.dropQueued();
+  };
+});
 /** A build has been running for a while for a site newer than the one shown. */
 export const siteBusy = writable(false);
 
@@ -132,29 +141,74 @@ export function arrangeInSize(site: SiteState, below: boolean, optimize = false)
   return controller.arrange(site, below, optimize).catch(rebuildAfter);
 }
 
-/** Pipes of the last routed build: shown faded while a pending build has none. */
-let lastPipes: SceneModel['pipes'] = null;
+/** Forgets the pipes the scene keeps to show faded; set while something shows `siteScene`. */
+let forgetLastPipes = () => {};
+
+/**
+ * A whole template was replaced (import, file, link, reset): a pending build of the new one must not show the
+ * previous template's pipes.
+ */
+export function forgetPipes(): void {
+  forgetLastPipes();
+}
 
 /**
  * The scene with nets of every resource but the isolated one faded (cheap: no re-routing), and the
  * site's width and depth named beside its edges. While pipes wait for editing to pause, the last routed
  * ones are shown, all faded.
  */
-
-export const siteScene = derived([siteBuild, isolate], ([$b, $iso]): SceneModel | null => {
-  const scene = $b.build?.scene ?? null;
-  if (!scene) return scene;
-  if (!$b.pending) lastPipes = scene.pipes;
-  else if (!scene.pipes && lastPipes) {
-    const faded = lastPipes.map((p) => ({ ...p, dim: true }));
-    return { ...(scene.site ? withDimensions(scene, [0, 0], scene.site.size, 0) : scene), pipes: faded };
-  }
-  const measured = scene.site ? withDimensions(scene, [0, 0], scene.site.size, 0) : scene;
-  if (!scene.pipes) return measured;
-  const nets = $b.build!.nets;
-  const resourceOf = new Map(nets.map((n) => [n.id, n.resource]));
-  return {
-    ...measured,
-    pipes: scene.pipes.map((p) => ({ ...p, dim: !!$iso && resourceOf.get(p.id ?? -1) !== $iso })),
+export const siteScene = readable<SceneModel | null>(null, (set) => {
+  /** Pipes of the last routed build: shown faded while a pending build has none. */
+  let lastPipes: SceneModel['pipes'] = null;
+  forgetLastPipes = () => {
+    lastPipes = null;
+  };
+  const stop = derived([siteBuild, isolate], ([$b, $iso]): SceneModel | null => {
+    const scene = $b.build?.scene ?? null;
+    if (!scene) return scene;
+    if (!$b.pending) lastPipes = scene.pipes;
+    else if (!scene.pipes && lastPipes) {
+      const faded = lastPipes.map((p) => ({ ...p, dim: true }));
+      return { ...(scene.site ? withDimensions(scene, [0, 0], scene.site.size, 0) : scene), pipes: faded };
+    }
+    const measured = scene.site ? withDimensions(scene, [0, 0], scene.site.size, 0) : scene;
+    if (!scene.pipes) return measured;
+    const nets = $b.build!.nets;
+    const resourceOf = new Map(nets.map((n) => [n.id, n.resource]));
+    return {
+      ...measured,
+      pipes: scene.pipes.map((p) => ({ ...p, dim: !!$iso && resourceOf.get(p.id ?? -1) !== $iso })),
+    };
+  }).subscribe(set);
+  return () => {
+    stop();
+    forgetLastPipes = () => {};
   };
 });
+
+/**
+ * Follows `source` only while the site view is shown, so its subscription (and the builds it starts) ends
+ * when the user goes back to the machine view; outside it holds `empty`.
+ */
+function inSiteView<T>(source: Readable<T>, empty: T): Readable<T> {
+  return readable(empty, (set) => {
+    let stopSource: (() => void) | undefined;
+    const stopMode = appMode.subscribe(($mode) => {
+      if ($mode === 'site' && !stopSource) stopSource = source.subscribe(set);
+      else if ($mode !== 'site' && stopSource) {
+        stopSource();
+        stopSource = undefined;
+        set(empty);
+      }
+    });
+    return () => {
+      stopMode();
+      stopSource?.();
+    };
+  });
+}
+
+/** `siteBuild` while the site view is shown; empty in the machine view. */
+export const siteBuildInView = inSiteView<SiteResult>(siteBuild, { build: null, error: null });
+/** `siteScene` while the site view is shown; null in the machine view. */
+export const siteSceneInView = inSiteView<SceneModel | null>(siteScene, null);

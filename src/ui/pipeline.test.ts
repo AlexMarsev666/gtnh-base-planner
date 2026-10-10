@@ -1,13 +1,15 @@
+import { get, writable } from 'svelte/store';
 import { describe, expect, it, vi } from 'vitest';
 import { getMultiblock } from '../data/catalog';
 import type { Unit } from '../model/multiblock/types';
 import type { WallStats } from '../model/plan/types';
 import type { SceneModel } from '../model/render/types';
 import type { RouteNet } from '../model/routing/routeNet';
-import { defaultPlan } from '../state/store';
+import type { AppMode } from '../share/sitePersist';
+import { connectBelow, defaultPlan, plan } from '../state/store';
 import { catalog } from '../data/catalog';
 import { dominantBlockId, hatchKindsOf, iconFaces, matchesQuery, shade } from './catalogView';
-import { createPipeline, type PipelineDeps } from './pipeline';
+import { createBuildStore, createPipeline, type PipelineDeps } from './pipeline';
 import { statsParts } from './statsText';
 
 const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -225,5 +227,35 @@ describe('catalog view', () => {
     expect(matchesQuery(coke, 'steam')).toBe(true);
     expect(matchesQuery(coke, 'zzz')).toBe(false);
     expect(catalog.every((d) => matchesQuery(d, ''))).toBe(true);
+  });
+});
+
+describe('build store', () => {
+  it('computes nothing while the template view is shown, and catches up on return', () => {
+    const deps = fakeDeps();
+    const mode = writable<AppMode>('machine');
+    const store = createBuildStore(createPipeline(deps), mode);
+    const stop = store.subscribe(() => {});
+    const before = deps.packUnits.mock.calls.length;
+    expect(before).toBeGreaterThan(0);
+
+    mode.set('site');
+    plan.update((p) => ({ ...p, count: p.count + 1 }));
+    connectBelow.update((b) => !b);
+    expect(deps.packUnits).toHaveBeenCalledTimes(before);
+    expect(deps.placeHatches).toHaveBeenCalledTimes(before);
+
+    mode.set('machine');
+    expect(deps.packUnits.mock.calls.length).toBeGreaterThan(before);
+    expect(get(store).pack?.requested).toBe(get(plan).count);
+    stop();
+  });
+
+  it('has an empty result before the machine view was ever built', () => {
+    const deps = fakeDeps();
+    const store = createBuildStore(createPipeline(deps), writable<AppMode>('site'));
+    expect(get(store).scene).toBeNull();
+    expect(get(store).error).toBeNull();
+    expect(deps.packUnits).not.toHaveBeenCalled();
   });
 });

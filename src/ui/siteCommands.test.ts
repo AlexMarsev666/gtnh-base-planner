@@ -1,9 +1,10 @@
 import { get, writable } from 'svelte/store';
 import { describe, expect, it, vi } from 'vitest';
+import { getSiteDef } from '../data/generic';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteState } from '../model/site/types';
-import { arrange, optimizeAfterImport, whenBuilt } from './siteCommands';
+import { arrange, freeOrigin, optimizeAfterImport, whenBuilt } from './siteCommands';
 import { JobCancelled } from './siteWorkerController';
 import type { SiteResult } from './sitePipeline';
 import { withGroupAdded } from './siteActions';
@@ -164,5 +165,33 @@ describe('arrange', () => {
     await arrange(false, imp.deps);
     expect(imp.said).toHaveLength(1);
     expect(imp.cleared).toEqual(['arrange']);
+  });
+});
+
+describe('freeOrigin', () => {
+  it('estimates the extent of an unbuilt template from its groups', () => {
+    let s = withGroupAdded(emptySite(), 'electric-blast-furnace', [3, 3]);
+    s = { ...s, groups: [{ ...s.groups[0], count: 3, limits: { x: 2, y: null, z: null } }] };
+    const width = getSiteDef('electric-blast-furnace')!.size[0];
+    expect(freeOrigin(s, null)[0]).toBe(3 + 2 * width + Math.max(1, s.corridor));
+    // Without limits every unit counts.
+    s = { ...s, groups: [{ ...s.groups[0], limits: { x: null, y: null, z: null } }] };
+    expect(freeOrigin(s, null)[0]).toBe(3 + 3 * width + Math.max(1, s.corridor));
+  });
+
+  it('uses the other side of the machine when it is turned', () => {
+    let s = withGroupAdded(emptySite(), 'electric-blast-furnace', [3, 3]);
+    s = { ...s, groups: [{ ...s.groups[0], count: 1, limits: { x: null, y: null, z: null }, rotation: 1 }] };
+    const depth = getSiteDef('electric-blast-furnace')!.size[2];
+    expect(freeOrigin(s, null)[0]).toBe(3 + depth + Math.max(1, s.corridor));
+  });
+
+  it('keeps the start of an empty template, and the built extent when there is a build', () => {
+    const empty = emptySite();
+    const edge = 1 + Math.max(1, empty.corridor);
+    expect(freeOrigin(empty, null)).toEqual([edge, edge]);
+    const s = imported();
+    const build = { groups: [{ def: {}, max: [20, 9] }] } as never;
+    expect(freeOrigin(s, build)).toEqual([20 + Math.max(1, s.corridor), edge]);
   });
 });
