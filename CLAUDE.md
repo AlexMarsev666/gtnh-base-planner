@@ -70,7 +70,7 @@ Each multiblock is `src/data/multiblocks/<id>.json` (type `MultiblockDef` in `sr
 | `algorithms-reviewer`      | sonnet | no         | `src/model/**`: geometry, packing, wallsharing, hatches, routing, site, Arrange/Optimize |
 | `graphics-reviewer`        | sonnet | no         | `src/render/**`, `Scene.svelte`, atlas and size scripts                                  |
 | `qa-reviewer`              | sonnet | no         | Tests, `src/import`, `src/share`, persistence, undo history, regressions                 |
-| `gtnh-expert`              | sonnet | no         | Game rules vs the GT:NH 2.9.0-RC-2 release (GT5-Unofficial 5.09.54.205) and repo data                                   |
+| `gtnh-expert`              | sonnet | no         | Game rules vs the GT:NH 2.9.0-RC-2 release (GT5-Unofficial 5.09.54.205) and repo data    |
 | `algorithms-deep-reviewer` | opus   | no         | One hard, escalated `src/model/**` question; only with the user's permission (see below) |
 
 Built-in agent types (`general-purpose`, `Explore`, `Plan`) inherit the main agent's Opus model. Use the project agents above instead; if a built-in one is truly needed, pass `model: "sonnet"` or `"haiku"`.

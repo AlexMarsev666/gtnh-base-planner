@@ -103,6 +103,8 @@ export const t = {
     `${n} units: a build this big can take a few seconds to lay out, pipe and draw, more in DETAILED view.`,
   unplacedHatches: (n: number) => `${n} ${n === 1 ? 'hatch' : 'hatches'} could not be placed.`,
   unconnectedPipes: (n: number) => `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected.`,
+  routingTruncated: (n: number) =>
+    `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected: routing stopped early because this build is very large.`,
   sharedPrompt: 'Open shared plan? It replaces your current one.',
   sharedOpen: 'Open',
   sharedKeep: 'Keep mine',

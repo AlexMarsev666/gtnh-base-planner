@@ -18,7 +18,7 @@ export function createBuildWarnings(): (result: PipelineResult) => void {
   let lastPack: PackResult | null = null;
   let lastHatches: HatchResult | null = null;
   let lastPipes: RouteNet[] | null = null;
-  return ({ def, pack, hatches, pipes, loosened }) => {
+  return ({ def, pack, hatches, pipes, loosened, routingTruncated }) => {
     if (pack !== lastPack) {
       if (pack && pack.placed < pack.requested)
         notify(t.placedFewer(pack.placed, pack.requested, pack.reason), 6000, 'pack');
@@ -34,7 +34,8 @@ export function createBuildWarnings(): (result: PipelineResult) => void {
     }
     if (pipes !== lastPipes) {
       const missing = pipes?.reduce((s, n) => s + (n.total - n.connected), 0) ?? 0;
-      if (missing > 0) notify(t.unconnectedPipes(missing), 6000, 'pipes');
+      if (missing > 0 && routingTruncated) notify(t.routingTruncated(missing), 8000, 'pipes');
+      else if (missing > 0) notify(t.unconnectedPipes(missing), 6000, 'pipes');
       else clearSlot('pipes');
     }
     lastPack = pack;

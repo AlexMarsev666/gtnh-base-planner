@@ -55,6 +55,8 @@ export interface PipelineResult {
   stats: WallStats | null;
   /** Pipe and cable networks (whichever are switched on), or null when both are off. */
   pipes: RouteNet[] | null;
+  /** True when the routing work budget left hatches unconnected that more search might have connected. */
+  routingTruncated?: boolean;
   scene: SceneModel | null;
   /** First error thrown by a stage (the stages after it are skipped). */
   error: string | null;
@@ -95,6 +97,8 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     loosened: boolean;
     /** Networks already routed while choosing the layout (pipes or cables on, auto layout). */
     pipes?: RouteNet[];
+    /** The routing work budget cut the search short (see `ResolvedRoutedLayout`). */
+    truncated?: boolean;
   }>('placeHatches');
   const statsStage = stage<WallStats>('computeWallStats');
   const pipesStage = stage<RouteNet[] | null>('routePipes');
@@ -202,6 +206,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       kinds.length > 0 ? (routed ?? d.routePipes(def, units, hatchResult.hatches, { kinds, below })) : null,
     );
     const pipeNets = pipes.ok ? pipes.value : null;
+    const routingTruncated = routed ? placed.value.truncated === true : undefined;
 
     // Hatches turn to whichever side their pipe reaches them from.
     // Width and depth of the whole build are measured beside it.
@@ -224,6 +229,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       hatches: hatchResult,
       stats: stats.value,
       pipes: pipeNets,
+      ...(routingTruncated ? { routingTruncated } : {}),
       scene: scene.ok ? scene.value : null,
       error: scene.ok ? (pipes.ok ? null : pipes.error) : scene.error,
     });

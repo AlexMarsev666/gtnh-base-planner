@@ -30,6 +30,19 @@ export const HISTORY_STEP = 1;
 export const MAX_STALLED_ROUNDS = 5;
 
 /**
+ * Work limits, counted in heap pops (never wall-clock time, so results stay deterministic). Very large
+ * builds (the Nanochip Assembly Complex) would otherwise negotiate and re-route for minutes; past a limit
+ * some hatches are left unconnected and the result is reported as truncated. Measured over the catalog
+ * (without the nanochip entries) the largest single `routePipes` run pops 7.87M cells and the largest
+ * `resolveRoutedLayout` 48.1M, so only builds beyond that are cut.
+ */
+/** Pops after which one `routePipes` run starts no further negotiation round. */
+export const ROUTE_POP_CAP = 8_000_000;
+
+/** Pops one `resolveRoutedLayout` may spend across all its routing runs. */
+export const RESOLVE_POP_BUDGET = 64_000_000;
+
+/**
  * Default extra cost of a pipe block that touches neither the build nor the ground, in blocks. Between two
  * routes of about the same length the one along the walls wins, as players lay pipes; a pipe still crosses
  * open space when that saves more.

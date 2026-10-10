@@ -12,6 +12,7 @@ import type { Dir, Vec3 } from './core/types';
 import type { HatchKind, MultiblockDef, Unit } from './multiblock/types';
 import type { HatchPlacement } from './plan/types';
 import type { RouteNet } from './routing/routeNet';
+import type { WorkBudget } from './routing/types';
 
 /** Hand-made entries; generated ones (tools/game-dump) have lighter checks in generated.test.ts. */
 const handMade = catalog.filter((d) => !d.generated);
@@ -418,6 +419,49 @@ describe('routePipes', () => {
     const a = routePipes(coke, units as Unit[], hatches as HatchPlacement[]);
     const b = routePipes(coke, units as Unit[], hatches as HatchPlacement[]);
     expect(a).toEqual(b);
+  });
+
+  describe('work budget', () => {
+    // Two kinds whose straight lines cross on top of the ovens, so round 0 leaves contested cells.
+    const units = [oven(1, [0, 0, 0]), oven(2, [4, 0, 0]), oven(3, [8, 0, 0])];
+    const hatches = [
+      hatch('itemIn', [1, 2, 1], 'up', [1]),
+      hatch('itemIn', [9, 2, 1], 'up', [3]),
+      hatch('itemOut', [5, 2, 0], 'up', [2]),
+      hatch('itemOut', [5, 2, 2], 'up', [2]),
+      hatch('fluidOut', [1, 2, 0], 'up', [1]),
+      hatch('fluidOut', [9, 2, 2], 'up', [3]),
+    ];
+
+    it('counts pops deterministically', () => {
+      const run = () => {
+        const budget: WorkBudget = { limit: Infinity, used: 0 };
+        const nets = routePipes(coke, units, hatches, { budget });
+        return { budget, nets };
+      };
+      const a = run();
+      expect(a.budget.used).toBeGreaterThan(0);
+      expect(a.budget.capped).toBeUndefined();
+      expect(run().budget.used).toBe(a.budget.used);
+      expect(run().nets).toEqual(a.nets);
+    });
+
+    it('stops negotiating after round 0 at maxPops, reports it and keeps the networks legal', () => {
+      const free = { limit: Infinity, used: 0 };
+      routePipes(coke, units, hatches, { budget: free });
+      const budget: WorkBudget = { limit: Infinity, used: 0 };
+      const nets = routePipes(coke, units, hatches, { maxPops: 1, budget });
+      expect(budget.capped).toBe(true);
+      expect(budget.used).toBeGreaterThan(0);
+      expect(budget.used).toBeLessThan(free.used);
+      const seen = new Set<string>();
+      for (const n of nets)
+        for (const c of pipeCells(n)) {
+          expect(seen.has(c)).toBe(false);
+          seen.add(c);
+        }
+      expect(nets.map((n) => n.kind)).toEqual(['itemIn', 'itemOut', 'fluidOut']);
+    });
   });
 
   it('routes 60 ovens with 3 kinds quickly', () => {

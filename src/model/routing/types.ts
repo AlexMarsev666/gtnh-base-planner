@@ -78,6 +78,14 @@ export interface KindState {
   tree: Tree | null;
 }
 
+/** Heap pops a caller allows itself across several `routePipes` runs; each run adds its pops to `used`. */
+export interface WorkBudget {
+  limit: number;
+  used: number;
+  /** Set when a run stopped negotiating because it hit its pop cap: the build is too big to search much. */
+  capped?: boolean;
+}
+
 /** Options of `routePipes`. */
 export interface RouteOptions {
   /** Extra cost of a bend, in pipe blocks (0 = plain shortest paths). Default `DEFAULT_TURN_COST`. */
@@ -92,4 +100,8 @@ export interface RouteOptions {
   rounds?: number;
   /** Pipes may run in the layer under the build and reach hatches from below (see `PlaceOptions`). */
   below?: boolean;
+  /** Start no further negotiation round once this many cells were popped in the run. Default `ROUTE_POP_CAP`. */
+  maxPops?: number;
+  /** Charged with the pops of the run; flagged `capped` when the run hit `maxPops`. */
+  budget?: WorkBudget;
 }

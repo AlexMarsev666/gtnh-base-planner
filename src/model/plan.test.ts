@@ -3,6 +3,7 @@ import { catalog, getMultiblock } from '../data/catalog';
 import { layoutCandidates, packUnits } from './layout/packer';
 import { loosenings } from './layout/variants';
 import {
+  betterRouting,
   hatchMoves,
   improveHatches,
   MAX_HATCH_MOVES,
@@ -20,6 +21,7 @@ import { routePipes } from './routing/router';
 import type { PlanLimits, Unit } from './multiblock/types';
 import type { HatchResult } from './plan/types';
 import type { RouteNet } from './routing/routeNet';
+import type { RouteOptions } from './routing/types';
 
 /** Hand-made entries; generated ones (tools/game-dump) have lighter checks in generated.test.ts. */
 const handMade = catalog.filter((d) => !d.generated);
@@ -203,6 +205,189 @@ describe('resolveRoutedLayout', () => {
   });
 });
 
+describe('resolveRoutedLayout work budget', () => {
+  const kinds = { kinds: ROUTED_KINDS };
+  const def = getMultiblock('coke-oven')!;
+  const base = { units: [{ id: 0, origin: [0, 0, 0], rotation: 0 }] as Unit[], requested: 1, placed: 1 };
+  const at = (x: number): Unit[] => [{ id: 0, origin: [x, 0, 0], rotation: 0 }];
+  const net = (connected: number, length = 0, kind: RouteNet['kind'] = 'itemIn'): RouteNet => ({
+    kind,
+    paths: [],
+    length,
+    connected,
+    total: 2,
+  });
+
+  /** Routing stub: every run costs `cost` pops, and the run at x === `cappedAt` reports the cap. */
+  function run(opts: { cost: number; limit: number; cappedAt?: number }) {
+    const routed: [number, number | undefined][] = [];
+    const r = resolveRoutedLayout(
+      def,
+      base,
+      [],
+      unlimited,
+      { ...kinds, budget: { limit: opts.limit, used: 0 } },
+      {
+        placeHatches: () => ({ hatches: [], unplaced: [] }),
+        layoutCandidates: function* () {},
+        loosenings: function* () {
+          for (let x = 1; x <= 4; x++) yield at(x);
+        },
+        routePipes: (_d, units, _h, o: RouteOptions) => {
+          const x = units[0].origin[0];
+          routed.push([x, o.rounds]);
+          o.budget!.used += opts.cost;
+          if (x === opts.cappedAt) o.budget!.capped = true;
+          return [net(0)];
+        },
+      },
+    );
+    return { r, routed };
+  }
+
+  it('skips the intermediate tries, hatch moves and the full reroute once a run is capped', () => {
+    const { r, routed } = run({ cost: 10, limit: 1000, cappedAt: 0 });
+    expect(routed).toEqual([
+      [0, TRIAL_ROUNDS],
+      [4, TRIAL_ROUNDS],
+    ]);
+    expect(r.truncated).toBe(true);
+  });
+
+  it('skips the intermediate tries when the budget cannot pay for them, but routes the loosest', () => {
+    const { r, routed } = run({ cost: 100, limit: 100 });
+    expect(routed).toEqual([
+      [0, TRIAL_ROUNDS],
+      [4, TRIAL_ROUNDS],
+    ]);
+    expect(r.truncated).toBe(true);
+  });
+
+  it('tries everything and is not truncated while the budget lasts', () => {
+    const { r, routed } = run({ cost: 1, limit: 1000 });
+    expect(routed.map(([x]) => x)).toEqual([0, 1, 2, 3, 4, 0]);
+    expect(routed[5][1]).toBeUndefined();
+    // Nothing connects in this stub, but nothing was skipped either.
+    expect(r.truncated).toBe(false);
+  });
+
+  it('is not truncated when the cap left every hatch connected', () => {
+    const r = resolveRoutedLayout(
+      def,
+      base,
+      [],
+      unlimited,
+      { ...kinds, budget: { limit: 10, used: 0 } },
+      {
+        placeHatches: () => ({ hatches: [], unplaced: [] }),
+        layoutCandidates: function* () {},
+        loosenings: function* () {},
+        routePipes: (_d, _u, _h, o) => {
+          o.budget!.used += 100;
+          o.budget!.capped = true;
+          return [net(2)];
+        },
+      },
+    );
+    expect(r.truncated).toBe(false);
+  });
+
+  describe('the full-round result replaces the trial one only when strictly better', () => {
+    function full(trial: RouteNet[], whole: RouteNet[]) {
+      const r = resolveRoutedLayout(
+        def,
+        base,
+        [],
+        unlimited,
+        kinds,
+        {
+          placeHatches: () => ({ hatches: [], unplaced: [] }),
+          layoutCandidates: function* () {},
+          loosenings: function* () {},
+          routePipes: (_d, _u, _h, o) => (o.rounds === TRIAL_ROUNDS ? trial : whole),
+        },
+        0,
+      );
+      return r.pipes;
+    }
+
+    it('prefers fewer unconnected hatches, then fewer kinds with any, then cheaper networks', () => {
+      const trial = [net(1, 5, 'itemIn'), net(1, 5, 'itemOut')];
+      const fewerNets = [net(2, 5, 'itemIn'), net(1, 5, 'itemOut')];
+      expect(full(trial, fewerNets)).toBe(fewerNets);
+      // Same count of unconnected hatches (2), but all in one kind.
+      const oneKind = [net(0, 5, 'itemIn'), net(2, 5, 'itemOut')];
+      expect(full(trial, oneKind)).toBe(oneKind);
+      // Same count, spread over more kinds than the trial's: the trial stays.
+      const manyKinds = [net(1, 1, 'itemIn'), net(1, 1, 'itemOut'), net(2, 1, 'fluidOut')];
+      expect(full(oneKind, manyKinds)).toBe(oneKind);
+      // Same distribution: the cheaper one wins.
+      const cheaper = [net(1, 4, 'itemIn'), net(1, 5, 'itemOut')];
+      expect(full(trial, cheaper)).toBe(cheaper);
+      const dearer = [net(1, 6, 'itemIn'), net(1, 5, 'itemOut')];
+      expect(full(trial, dearer)).toBe(trial);
+    });
+
+    it('keeps the trial result when everything is equal', () => {
+      const trial = [net(1, 5)];
+      expect(full(trial, [net(1, 5)])).toBe(trial);
+      expect(betterRouting([net(1, 5)], [net(1, 5)])).toBe(false);
+    });
+  });
+});
+
+describe('resolveRoutedLayout on normal machines', () => {
+  const routed: RoutedLayoutDeps = { placeHatches, layoutCandidates, loosenings, routePipes };
+  const cases: [string, number, PlanLimits][] = [
+    ['coke-oven', 12, unlimited],
+    ['implosion-compressor', 100, { x: 6, y: null, z: 6 }],
+    ['large-chemical-reactor', 12, unlimited],
+    ['electric-blast-furnace', 4, unlimited],
+    ['eye-of-harmony', 4, unlimited],
+    ['space-elevator', 4, unlimited],
+  ];
+
+  it('the default work budget changes nothing', () => {
+    for (const [id, n, limits] of cases) {
+      const def = getMultiblock(id)!;
+      const pack = packUnits(def, n, limits);
+      const run = (extra: RouteOptions) =>
+        resolveRoutedLayout(def, pack, def.defaultHatches, limits, { kinds: ROUTED_KINDS, ...extra }, routed);
+      const normal = run({});
+      const unbounded = run({ maxPops: Infinity, budget: { limit: Infinity, used: 0 } });
+      expect(normal.truncated, id).toBe(false);
+      expect(normal, id).toEqual(unbounded);
+    }
+  }, 60_000);
+
+  it.skipIf(!process.env.PERF)(
+    'routes the nanochip assembly complex within the budget',
+    () => {
+      const def = getMultiblock('nanochip-assembly-complex')!;
+      const pack = packUnits(def, 4, unlimited);
+      let calls = 0;
+      const counting: RoutedLayoutDeps = {
+        ...routed,
+        routePipes: (...args) => {
+          calls++;
+          return routePipes(...args);
+        },
+      };
+      const r = resolveRoutedLayout(
+        def,
+        pack,
+        def.defaultHatches,
+        unlimited,
+        { kinds: ROUTED_KINDS },
+        counting,
+      );
+      expect(calls).toBe(2);
+      expect(unconnected(r.pipes)).toBe(0);
+    },
+    120_000,
+  );
+});
+
 describe('layoutCandidates', () => {
   it('yields only valid, distinct layouts of the requested size', () => {
     const def = getMultiblock('coke-oven')!;
@@ -291,6 +476,25 @@ describe('improveHatches', () => {
       expect(again).toEqual(out);
     }
   }, 30_000);
+
+  it('does nothing when it cannot afford a routing run', () => {
+    const s = start('large-chemical-reactor', 12);
+    let routed = 0;
+    const out = improveHatches(
+      s.def,
+      s.units,
+      defaultEnabled('large-chemical-reactor'),
+      s.hatches,
+      s.pipes,
+      (h) => (routed++, s.route(h)),
+      placeHatches,
+      undefined,
+      () => false,
+    );
+    expect(routed).toBe(0);
+    expect(out.hatches).toBe(s.hatches);
+    expect(out.pipes).toBe(s.pipes);
+  });
 
   it('tries less on builds with many routed hatches', () => {
     expect(hatchMoves(8)).toBe(MAX_HATCH_MOVES);
