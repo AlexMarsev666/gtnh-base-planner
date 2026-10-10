@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { decodePng } from '../../scripts/build-atlas.mjs';
+import { decodePng, isTranslucentBlock, readBlockIds, readBlockNames } from '../../scripts/build-atlas.mjs';
 import { BLOCKS } from '../data/blocks';
 import { DEFAULT_HATCH_COLORS } from '../model/colors';
 import type { HatchKind } from '../model/multiblock/types';
@@ -204,11 +204,7 @@ describe('createDetailedProvider', () => {
     await Promise.all([p.load(), p.load()]);
     expect(loader).toHaveBeenCalledTimes(1);
     const mats = p.materials({ blockId: 'gt.glass.reinforced', kind: 'casing' }, colors);
-    expect(mats[0].alphaTest).toBe(0.5);
-    // Borosilicate glass is mostly half transparent: blended, not cut out.
-    const boro = p.materials({ blockId: 'bartworks:BW_TieredGlass@0', kind: 'casing' }, colors);
-    expect(boro[0].transparent).toBe(true);
-    expect(boro[0].depthWrite).toBe(false);
+    expect(mats[0].transparent).toBe(true);
     const disposed = vi.fn();
     mats[0].addEventListener('dispose', disposed);
     const tex = mapOf(mats[0])!;
@@ -218,5 +214,64 @@ describe('createDetailedProvider', () => {
     expect(disposed).toHaveBeenCalled();
     expect(texDisposed).toHaveBeenCalled();
     expect(p.materials({ blockId: 'gt.glass.reinforced', kind: 'casing' }, colors)[0]).not.toBe(mats[0]);
+  });
+
+  it('draws only blocks flagged as glass see-through', async () => {
+    const p = createDetailedProvider({ loadAtlas });
+    await p.load();
+    const first = (blockId: string) =>
+      p.materials({ blockId, kind: 'casing' }, colors)[0] as THREE.MeshLambertMaterial;
+    for (const id of ['gt.glass.reinforced', 'bartworks:BW_TieredGlass@0', 'gregtech:gt.blockglass1@10']) {
+      const m = first(id);
+      expect(m.transparent, id).toBe(true);
+      expect(m.depthWrite, id).toBe(false);
+    }
+    // Large Chemical Reactor walls have many semi-transparent pixels but are solid in game.
+    for (const id of ['gregtech:gt.blockcasings8@0', 'gregtech:gt.blockcasings8@1']) {
+      const m = first(id);
+      expect(m.transparent, id).toBe(false);
+      expect(m.depthWrite, id).toBe(true);
+      expect(m.alphaTest, id).toBeLessThanOrEqual(0.1);
+    }
+    // Frames are cut out, not blended.
+    const frame = first('gt.frame.steel');
+    expect(frame.transparent).toBe(false);
+    expect(frame.alphaTest).toBe(0.1);
+  });
+
+  it('keeps a hatch on a glass casing see-through', async () => {
+    const p = createDetailedProvider({
+      loadAtlas,
+      manifest: {
+        ...TEXTURES,
+        blocks: { ...TEXTURES.blocks, 'test.glassHatch': { flat: true } },
+      },
+    });
+    await p.load();
+    const mats = p.materials(
+      { blockId: 'test.glassHatch', baseBlockId: 'gt.glass.reinforced', kind: 'hatch', hatchKind: 'itemIn' },
+      colors,
+    );
+    expect(mats[0].transparent).toBe(true);
+  });
+});
+
+describe('isTranslucentBlock', () => {
+  it('flags glass by id or display name, not lookalike casings', () => {
+    expect(isTranslucentBlock('gt.glass.reinforced', 'Reinforced Glass')).toBe(true);
+    expect(isTranslucentBlock('bartworks:BW_TieredGlass@3')).toBe(true);
+    expect(isTranslucentBlock('gregtech:gt.blocktintedglass@0')).toBe(true);
+    expect(isTranslucentBlock('miscutils:gtplusplus.blockcasings.5@15', 'Force Field Glass')).toBe(true);
+    // The whole gt.blockglass1 class is drawn in the translucent pass.
+    expect(isTranslucentBlock('gregtech:gt.blockglass1@6', 'Chamber Grate')).toBe(true);
+    expect(isTranslucentBlock('gregtech:gt.blockcasings8@0', 'Chemically Inert Machine Casing')).toBe(false);
+    expect(isTranslucentBlock('gt.frame.steel', 'Steel Frame Box')).toBe(false);
+  });
+
+  it('matches the translucent flags in textures.json (run `npm run atlas` after changing the rule)', () => {
+    const names = readBlockNames();
+    for (const id of readBlockIds()) {
+      expect(TEXTURES.blocks[id]?.translucent === true, id).toBe(isTranslucentBlock(id, names.get(id)));
+    }
   });
 });

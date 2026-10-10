@@ -25,6 +25,8 @@ export interface BlockFaces {
   front?: string;
   /** No texture: DETAILED view uses the flat colour from blocks.ts. */
   flat?: boolean;
+  /** Glass in game: drawn see-through. Decided by scripts/build-atlas.mjs from the block identity. */
+  translucent?: boolean;
 }
 
 export interface TextureManifest {
@@ -97,11 +99,17 @@ function frame(size: number, rgb: [number, number, number]): Uint8Array {
 /** A face to render: base tile plus overlays, or a flat colour. */
 type FaceSpec =
   | { type: 'flat'; color: string }
-  | { type: 'tiles'; base: string; front?: string; hatch?: { kind: HatchKind; color: string } };
+  | {
+      type: 'tiles';
+      base: string;
+      front?: string;
+      hatch?: { kind: HatchKind; color: string };
+      translucent?: boolean;
+    };
 
 function faceKey(spec: FaceSpec): string {
   if (spec.type === 'flat') return `flat:${spec.color}`;
-  return `tiles:${spec.base}|${spec.front ?? ''}|${spec.hatch ? spec.hatch.kind + ':' + spec.hatch.color : ''}`;
+  return `tiles:${spec.base}${spec.translucent ? '*' : ''}|${spec.front ?? ''}|${spec.hatch ? spec.hatch.kind + ':' + spec.hatch.color : ''}`;
 }
 
 async function loadAtlasFromUrl(url: string): Promise<AtlasPixels> {
@@ -212,18 +220,26 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
     if (px) {
       const tex = makeTexture(px, manifest.atlas.tile);
       textures.set(key, tex);
-      // Frames and grates are cut out (alpha 0 or 255); glass is see-through (mostly partial alpha), as the game
-      // draws it in its translucent pass.
-      let cutout = false;
-      let partial = 0;
-      for (let i = 3; i < px.length; i += 4) {
-        if (px[i] < 255) cutout = true;
-        if (px[i] > 0 && px[i] < 255) partial++;
+      // Glass (flagged in the manifest) is see-through, as the game draws it in its translucent pass. Anything
+      // else is opaque, or cut out (alpha 0 or 255) like frames and grates.
+      if (spec.type === 'tiles' && spec.translucent) {
+        material = new THREE.MeshLambertMaterial({
+          map: tex,
+          transparent: true,
+          depthWrite: false,
+          alphaTest: 0.02,
+        });
+      } else {
+        let cutout = false;
+        for (let i = 3; i < px.length; i += 4) {
+          if (px[i] < 255) {
+            cutout = true;
+            break;
+          }
+        }
+        // 0.1 is Minecraft's terrain alpha test: semi-transparent pixels of a solid casing do not become holes.
+        material = new THREE.MeshLambertMaterial({ map: tex, alphaTest: cutout ? 0.1 : 0 });
       }
-      material =
-        partial * 4 > px.length / 4
-          ? new THREE.MeshLambertMaterial({ map: tex, transparent: true, depthWrite: false, alphaTest: 0.02 })
-          : new THREE.MeshLambertMaterial({ map: tex, alphaTest: cutout ? 0.5 : 0 });
     } else {
       const color = spec.type === 'flat' ? spec.color : '#999999';
       material = new THREE.MeshLambertMaterial({ color });
@@ -254,6 +270,7 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
       base,
       front: facing && visual.kind === 'controller' ? faces.front : undefined,
       hatch: facing && isHatch ? { kind: visual.hatchKind!, color: hatchColor!.toLowerCase() } : undefined,
+      translucent: faces.translucent,
     };
   }
 

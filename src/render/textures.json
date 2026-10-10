@@ -735,7 +735,8 @@
       "side": "DUMP_COMP_ASSLINE_CASING_0"
     },
     "GoodGenerator:fieldRestrictingGlass@0": {
-      "side": "DUMP_FIELD_RESTRICTING_GLASS"
+      "side": "DUMP_FIELD_RESTRICTING_GLASS",
+      "translucent": true
     },
     "GoodGenerator:gravityStabilizationCasing@0": {
       "side": "DUMP_GRAVITY_STABILIZATION_CASING"
@@ -777,28 +778,36 @@
       "side": "DUMP_TRANSFORMER_COIL"
     },
     "bartworks:BW_TieredGlass@0": {
-      "side": "DUMP_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@1": {
-      "side": "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@3": {
-      "side": "DUMP_RHODIUM_PLATED_PALLADIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_RHODIUM_PLATED_PALLADIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@4": {
-      "side": "DUMP_IRIDIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_IRIDIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@5": {
-      "side": "DUMP_OSMIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_OSMIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@6": {
-      "side": "DUMP_NEUTRONIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_NEUTRONIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@7": {
-      "side": "DUMP_INFINITY_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_INFINITY_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:BW_TieredGlass@8": {
-      "side": "DUMP_TRANSCENDENTALLY_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
+      "side": "DUMP_TRANSCENDENTALLY_REINFORCED_BORON_SILICATE_GLASS_BLOCK",
+      "translucent": true
     },
     "bartworks:bw.werkstoffblockscasing.01@31850": {
       "side": "DUMP_BLOCK_CASING_C8C8C8"
@@ -1363,34 +1372,44 @@
       "side": "DUMP_FRAME_GT_0A0A0A"
     },
     "gregtech:gt.blockglass1@0": {
-      "side": "DUMP_GLASS_PH_RESISTANT"
+      "side": "DUMP_GLASS_PH_RESISTANT",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@1": {
-      "side": "DUMP_NEUTRONIUM_COATED_UV_RESISTANT_GLASS"
+      "side": "DUMP_NEUTRONIUM_COATED_UV_RESISTANT_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@10": {
-      "side": "DUMP_REINFORCED_GLASS"
+      "side": "DUMP_REINFORCED_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@2": {
-      "side": "DUMP_OMNI_PURPOSE_INFINITY_FUSED_GLASS"
+      "side": "DUMP_OMNI_PURPOSE_INFINITY_FUSED_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@3": {
-      "side": "DUMP_GLASS_QUARK_CONTAINMENT"
+      "side": "DUMP_GLASS_QUARK_CONTAINMENT",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@4": {
-      "side": "DUMP_HAWKING_GLASS"
+      "side": "DUMP_HAWKING_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@6": {
-      "side": "DUMP_SPINMATRON_GRATE"
+      "side": "DUMP_SPINMATRON_GRATE",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@7": {
-      "side": "DUMP_EXOFOUNDRY_GLASS"
+      "side": "DUMP_EXOFOUNDRY_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@8": {
-      "side": "DUMP_NANOCHIP_GLASS"
+      "side": "DUMP_NANOCHIP_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockglass1@9": {
-      "side": "DUMP_BEC_GLASS"
+      "side": "DUMP_BEC_GLASS",
+      "translucent": true
     },
     "gregtech:gt.blockmachines@1000": {
       "side": "DUMP_MACHINE_HEATPROOFCASING",
@@ -2401,7 +2420,8 @@
       "side": "DUMP_BLOCK_TSREIN"
     },
     "gregtech:gt.blocktintedglass@0": {
-      "side": "DUMP_GLASS_TINTED_INDUSTRIAL_WHITE"
+      "side": "DUMP_GLASS_TINTED_INDUSTRIAL_WHITE",
+      "translucent": true
     },
     "gregtech:gt.foundrycasings@0": {
       "side": "DUMP_EXOFOUNDRY_CASING"
@@ -2637,7 +2657,8 @@
       "side": "FRAME_TUNGSTENSTEEL"
     },
     "gt.glass.reinforced": {
-      "side": "REINFORCED_GLASS"
+      "side": "REINFORCED_GLASS",
+      "translucent": true
     },
     "gt.hatch.dynamo": {
       "side": "MACHINE_LV_SIDE",
@@ -2815,7 +2836,8 @@
       "side": "DUMP_CASING_TARGET_RECEPTACLE"
     },
     "gtnhlanth:tile.casing.shielded_accelerator_glass@0": {
-      "side": "DUMP_CASING_SHIELDED_ACCELERATOR_GLASS"
+      "side": "DUMP_CASING_SHIELDED_ACCELERATOR_GLASS",
+      "translucent": true
     },
     "gtpp.casing.centrifuge": {
       "side": "MACHINE_CASING_CENTRIFUGE"
@@ -3016,7 +3038,8 @@
     "miscutils:gtplusplus.blockcasings.5@15": {
       "side": "DUMP_FORCE_FIELD_GLASS",
       "top": "DUMP_FORCE_FIELD_GLASS_TOP",
-      "bottom": "DUMP_FORCE_FIELD_GLASS_TOP"
+      "bottom": "DUMP_FORCE_FIELD_GLASS_TOP",
+      "translucent": true
     },
     "miscutils:gtplusplus.blockcasings.5@2": {
       "side": "DUMP_MACHINE_CASING_GEARBOX_T1"

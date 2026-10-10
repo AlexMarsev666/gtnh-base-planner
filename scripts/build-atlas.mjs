@@ -635,8 +635,31 @@ export function readBlockIds(
   return [...[...source.matchAll(/\bid:\s*'([^']+)'/g)].map((m) => m[1]), ...generatedList.map((b) => b.id)];
 }
 
+/** Display names by block id, from the same two sources as `readBlockIds`. */
+export function readBlockNames(
+  source = readFileSync(BLOCKS_TS, 'utf8'),
+  generatedList = existsSync(BLOCKS_GENERATED) ? JSON.parse(readFileSync(BLOCKS_GENERATED, 'utf8')) : [],
+) {
+  const names = new Map(
+    [...source.matchAll(/id:\s*'([^']+)',\s*name:\s*'([^']+)'/g)].map((m) => [m[1], m[2]]),
+  );
+  for (const b of generatedList) names.set(b.id, b.name);
+  return names;
+}
+
+/**
+ * Whether a block is see-through glass in game (drawn in the translucent pass): its registry id or display
+ * name mentions glass (`gt.glass.reinforced`, `bartworks:BW_TieredGlass@n`, `gt.blockglass1@n`,
+ * `gt.blocktintedglass`, "Force Field Glass", ...). Every `gt.blockglass1` meta counts, grate and waveguide
+ * included: the game draws the whole class in the translucent pass. Decided from identity, never from pixels:
+ * casings with a perforated texture must stay opaque.
+ */
+export function isTranslucentBlock(id, name = id) {
+  return /glass|glas/i.test(id) || /glass/i.test(name);
+}
+
 /** Builds the textures.json object. */
-export function buildManifest(rects, atlasSize, blockIds) {
+export function buildManifest(rects, atlasSize, blockIds, names = readBlockNames()) {
   const blocks = {};
   const flat = [];
   for (const id of [...new Set([...blockIds, ...Object.keys(BLOCK_MAP)])].sort()) {
@@ -647,7 +670,7 @@ export function buildManifest(rects, atlasSize, blockIds) {
       continue;
     }
     for (const t of Object.values(faces)) if (!rects[t]) throw new Error(`${id}: unknown tile ${t}`);
-    blocks[id] = { ...faces };
+    blocks[id] = isTranslucentBlock(id, names.get(id)) ? { ...faces, translucent: true } : { ...faces };
   }
   for (const [kind, list] of Object.entries(HATCH_OVERLAYS)) {
     for (const t of list) if (!rects[t]) throw new Error(`hatch ${kind}: unknown tile ${t}`);
