@@ -1,5 +1,6 @@
 # Local editor and desktop launch settings
-/.claude/
+/.claude/*
+!/.claude/agents/
 /.vscode/
 .DS_Store
 Thumbs.db
