@@ -180,7 +180,6 @@ describe('malformed site links and files', () => {
   it('rejects bad fields with a readable error', () => {
     const cases: [string, (s: SiteState) => void][] = [
       ['rotation', (s) => ((s.groups[0] as { rotation: number }).rotation = 4)],
-      ['unknown multiblock', (s) => (s.groups[0].multiblockId = 'nope')],
       ['script id', (s) => (s.groups[0].multiblockId = '<script>')],
       ['hatch kind', (s) => ((s.groups[0].enabledHatches as string[]) = ['laser'])],
       ['colour', (s) => (s.resources['item:dust'].color = 'red')],

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
+import { deflateRaw, toBase64Url } from '../share/binary';
 import { encodePlan } from '../share/codec';
 import { STORAGE_KEY, planToJson } from '../share/persist';
 import { encodeSite, emptySite, siteToJson } from '../share/siteCodec';
@@ -345,5 +346,76 @@ describe('an unreadable stored plan or template is never overwritten unasked', (
     await vi.advanceTimersByTimeAsync(400);
     expect(get(notices).map((n) => n.text)).toContain(t.saveFailed);
     stop();
+  });
+});
+
+describe('templates with machines that no longer exist', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function gone(): SiteState {
+    const g = (id: string, multiblockId: string) => ({
+      id,
+      multiblockId,
+      count: 1,
+      limits: { x: null, y: null, z: null },
+      enabledHatches: [],
+      origin: [3, 4] as [number, number],
+      rotation: 0 as const,
+    });
+    return { ...emptySite(), groups: [g('a', 'coke-oven'), g('b', 'gone-one'), g('c', 'gone-two')] };
+  }
+
+  it('tells the user about the stored template and keeps its original', async () => {
+    notices.set([]);
+    const raw = JSON.stringify(gone());
+    const store = stubBrowser('', 'site', { [SITE_STORAGE_KEY]: raw });
+    await start();
+    expect(get(site).groups[1]!.multiblockId).toBe('placeholder');
+    expect(get(notices).map((n) => n.text)).toContain(t.recovery.replaced(2, true));
+    expect(t.recovery.replaced(2, true)).toContain('Your original is kept.');
+    const backup = [...store.keys()].find((k) => k.startsWith(`${SITE_STORAGE_KEY}:backup-`));
+    expect(store.get(backup!)).toBe(raw);
+    expect(get(recovery).site).toBeNull();
+  });
+
+  it('saves the repaired template once its original is backed up, so the notice shows once', async () => {
+    notices.set([]);
+    const raw = JSON.stringify(gone());
+    const store = stubBrowser('', 'site', { [SITE_STORAGE_KEY]: raw });
+    await start();
+    expect(JSON.parse(store.get(SITE_STORAGE_KEY)!).groups[1].multiblockId).toBe('placeholder');
+    notices.set([]);
+    stubBrowser('', 'site', Object.fromEntries(store));
+    await start();
+    expect(get(notices)).toHaveLength(0);
+  });
+
+  it('leaves the stored template alone when its backup cannot be made', async () => {
+    const raw = JSON.stringify(gone());
+    const store = stubBrowser('', 'site', { [SITE_STORAGE_KEY]: raw }, 'backups');
+    await start();
+    expect(get(site).groups[1]!.multiblockId).toBe('placeholder');
+    expect(store.get(SITE_STORAGE_KEY)).toBe(raw);
+  });
+
+  it('Try again tells about placeholders in the restored template', async () => {
+    stubBrowser('', 'site', { [SITE_STORAGE_KEY]: '{"broken":' });
+    await start();
+    notices.set([]);
+    localStorage.setItem(get(recovery).site!.backupKey!, JSON.stringify(gone()));
+    retryUnreadable('site');
+    expect(get(site).groups[2]!.multiblockId).toBe('placeholder');
+    expect(get(notices).map((n) => n.text)).toContain(t.recovery.replaced(2, false));
+  });
+
+  it('tells the user about a shared link and a file', async () => {
+    notices.set([]);
+    const link = toBase64Url(await deflateRaw(new TextEncoder().encode(JSON.stringify(gone()))));
+    stubBrowser(`#s=${link}`, 'site');
+    await start();
+    expect(get(notices).map((n) => n.text)).toContain(t.recovery.replaced(2, false));
+    notices.set([]);
+    await openSiteFile(new File([JSON.stringify(gone())], 'x.json'));
+    expect(get(notices).map((n) => n.text)).toContain(t.recovery.replaced(2, false));
   });
 });

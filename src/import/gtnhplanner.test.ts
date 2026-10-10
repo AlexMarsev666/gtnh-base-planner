@@ -183,6 +183,12 @@ describe('buildSiteFromGtnh', () => {
     expect(Object.values(site.resources).some((r) => r.name === 'Programmed Circuit')).toBe(false);
   });
 
+  it('never turns an imported group into a "Missing" placeholder', () => {
+    // Validation repairs unknown ids silently; an import must only ever produce known ones.
+    const { site } = buildSiteFromGtnh(parseGtnhProject(text));
+    expect(site.groups.filter((g) => g.label?.startsWith('Missing:'))).toEqual([]);
+  });
+
   it('builds and routes the imported site without overlaps', () => {
     const { site } = buildSiteFromGtnh(parseGtnhProject(text));
     const b = createSiteBuilder()(site, { pipes: true, cables: true });

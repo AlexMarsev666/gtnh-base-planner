@@ -2,7 +2,15 @@ import type { SiteState } from '../model/site/types';
 import { keepBackup } from './backups';
 import { MAX_SITE_JSON_BYTES, PlanFormatError } from './binary';
 import type { LocationLike, StorageLike, WindowLike } from './persist';
-import { decodeSite, encodeSite, siteFromJson, siteToJson, validateSiteState } from './siteCodec';
+import {
+  decodeSiteWithReport,
+  encodeSite,
+  siteFromJsonWithReport,
+  siteToJson,
+  validateSiteState,
+  type ReplacedGroup,
+  type SiteLoad,
+} from './siteCodec';
 
 /** Site persistence, the same rules as plans (`persist.ts`) under its own storage key and `#s=` parameter. */
 
@@ -26,9 +34,11 @@ function browserWindow(): WindowLike | null {
 
 export interface StoredSiteResult {
   site: SiteState | null;
+  /** Groups of the stored site whose multiblock no longer exists (shown as placeholders). */
+  replaced?: ReplacedGroup[];
   /** Set when a stored site existed but could not be read. */
   error?: string;
-  /** Key the unreadable site was copied to (absent if the copy failed). */
+  /** Key the unreadable site, or the original of a repaired one, was copied to (absent if the copy failed). */
   backupKey?: string;
   /** The unreadable stored text (for a download), when `error` is set. */
   raw?: string;
@@ -48,7 +58,10 @@ export function readStoredSite(
   }
   if (raw === null) return { site: null };
   try {
-    return { site: siteFromJson(raw) };
+    const { site, replaced } = siteFromJsonWithReport(raw);
+    if (replaced.length === 0) return { site };
+    // The repaired template replaces the stored one at the next autosave: keep the original text first.
+    return { site, replaced, backupKey: keepBackup(storage, SITE_STORAGE_KEY, raw, now) };
   } catch (err) {
     const error = err instanceof Error ? err.message : 'Unreadable template.';
     return { site: null, error, raw, backupKey: keepBackup(storage, SITE_STORAGE_KEY, raw, now) };
@@ -105,9 +118,9 @@ export function hashSiteParam(hash: string): string | null {
 
 export async function readHashSite(
   loc: Pick<LocationLike, 'hash'> | null = browserWindow()?.location ?? null,
-): Promise<SiteState | null> {
+): Promise<SiteLoad | null> {
   const value = loc ? hashSiteParam(loc.hash) : null;
-  return value === null ? null : decodeSite(value);
+  return value === null ? null : decodeSiteWithReport(value);
 }
 
 export function clearSiteHash(win: WindowLike | null = browserWindow()): void {
@@ -124,9 +137,9 @@ export async function siteHashUrl(
   return `${href.split('#')[0] ?? ''}#${SITE_HASH_PARAM}=${await encodeSite(site)}`;
 }
 
-export async function readSiteFile(file: Blob): Promise<SiteState> {
+export async function readSiteFile(file: Blob): Promise<SiteLoad> {
   if (file.size > MAX_SITE_JSON_BYTES) throw new PlanFormatError('Site file is too large.');
-  return siteFromJson(await file.text());
+  return siteFromJsonWithReport(await file.text());
 }
 
 export function downloadText(text: string, fileName: string): void {

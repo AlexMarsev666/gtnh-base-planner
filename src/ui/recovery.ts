@@ -5,7 +5,7 @@ import type { SiteState } from '../model/site/types';
 import { listBackups } from '../share/backups';
 import { STORAGE_KEY, planFromJson, saveStoredPlan } from '../share/persist';
 import { SITE_STORAGE_KEY, downloadText, saveStoredSite } from '../share/sitePersist';
-import { siteFromJson } from '../share/siteCodec';
+import { siteFromJsonWithReport } from '../share/siteCodec';
 import { site } from '../state/site';
 import { plan, selectedUnits } from '../state/store';
 import { notify, warnOnce } from './notices';
@@ -87,8 +87,14 @@ export function retryUnreadable(kind: RecoveryKind): void {
   let lastError = entry.error;
   for (const text of candidates(kind, entry)) {
     let next: PlanState | SiteState;
+    let replaced = 0;
     try {
-      next = kind === 'plan' ? planFromJson(text) : siteFromJson(text);
+      if (kind === 'plan') next = planFromJson(text);
+      else {
+        const loaded = siteFromJsonWithReport(text);
+        next = loaded.site;
+        replaced = loaded.replaced.length;
+      }
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
       continue;
@@ -99,6 +105,7 @@ export function retryUnreadable(kind: RecoveryKind): void {
       plan.set(next as PlanState);
     } else replaceSite(next as SiteState);
     saveNow(kind);
+    if (replaced > 0) notify(t.recovery.replaced(replaced, false), 8000);
     return;
   }
   warnOnce('retryUnreadable', lastError);

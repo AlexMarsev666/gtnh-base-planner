@@ -1,4 +1,5 @@
-import { getSiteDef, isSingleBlock } from '../data/generic';
+import { PLACEHOLDER_ID, getSiteDef, isSingleBlock } from '../data/generic';
+import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { getSingleMachine } from '../data/single-machines';
 import { effectiveSize } from '../model/resize';
 import {
@@ -127,15 +128,30 @@ function validateResource(value: unknown, key: string): ResourceDef {
   return res;
 }
 
-function validateGroup(value: unknown, index: number): SiteGroup {
+/** A group whose multiblock id no longer exists, shown as a placeholder. */
+export interface ReplacedGroup {
+  group: string;
+  /** The id that was not found. */
+  id: string;
+}
+
+export interface SiteLoad {
+  site: SiteState;
+  replaced: ReplacedGroup[];
+}
+
+function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[]): SiteGroup {
   const what = `Group ${index + 1}`;
   const obj = expectObject(value, what);
-  const multiblockId = field(obj, 'multiblockId');
-  if (typeof multiblockId !== 'string' || !ID_RE.test(multiblockId) || multiblockId.length > 64) {
+  const rawId = field(obj, 'multiblockId');
+  if (typeof rawId !== 'string' || !ID_RE.test(rawId) || rawId.length > 64) {
     throw new PlanFormatError(`${what} multiblock id is invalid.`);
   }
-  const def = getSiteDef(multiblockId);
-  if (!def) throw new PlanFormatError(`${what}: unknown multiblock "${multiblockId}".`);
+  let multiblockId = resolveMultiblockId(rawId);
+  const found = getSiteDef(multiblockId);
+  // An id the catalog no longer has does not reject the template: the group becomes a placeholder.
+  if (!found) multiblockId = PLACEHOLDER_ID;
+  const def = found ?? getSiteDef(PLACEHOLDER_ID)!;
   const limitsObj = expectObject(field(obj, 'limits'), `${what} limits`);
   const limits: PlanLimits = {
     x: expectLimit(field(limitsObj, 'x'), `${what} limit X`),
@@ -153,7 +169,13 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     origin: expectPair(field(obj, 'origin'), `${what} origin`, -SITE_MAX_SIZE, 2 * SITE_MAX_SIZE),
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
   };
-  const label = optionalString(field(obj, 'label'), `${what} label`, MAX_NAME);
+  let label = optionalString(field(obj, 'label'), `${what} label`, MAX_NAME);
+  if (!found) {
+    replaced.push({ group: group.id, id: rawId });
+    const missing = `Missing: ${rawId}`;
+    label =
+      label !== undefined && `${missing} (${label})`.length <= MAX_NAME ? `${missing} (${label})` : missing;
+  }
   if (label !== undefined) group.label = label;
   const machine = field(obj, 'machine');
   // A look this version does not know (a newer list) is left out rather than refused: it is only cosmetic.
@@ -243,6 +265,11 @@ function unique<T extends { id: string }>(list: T[], what: string): Set<string> 
  * resource matches its links. Hatch kinds are normalised to `HATCH_KINDS` order, colours to lower case.
  */
 export function validateSiteState(input: unknown): SiteState {
+  return validateSiteStateWithReport(input).site;
+}
+
+/** `validateSiteState`, also naming the groups whose multiblock is gone and that became placeholders. */
+export function validateSiteStateWithReport(input: unknown): SiteLoad {
   const obj = expectObject(input, 'Site');
   if (field(obj, 'kind') !== 'site') throw new PlanFormatError('This is not a site file.');
   const v = field(obj, 'v');
@@ -261,7 +288,10 @@ export function validateSiteState(input: unknown): SiteState {
   // Own keys only: an inherited name such as "toString" is not a resource.
   const hasResource = (k: string) => Object.hasOwn(resources, k);
 
-  const groups = expectArray(field(obj, 'groups'), 'Groups', MAX_GROUPS).map(validateGroup);
+  const replaced: ReplacedGroup[] = [];
+  const groups = expectArray(field(obj, 'groups'), 'Groups', MAX_GROUPS).map((g, i) =>
+    validateGroup(g, i, replaced),
+  );
   const ports = expectArray(field(obj, 'ports'), 'Ports', MAX_PORTS).map(validatePort);
   const links = expectArray(field(obj, 'links'), 'Links', MAX_LINKS).map(validateLink);
   const groupIds = unique(groups, 'Group');
@@ -320,7 +350,7 @@ export function validateSiteState(input: unknown): SiteState {
   };
   const name = optionalString(field(obj, 'name'), 'Site name', MAX_NAME);
   if (name !== undefined) site.name = name;
-  return site;
+  return { site, replaced };
 }
 
 export function emptySite(): SiteState {
@@ -353,6 +383,10 @@ export function siteToJson(site: SiteState): string {
 export const MAX_SITE_FILE_BYTES = MAX_SITE_JSON_BYTES;
 
 export function siteFromJson(text: string): SiteState {
+  return siteFromJsonWithReport(text).site;
+}
+
+export function siteFromJsonWithReport(text: string): SiteLoad {
   if (typeof text !== 'string') throw new PlanFormatError('Site file is not text.');
   if (text.length > MAX_SITE_JSON_BYTES) throw new PlanFormatError('Site file is too large.');
   let data: unknown;
@@ -361,7 +395,7 @@ export function siteFromJson(text: string): SiteState {
   } catch {
     throw new PlanFormatError('Site file is not valid JSON.');
   }
-  return validateSiteState(data);
+  return validateSiteStateWithReport(data);
 }
 
 export async function encodeSite(site: SiteState, opts: CompressOptions = {}): Promise<string> {
@@ -373,6 +407,10 @@ export async function encodeSite(site: SiteState, opts: CompressOptions = {}): P
 }
 
 export async function decodeSite(encoded: string, opts: CompressOptions = {}): Promise<SiteState> {
+  return (await decodeSiteWithReport(encoded, opts)).site;
+}
+
+export async function decodeSiteWithReport(encoded: string, opts: CompressOptions = {}): Promise<SiteLoad> {
   if (typeof encoded !== 'string' || encoded.length === 0) throw new PlanFormatError('Site link is empty.');
   const bytes = await inflateRaw(fromBase64Url(encoded), { ...opts, limit: MAX_SITE_JSON_BYTES });
   let text: string;
@@ -387,5 +425,5 @@ export async function decodeSite(encoded: string, opts: CompressOptions = {}): P
   } catch {
     throw new PlanFormatError('Site link is damaged (not JSON).');
   }
-  return validateSiteState(data);
+  return validateSiteStateWithReport(data);
 }

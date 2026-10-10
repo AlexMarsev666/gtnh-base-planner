@@ -1,4 +1,5 @@
 import { getMultiblock } from '../data/catalog';
+import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { effectiveSize } from '../model/resize';
 import type { Rotation, Vec3 } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
@@ -118,8 +119,9 @@ function expectMultiblockId(value: unknown): string {
   if (typeof value !== 'string' || value.length > MAX_ID_LENGTH || !ID_RE.test(value)) {
     throw new PlanFormatError('Multiblock id is invalid.');
   }
-  if (!getMultiblock(value)) throw new PlanFormatError(`Unknown multiblock "${value}".`);
-  return value;
+  const id = resolveMultiblockId(value);
+  if (!getMultiblock(id)) throw new PlanFormatError(`Unknown multiblock "${value}".`);
+  return id;
 }
 
 function expectLimit(value: unknown, axis: string): number | null {

@@ -122,6 +122,10 @@ export const t = {
     download: 'Download copy',
     retry: 'Try again',
     startNew: 'Start new',
+    replaced: (n: number, kept: boolean) =>
+      `${n} ${n === 1 ? 'machine no longer exists and is' : 'machines no longer exist and are'} shown as ${
+        n === 1 ? 'a placeholder' : 'placeholders'
+      }.${kept ? ' Your original is kept.' : ''}`,
   },
 
   // Mode switch

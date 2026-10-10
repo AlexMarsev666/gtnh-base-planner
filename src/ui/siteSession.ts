@@ -22,6 +22,8 @@ import { replaceSite } from './siteActions';
 
 /** A shared site from the URL waiting for the user's OPEN / KEEP MINE answer. */
 export const pendingSite = writable<SiteState | null>(null);
+/** How many groups of `pendingSite` became placeholders (told when the user opens it). */
+let pendingReplaced = 0;
 /** Site link shown in a selectable field when the clipboard is unavailable. */
 export const siteShareFallback = writable<string | null>(null);
 
@@ -30,6 +32,10 @@ const SAVE_DEBOUNCE_MS = 300;
 let saveWarned = false;
 
 /** Writes the site right away unless an unreadable stored one is held; tells the user once per failure streak. */
+function tellReplaced(n: number, kept = false): void {
+  if (n > 0) notify(t.recovery.replaced(n, kept), 8000);
+}
+
 function saveSiteNow(s: SiteState): void {
   if (isHeld('site')) return;
   if (saveStoredSite(s)) saveWarned = false;
@@ -46,6 +52,10 @@ export async function initSiteSession(): Promise<void> {
   try {
     const result = readStoredSite();
     stored = result.site;
+    const kept = result.backupKey !== undefined;
+    tellReplaced(result.replaced?.length ?? 0, kept);
+    // With the original safe in a backup the repaired template is stored now, so the notice appears once.
+    if (kept && stored && result.replaced?.length) saveSiteNow(stored);
     // The unreadable text stays where it is until the user decides (see recovery.ts).
     if (result.error !== undefined) {
       holdUnreadable('site', { error: result.error, raw: result.raw ?? '', backupKey: result.backupKey });
@@ -56,8 +66,11 @@ export async function initSiteSession(): Promise<void> {
   if (stored) site.set(stored);
   if (hashSiteParam(location.hash) === null) return;
   let shared: SiteState | null = null;
+  let sharedReplaced = 0;
   try {
-    shared = await readHashSite();
+    const loaded = await readHashSite();
+    shared = loaded?.site ?? null;
+    sharedReplaced = loaded?.replaced.length ?? 0;
   } catch (err) {
     warnOnce('readHashSite', err);
     notify(err instanceof Error && err.name === 'PlanFormatError' ? err.message : t.sharedInvalid, 8000);
@@ -75,7 +88,11 @@ export async function initSiteSession(): Promise<void> {
     saveSiteNow(shared);
     // Still held: the link is the only copy of this template outside memory, so a reload must find it.
     if (!isHeld('site')) clearSiteHash();
-  } else pendingSite.set(shared);
+    tellReplaced(sharedReplaced);
+  } else {
+    pendingReplaced = sharedReplaced;
+    pendingSite.set(shared);
+  }
 }
 
 export function answerSharedSite(open: boolean): void {
@@ -83,7 +100,9 @@ export function answerSharedSite(open: boolean): void {
   if (open && shared) {
     releaseIfBackedUp('site');
     replaceSite(shared);
+    tellReplaced(pendingReplaced);
   }
+  pendingReplaced = 0;
   pendingSite.set(null);
   clearSiteHash();
 }
@@ -164,10 +183,11 @@ export function downloadSite(): void {
 
 export async function openSiteFile(file: File): Promise<void> {
   try {
-    const next = await readSiteFile(file);
+    const { site: next, replaced } = await readSiteFile(file);
     releaseIfBackedUp('site');
     replaceSite(next);
     notify(t.site.opened);
+    tellReplaced(replaced.length);
   } catch (err) {
     warnOnce('siteFromJson', err);
     notify(t.jsonFailed(err instanceof Error ? err.message : String(err)), 6000);
