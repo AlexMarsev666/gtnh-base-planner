@@ -4,6 +4,7 @@ import type { MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
 import { sourceOf } from './cache';
 import { candidates, decode, ordinal } from './candidates';
 import { coord, modeCaps, modesFor, neighbourCap, PATTERNS, rotationAt } from './modes';
+import type { WallshareMode } from '../plan/types';
 import { inside, pairOk } from './shapes';
 import type { Candidate, DefCache, Spacing } from './types';
 
@@ -79,10 +80,20 @@ export function realize(def: MultiblockDef, cache: DefCache, n: number, c: Candi
   return null;
 }
 
-/** Best layout of exactly `n` units within limits, or null when none of the lattice layouts fits. */
-export function tryPack(def: MultiblockDef, cache: DefCache, n: number, limits: PlanLimits): Unit[] | null {
+/**
+ * Best layout of exactly `n` units within limits, or null when none of the lattice layouts fits. With a
+ * `wallshare` preference only layouts of that kind are tried ('separate' needs gaps, so it searches the
+ * spaced family).
+ */
+export function tryPack(
+  def: MultiblockDef,
+  cache: DefCache,
+  n: number,
+  limits: PlanLimits,
+  wallshare?: WallshareMode,
+): Unit[] | null {
   if (n === 0) return [];
-  for (const c of candidates(def, modesFor(def, cache), n, limits)) {
+  for (const c of candidates(def, modesFor(def, cache), n, limits, wallshare === 'separate', wallshare)) {
     const units = realize(def, cache, n, c);
     if (units) return units;
   }

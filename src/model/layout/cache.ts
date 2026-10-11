@@ -1,8 +1,7 @@
 import type { Vec3 } from '../core/types';
 import type { MultiblockDef, Unit } from '../multiblock/types';
-import type { PackResult } from '../plan/types';
 import { buildShapes } from './shapes';
-import type { Candidate, DefCache } from './types';
+import type { Candidate, DefCache, LayoutResult } from './types';
 
 /**
  * Per-definition caches of the layout packer, keyed by the definition object (WeakMap: a new or resized
@@ -25,7 +24,7 @@ export function defCache(def: MultiblockDef): DefCache {
   return c;
 }
 
-export function cloneResult(r: PackResult): PackResult {
+export function cloneResult(r: LayoutResult): LayoutResult {
   const units = r.units.map((u) => ({
     id: u.id,
     origin: [u.origin[0], u.origin[1], u.origin[2]] as Vec3,
@@ -33,5 +32,5 @@ export function cloneResult(r: PackResult): PackResult {
   }));
   const source = sourceOf.get(r.units);
   if (source) sourceOf.set(units, source);
-  return { ...r, units };
+  return r.fallback ? { ...r, units, fallback: { ...r.fallback } } : { ...r, units };
 }

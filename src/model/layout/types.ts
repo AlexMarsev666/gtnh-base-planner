@@ -1,5 +1,5 @@
 import type { Vec3 } from '../core/types';
-import type { PackResult } from '../plan/types';
+import type { PackResult, WallshareMode } from '../plan/types';
 
 /** Internal types of the layout packer (see `packer.ts`). */
 
@@ -35,7 +35,7 @@ export interface DefCache {
   shapes: Shape[];
   pairs: Map<string, boolean>;
   modes: Mode[] | null;
-  results: Map<string, PackResult>;
+  results: Map<string, LayoutResult>;
 }
 
 /** Fill orders: which horizontal axis fills fastest (height is always filled last, bottom-up). */
@@ -52,4 +52,28 @@ export interface Candidate {
   area: number;
   squareness: number;
   seq: number;
+  /** Neighbour pairs per axis that share a wall (spacing size - 1). */
+  shared: Vec3;
+  /** Neighbour pairs per axis that touch without sharing (spacing === size). */
+  touching: Vec3;
+  /** Which wallshare preference this layout satisfies (see `classifyWallshare`). */
+  kind: WallshareMode;
+}
+
+/**
+ * Reported when a wallshare preference could not be honoured: the layout of the automatic ranking was used
+ * instead. `used` classifies that layout truthfully ('auto' = mixed or no clear pattern). It also applies when fewer units fit than asked: that shortfall path ignores the preference.
+ * - 'no-wallshare': the multiblock cannot share walls (`def.wallshare` false) and the mode needs sharing.
+ * - 'limits': the unit limits forbid it (it would work without them).
+ * - 'geometry': no valid layout of that kind exists for this multiblock and count.
+ */
+export interface WallshareFallback {
+  wanted: WallshareMode;
+  used: WallshareMode;
+  reason: 'no-wallshare' | 'limits' | 'geometry';
+}
+
+/** `PackResult` plus the fallback report of a wallshare preference (absent when honoured or not asked for). */
+export interface LayoutResult extends PackResult {
+  fallback?: WallshareFallback;
 }
