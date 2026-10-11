@@ -8,14 +8,14 @@ import {
 } from '../import/gtnhplanner';
 import { createSiteBuilder } from '../model/site/build';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
-import type { SiteState } from '../model/site/types';
+import type { SiteRouting, SiteState } from '../model/site/types';
 import {
   createMachineHandler,
   type MachineWorkerRequest,
   type MachineWorkerResponse,
 } from './machineWorkerHandler';
 import { createPipeline } from './pipelineCore';
-import { arrangeHere, type Arranged } from './siteArrange';
+import { arrangeHere, type Arranged, type ArrangeProgress } from './siteArrange';
 
 /**
  * Builds sites off the main thread: packing hundreds of units and routing a large template takes seconds,
@@ -25,7 +25,7 @@ import { arrangeHere, type Arranged } from './siteArrange';
 
 export type SiteWorkerRequest =
   | { id: number; type: 'build'; site: SiteState; opts: SiteBuildOptions }
-  | { id: number; type: 'arrange'; site: SiteState; below: boolean; optimize?: boolean }
+  | { id: number; type: 'arrange'; site: SiteState; routing: SiteRouting; optimize?: boolean }
   | {
       id: number;
       type: 'import';
@@ -34,9 +34,15 @@ export type SiteWorkerRequest =
       opts: ImportOptions;
     };
 
-/** `partial`: the groups without pipes, sent first when routing will take a while; the full build follows. */
+/**
+ * `partial`: the groups without pipes, sent first when routing will take a while; the full build follows.
+ * `progress`: how far an arrange / optimise has got (at most ~20 a second); the `arranged` result follows. A
+ * running search cannot hear a cancel message (the worker is busy), so the controller stops it by
+ * terminating the worker instead.
+ */
 export type SiteWorkerResponse =
   | { id: number; build: SiteBuild; partial?: boolean }
+  | { id: number; progress: ArrangeProgress }
   | { id: number; imported: { site: SiteState; report: ImportReport } }
   | { id: number; arranged: Arranged }
   | { id: number; error: string };
@@ -62,7 +68,11 @@ self.onmessage = (e: MessageEvent<SiteWorkerRequest | MachineWorkerRequest>) => 
       return;
     }
     if (req.type === 'arrange') {
-      post({ id: req.id, arranged: arrangeHere(req.site, req.below, buildSite, req.optimize) });
+      const onProgress = (progress: ArrangeProgress) => post({ id: req.id, progress });
+      post({
+        id: req.id,
+        arranged: arrangeHere(req.site, req.routing, buildSite, req.optimize, { onProgress }),
+      });
       return;
     }
     const { id, site, opts } = req;

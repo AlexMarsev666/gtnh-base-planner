@@ -1,4 +1,5 @@
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
+import type { WallshareMode } from '../model/plan/types';
 import type { RoutedKind } from '../model/routing/kinds';
 
 /**
@@ -7,12 +8,17 @@ import type { RoutedKind } from '../model/routing/kinds';
  * Adding an input to a stage means adding it here; `pipelineKeys.test.ts` checks each one.
  */
 
-/** Packing: the (sized) multiblock, count, limits, or the manual units in place of a packed layout. */
+/**
+ * Packing: the (sized, maybe mirrored) multiblock, count, limits and wall sharing preference, or the manual
+ * units in place of a packed layout.
+ */
 export function layoutKey(input: {
   defId: string;
   size: number | undefined;
   count: number;
   limits: PlanLimits;
+  mirror: boolean;
+  wallshare: WallshareMode | undefined;
   manualUnits: readonly Unit[] | undefined;
 }): string {
   const { limits, manualUnits } = input;
@@ -21,6 +27,8 @@ export function layoutKey(input: {
     input.defId,
     input.size ?? null,
     input.count,
+    input.mirror,
+    input.wallshare ?? 'auto',
     limits.x ?? null,
     limits.y ?? null,
     limits.z ?? null,

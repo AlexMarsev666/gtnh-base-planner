@@ -46,3 +46,25 @@ showIcons.subscribe((on) => {
     // Not important enough to report.
   }
 });
+
+/**
+ * How far the running ARRANGE / OPTIMIZE has got; `total` 0 while nothing is known yet, null when none runs.
+ * Set by the build worker's controller (see `sitePipeline`).
+ */
+export const arrangeProgress = writable<{
+  done: number;
+  total: number;
+  phase: 'arrange' | 'optimize';
+} | null>(null);
+
+/** What the last ARRANGE / OPTIMIZE / NEAT that was applied did; null before the first one, or after an edit. */
+export interface ArrangeOutcome {
+  kind: 'arrange' | 'optimize' | 'neat';
+  fits: boolean;
+  floors: number;
+  /** Optimise only: an annealed layout replaced the arranged one. */
+  improved?: boolean;
+  /** Optimise only: the safety limit ended the search early. */
+  truncated?: boolean;
+}
+export const arrangeOutcome = writable<ArrangeOutcome | null>(null);

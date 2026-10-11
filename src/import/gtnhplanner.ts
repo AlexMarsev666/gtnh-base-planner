@@ -9,7 +9,7 @@ import {
   multiblockForMachineType,
   multiblockForName,
 } from '../data/gtnhplanner-machines';
-import { arrangeSite, grownSize, type ArrangeResult } from '../model/site/arrange';
+import { arrangeSite, grownSize, type ArrangeOptions, type ArrangeResult } from '../model/site/arrange';
 import { createSiteBuilder, localFootprints, localHeights } from '../model/site/build';
 import type { SiteBuilder } from '../model/site/buildTypes';
 import { IO_KINDS, singleBlockLimits } from '../model/site/group';
@@ -549,6 +549,7 @@ export function arrangeOnFloors(
   site: SiteState,
   builder: SiteBuilder,
   below?: boolean,
+  progress: Pick<ArrangeOptions, 'onProgress' | 'signal'> = {},
 ): { site: SiteState; arranged: ArrangeResult } {
   const onFloors = (s: SiteState) => {
     const built = builder(s, { pipes: false, cables: false, below });
@@ -558,6 +559,7 @@ export function arrangeOnFloors(
       footprints,
       arranged: arrangeSite(s, (id) => footprints.get(id), {
         floors: { heightOf: (id) => heights.get(id) ?? 1 },
+        ...progress,
       }),
     };
   };

@@ -1,9 +1,12 @@
 import { getMultiblock } from '../data/catalog';
 import { DEFAULT_HATCH_COLORS } from '../model/colors';
 import { layoutCandidates, packUnits } from '../model/layout/packer';
+import type { LayoutResult, WallshareFallback } from '../model/layout/types';
+import type { CapacityEntry, PlaceResult } from '../model/hatches/types';
 import { loosenings } from '../model/layout/variants';
 import { alongX } from '../model/orient';
 import { resolveLayout, resolveRoutedLayout, type ResolvedLayout } from '../model/plan';
+import { mirroredDef } from '../model/mirror';
 import { effectiveSize, sizedDef } from '../model/resize';
 import { placeHatches } from '../model/hatches/placement';
 import { withPipeFaces } from '../model/routing/attachments';
@@ -50,6 +53,10 @@ export interface PipelineResult {
   /** True when the layout was loosened (gaps, walkways) so every hatch fits. */
   loosened: boolean;
   hatches: HatchResult | null;
+  /** Units that want more hatches than have a cell for them (from the hatch placement), if any. */
+  capacity?: CapacityEntry[];
+  /** Set when the plan's wall sharing preference could not be honoured, and what was used instead. */
+  wallshareFallback?: WallshareFallback;
   stats: WallStats | null;
   /** Pipe and cable networks (whichever are switched on), or null when both are off. */
   pipes: RouteNet[] | null;
@@ -88,10 +95,10 @@ export function mergeColors(overrides: PlanState['colors']): Record<HatchKind, s
  * depends on, so changing a colour does not re-pack and a camera move (not an input) recomputes nothing.
  */
 export function createPipeline(deps: PipelineDeps = defaultDeps) {
-  const layoutStage = stage<PackResult>('packUnits');
+  const layoutStage = stage<LayoutResult>('packUnits');
   const hatchStage = stage<{
     pack: PackResult;
-    hatches: HatchResult;
+    hatches: PlaceResult;
     loosened: boolean;
     /** Networks already routed while choosing the layout (pipes or cables on, auto layout). */
     pipes?: RouteNet[];
@@ -106,13 +113,19 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
 
   return function run(p: PlanState, pipesOn: boolean, cablesOn = false, below = false): PipelineResult {
     // Hatches may face down, and pipes run under the build, when connections from below are allowed.
-    const d: PipelineDeps = below
-      ? { ...deps, placeHatches: (df, u, e, a) => deps.placeHatches(df, u, e, a, { below: true }) }
-      : deps;
+    // The wall sharing preference also orders the looser layouts tried when hatches do not fit.
+    const d: PipelineDeps = {
+      ...deps,
+      ...(below
+        ? { placeHatches: (df, u, e, a, o) => deps.placeHatches(df, u, e, a, { ...o, below: true }) }
+        : {}),
+      layoutCandidates: (df, n, l) => deps.layoutCandidates(df, n, l, p.wallshare),
+    };
     const raw = deps.getMultiblock(p.multiblockId);
     const size = raw ? effectiveSize(raw, p.size) : undefined;
-    // A resizable multiblock is built at the plan's height / length.
-    const def = raw ? sizedDef(raw, size) : undefined;
+    // A resizable multiblock is built at the plan's height / length, and mirrored in X when asked.
+    const sized = raw ? sizedDef(raw, size) : undefined;
+    const def = sized && p.mirror ? mirroredDef(sized) : sized;
     const empty: PipelineResult = {
       def,
       pack: null,
@@ -134,6 +147,8 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       size,
       count: p.count,
       limits: p.limits,
+      mirror: !!p.mirror,
+      wallshare: p.wallshare,
       manualUnits: p.manualUnits,
     });
     const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below);
@@ -152,7 +167,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
         const n = p.manualUnits.length;
         return { units: p.manualUnits, requested: n, placed: n };
       }
-      return deps.packUnits(def, p.count, p.limits);
+      return deps.packUnits(def, p.count, p.limits, p.wallshare);
     });
     if (!pack.ok) return finish({ ...empty, error: pack.error });
     const packed = pack.value;
@@ -225,6 +240,8 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       pack: layout,
       loosened,
       hatches: hatchResult,
+      ...(hatchResult.capacity ? { capacity: hatchResult.capacity } : {}),
+      ...(packed.fallback ? { wallshareFallback: packed.fallback } : {}),
       stats: stats.value,
       pipes: pipeNets,
       ...(routingTruncated ? { routingTruncated } : {}),

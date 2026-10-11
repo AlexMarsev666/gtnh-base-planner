@@ -9,6 +9,8 @@ const layoutInput: LayoutInput = {
   size: undefined,
   count: 4,
   limits: { x: null, y: 1, z: null } as PlanLimits,
+  mirror: false,
+  wallshare: undefined,
   manualUnits: undefined,
 };
 const oneUnit: Unit[] = [{ id: 0, origin: [0, 0, 0], rotation: 0 }];
@@ -23,10 +25,14 @@ describe('pipeline keys', () => {
       { ...layoutInput, limits: { x: 2, y: 1, z: null } },
       { ...layoutInput, limits: { x: null, y: 2, z: null } },
       { ...layoutInput, limits: { x: null, y: 1, z: 2 } },
+      { ...layoutInput, mirror: true },
+      { ...layoutInput, wallshare: 'stack' },
       { ...layoutInput, manualUnits: oneUnit },
     ]).map((i) => layoutKey(i));
     expect(new Set([base, ...changed]).size).toBe(changed.length + 1);
     // Limits compare by value, whatever their key order.
+    // 'auto' is the same as no preference.
+    expect(layoutKey({ ...layoutInput, wallshare: 'auto' })).toBe(base);
     expect(layoutKey({ ...layoutInput, limits: { z: null, y: 1, x: null } })).toBe(base);
   });
 

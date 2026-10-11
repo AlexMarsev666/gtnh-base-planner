@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { getSiteDef } from '../data/generic';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
-import type { SiteState } from '../model/site/types';
-import { arrange, freeOrigin, optimizeAfterImport, whenBuilt } from './siteCommands';
+import type { SiteRouting, SiteState } from '../model/site/types';
+import { arrange, freeOrigin, neatArrange, optimizeAfterImport, whenBuilt } from './siteCommands';
+import { canRedo, canUndo, redo, startSiteHistory, undo as undoStep } from './siteHistory';
+import { arrangeOutcome, site } from '../state/site';
 import { JobCancelled } from './siteWorkerController';
 import type { SiteResult } from './sitePipeline';
 import { withGroupAdded } from './siteActions';
@@ -98,7 +100,7 @@ describe('optimizeAfterImport', () => {
 describe('arrange', () => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   const undo = { label: 'Undo', run: () => {} };
-  function setup(job: (s: SiteState) => Promise<unknown>) {
+  function setup(job: (s: SiteState, routing: SiteRouting) => Promise<unknown>) {
     const s = imported();
     const sites = writable(s);
     const cleared: string[] = [];
@@ -165,6 +167,89 @@ describe('arrange', () => {
     await arrange(false, imp.deps);
     expect(imp.said).toHaveLength(1);
     expect(imp.cleared).toEqual(['arrange']);
+  });
+  it('arranges and optimises with the site routing, or the browser switch for sites without one', async () => {
+    const seen: unknown[] = [];
+    const { s, deps } = setup(async (x, routing) => (seen.push(routing), arranged(x)));
+    await arrange(false, deps);
+    expect(seen.at(-1)).toEqual({ style: 'classic', depth: 0 });
+    deps.below.set(true);
+    await arrange(false, deps);
+    expect(seen.at(-1)).toEqual({ style: 'classic', depth: 1 });
+    deps.sites.set({ ...s, routing: { style: 'neat', depth: 2 } });
+    await arrange(true, deps);
+    expect(seen.at(-1)).toEqual({ style: 'neat', depth: 2 });
+    // A legacy site keeps having no routing of its own.
+    deps.sites.set(s);
+    await arrange(false, deps);
+    expect(get(deps.sites).routing).toBeUndefined();
+  });
+
+  it('reports what an applied run did, and leaves everything alone when cancelled', async () => {
+    const done = setup(async (x) => ({
+      ...arranged(x),
+      optimized: { improved: true, truncated: true, start: {}, result: {}, reshaped: 0 },
+    }));
+    await arrange(true, done.deps);
+    expect(get(arrangeOutcome)).toEqual({
+      kind: 'optimize',
+      fits: true,
+      floors: 1,
+      improved: true,
+      truncated: true,
+    });
+    const stopped = setup(async () => {
+      throw new JobCancelled('aborted');
+    });
+    await arrange(true, stopped.deps);
+    expect(get(stopped.sites)).toBe(stopped.s);
+    expect(stopped.said[1]).toEqual([expect.stringMatching(/optimizing stopped/), 4000, 'arrange']);
+    expect(get(arrangeOutcome)).toBeNull();
+  });
+
+  it('drops the result when the effective routing changed while it ran', async () => {
+    const later = setup(async (x) => {
+      later.deps.below.set(true);
+      return arranged(x);
+    });
+    await arrange(false, later.deps);
+    expect(later.said[1]).toEqual([expect.stringMatching(/arranging stopped/), 4000, 'arrange']);
+    expect(get(later.sites)).toBe(later.s);
+  });
+
+  describe('neat', () => {
+    const run = async (routing: SiteState['routing']) => {
+      const seen: unknown[] = [];
+      const { s, deps } = setup(async (x, r) => (seen.push(r), arranged(x)));
+      const start = { ...s, routing };
+      site.set(start);
+      deps.sites = site as never;
+      const stop = startSiteHistory();
+      await neatArrange(deps);
+      return { start, seen, stop };
+    };
+
+    it('arranges and switches to neat routing at least one layer deep, as one undo step', async () => {
+      const { start, seen, stop } = await run(undefined);
+      expect(seen).toEqual([{ style: 'neat', depth: 1 }]);
+      expect(get(site)).toMatchObject({ name: 'arranged', routing: { style: 'neat', depth: 1 } });
+      expect(get(canUndo)).toBe(true);
+      expect(undoStep()).toBe(true);
+      expect(get(site)).toBe(start);
+      // Both the layout and the routing came back in that one step.
+      expect(get(canUndo)).toBe(false);
+      expect(get(canRedo)).toBe(true);
+      expect(redo()).toBe(true);
+      expect(get(site).routing).toEqual({ style: 'neat', depth: 1 });
+      stop();
+    });
+
+    it('keeps a deeper setting', async () => {
+      const { seen, stop } = await run({ style: 'classic', depth: 3 });
+      expect(seen).toEqual([{ style: 'neat', depth: 3 }]);
+      expect(get(site).routing).toEqual({ style: 'neat', depth: 3 });
+      stop();
+    });
   });
 });
 

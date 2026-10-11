@@ -1,12 +1,13 @@
 import { derived, readable, writable, type Readable } from 'svelte/store';
 import type { GtnhProject, ImportOptions, MachineChoice } from '../import/gtnhplanner';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
-import type { SiteState } from '../model/site/types';
+import type { SiteRouting, SiteState } from '../model/site/types';
+import { effectiveRouting } from '../share/siteCodec';
 import type { SceneModel } from '../model/render/types';
-import { appMode, isolate, site, siteCables, sitePipes } from '../state/site';
+import { appMode, arrangeProgress, isolate, site, siteCables, sitePipes } from '../state/site';
 import { connectBelow } from '../state/store';
 import { withDimensions } from './dimensions';
-import type { Arranged } from './siteArrange';
+import { belowOf, type Arranged } from './siteArrange';
 import {
   createSiteWorkerController,
   JobCancelled,
@@ -26,11 +27,21 @@ export type { SiteResult } from './siteWorkerController';
  */
 export const siteBuild = writable<SiteResult>({ build: null, error: null }, () => {
   // Only while something shows the site (the machine view never builds it).
+  let last: { site: SiteState; pipes: boolean; cables: boolean; routing: string } | null = null;
   const stop = derived([site, sitePipes, siteCables, connectBelow], (x) => x).subscribe(
-    ([$site, $pipes, $cables, $below]) => request($site, { pipes: $pipes, cables: $cables, below: $below }),
+    ([$site, $pipes, $cables, $below]) => {
+      const routing = effectiveRouting($site, $below);
+      // The browser-wide switch does not matter once the site has its own routing.
+      const key = JSON.stringify(routing);
+      if (last?.site === $site && last.pipes === $pipes && last.cables === $cables && last.routing === key)
+        return;
+      last = { site: $site, pipes: $pipes, cables: $cables, routing: key };
+      request($site, { pipes: $pipes, cables: $cables, below: belowOf(routing), routing });
+    },
   );
   return () => {
     stop();
+    last = null;
     // Nothing shows the site any more: no stale request may be submitted later. A build already running
     // finishes (its groups stay cached for coming back).
     clearTimeout(idleTimer);
@@ -74,6 +85,7 @@ const controller = createSiteWorkerController({
     siteBuild.set(result);
   },
   onBusy: setBusy,
+  onProgress: (p) => arrangeProgress.set(p),
 });
 
 /** Pipes are not routed while the user is editing; they follow this long after the last edit. */
@@ -137,8 +149,21 @@ export function importSite(
  * in the build worker: a big template can take seconds to measure. With `optimize` the arrangement is then
  * annealed and routed a few times, which takes longer.
  */
-export function arrangeInSize(site: SiteState, below: boolean, optimize = false): Promise<Arranged> {
-  return controller.arrange(site, below, optimize).catch(rebuildAfter);
+export function arrangeInSize(
+  site: SiteState,
+  routing: SiteRouting,
+  optimize = false,
+  against = routing,
+): Promise<Arranged> {
+  return controller.arrange(site, routing, optimize, against).catch(rebuildAfter);
+}
+
+/**
+ * Stops the running arrange / optimise: its promise rejects with `JobCancelled('aborted')` and the template
+ * and its undo history stay as they were.
+ */
+export function cancelArrange(): void {
+  controller.cancelArrange();
 }
 
 /** Forgets the pipes the scene keeps to show faded; set while something shows `siteScene`. */
@@ -212,3 +237,23 @@ function inSiteView<T>(source: Readable<T>, empty: T): Readable<T> {
 export const siteBuildInView = inSiteView<SiteResult>(siteBuild, { build: null, error: null });
 /** `siteScene` while the site view is shown; null in the machine view. */
 export const siteSceneInView = inSiteView<SceneModel | null>(siteScene, null);
+
+/** What the routing of the built site did: the router's numbers and the underground depth it could use. */
+export interface SiteRouteInfo {
+  routeStats: SiteBuild['stats']['routeStats'];
+  /** The routing the build was asked for. */
+  routing: SiteRouting;
+  /** The depth actually used (less than asked when the grid would be too big). */
+  depthUsed: number;
+}
+
+/** `routeStats` and `depthUsed` of the routed build on screen; null before one, and while pipes are pending. */
+export const siteRouteInfo: Readable<SiteRouteInfo | null> = derived(siteBuildInView, ($r) => {
+  const b = $r.build;
+  if (!b || $r.pending) return null;
+  return {
+    routeStats: b.stats.routeStats,
+    routing: { style: b.routing.style, depth: b.routing.depth },
+    depthUsed: b.routing.depthUsed,
+  };
+});

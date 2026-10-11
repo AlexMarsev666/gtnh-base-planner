@@ -9,7 +9,7 @@ import type { AppMode } from '../share/sitePersist';
 import { connectBelow, defaultPlan, plan } from '../state/store';
 import { catalog } from '../data/catalog';
 import { dominantBlockId, hatchKindsOf, iconFaces, matchesQuery, shade } from './catalogView';
-import { createBuildStore, createPipeline, type PipelineDeps } from './pipeline';
+import { createBuildStore, createPipeline, planBom, type PipelineDeps } from './pipeline';
 import { statsParts } from './statsText';
 
 const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -119,6 +119,68 @@ describe('pipeline', () => {
       [{ ...p, limits: { ...p.limits, x: 3 }, enabledHatches: [] }, false, false, true],
       [false, true, false, true],
     );
+  });
+
+  it('repacks and replaces hatches when the mirror or wall sharing changes', () => {
+    const deps = fakeDeps();
+    const run = createPipeline(deps);
+    const p = defaultPlan();
+    const base = run(p, false);
+    const packs = () => deps.packUnits.mock.calls.length;
+    expect(packs()).toBe(1);
+    const mirrored = run({ ...p, mirror: true }, false);
+    expect(packs()).toBe(2);
+    expect(mirrored.def).not.toBe(base.def);
+    expect(mirrored.def?.id).toBe(base.def?.id);
+    run({ ...p, mirror: true, wallshare: 'stack' }, false);
+    expect(packs()).toBe(3);
+    // The preference reaches the packer and the looser layouts.
+    expect(deps.packUnits.mock.calls[2]).toEqual([expect.anything(), p.count, p.limits, 'stack']);
+    run({ ...p, mirror: true, wallshare: 'auto' }, false);
+    expect(packs()).toBe(4);
+  });
+
+  it('passes the incoming hatch options on when hatches may face down', () => {
+    const deps = fakeDeps();
+    deps.placeHatches.mockImplementation(((..._a: unknown[]) => ({
+      hatches: [],
+      unplaced: [{ unitId: 0, kind: 'energy' }],
+    })) as never);
+    deps.layoutCandidates.mockImplementation(function* () {} as never);
+    const run = createPipeline(deps);
+    run(defaultPlan(), false, false, true);
+    for (const call of deps.placeHatches.mock.calls as unknown[][])
+      expect(call[4]).toMatchObject({ below: true });
+  });
+
+  it('exposes the hatch capacity and the wall sharing fallback', () => {
+    const deps = fakeDeps();
+    const capacity = [{ needed: 3, available: 2, kind: 'energy', units: 1 }] as never;
+    deps.placeHatches.mockImplementation((() => ({ hatches: [], unplaced: [], capacity })) as never);
+    const fallback = { wanted: 'stack', used: 'auto', reason: 'geometry' } as const;
+    deps.packUnits.mockImplementation(((_d: unknown, count: number) => ({
+      units: [{ id: 0, origin: [0, 0, 0], rotation: 0 }],
+      requested: count,
+      placed: 1,
+      fallback,
+    })) as never);
+    const r = createPipeline(deps)(defaultPlan(), false);
+    expect(r.capacity).toBe(capacity);
+    expect(r.wallshareFallback).toEqual(fallback);
+    expect(createPipeline(fakeDeps())(defaultPlan(), false).capacity).toBeUndefined();
+  });
+
+  it('counts hatches of the machine tier and of tiered single hatches in the bill of materials', () => {
+    const scene = createPipeline()(defaultPlan('electric-blast-furnace'), false).scene!;
+    const tiersOf = (b: ReturnType<typeof planBom>) => b.blocks.filter((r) => r.tier).map((r) => r.tier);
+    expect(tiersOf(planBom(scene, { tier: 'HV' }))).toContain('HV');
+    expect(tiersOf(planBom(scene, { tier: 'HV' }))).not.toContain('EV');
+    // No tier set: untiered, as before.
+    expect(tiersOf(planBom(scene, {}))).toEqual([]);
+    const energy = scene.hatches.findIndex((h) => h.kind === 'energy');
+    expect(energy).toBeGreaterThanOrEqual(0);
+    const some = planBom(scene, { tier: 'HV', hatchTiers: { 'energy:0': 'EV' } });
+    expect(tiersOf(some)).toEqual(expect.arrayContaining(['HV', 'EV']));
   });
 
   it('loosens the layout when pipes cannot reach every hatch, and routes it once', () => {

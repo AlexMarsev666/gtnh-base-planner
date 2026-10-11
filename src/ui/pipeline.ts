@@ -1,6 +1,10 @@
 import { derived, writable, type Readable } from 'svelte/store';
 import { getMultiblock } from '../data/catalog';
+import { requiredBlocks, type Bom } from '../model/bom';
+import { mirroredDef } from '../model/mirror';
 import { effectiveSize, sizedDef } from '../model/resize';
+import type { PlanState } from '../model/plan/types';
+import type { SceneModel } from '../model/render/types';
 import type { MultiblockDef } from '../model/multiblock/types';
 import type { AppMode } from '../share/sitePersist';
 import { appMode } from '../state/site';
@@ -78,5 +82,20 @@ export const machineBusy = machine.busy;
 /** The multiblock of the current plan at its size, known at once (the build itself arrives later). */
 export const machineDef: Readable<MultiblockDef | undefined> = derived(plan, ($plan) => {
   const raw = getMultiblock($plan.multiblockId);
-  return raw ? sizedDef(raw, effectiveSize(raw, $plan.size)) : undefined;
+  if (!raw) return undefined;
+  const sized = sizedDef(raw, effectiveSize(raw, $plan.size));
+  return $plan.mirror ? mirroredDef(sized) : sized;
 });
+
+/** The bill of materials of a machine build, with the plan's machine and hatch tiers. */
+export function planBom(scene: SceneModel, p: Pick<PlanState, 'tier' | 'hatchTiers'>): Bom {
+  return requiredBlocks(scene, undefined, {
+    machineTier: p.tier,
+    hatchTiers: p.hatchTiers,
+  });
+}
+
+/** The bill of materials of the machine on screen (empty before it is built). */
+export const machineBom: Readable<Bom> = derived([build, plan], ([$build, $plan]) =>
+  $build.scene ? planBom($build.scene, $plan) : { blocks: [], io: [], totalBlocks: 0 },
+);

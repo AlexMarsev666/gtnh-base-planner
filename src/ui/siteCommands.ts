@@ -2,8 +2,9 @@ import { get, type Readable, type Writable } from 'svelte/store';
 import { getSiteDef } from '../data/generic';
 import { t } from '../i18n/en';
 import type { SiteBuild } from '../model/site/buildTypes';
-import type { SiteState } from '../model/site/types';
-import { appMode, site, siteGroup } from '../state/site';
+import type { RoutingDepth, SiteRouting, SiteState } from '../model/site/types';
+import { effectiveRouting } from '../share/siteCodec';
+import { appMode, arrangeOutcome, site, siteGroup } from '../state/site';
 import { connectBelow, plan } from '../state/store';
 import { clearSlot, notify, warnOnce, type NoticeAction } from './notices';
 import { withGroupAdded, withGrownToFit, withPlanAdded } from './siteActions';
@@ -70,8 +71,21 @@ export function addPlanToSite(): void {
  * floors above it, and a group bigger than the ground stacks its machines up. The size is never changed. It
  * runs in the build worker, as a big template takes seconds to measure.
  */
-export async function arrange(
-  optimize = false,
+export function arrange(optimize = false, deps: ArrangeDeps = {}): Promise<void> {
+  return runArrange(optimize ? 'optimize' : 'arrange', deps);
+}
+
+/**
+ * Neat routing in one step: arranges the template and switches it to the neat router, underground at least one
+ * layer deep (a deeper setting stays). The new layout and the new routing are one change of the template, so
+ * one undo takes both back.
+ */
+export function neatArrange(deps: ArrangeDeps = {}): Promise<void> {
+  return runArrange('neat', deps);
+}
+
+async function runArrange(
+  kind: 'arrange' | 'optimize' | 'neat',
   {
     arrangeInSize: run = arrangeInSize,
     sites = site,
@@ -83,11 +97,18 @@ export async function arrange(
 ): Promise<void> {
   const s = get(sites);
   if (!s.groups.length) return;
+  const optimize = kind === 'optimize';
+  // The arrangement is built with the options the site itself is built with.
+  const current = effectiveRouting(s, get(below));
+  const startedAgainst = JSON.stringify(current);
+  const routing: SiteRouting =
+    kind === 'neat' ? { style: 'neat', depth: (current.depth || 1) as RoutingDepth } : current;
+  arrangeOutcome.set(null);
   say(optimize ? t.site.optimizing : t.site.arranging, 0, 'arrange');
   const cancelled = () => say(t.site.arrangeCancelled(optimize), 4000, 'arrange');
   let r;
   try {
-    r = await run(s, get(below), optimize);
+    r = await run(s, routing, optimize, current);
   } catch (err) {
     // Replaced by a newer arrange: that one owns the notice now. An import has notices of its own.
     if (err instanceof JobCancelled && err.reason === 'arrange') return;
@@ -103,11 +124,17 @@ export async function arrange(
     return;
   }
   // The template was edited while it was being arranged: the result no longer fits it.
-  if (get(sites) !== s) {
+  if (get(sites) !== s || JSON.stringify(effectiveRouting(get(sites), get(below))) !== startedAgainst) {
     cancelled();
     return;
   }
-  sites.set(r.site);
+  sites.set(kind === 'neat' ? { ...r.site, routing } : r.site);
+  arrangeOutcome.set({
+    kind,
+    fits: r.fits,
+    floors: r.floors,
+    ...(r.optimized ? { improved: r.optimized.improved, truncated: r.optimized.truncated } : {}),
+  });
   say(
     r.fits && r.optimized
       ? optimizedNotice(r.optimized)
@@ -124,7 +151,12 @@ export async function arrange(
 
 /** What `arrange` uses, replaceable in tests. */
 interface ArrangeDeps {
-  arrangeInSize?: (site: SiteState, below: boolean, optimize: boolean) => Promise<Arranged>;
+  arrangeInSize?: (
+    site: SiteState,
+    routing: SiteRouting,
+    optimize: boolean,
+    against: SiteRouting,
+  ) => Promise<Arranged>;
   sites?: Writable<SiteState>;
   below?: Readable<boolean>;
   notify?: (text: string, ms?: number, slot?: string, action?: NoticeAction) => void;

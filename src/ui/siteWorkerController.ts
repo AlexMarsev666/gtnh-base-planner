@@ -6,10 +6,11 @@ import {
   type MachineChoice,
 } from '../import/gtnhplanner';
 import { createSiteBuilder } from '../model/site/build';
+import { AbortedError } from '../model/site/progress';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
-import type { SiteState } from '../model/site/types';
+import type { SiteRouting, SiteState } from '../model/site/types';
 import { warnOnce } from './notices';
-import { arrangeHere, type Arranged } from './siteArrange';
+import { arrangeHere, type Arranged, type ArrangeProgress } from './siteArrange';
 import type { SiteWorkerRequest, SiteWorkerResponse } from './siteWorker';
 
 export interface SiteResult {
@@ -36,6 +37,11 @@ export interface SiteWorkerEvents {
   onBuild: (result: SiteResult) => void;
   /** `now`: show it at once (routing is known to be slow), else only if the build is not quick. */
   onBusy: (busy: boolean, now?: boolean) => void;
+  /**
+   * How far the running arrange / optimise has got; `{ done: 0, total: 0 }` when it starts (nothing known
+   * yet) and null when it is over, however it ended.
+   */
+  onProgress?: (progress: ArrangeProgress | null) => void;
 }
 
 export interface SiteWorkerController {
@@ -56,10 +62,25 @@ export interface SiteWorkerController {
   ) => Promise<ImportResult>;
   /**
    * Arranges `site` inside its own size, on floors if need be; drops the current job, which it replaces. With
-   * `optimize`, the arrangement is then annealed and the best layout by the router's numbers kept. Submitting
-   * a different site (or another `below`) while it runs cancels it with `JobCancelled('edit')`.
+   * `optimize`, the arrangement is then annealed and the best layout by the router's numbers kept. `routing`
+   * is the routing it arranges with (hatches face down when its depth is above 0); `against` is the routing
+   * the site was being built with when the job started (default `routing`; they differ for NEAT, which
+   * arranges with a routing the site does not have yet). Submitting a different site, or a build whose routing
+   * differs from `against`, while it runs cancels it with `JobCancelled('edit')`: a result for a template that
+   * has changed is never delivered.
    */
-  arrange: (site: SiteState, below: boolean, optimize?: boolean) => Promise<Arranged>;
+  arrange: (
+    site: SiteState,
+    routing: SiteRouting,
+    optimize?: boolean,
+    against?: SiteRouting,
+  ) => Promise<Arranged>;
+  /**
+   * Stops the running arrange / optimise (it rejects with `JobCancelled('aborted')`; nothing else changes).
+   * The worker is terminated, as it cannot hear a message while it searches. An arrangement running here
+   * (no worker) can only be stopped at a progress report from inside the run, as it blocks everything else.
+   */
+  cancelArrange: () => void;
 }
 
 type BuildRequest = { site: SiteState; opts: SiteBuildOptions; pending: boolean };
@@ -73,8 +94,12 @@ interface PendingImport {
 
 interface PendingArrange {
   site: SiteState;
-  below: boolean;
+  routing: SiteRouting;
+  /** The routing the site was built with when the job started. */
+  against: SiteRouting;
   optimize: boolean;
+  /** Aborts an arrangement done right here. */
+  abort: AbortController;
   resolve: (r: Arranged) => void;
   reject: (err: Error) => void;
 }
@@ -127,11 +152,21 @@ export function createSiteWorkerController(
     }
   }
 
+  /** The arrangement being done right here, if any (it can only be interrupted from a progress report). */
+  let localJob: PendingArrange | null = null;
+
   function arrangeLocally(job: PendingArrange): void {
+    localJob = job;
     try {
-      job.resolve(arrangeHere(job.site, job.below, here(), job.optimize));
+      const onProgress = (p: ArrangeProgress) => events.onProgress?.(p);
+      job.resolve(
+        arrangeHere(job.site, job.routing, here(), job.optimize, { onProgress, signal: job.abort.signal }),
+      );
     } catch (err) {
-      job.reject(err instanceof Error ? err : new Error(String(err)));
+      job.reject(err instanceof AbortedError ? new JobCancelled('aborted') : asError(err));
+    } finally {
+      localJob = null;
+      events.onProgress?.(null);
     }
   }
 
@@ -158,7 +193,10 @@ export function createSiteWorkerController(
     const was = inFlight;
     inFlight = null;
     if (was && 'import' in was) was.import.reject(new JobCancelled(reason));
-    if (was && 'arrange' in was) was.arrange.reject(new JobCancelled(reason));
+    if (was && 'arrange' in was) {
+      was.arrange.reject(new JobCancelled(reason));
+      events.onProgress?.(null);
+    }
   }
 
   function startWorker(): Worker | null {
@@ -179,6 +217,10 @@ export function createSiteWorkerController(
       const msg = e.data;
       const job = inFlight;
       if (!job || msg.id !== job.id) return;
+      if ('progress' in msg) {
+        if ('arrange' in job) events.onProgress?.(msg.progress);
+        return;
+      }
       if ('partial' in msg && msg.partial) {
         // Groups first; the routed build of the same request is still coming.
         if (!queued && 'build' in job)
@@ -191,6 +233,7 @@ export function createSiteWorkerController(
         if ('imported' in msg) job.import.resolve(msg.imported);
         else job.import.reject(new Error('error' in msg ? msg.error : 'Import failed'));
       } else if ('arrange' in job) {
+        events.onProgress?.(null);
         if ('arranged' in msg) job.arrange.resolve(msg.arranged);
         else job.arrange.reject(new Error('error' in msg ? msg.error : 'Arrange failed'));
       } else if ('error' in msg) {
@@ -246,11 +289,11 @@ export function createSiteWorkerController(
       // The worker is busy with a site that is gone (an import or an opened file replaced it): drop that
       // build rather than wait for it. Its group cache would not help the new site anyway.
       if (inFlight && 'build' in inFlight && replaced(inFlight.build.site, site)) stopWorker('edit');
-      // An arrangement of another template (or another `below`) no longer fits what the user is editing.
+      // An arrangement of another template (or another routing) no longer fits what the user is editing.
       else if (
         inFlight &&
         'arrange' in inFlight &&
-        (inFlight.arrange.site !== site || inFlight.arrange.below !== !!opts.below)
+        (inFlight.arrange.site !== site || !sameRouting(inFlight.arrange.against, routingOf(opts)))
       )
         stopWorker('edit');
       if (inFlight === null) sendQueued();
@@ -290,22 +333,50 @@ export function createSiteWorkerController(
       });
     },
 
-    arrange(site, below, optimize = false) {
+    arrange(site, routing, optimize = false, against = routing) {
       return new Promise((resolve, reject) => {
-        const job: PendingArrange = { site, below, optimize, resolve, reject };
+        const job: PendingArrange = {
+          site,
+          routing,
+          against,
+          optimize,
+          abort: new AbortController(),
+          resolve,
+          reject,
+        };
         // Builds of the current site wait: the arrangement changes it.
         queued = null;
         if (inFlight) stopWorker('arrange');
         const w = workerFailed ? null : startWorker();
+        events.onProgress?.({ done: 0, total: 0, phase: 'arrange' });
         if (!w) {
           arrangeLocally(job);
           return;
         }
         inFlight = { id: ++nextId, arrange: job };
-        post(w, { id: inFlight.id, type: 'arrange', site, below, optimize });
+        post(w, { id: inFlight.id, type: 'arrange', site, routing, optimize });
       });
     },
+
+    cancelArrange() {
+      localJob?.abort.abort();
+      if (!inFlight || !('arrange' in inFlight)) return;
+      inFlight.arrange.abort.abort();
+      stopWorker('aborted');
+      sendQueued();
+    },
   };
+}
+
+const asError = (err: unknown): Error => (err instanceof Error ? err : new Error(String(err)));
+
+/** The routing a build asks for (`below` alone means classic routing, one layer deep or none). */
+function routingOf(opts: SiteBuildOptions): SiteRouting {
+  return opts.routing ?? { style: 'classic', depth: opts.below ? 1 : 0 };
+}
+
+function sameRouting(a: SiteRouting, b: SiteRouting): boolean {
+  return a.style === b.style && a.depth === b.depth;
 }
 
 /** Whether `next` shares fewer than half of its groups (same id, machine and count) with `prev`. */
