@@ -43,7 +43,11 @@ export interface HatchAssign {
 }
 
 export type TransformerStep = 'up' | 'down';
-export const TRANSFORMER_AMPS = [1, 2, 4, 16] as const;
+/**
+ * Transformer families by the amperage of the low side: 4 (plain, 1A in), 16 (Hi-Amp, 4A in; high side UEV or
+ * higher only) and 64 (Power, 16A in).
+ */
+export const TRANSFORMER_AMPS = [4, 16, 64] as const;
 export type TransformerAmps = (typeof TRANSFORMER_AMPS)[number];
 
 export interface SiteGroup {
@@ -96,7 +100,7 @@ export interface SiteGroup {
   assign?: Record<string, HatchAssign>;
   /** Transformers only (single block, `machine` = `transformer`; `tier` is the high side): direction. */
   step?: TransformerStep;
-  /** Transformers only: amperage of the hatches. */
+  /** Transformers only: amperage of the low side (see `TRANSFORMER_AMPS`); absent = 4. */
   amps?: TransformerAmps;
   /** Where an imported group came from (shown in labels and the group list). */
   source?: { name: string; machineCount?: number; tier?: string };

@@ -697,7 +697,8 @@
     "SINGLE_SIFTER": [112, 672, 16, 16],
     "SINGLE_THERMAL_CENTRIFUGE": [128, 672, 16, 16],
     "SINGLE_UNPACKAGER": [144, 672, 16, 16],
-    "SINGLE_WIREMILL": [160, 672, 16, 16]
+    "SINGLE_WIREMILL": [160, 672, 16, 16],
+    "SINGLE_TRANSFORMER": [176, 672, 16, 16]
   },
   "blocks": {
     "GoodGenerator:FRF_Casings@0": {
@@ -3436,6 +3437,12 @@
       "top": "MACHINE_LV_TOP",
       "bottom": "MACHINE_LV_BOTTOM",
       "front": "SINGLE_THERMAL_CENTRIFUGE"
+    },
+    "site.machine.transformer": {
+      "side": "MACHINE_HV_SIDE",
+      "top": "MACHINE_HV_TOP",
+      "bottom": "MACHINE_HV_BOTTOM",
+      "front": "SINGLE_TRANSFORMER"
     },
     "site.machine.unpackager": {
       "side": "MACHINE_LV_SIDE",

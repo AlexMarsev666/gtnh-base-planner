@@ -1,9 +1,11 @@
 import { blockInfo } from '../data/blocks';
 import type { TextureManifest } from '../render/detailed';
 import textureManifest from '../render/textures.json';
+import { TIERS, type Tier } from './core/types';
 import type { HatchKind } from './multiblock/types';
 import type { SceneModel } from './render/types';
 import { isCable } from './routing/kinds';
+import { hatchTier, planHatchKeys } from './tiers';
 
 const TEXTURES = textureManifest as unknown as TextureManifest;
 
@@ -23,8 +25,24 @@ export interface BomRow {
   /** Hatch rows: the casing the hatch replaces and the hatch kind, for the icon. */
   baseBlockId?: string;
   hatchKind?: HatchKind;
-  /** Hatches and buses come in any voltage tier. */
+  /** Hatches and buses come in any voltage tier (unless `tier` says which). */
   anyTier: boolean;
+  /** Hatch rows with a chosen voltage tier: the row is for that tier only. */
+  tier?: Tier;
+}
+
+/**
+ * Voltage tiers of the machine's hatches (see `hatchTier`). The energy and dynamo hatches get `machineTier`
+ * unless `hatchTiers` names them; other hatches are tiered only by `hatchTiers`. A hatch is found by its key:
+ * `keyOf(hatch, index)` for `scene.hatches[index]`, else `hatchKeys[index]`, else the machine view's
+ * `<kind>:<ordinal>` in the order of `scene.hatches`.
+ */
+export interface BomTiers {
+  machineTier?: Tier;
+  hatchTiers?: Record<string, Tier>;
+  /** Keys parallel to `scene.hatches`. */
+  hatchKeys?: readonly string[];
+  keyOf?: (hatch: SceneModel['hatches'][number], index: number) => string;
 }
 
 /** What a pipe or cable network carries. */
@@ -112,27 +130,52 @@ function isTiered(blockId: string): boolean {
   return blockId.startsWith('gt.hatch.') && blockId !== 'gt.hatch.maintenance';
 }
 
+const tierRank = (tier: Tier | undefined): number => (tier ? TIERS.indexOf(tier) + 1 : 0);
+
 /** Blocks of the scene by kind, and the pipes and cables by class. */
-export function requiredBlocks(scene: SceneModel, manifest: TextureManifest = TEXTURES): Bom {
+export function requiredBlocks(
+  scene: SceneModel,
+  manifest: TextureManifest = TEXTURES,
+  tiers?: BomTiers,
+): Bom {
   interface Group {
     blockId: string;
+    tier?: Tier;
     kind: 'controller' | 'casing' | 'hatch';
     count: number;
     baseBlockId?: string;
     hatchKind?: HatchKind;
   }
+  // Tier of the hatch in each cell, when tiers are given.
+  const cellTiers = new Map<string, Tier>();
+  if (tiers) {
+    const keys = tiers.hatchKeys ?? planHatchKeys(scene.hatches);
+    scene.hatches.forEach((h, i) => {
+      const key = tiers.keyOf ? tiers.keyOf(h, i) : keys[i];
+      const tier = hatchTier(h.kind, key, tiers.machineTier, tiers.hatchTiers);
+      if (tier) cellTiers.set(h.cell.join(','), tier);
+      else cellTiers.delete(h.cell.join(','));
+    });
+  }
   const groups = new Map<string, Group>();
   for (const v of scene.voxels) {
     // Site ports mark where a resource enters or leaves the site; they are not blocks to build.
     if (!v.blockId || v.blockId.startsWith('site.port.')) continue;
-    const g = groups.get(v.blockId);
+    // Only hatches that come in any tier get one (not the maintenance hatch, not steam hatches).
+    const tier =
+      v.kind === 'hatch' && v.hatchKind !== 'steamIn' && isTiered(v.blockId)
+        ? cellTiers.get(v.pos.join(','))
+        : undefined;
+    const groupKey = tier ? `${v.blockId}|${tier}` : v.blockId;
+    const g = groups.get(groupKey);
     if (g) {
       g.count++;
       // A block that is a controller anywhere is listed as one.
       if (v.kind === 'controller') g.kind = 'controller';
     } else
-      groups.set(v.blockId, {
+      groups.set(groupKey, {
         blockId: v.blockId,
+        tier,
         kind: v.kind,
         count: 1,
         baseBlockId: v.baseBlockId,
@@ -142,8 +185,13 @@ export function requiredBlocks(scene: SceneModel, manifest: TextureManifest = TE
 
   // Ids sorted first so rows that merge (same name) keep the smallest id's key.
   const merged = new Map<string, BomRow & { kind: Group['kind'] }>();
-  for (const g of [...groups.values()].sort((a, b) => (a.blockId < b.blockId ? -1 : 1))) {
-    const label = blockLabel(g.blockId, manifest);
+  const byId = [...groups.values()].sort(
+    (a, b) =>
+      (a.blockId < b.blockId ? -1 : a.blockId > b.blockId ? 1 : 0) || tierRank(a.tier) - tierRank(b.tier),
+  );
+  for (const g of byId) {
+    const name = blockLabel(g.blockId, manifest);
+    const label = g.tier ? `${name} (${g.tier})` : name;
     const anyTier = isTiered(g.blockId);
     const id = `${label}|${anyTier}`;
     const row = merged.get(id);
@@ -152,13 +200,14 @@ export function requiredBlocks(scene: SceneModel, manifest: TextureManifest = TE
       if (g.kind === 'controller') row.kind = 'controller';
     } else
       merged.set(id, {
-        key: `block:${g.blockId}`,
+        key: g.tier ? `block:${g.blockId}@${g.tier}` : `block:${g.blockId}`,
         label,
         count: g.count,
         blockId: g.blockId,
         baseBlockId: g.baseBlockId,
         hatchKind: g.hatchKind,
-        anyTier,
+        anyTier: g.tier ? false : anyTier,
+        ...(g.tier ? { tier: g.tier } : {}),
         kind: g.kind,
       });
   }

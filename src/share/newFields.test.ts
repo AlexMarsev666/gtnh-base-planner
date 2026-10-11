@@ -258,11 +258,11 @@ describe('site group: tier, hatchTiers, mirror, wallshare, assign', () => {
 });
 
 describe('site group: transformer step and amps', () => {
-  const single = { multiblockId: 'single-block', machine: 'macerator', tier: 'MV', step: 'down', amps: 4 };
+  const single = { multiblockId: 'single-block', machine: 'macerator', tier: 'MV', step: 'down', amps: 16 };
 
   it('round-trips on a single block', async () => {
     const site = siteWith(single);
-    expect(validateSiteState(site).groups[0]).toMatchObject({ tier: 'MV', step: 'down', amps: 4 });
+    expect(validateSiteState(site).groups[0]).toMatchObject({ tier: 'MV', step: 'down', amps: 16 });
     expect(await decodeSite(await encodeSite(site))).toEqual(validateSiteState(site));
     expect(siteFromJson(siteToJson(site))).toEqual(validateSiteState(site));
   });
@@ -274,7 +274,14 @@ describe('site group: transformer step and amps', () => {
   });
 
   it('rejects bad shapes', () => {
-    for (const extra of [{ step: 'sideways' }, { amps: 3 }, { amps: '4' }, { step: 1 }])
+    for (const extra of [
+      { step: 'sideways' },
+      { amps: 3 },
+      { amps: 1 },
+      { amps: 2 },
+      { amps: '4' },
+      { step: 1 },
+    ])
       expect(() => validateSiteState(siteWith({ ...single, ...extra })), JSON.stringify(extra)).toThrow(
         PlanFormatError,
       );

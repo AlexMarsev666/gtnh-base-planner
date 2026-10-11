@@ -223,3 +223,93 @@ describe('tickedLast', () => {
     expect(rows.map((r) => r.key)).toEqual(['a', 'b', 'c', 'd']);
   });
 });
+
+describe('requiredBlocks with tiers', () => {
+  const ebf = getMultiblock('electric-blast-furnace')!;
+  const at = (kind: HatchKind, x: number): HatchPlacement => ({
+    kind,
+    cell: [x, 0, 0],
+    face: 'north',
+    unitIds: [1],
+  });
+  const hatches = [
+    at('energy', 0),
+    at('energy', 1),
+    at('itemIn', 2),
+    at('itemIn', 3),
+    at('itemIn', 4),
+    at('maintenance', 5),
+  ];
+  const ebfScene = () => buildSceneModel(ebf, [oven(1, 0)], hatches, stats, null, DEFAULT_HATCH_COLORS);
+  const rows = (bom: ReturnType<typeof requiredBlocks>) =>
+    bom.blocks.filter((r) => r.hatchKind).map((r) => [r.label, r.count]);
+
+  it('is unchanged without tier information', () => {
+    const s = ebfScene();
+    const plain = requiredBlocks(s);
+    expect(requiredBlocks(s, undefined, {})).toEqual(plain);
+    expect(requiredBlocks(s, undefined, { hatchTiers: { 'muffler:0': 'HV' } }).blocks).toEqual(plain.blocks);
+    expect(plain.blocks.every((r) => r.tier === undefined)).toBe(true);
+    expect(rows(plain)).toEqual([
+      ['Input Bus', 3],
+      ['Energy Hatch', 2],
+      ['Maintenance Hatch', 1],
+    ]);
+  });
+
+  it('gives the energy hatches the machine tier and leaves the other hatches as any tier', () => {
+    const bom = requiredBlocks(ebfScene(), undefined, { machineTier: 'EV' });
+    expect(rows(bom)).toEqual([
+      ['Input Bus', 3],
+      ['Energy Hatch (EV)', 2],
+      ['Maintenance Hatch', 1],
+    ]);
+    const energy = bom.blocks.find((r) => r.tier === 'EV')!;
+    expect(energy).toMatchObject({ anyTier: false, key: 'block:gt.hatch.energy@EV' });
+    expect(bom.totalBlocks).toBe(requiredBlocks(ebfScene()).totalBlocks);
+  });
+
+  it('never lists a MAX energy hatch', () => {
+    const bom = requiredBlocks(ebfScene(), undefined, { machineTier: 'MAX' });
+    expect(rows(bom)).toContainEqual(['Energy Hatch (UXV)', 2]);
+  });
+
+  it('splits rows by tier when single hatches have their own', () => {
+    const bom = requiredBlocks(ebfScene(), undefined, {
+      machineTier: 'HV',
+      hatchTiers: {
+        'itemIn:0': 'HV',
+        'itemIn:1': 'HV',
+        'itemIn:2': 'LV',
+        'energy:1': 'IV',
+        'maintenance:0': 'EV',
+      },
+    });
+    expect(rows(bom)).toEqual([
+      ['Input Bus (HV)', 2],
+      ['Energy Hatch (HV)', 1],
+      ['Energy Hatch (IV)', 1],
+      ['Input Bus (LV)', 1],
+      ['Maintenance Hatch', 1],
+    ]);
+  });
+
+  it('reads hatch keys from a parallel list or a function', () => {
+    const keys = ['energy:a', 'energy:b', 'itemIn:r:0', 'itemIn:r:0', 'itemIn:r:shared', 'maintenance:0'];
+    const hatchTiers = { 'energy:b': 'ZPM', 'itemIn:r:0': 'MV' } as const;
+    const a = requiredBlocks(ebfScene(), undefined, { hatchKeys: keys, hatchTiers, machineTier: 'LV' });
+    const b = requiredBlocks(ebfScene(), undefined, {
+      keyOf: (_h, i) => keys[i],
+      hatchTiers,
+      machineTier: 'LV',
+    });
+    expect(b).toEqual(a);
+    expect(rows(a)).toEqual([
+      ['Input Bus (MV)', 2],
+      ['Energy Hatch (LV)', 1],
+      ['Energy Hatch (ZPM)', 1],
+      ['Input Bus', 1],
+      ['Maintenance Hatch', 1],
+    ]);
+  });
+});

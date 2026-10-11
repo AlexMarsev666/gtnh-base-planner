@@ -8,11 +8,17 @@
  * copied to `tools/texture-sources/SINGLE_<ID>.png` (the atlas script crops it to its first frame and puts it
  * over the machine hull) and listed in `ATTRIBUTION.md`. The ones with a `tile` reuse a tile the atlas has
  * already.
+ *
+ * Tiers: the hull of every tier (`MACHINE_<tier>_SIDE/TOP/BOTTOM`) and, for the machine marked `transformer`,
+ * the overlays of every family as GT draws them: `SINGLE_TRANSFORMER_<IN|OUT>_<TIER>` (single-amp) and
+ * `SINGLE_TRANSFORMER_<IN|OUT>_<4|16|64>A_<TIER>`. The names are those of `transformerLook` in
+ * src/data/single-machines.ts. Basic machines look the same in every tier apart from the hull.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
+import { TIERS } from '../../src/model/core/types.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const OUT = join(ROOT, 'tools/texture-sources');
@@ -25,14 +31,40 @@ if (!jar) {
   process.exit(1);
 }
 const machines = JSON.parse(readFileSync(join(ROOT, 'src/data/single-machines.json'), 'utf8'));
+// Tile name -> path in the jar (two tiles may be the same sprite).
 const wanted = new Map(
   machines
     .filter((m) => m.sprite)
-    .map((m) => [ASSETS + m.sprite + '.png', `SINGLE_${m.id.toUpperCase().replaceAll('-', '_')}`]),
+    .map((m) => [`SINGLE_${m.id.toUpperCase().replaceAll('-', '_')}`, ASSETS + m.sprite + '.png']),
 );
-const files = unzipSync(readFileSync(jar), { filter: (f) => wanted.has(f.name) });
+const ICONSETS = 'iconsets/';
+// Overlays of the transformers (MTETransformer, MTETransformerHiAmp, MTEWetTransformer): the single-amp
+// hatch overlay (plain transformer, high side LV..MAX) and the 4, 16 and 64 amp ones of every tier.
+if (machines.some((m) => m.transformer)) {
+  TIERS.forEach((tier, i) => {
+    const tag = tier.toUpperCase();
+    for (const dir of ['IN', 'OUT']) {
+      if (i >= 1)
+        wanted.set(
+          `SINGLE_TRANSFORMER_${dir}_${tag}`,
+          `${ASSETS}${ICONSETS}OVERLAY_ENERGY_${dir}_${tier}.png`,
+        );
+      for (const amps of [4, 16, 64])
+        wanted.set(
+          `SINGLE_TRANSFORMER_${dir}_${amps}A_${tag}`,
+          `${ASSETS}${ICONSETS}OVERLAY_ENERGY_${dir}_MULTI_${amps}A_${tier}.png`,
+        );
+    }
+  });
+}
+// The hull of every tier.
+for (const tier of TIERS)
+  for (const part of ['SIDE', 'TOP', 'BOTTOM'])
+    wanted.set(`MACHINE_${tier}_${part}`, `${ASSETS}${ICONSETS}MACHINE_${tier}_${part}.png`);
+const paths = new Set(wanted.values());
+const files = unzipSync(readFileSync(jar), { filter: (f) => paths.has(f.name) });
 mkdirSync(OUT, { recursive: true });
-for (const [path, tile] of wanted) {
+for (const [tile, path] of wanted) {
   if (!files[path]) throw new Error(`the jar has no ${path}`);
   writeFileSync(join(OUT, `${tile}.png`), files[path]);
 }
@@ -49,7 +81,7 @@ const section = [
   '[`tools/game-dump/single-machines.mjs`](tools/game-dump/single-machines.mjs)) are these sprites of the',
   'GT5-Unofficial `5.09.54.205` jar, drawn over the machine hull:',
   '',
-  ...[...wanted.keys()].sort().map((p) => `- \`src/main/resources/${p}\``),
+  ...[...paths].sort().map((p) => `- \`src/main/resources/${p}\``),
   '',
   END,
 ].join(NL);
