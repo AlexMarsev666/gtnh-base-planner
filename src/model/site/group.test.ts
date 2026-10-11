@@ -29,6 +29,22 @@ function resourcesOf(b: ReturnType<typeof build>, unitId: number, kind: HatchKin
     .sort();
 }
 
+describe('where a resource may attach (ends)', () => {
+  const demand: Demand = { fluidOut: ['fluid:f'] };
+  it('boxes the cells a kind may take, and has none where every open face is disallowed for it', () => {
+    const b = build(1, demand, {}, oil, ['energy']);
+    expect(b.ends?.['fluid:f']).toBeDefined();
+    const sealed = {
+      ...oil,
+      legend: {
+        ...oil.legend,
+        r: { ...oil.legend.r, disallowFaces: { fluidOut: ['north', 'south', 'east', 'west', 'up', 'down'] } },
+      },
+    } as typeof oil;
+    expect(build(1, demand, {}, sealed, ['energy']).ends?.['fluid:f']).toBeUndefined();
+  });
+});
+
 describe('resource hatches as requests', () => {
   it('gives every unit the full set when it fits', () => {
     const b = build(3, { itemIn: items(2) });

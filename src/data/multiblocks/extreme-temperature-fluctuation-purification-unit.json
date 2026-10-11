@@ -274,6 +274,7 @@
   "hatchBlocks": { "fluidIn": "gt.hatch.inputHatch", "fluidOut": "gt.hatch.outputHatch" },
   "shareableHatches": ["fluidIn", "fluidOut"],
   "requiredHatches": { "fluidIn": { "min": 1 }, "fluidOut": { "min": 1 } },
+  "minCasings": [{ "chars": ["D"], "min": 50 }],
   "defaultHatches": ["fluidIn", "fluidOut"],
   "zones": {
     "dot1": {

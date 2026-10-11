@@ -1,5 +1,6 @@
 import type { Rotation } from '../core/types';
 import { AbortedError, throttledProgress, throwIfAborted } from './progress';
+import { coversFootprint, turnedReach, type Terminals } from './terminals';
 import type { SiteGroup, SiteState } from './types';
 
 export { AbortedError };
@@ -22,8 +23,14 @@ export { AbortedError };
  *    run back and forth (the second one west, the third east again, ...), so the end of one floor lies next
  *    to the start of the next.
  *
+ * 6. Each group is turned so that its hatches can face the way the flow goes: those that take resources in
+ *    reach towards the west (the east on the floors that run back), those that give them out towards the other
+ *    side, as far as the cells a hatch of that kind may take allow. That is a choice between the two turns the
+ *    footprint allows, and needs `ends`.
+ *
  * `sizeOf` gives a group's local footprint [x, z] (before rotation). Pure and deterministic, and idempotent:
- * arranging an arranged site gives the same site (rotations are chosen from the footprints alone).
+ * arranging an arranged site gives the same site (rotations are chosen from the footprints and the groups'
+ * hatches alone, never from the current rotations).
  */
 
 export interface ArrangeResult {
@@ -39,6 +46,8 @@ export interface ArrangeResult {
 export interface ArrangeOptions {
   /** Build on several floors instead of widening the site; gives each group's height (blocks). */
   floors?: { heightOf: (id: string) => number };
+  /** Where each group's links attach, by group id (see `localTerminals`). Groups without it are not turned to face. */
+  ends?: (id: string) => Terminals | undefined;
   /** Called with (steps done, steps in all) as the arrangement proceeds (at most ~20 times a second). */
   onProgress?: (done: number, total: number) => void;
   /** Aborting throws `AbortedError`. */
@@ -182,8 +191,50 @@ export function arrangeSite(
   };
 
   /**
+   * Resources each group takes in and gives out: links to a boundary port count too, the ports being on the
+   * west (in) and east (out) edges.
+   */
+  const takes = ids.map(() => new Set<string>());
+  const gives = ids.map(() => new Set<string>());
+  for (const l of site.links) {
+    const to = 'group' in l.to ? index.get(l.to.group) : undefined;
+    const from = 'group' in l.from ? index.get(l.from.group) : undefined;
+    if (to !== undefined) takes[to].add(l.resource);
+    if (from !== undefined) gives[from].add(l.resource);
+  }
+  /**
+   * The turn of group `v` for its footprint turn `r` (0 or 1): `r` or the half turn after it, whichever lets the
+   * hatches that take resources in reach further west and those that give out further east (the other way
+   * round when `back`), by the part of the group each may go on. Ties, and groups whose hatches may go
+   * anywhere or are unknown, keep `r`.
+   */
+  const facing = (v: number, r: Rotation, back: boolean): Rotation => {
+    const ends = opts.ends?.(ids[v]);
+    const size = sizeOf(ids[v]) ?? [3, 3];
+    if (!ends) return r;
+    const lean = (t: Rotation) => {
+      let sum = 0;
+      for (const [set, west] of [
+        [takes[v], !back],
+        [gives[v], back],
+      ] as const)
+        for (const k of set) {
+          const box = ends[k];
+          if (!box || coversFootprint(box, size)) continue;
+          const [x0, x1] = turnedReach(box, size, t);
+          // Reaching west is a low west edge; reaching east, a high east edge.
+          sum += west ? x0 : -x1;
+        }
+      return sum;
+    };
+    const half = ((r + 2) % 4) as Rotation;
+    return lean(half) < lean(r) - 1e-9 ? half : r;
+  };
+
+  /**
    * Rotations for a column: all narrow (min x), or all short (min z); the first that fits. Square footprints
-   * stay unrotated. The groups' current rotations play no part, which keeps the arrangement idempotent.
+   * stay unrotated (`facing` may still turn them half way). The groups' current rotations play no part, which
+   * keeps the arrangement idempotent.
    */
   const chooseRotations = (c: number[]): Rotation[] => {
     const options: Rotation[][] = [
@@ -234,7 +285,7 @@ export function arrangeSite(
       let dz = 0;
       for (const e of sub) {
         const [fx, fz] = foot(e.v, e.r);
-        out[e.v].rotation = e.r;
+        out[e.v].rotation = facing(e.v, e.r, floor % 2 === 1);
         // Groups of a column share their west edge.
         out[e.v].origin = [x, 0];
         onFloor.set(e.v, { floor, x, fx });

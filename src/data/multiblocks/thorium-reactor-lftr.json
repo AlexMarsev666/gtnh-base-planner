@@ -36,6 +36,7 @@
     "dynamo": { "min": 4, "max": 4 },
     "muffler": { "min": 4, "max": 4 }
   },
+  "minCasings": [{ "chars": ["A", "E"], "min": 27 }],
   "defaultHatches": ["fluidIn", "fluidOut", "dynamo", "muffler"],
   "zones": {
     "dot1": {

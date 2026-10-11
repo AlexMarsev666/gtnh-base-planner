@@ -1,13 +1,16 @@
 import { isSingleBlock } from '../../data/generic';
-import { rotateDir, rotatedSize, step, unitCells } from '../geometry';
+import { DefinitionError, rotateDir, rotatedSize, step, unitCells } from '../geometry';
 import { layoutCandidates, packUnits } from '../layout/packer';
 import { resolveLayout } from '../plan';
 import { placeHatches } from '../hatches/placement';
+import { findSites } from '../hatches/sites';
+import { inZone, resolveZone, withHatchZones } from '../hatches/zones';
 import type { HatchAvoid, HatchRequest, PlaceOptions, PlaceResult, UnplacedHatch } from '../hatches/types';
 import type { Dir, Rotation, Vec3 } from '../core/types';
 import type { HatchKind, MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
 import type { HatchPlacement, PackResult, WallshareMode, WallStats } from '../plan/types';
 import { computeWallStats } from '../walls';
+import { reachOf, type Reach, type Terminals } from './terminals';
 import {
   distributedRequests,
   fullRequests,
@@ -93,6 +96,8 @@ export interface GroupBuild {
   notes: GroupNote[];
   /** Choices and requirements it could not meet (see `GroupProblem`). */
   problems: GroupProblem[];
+  /** Where each resource's hatches may go (see `Terminals`); absent for single blocks. */
+  ends?: Terminals;
 }
 
 /** Times the spread resources are moved to units with room after a placement (see `rebalanced`). */
@@ -286,7 +291,53 @@ export function buildGroup(
     missing,
     notes,
     problems,
+    ends: candidateEnds(def, resolved.pack.units, requests, below, shift),
   };
+}
+
+/**
+ * Per resource key of `requests`, the box around the cells a hatch for it may take: structure cells with an open
+ * face that allow its kind, in its zone, on a unit that asks for it (in the same frame as `shift` gives).
+ */
+function candidateEnds(
+  def: MultiblockDef,
+  units: readonly Unit[],
+  requests: readonly HatchRequest[],
+  below: boolean,
+  shift: (p: Vec3) => Vec3,
+): Terminals {
+  const keyed = requests.filter((r) => r.key !== undefined);
+  if (keyed.length === 0 || units.length === 0) return {};
+  const zoned = withHatchZones(def);
+  const ids = units.map((u) => u.id);
+  let sites;
+  try {
+    sites = findSites(zoned, units, below).sites;
+  } catch (err) {
+    // A malformed definition places nothing: nothing to lean to. Anything else is a bug.
+    if (err instanceof DefinitionError) return {};
+    throw err;
+  }
+  const cells = new Map<string, [number, number][]>();
+  for (const r of keyed) {
+    const asked = r.units === 'each' ? ids : r.units;
+    const zone = r.zone === undefined ? undefined : resolveZone(zoned, r.zone);
+    const list = cells.get(r.key!) ?? [];
+    for (const site of sites) {
+      if (!site.kinds.has(r.kind) || !site.faces.some((f) => !site.blocked.get(r.kind)?.has(f.dir))) continue;
+      if (!site.unitIds.some((id) => asked.includes(id) && (zone === undefined || inZone(site, id, zone))))
+        continue;
+      const p = shift(site.pos);
+      list.push([p[0], p[2]]);
+    }
+    cells.set(r.key!, list);
+  }
+  const out: Record<string, Reach> = {};
+  for (const [key, list] of cells) {
+    const box = reachOf(list);
+    if (box) out[key] = box;
+  }
+  return out;
 }
 
 /** The capacity overload of a placement (the worst one) and its other unmet hatches, one entry each. */

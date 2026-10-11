@@ -43,6 +43,7 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["b", "l", "t", "c"], "min": 16, "perSlab": 7 }],
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
   "wallshare": true,
   "resize": { "axis": "y", "from": 1, "to": 2, "min": 3, "max": 12, "default": 5, "label": "height" },

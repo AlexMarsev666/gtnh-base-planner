@@ -70,6 +70,7 @@
   "hatchBlocks": { "itemIn": "gt.hatch.inputBus" },
   "shareableHatches": ["itemIn"],
   "requiredHatches": { "itemIn": { "min": 1 } },
+  "minCasings": [{ "chars": ["A"], "min": 20 }],
   "defaultHatches": ["itemIn"],
   "zones": { "dot1": { "kinds": ["itemIn"], "text": "1+ Input Bus: Any machine casing" } },
   "wallshare": true,

@@ -1,7 +1,7 @@
 import { getSiteDef, isSingleBlock } from '../../data/generic';
 import { FLOOR_CLEARANCE } from './arrange';
 import { annealGroups, defaultIterations, type AnnealOptions } from './anneal';
-import { localFootprints, localHeights } from './build';
+import { localFootprints, localHeights, localTerminals } from './build';
 import type { SiteBuild, SiteBuildOptions, SiteBuilder } from './buildTypes';
 import { AbortedError, throttledProgress, throwIfAborted } from './progress';
 import { groupShapes } from './shapes';
@@ -238,6 +238,7 @@ export function optimizeSite(
     const measured = build(site, false);
     const footprints = localFootprints(measured);
     const heights = localHeights(measured);
+    const ends = localTerminals(measured);
     const sizeOf = (id: string) => footprints.get(id);
     const heightOf = (id: string) => heights.get(id) ?? 1;
     const bounds = scoreBounds(site, heightOf);
@@ -291,6 +292,7 @@ export function optimizeSite(
       const r = annealGroups(site, sizeOf, {
         seed: mixSeed(seed, 1, k),
         heightOf,
+        ends,
         shapes: k % 2 === 1 ? shapes : undefined,
         iterations: exploreSteps,
         budgetMs: Math.max(0, limit - used()),
@@ -323,6 +325,7 @@ export function optimizeSite(
         const r = annealGroups({ ...site, groups: best.groups }, sizeOf, {
           seed: mixSeed(seed, 2, run),
           heightOf,
+          ends,
           shapes: run % 2 === 1 ? shapes : undefined,
           iterations: steps,
           budgetMs: Math.max(0, limit - used()),

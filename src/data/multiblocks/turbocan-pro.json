@@ -29,6 +29,11 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A"], "min": 85 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "wallshare": true,
   "notes": "7x5x7 (a round base and top joined by a hollow core ringed by Steel Pipe Casings). Solid Steel Machine Casings (at least 85) take every bus and hatch. The controller sits in the middle layer, two blocks back from the front edge. GT also needs at least one input and one output of any kind."

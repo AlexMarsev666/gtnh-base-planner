@@ -10,7 +10,7 @@ import {
   multiblockForName,
 } from '../data/gtnhplanner-machines';
 import { arrangeSite, grownSize, type ArrangeOptions, type ArrangeResult } from '../model/site/arrange';
-import { createSiteBuilder, localFootprints, localHeights } from '../model/site/build';
+import { createSiteBuilder, localFootprints, localHeights, localTerminals } from '../model/site/build';
 import type { SiteBuilder } from '../model/site/buildTypes';
 import { IO_KINDS, singleBlockLimits } from '../model/site/group';
 import {
@@ -555,10 +555,12 @@ export function arrangeOnFloors(
     const built = builder(s, { pipes: false, cables: false, below });
     const footprints = localFootprints(built);
     const heights = localHeights(built);
+    const ends = localTerminals(built);
     return {
       footprints,
       arranged: arrangeSite(s, (id) => footprints.get(id), {
         floors: { heightOf: (id) => heights.get(id) ?? 1 },
+        ends: (id) => ends.get(id),
         ...progress,
       }),
     };
@@ -922,13 +924,16 @@ export function buildSiteFromGtnh(
     throw new ImportError(`Could not build a valid template: ${err.message}`);
   }
   site = { ...site, groups: stackGroups(site, builder, opts.below) };
-  const sizes = localFootprints(builder(site, { pipes: false, cables: false, below: opts.below }));
-  let arranged = arrangeSite(site, (id) => sizes.get(id));
+  const measured = builder(site, { pipes: false, cables: false, below: opts.below });
+  const sizes = localFootprints(measured);
+  const ends = localTerminals(measured);
+  const arrangeOpts = { ends: (id: string) => ends.get(id) };
+  let arranged = arrangeSite(site, (id) => sizes.get(id), arrangeOpts);
   if (opts.fit !== false) {
     // From the smallest site up, so a large site left from an earlier chain does not stretch every pipe.
     size = grownSize({ ...site, size: [SITE_MIN_SIZE, SITE_MIN_SIZE] }, (id) => sizes.get(id), SITE_MAX_SIZE);
     site = { ...site, size };
-    arranged = arrangeSite(site, (id) => sizes.get(id));
+    arranged = arrangeSite(site, (id) => sizes.get(id), arrangeOpts);
   } else {
     // The size is the user's: what is too wide for one floor goes on the next.
     const laid = arrangeOnFloors(site, builder, opts.below);

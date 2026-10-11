@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { siteFromJson } from '../../share/siteCodec';
 import { AbortedError, FLOOR_CLEARANCE, arrangeSite, grownSize } from './arrange';
-import { createSiteBuilder, localFootprints, localHeights } from './build';
+import { createSiteBuilder, localFootprints, localHeights, localTerminals } from './build';
+import type { Terminals } from './terminals';
 import type { SiteGroup, SiteState } from './types';
 
 function g(id: string, multiblockId: string, count = 1): SiteGroup {
@@ -264,5 +265,120 @@ describe('arrangeSite progress and cancel', () => {
         onProgress: () => later.abort(),
       }),
     ).toThrow(AbortedError);
+  });
+});
+
+describe('arrangeSite faces hatches along the flow', () => {
+  /** a gives r to b. Square groups: only the hatches decide the turn. Cells are local, in 6 x 6. */
+  const pair = (): SiteState => ({
+    ...chain(),
+    groups: [g('a', 'electric-blast-furnace'), g('b', 'electric-blast-furnace')],
+    links: [{ id: '1', from: { group: 'a' }, to: { group: 'b' }, resource: 'r1' }],
+    resources: chain().resources,
+  });
+  const six = () => [6, 6] as [number, number];
+  /** Hatches may only go on the west column (cell x = 0) or the east one (x = 5). */
+  const westBox = [0, 1, 2, 3] as const;
+  const eastBox = [5, 6, 2, 3] as const;
+  const endsOf = (west: boolean) => (id: string) => ({
+    r1: id === 'a' ? (west ? westBox : eastBox) : west ? eastBox : westBox,
+  });
+
+  it('turns a square group half way so its output faces downstream and its input upstream', () => {
+    // Hatches on the wrong sides (a's output on its west, b's input on its east): both are turned.
+    const wrong = arrangeSite(pair(), six, { ends: endsOf(true) });
+    expect(wrong.groups.map((gr) => gr.rotation)).toEqual([2, 2]);
+    // Hatches already on the right sides: no turn, and without any information no turn either.
+    const right = arrangeSite(pair(), six, { ends: endsOf(false) });
+    expect(right.groups.map((gr) => gr.rotation)).toEqual([0, 0]);
+    expect(arrangeSite(pair(), six).groups.map((gr) => gr.rotation)).toEqual([0, 0]);
+  });
+
+  it('is idempotent and independent of the current turns, with hatches', () => {
+    const opts = { ends: endsOf(true) };
+    const once = arrangeSite(pair(), six, opts);
+    expect(arrangeSite({ ...pair(), groups: once.groups }, six, opts)).toEqual(once);
+    const turned = pair().groups.map((gr, i) => ({ ...gr, rotation: ((i + 1) % 4) as 0 | 1 | 2 | 3 }));
+    expect(arrangeSite({ ...pair(), groups: turned }, six, opts)).toEqual(once);
+  });
+
+  it('faces the other way on the floors that run back', () => {
+    const line: SiteState = {
+      ...pair(),
+      size: [20, 20],
+      groups: Array.from({ length: 6 }, (_, i) => g(`g${i}`, 'electric-blast-furnace')),
+      links: Array.from({ length: 5 }, (_, i) => ({
+        id: `l${i}`,
+        from: { group: `g${i}` },
+        to: { group: `g${i + 1}` },
+        resource: `l${i}`,
+      })),
+    };
+    // Every group takes its resource on the west side and gives its own on the east side.
+    const ends = (id: string) => {
+      const i = Number(id.slice(1));
+      return { [`l${i - 1}`]: [0, 1, 2, 3], [`l${i}`]: [5, 6, 2, 3] } as unknown as Terminals;
+    };
+    const r = arrangeSite(line, six, { floors: { heightOf: () => 5 }, ends });
+    expect(r.floors).toBeGreaterThan(1);
+    // Floors run west to east, then back, then west to east again.
+    const levels = [...new Set(r.groups.map((gr) => gr.elevation ?? 0))].sort((x, y) => x - y);
+    for (const gr of r.groups) expect(gr.rotation).toBe(levels.indexOf(gr.elevation ?? 0) % 2 === 1 ? 2 : 0);
+  });
+
+  const arrangeReal = (site: SiteState, withEnds = true) => {
+    const first = createSiteBuilder()(site, { pipes: false, cables: false });
+    const sizes = localFootprints(first);
+    const ends = localTerminals(first);
+    return arrangeSite(site, (id) => sizes.get(id), withEnds ? { ends: (id) => ends.get(id) } : {});
+  };
+  const fluid = { kind: 'fluid' as const, name: 'f', color: '#3366ff' };
+  /** `from` gives a fluid to `to`, one on each side of the chain. */
+  const feed = (from: string, to: string): SiteState => ({
+    ...chain(),
+    groups: [g('p', from), g('q', to)],
+    links: [{ id: '1', from: { group: 'p' }, to: { group: 'q' }, resource: 'f' }],
+    ports: [],
+    resources: { f: fluid },
+  });
+
+  it('turns a cracker so the column its output hatches may go on faces the consumer, in the live build', () => {
+    // The Oil Cracking Unit takes fluid outputs on one side column only. The site is shallow, so the
+    // cracker keeps its long side along X and only the half turn decides which end the column is on.
+    const site = {
+      ...feed('oil-cracking-unit', 'large-chemical-reactor'),
+      size: [40, 8] as [number, number],
+    };
+    const eastOf = (groups: SiteGroup[]) => {
+      const live = createSiteBuilder()({ ...site, groups }, { pipes: false, cables: false });
+      const [p, q] = live.groups;
+      const hatches = p.hatches.filter((h) => h.resource === 'f');
+      expect(hatches.length).toBeGreaterThan(0);
+      expect(q.min[0]).toBeGreaterThan(p.min[0]);
+      const mid = (p.min[0] + p.max[0]) / 2;
+      return hatches.map((h) => h.cell[0] + 0.5 > mid);
+    };
+    const turned = arrangeReal(site);
+    expect(turned.groups[0].rotation).toBe(2);
+    expect(eastOf(turned.groups).every(Boolean)).toBe(true);
+    // Without the hatch information the cracker keeps its footprint turn, and its column faces away.
+    const plain = arrangeReal(site, false);
+    expect(plain.groups[0].rotation).toBe(0);
+    expect(eastOf(plain.groups).some(Boolean)).toBe(false);
+  });
+
+  it('leaves a machine whose hatches may go anywhere as the footprint turned it', () => {
+    const site = feed('large-chemical-reactor', 'large-chemical-reactor');
+    expect(arrangeReal(site).groups.map((gr) => gr.rotation)).toEqual(
+      arrangeReal(site, false).groups.map((gr) => gr.rotation),
+    );
+  });
+
+  it('is idempotent on a real chain, from any turns', () => {
+    const site = chain();
+    const once = arrangeReal(site);
+    expect(arrangeReal({ ...site, groups: once.groups })).toEqual(once);
+    const turned = site.groups.map((gr, i) => ({ ...gr, rotation: ((i + 1) % 4) as 0 | 1 | 2 | 3 }));
+    expect(arrangeReal({ ...site, groups: turned })).toEqual(once);
   });
 });

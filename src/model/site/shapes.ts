@@ -129,7 +129,7 @@ function measure(
   );
   const shapeOf = (id: string, limits: PlanLimits): Shape | null => {
     const b = built.get(id);
-    return b ? { limits, size: [b.size[0], b.size[2]], height: b.size[1] } : null;
+    return b ? { limits, size: [b.size[0], b.size[2]], height: b.size[1], ends: b.ends } : null;
   };
   const sameFoot = (a: Shape, b: Shape) =>
     a.size[0] === b.size[0] && a.size[1] === b.size[1] && a.height === b.height;

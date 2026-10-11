@@ -17,6 +17,7 @@
   "hatchBlocks": { "fluidOut": "gt.hatch.outputHatch" },
   "shareableHatches": ["fluidOut"],
   "requiredHatches": { "fluidOut": { "min": 1, "max": 1 } },
+  "minCasings": [{ "chars": ["A"], "min": 9 }],
   "defaultHatches": ["fluidOut"],
   "zones": {
     "dot1": { "kinds": ["fluidOut"], "text": "1 Steam Hatch: Any casing\n1 Output Hatch: Any casing" }

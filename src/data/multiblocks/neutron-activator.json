@@ -38,6 +38,11 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "maintenance": { "min": 1, "max": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A", "F"], "min": 7 }],
   "defaultHatches": ["itemIn", "itemOut", "maintenance"],
   "zones": {
     "dot1": { "kinds": ["itemIn", "fluidIn"], "text": "1+ Input Bus/Hatch: Any top edge casing" },

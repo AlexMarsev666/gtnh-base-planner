@@ -866,6 +866,11 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1, "max": 2 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["B"], "min": 1250 }],
   "defaultHatches": ["itemIn", "itemOut", "energy"],
   "zones": {
     "dot1": {

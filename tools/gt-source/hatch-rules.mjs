@@ -156,14 +156,15 @@ export class HatchRules {
    * What the controller's structure check demands, which wins over the tooltip: `{ kinds, any, noMaintenance }`.
    * `kinds[kind]` is `{ min?, max? }` from `checkHatchExact/Min/Max` and the `checkHas*` / `checkOne*` helpers
    * `checkMachine` calls (directly or through methods it calls, `super.checkMachine` included); `any` lists the
-   * "any input / any output" checks (`{ input: true }`), whose kind is only known per machine;
+   * "any input / any output" checks (`{ input: true }`), whose kind is only known per machine; `casing` lists the
+   * `checkCasingMin(errors, counter, min)` calls as raw Java text (`{ counter, min }`);
    * `noMaintenance` is set when `getDefaultHasMaintenanceChecks()` returns false. Only calls that always run count
    * (a condition that is not a plain true/false method of the chain skips its branch).
    */
   checksOf(sourceClass) {
     const chain = this.chain(sourceClass);
     const ctx = this.context(chain.map((x) => this.src(x.file)));
-    const out = { kinds: {}, any: {}, noMaintenance: false };
+    const out = { kinds: {}, any: {}, casing: [], noMaintenance: false };
     const need = (kind, min, max) => {
       const r = (out.kinds[kind] ??= {});
       if (min !== undefined) r.min = Math.max(r.min ?? 0, min);
@@ -286,6 +287,10 @@ const HELPER_KIND = {
 
 /** Records the demand of one structure-check call; false when the call is not one. */
 function checkCall(fn, args, ctx, need, out) {
+  if (fn === 'checkCasingMin' && args.length === 3) {
+    out.casing.push({ counter: args[1], min: args[2] });
+    return true;
+  }
   let m = /^checkHatch(Exact|Min|Max)$/.exec(fn);
   if (m) {
     const kind = ELEMENT_KIND[(args[1] ?? '').replace(/^.*\./, '')];

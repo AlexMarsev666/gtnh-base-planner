@@ -2,6 +2,7 @@ import type { Rotation } from '../core/types';
 import { FLOOR_CLEARANCE } from './arrange';
 import type { PlanLimits } from '../multiblock/types';
 import { throwIfAborted } from './progress';
+import { coversFootprint, turnedReach, type Reach, type Terminals } from './terminals';
 import type { SiteGroup, SiteLink, SiteState } from './types';
 
 /**
@@ -15,7 +16,10 @@ import type { SiteGroup, SiteLink, SiteState } from './types';
  *
  * Cost = estimated wire length + `compact` * (width + depth of the groups' bounding box).
  * - Wire length is the half-perimeter of each net's terminals (a net: the links of one resource that share
- *   an end), measured between group centres, in X, Z and height. A boundary port without a position is an
+ *   an end), measured between group centres, in X, Z and height. Where the hatches for the net's resource
+ *   may only go on part of a group (`Terminals`), its terminal is the point of that part, turned with the group,
+ *   nearest the net's other terminals instead of its centre: a group facing its partners away pays for it, so
+ *   turning is worth something even for a square group. A boundary port without a position is an
  *   X-only terminal on its own edge (west for inputs, east for outputs), since it is placed along that edge
  *   wherever the pipes need it.
  *
@@ -60,6 +64,11 @@ export interface AnnealOptions {
    * move that repacks it in place; the result carries the chosen `limits`. Groups without an entry keep theirs.
    */
   shapes?: ReadonlyMap<string, readonly Shape[]>;
+  /**
+   * Where each group's links attach in its current shape (by group id), for groups whose shapes carry no
+   * `ends` of their own. A group without any terminals counts from its centre.
+   */
+  ends?: ReadonlyMap<string, Terminals>;
 }
 
 export interface AnnealResult {
@@ -82,6 +91,8 @@ export interface Shape {
   limits: PlanLimits;
   size: [number, number];
   height: number;
+  /** Where its links attach (see `Terminals`), when known. */
+  ends?: Terminals;
 }
 
 export const DEFAULT_COMPACT = 0.3;
@@ -96,6 +107,9 @@ export function defaultIterations(groups: number): number {
 }
 
 interface Net {
+  resource: string;
+  /** Index of `resource` among the site's net resources (set by `Layout`). */
+  res: number;
   groups: number[];
   /** X of the boundary ports without a position (the edges). */
   edgeX: number[];
@@ -132,7 +146,7 @@ function buildNets(site: SiteState, index: Map<string, number>): Net[] {
   for (const k of parent.keys()) {
     const at = k.indexOf('|');
     const end = k.slice(at + 1);
-    const net = nets.get(find(k)) ?? { groups: [], edgeX: [], fixed: [] };
+    const net = nets.get(find(k)) ?? { resource: k.slice(0, at), res: -1, groups: [], edgeX: [], fixed: [] };
     nets.set(find(k), net);
     if (end.startsWith('g:')) {
       const gi = index.get(end.slice(2));
@@ -170,6 +184,11 @@ class Layout {
   readonly shape: number[];
   /** The shape each group started with. */
   readonly home: number[];
+  /** Middle of each group's hatches per (shape, rotation, resource), measured once (null: none known). */
+  private readonly turned: (Reach | null | undefined)[][];
+  /** Whether any shape knows where its links may attach. */
+  private readonly anyReach: boolean;
+  private readonly resources: string[];
   private readonly y0: number[];
   private readonly h: number[];
   private readonly gap: number;
@@ -183,11 +202,14 @@ class Layout {
     readonly compact: number,
     private readonly centre: number = DEFAULT_CENTRE,
     shapes?: ReadonlyMap<string, readonly Shape[]>,
+    ends?: ReadonlyMap<string, Terminals>,
   ) {
     const gs = site.groups;
     this.n = gs.length;
     const index = new Map(gs.map((g, i) => [g.id, i]));
     this.nets = buildNets(site, index);
+    this.resources = [...new Set(this.nets.map((n) => n.resource))];
+    for (const n of this.nets) n.res = this.resources.indexOf(n.resource);
     this.netsOf = gs.map(() => []);
     this.nets.forEach((net, k) => new Set(net.groups).forEach((gi) => this.netsOf[gi].push(k)));
     this.wires = new Float64Array(this.nets.length);
@@ -206,6 +228,16 @@ class Layout {
       ),
     );
     this.home = [...this.shape];
+    this.shapes.forEach((list, i) => {
+      const own = ends?.get(gs[i].id);
+      if (own && !list[this.shape[i]].ends) {
+        const copy = [...list];
+        copy[this.shape[i]] = { ...list[this.shape[i]], ends: own };
+        this.shapes[i] = copy;
+      }
+    });
+    this.turned = gs.map(() => []);
+    this.anyReach = this.shapes.some((list) => list.some((sh) => sh.ends && Object.keys(sh.ends).length > 0));
     this.x = gs.map((g) => g.origin[0]);
     this.z = gs.map((g) => g.origin[1]);
     this.rot = gs.map((g) => g.rotation);
@@ -235,6 +267,23 @@ class Layout {
   footOf(i: number, r: Rotation, s: number = this.shape[i]): [number, number] {
     const [fx, fz] = this.shapes[i][s].size;
     return r % 2 === 0 ? [fx, fz] : [fz, fx];
+  }
+
+  /**
+   * Bounds from the min corner of group `i` of where its links of resource number `res` may attach in the turn
+   * `r` of shape `s`, or null when that is unknown or anywhere on the group (turning it then changes nothing).
+   */
+  reach(i: number, r: Rotation, s: number, res: number): Reach | null {
+    const memo = this.turned[i];
+    const k = (s * 4 + r) * this.resources.length + res;
+    let at = memo[k];
+    if (at === undefined) {
+      const { ends, size } = this.shapes[i][s];
+      const box = ends?.[this.resources[res]];
+      at = box && !coversFootprint(box, size) ? turnedReach(box, size, r) : null;
+      memo[k] = at;
+    }
+    return at;
   }
 
   /** Whether group `i` is inside the site's margins. */
@@ -314,14 +363,39 @@ class Layout {
     let yl = -Infinity;
     let yh = Infinity;
     let pts = net.edgeX.length + net.fixed.length;
+    // Sums of the terminals' centres, to lean a group's terminal to the others': the reference point.
+    let sx = 0;
+    let sz = 0;
+    let nx = 0;
+    let nz = 0;
+    if (this.anyReach) {
+      for (const gi of net.groups)
+        if (this.present[gi]) {
+          sx += this.x[gi] + this.w[gi] / 2;
+          sz += this.z[gi] + this.d[gi] / 2;
+          nx++;
+          nz++;
+        }
+      for (const px of net.edgeX) ((sx += px), nx++);
+      for (const [px, pz] of net.fixed) ((sx += px), (sz += pz), nx++, nz++);
+    }
     for (const gi of net.groups) {
       if (!this.present[gi]) continue;
       pts++;
       const gx = this.x[gi];
       const gz = this.z[gi];
       const gy = this.y0[gi];
-      const cx = gx + this.w[gi] / 2;
-      const cz = gz + this.d[gi] / 2;
+      let cx = gx + this.w[gi] / 2;
+      let cz = gz + this.d[gi] / 2;
+      // Where the links may attach: as near the others as that box lets it be.
+      const box = this.anyReach ? this.reach(gi, this.rot[gi], this.shape[gi], net.res) : null;
+      if (box) {
+        const rx = nx > 1 ? (sx - cx) / (nx - 1) : cx;
+        const rz = nz > 1 ? (sz - cz) / (nz - 1) : cz;
+        // A hatch is in a block: its terminal is a block's centre.
+        cx = Math.min(gx + box[1] - 0.5, Math.max(gx + box[0] + 0.5, rx));
+        cz = Math.min(gz + box[3] - 0.5, Math.max(gz + box[2] + 0.5, rz));
+      }
       const cy = gy + this.h[gi] / 2;
       if (cx < x0) x0 = cx;
       if (cx > x1) x1 = cx;
@@ -464,6 +538,7 @@ export function annealGroups(
     opts.compact ?? DEFAULT_COMPACT,
     opts.centre ?? DEFAULT_CENTRE,
     opts.shapes,
+    opts.ends,
   );
   const toGroups = () =>
     site.groups.map((g, i) => ({
@@ -502,6 +577,8 @@ export function annealGroups(
   const iterations = opts.iterations ?? defaultIterations(m.n);
   const [w, d] = site.size;
   const gap = site.corridor;
+  /** A rotation other than `r`: a quarter turn either way or a half turn, each as likely. */
+  const turnedBy = (r: Rotation): Rotation => ((r + randInt(1, 3)) % 4) as Rotation;
 
   /** Puts `i` at `x`,`z` (rotated to `r`, packed as shape `s`) if that is a valid place; otherwise leaves it. */
   const tryPlace = (
@@ -573,7 +650,7 @@ export function annealGroups(
         }
       };
       for (let k = 0; k < 14; k++) {
-        const r: Rotation = rand() < 0.2 ? (((m.rot[i] + (rand() < 0.5 ? 1 : 3)) % 4) as Rotation) : m.rot[i];
+        const r: Rotation = rand() < 0.2 ? turnedBy(m.rot[i]) : m.rot[i];
         m.set(i, m.x[i], m.z[i], r);
         const linked = m.partners[i].filter((j) => m.present[j] && j !== i);
         if (k % 2 === 0 && linked.length > 0) {
@@ -666,11 +743,9 @@ export function annealGroups(
     } else if (pickMove < 0.9) {
       const i = randInt(0, m.n - 1);
       const [fx, fz] = m.footOf(i, m.rot[i]);
-      if (fx !== fz) {
-        const r = ((m.rot[i] + (rand() < 0.5 ? 1 : 3)) % 4) as Rotation;
-        const [nx, nz] = m.footOf(i, r);
-        moved = tryPlace(i, Math.round(m.x[i] + fx / 2 - nx / 2), Math.round(m.z[i] + fz / 2 - nz / 2), r);
-      }
+      const r = turnedBy(m.rot[i]);
+      const [nx, nz] = m.footOf(i, r);
+      moved = tryPlace(i, Math.round(m.x[i] + fx / 2 - nx / 2), Math.round(m.z[i] + fz / 2 - nz / 2), r);
     } else {
       moved = ruinAndRecreate();
     }

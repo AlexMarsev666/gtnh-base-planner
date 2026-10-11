@@ -187,6 +187,43 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
       err(`requiredHatches.${k}.min >= 1 but "${k}" is not in defaultHatches`);
   }
 
+  // hatch groups
+  if (def.requiredAny !== undefined && !Array.isArray(def.requiredAny)) err('requiredAny must be an array');
+  for (const [i, group] of (Array.isArray(def.requiredAny) ? def.requiredAny : []).entries()) {
+    const at = `requiredAny[${i}]`;
+    if (!Array.isArray(group?.kinds) || group.kinds.length === 0)
+      err(`${at}.kinds must be a non-empty array`);
+    const seen = new Set<string>();
+    for (const k of Array.isArray(group?.kinds) ? group.kinds : []) {
+      if (!isHatchKind(k)) err(`${at} has invalid hatch kind "${k}"`);
+      else if (!allowed.has(k)) err(`${at} lists "${k}" but no legend cell allows it`);
+      if (seen.has(k)) err(`${at} lists "${k}" twice`);
+      seen.add(k);
+    }
+    if (!isInt(group?.min) || group.min < 1) err(`${at}.min must be an integer >= 1`);
+  }
+
+  // casing minimums
+  if (def.minCasings !== undefined && !Array.isArray(def.minCasings)) err('minCasings must be an array');
+  for (const [i, m] of (Array.isArray(def.minCasings) ? def.minCasings : []).entries()) {
+    const at = `minCasings[${i}]`;
+    const listed = Array.isArray(m?.chars) ? m.chars : [];
+    if (listed.length === 0) err(`${at}.chars must be a non-empty array`);
+    if (new Set(listed).size !== listed.length) err(`${at}.chars lists a character twice`);
+    for (const ch of listed) if (!(ch in legend)) err(`${at}.chars lists "${ch}" which is not a legend key`);
+    if (!isInt(m?.min) || m.min < 1) err(`${at}.min must be an integer >= 1`);
+    if (m?.perSlab !== undefined && (!isInt(m.perSlab) || m.perSlab < 1 || def.resize === undefined))
+      err(`${at}.perSlab must be an integer >= 1 and only on a resizable def`);
+    // The minimum must be reachable: the structure itself holds that many such cells (no hatch in them).
+    const chars = new Set(listed);
+    let cells = 0;
+    for (const layer of Array.isArray(def.layers) ? def.layers : [])
+      for (const row of Array.isArray(layer) ? layer : [])
+        if (typeof row === 'string') for (const ch of row) if (chars.has(ch)) cells++;
+    if (isInt(m?.min) && cells < m.min)
+      err(`${at}.min ${m.min} but the structure has only ${cells} such cells`);
+  }
+
   // zones
   for (const [region, zone] of Object.entries(def.zones ?? {})) {
     const cellKinds = regions.get(region);

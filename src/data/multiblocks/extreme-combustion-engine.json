@@ -36,6 +36,7 @@
     "fluidIn": { "min": 1 },
     "dynamo": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["C"], "min": 30 }],
   "defaultHatches": ["fluidIn", "dynamo", "maintenance", "muffler"],
   "wallshare": true,
   "notes": "GT:NH 2.9 structure: 10 long, 5 high, 5 deep. A 3x3 Robust Tungstensteel block around the controller (at least 30 casings in total) takes the maintenance hatch and muffler; the engine body has Extreme Engine Intake Casings on top (the air above them must stay free), Tungstensteel Turbine Casings that take input hatches (fuel, lubricant, liquid oxygen), Tungstensteel Firebox Casings, a Steel Gear Box shaft ending in the dynamo hatch at the far end, and a PTFE pipe / Chemically Inert floor. PTFE frame boxes stand at the front. The controller sits one block back from the front edge."

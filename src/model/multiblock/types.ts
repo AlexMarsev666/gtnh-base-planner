@@ -35,6 +35,36 @@ export interface HatchRequirement {
 }
 
 /**
+ * A casing minimum (GT `checkCasingMin(errors, counter, min)`): the unit must contain at least `min` cells of
+ * `chars` (legend keys, together), so a hatch standing in such a casing cell does not count. This is how
+ * many casing cells hatches may replace. For a resizable def (see `ResizeRule`) `min` is the minimum of the
+ * stored smallest form and `perSlab` what each repeating slab added by `sizedDef` raises it by, so the minimum at
+ * size `n` is `min + perSlab * (n - resize.min) / (resize.to - resize.from)`; `sizedDef` states it that way (its
+ * result has no `perSlab`).
+ */
+export interface CasingMinimum {
+  /**
+   * Legend keys of this def whose cells GT counts (the cells of the structure elements that bump the counter, so a
+   * plain casing of the same block that GT does not count is not listed).
+   */
+  chars: string[];
+  /** Minimum number of those cells in the smallest form (at least 1). */
+  min: number;
+  /** Added to `min` for each repeating slab of a resizable def (a positive whole number). */
+  perSlab?: number;
+}
+
+/**
+ * A group of hatch kinds of which a unit needs `min` in total (GT `checkHasAnyInput` / `checkHasAnyOutput`:
+ * any input bus or hatch, any output bus or hatch), whichever the player picks. `kinds` are the kinds some cell of
+ * the def can take. Not stated when `requiredHatches` already demands one of them.
+ */
+export interface HatchGroupRequirement {
+  kinds: HatchKind[];
+  min: number;
+}
+
+/**
  * How a multiblock grows along one local axis (GT `beginVariableStructureBlock`), e.g. Distillation Tower
  * height or Assembly Line length. The JSON holds the smallest form (`size[axis] === min`), with one copy of
  * the repeating slab `[from, to)`; a size of `n` inserts `(n - min) / (to - from)` more copies right after
@@ -89,6 +119,13 @@ export interface MultiblockDef {
   shareableHatches: HatchKind[];
   /** Required hatch counts per unit (e.g. EBF muffler min 1 max 1). */
   requiredHatches?: Partial<Record<HatchKind, HatchRequirement>>;
+  /**
+   * Hatch groups of which at least `min` hatches in total are needed, e.g. an input bus or an input hatch
+   * (GT `checkHasAnyInput`), where `requiredHatches` cannot name the kind.
+   */
+  requiredAny?: HatchGroupRequirement[];
+  /** Casing minimums the game's structure check demands (see `CasingMinimum`), one per counted casing. */
+  minCasings?: CasingMinimum[];
   /** Hatch kinds enabled by default in a new plan. */
   defaultHatches: HatchKind[];
   /**

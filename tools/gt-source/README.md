@@ -41,6 +41,30 @@ Four catalog entries still come from the old converter, because the game dump ca
 not on the dump's dev server): Extreme Entity Crusher, Large Essentia Smeltery, Research Completer and Space
 Elevator. Their GT shapes are in `src/data/gt-shapes.generated.json`, checked by `src/data/gt-structures.test.ts`.
 
+## Casing minimums and any-input checks
+
+`casing-min.mjs` reads what a controller's structure check demands beyond its hatch counts and patches it into
+`src/data/multiblocks/*.json` (also hand-made entries; the class comes from the entry's `source`):
+
+```sh
+node tools/gt-source/casing-min.mjs ../gt5u           # report
+node tools/gt-source/casing-min.mjs ../gt5u --write   # patch `minCasings` and `requiredAny`
+```
+
+`checkCasingMin(errors, counter, min)` becomes `minCasings`: the counter's blocks come from the `onElementPass` /
+`if (block == X && meta == N) counter++` that bump it (also through the methods they call), matched to catalog block ids by
+registry name and meta; GT counts only the cells of the elements that bump, so when another element of the shapes the
+check runs places the same block without counting it (a plain casing beside the hatch casing, as in the Industrial
+Compressor), `chars` lists only the legend keys of the same kind (with or without hatches) as the counting element,
+and an entry where that cannot be told apart fails the run. `min` is an `int` expression, size-dependent ones anchored
+on the tooltip's casing line. `checkHasAnyInput/Output` becomes `requiredAny`, also when it is only called under a
+condition (a per-tier loop). Both follow superclasses (large boilers, XL turbines). A minimum or counter it cannot read
+fails the run with the class list (`--partial` writes the rest), as does a class that calls `checkCasingMin` but gets no
+entry, unless the entry is in `UNWRITTEN` with the reason (Exo Foundry: truncated structure; Nano Forge, PCB Factory:
+the check only runs for another tier). It also lists tooltip disagreements and alternatives per structure tier (chosen
+by the tier of the entry's casing, then the tooltip, then the largest the structure meets), and `--write` refreshes
+`src/data/constraints.snapshot.json`. `tools/game-dump/build.mjs` applies the same code to the entries it writes.
+
 ## Hatch elements per hint dot
 
 `hatch-elements.mjs` reads the `.addElement('x', ...)` calls of a controller's structure definition (the nearest class

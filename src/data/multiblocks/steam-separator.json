@@ -26,6 +26,8 @@
   },
   "shareableHatches": ["steamIn", "itemIn", "itemOut", "fluidOut"],
   "requiredHatches": { "steamIn": { "min": 1 }, "itemIn": { "min": 1 } },
+  "requiredAny": [{ "kinds": ["itemOut", "fluidOut"], "min": 1 }],
+  "minCasings": [{ "chars": ["A"], "min": 60 }],
   "defaultHatches": ["steamIn", "itemIn", "itemOut"],
   "wallshare": true,
   "notes": "Steam multiblock: runs on steam from steam input hatches, no energy or maintenance hatch. Every tiered part (machine casing, gear box, pipe casing, firebox, frame) must be the same tier: bronze (shown) or steel (Solid Steel Machine Casing and steel parts; high-pressure steam, faster). Buses are steam input/output buses. Steam centrifuge (Steam Separator), 5x5x5, at least 60 machine casings. The casings take the steam input hatch, steam input and output buses and output hatches; GT also needs at least one output of any kind. Sharing: every hatch found during the structure check is added to each controller whose structure contains it, so steam hatches and buses in a shared wall serve both machines."

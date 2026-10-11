@@ -223,6 +223,7 @@
     "energy": { "min": 1 },
     "dynamo": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 470 }],
   "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "dynamo"],
   "zones": {
     "dot1": {

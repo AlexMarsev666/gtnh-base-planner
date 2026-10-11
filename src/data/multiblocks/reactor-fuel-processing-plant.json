@@ -41,6 +41,7 @@
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 7 }],
   "defaultHatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
   "zones": {
     "dot1": {

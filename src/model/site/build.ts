@@ -7,6 +7,7 @@ import { analysePower } from './power';
 import { placeSitePorts } from './ports';
 import type { RouteResult, RouteStats } from './router';
 import { buildSiteScene } from './siteScene';
+import type { Terminals } from './terminals';
 import { groupToward } from './toward';
 
 /**
@@ -106,5 +107,12 @@ export function localHeights(build: SiteBuild): Map<string, number> {
 export function localFootprints(build: SiteBuild): Map<string, [number, number]> {
   const out = new Map<string, [number, number]>();
   for (const g of build.groups) if (g.build) out.set(g.group.id, [g.build.size[0], g.build.size[2]]);
+  return out;
+}
+
+/** Where each built group's links attach (see `Terminals`), for `arrangeSite` and `annealGroups`. */
+export function localTerminals(build: SiteBuild): Map<string, Terminals> {
+  const out = new Map<string, Terminals>();
+  for (const g of build.groups) if (g.build?.ends) out.set(g.group.id, g.build.ends);
   return out;
 }

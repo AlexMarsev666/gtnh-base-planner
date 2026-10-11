@@ -41,6 +41,7 @@
     "dynamo": { "min": 1, "max": 1 },
     "maintenance": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 130 }],
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "dynamo", "maintenance"],
   "zones": {
     "dot1": {

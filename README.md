@@ -73,7 +73,8 @@ The planner checks layout rules for the transcribed structure only. It is not a 
 2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: ADD MULTIBLOCK, then ADD LINK with a start
    (a group or TEMPLATE INPUT), an end (a group or TEMPLATE OUTPUT) and a resource. In the single-machine view, SETTINGS →
    ADD TO TEMPLATE copies the current plan into the template as a group.
-3. ARRANGE lays the groups out west to east along the flow. NEAT does that and switches to neat routing, at least
+3. ARRANGE lays the groups out west to east along the flow, turning each so its input hatches face upstream and its output
+   hatches downstream (OPTIMIZE turns groups too, by where their hatches are). NEAT does that and switches to neat routing, at least
    one layer under the ground, as one undo step (the layout and the routing come back together). OPTIMIZE arranges,
    then searches for a tighter layout with shorter pipes in the background: simulated annealing on a cheap length
    estimate finds candidates, then a second pass judges every step by the real router. It may also pack a group of
@@ -130,22 +131,24 @@ clamped and impossible rates are dropped, and the dialog says how many values we
 
 Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multiblocks/), typed as `MultiblockDef` in [`src/model/multiblock/types.ts`](src/model/multiblock/types.ts). Files are picked up at build time; there is no registry to edit.
 
-| Field                | Meaning                                                                                      |
-| -------------------- | -------------------------------------------------------------------------------------------- |
-| `id`, `name`, `tier` | Stable id (used in saved plans and links), display name, short tag such as `Steam` or `LV`.  |
-| `source`             | Link to the GT5-Unofficial source the structure was transcribed from.                        |
-| `size`               | `[x, y, z]` in blocks.                                                                       |
-| `layers`             | `layers[y][z]` is a string of length `x`. `~` controller, `-` must be air, space = not part. |
-| `legend`             | Every other character: `{ blockId, hatches? }`. `hatches` lists kinds that may replace it.   |
-| `controller`         | `{ pos, facing, blockId }`; `pos` is the `~` cell, `facing` the front face (local frame).    |
-| `hatchBlocks`        | Block id placed for each hatch kind.                                                         |
-| `shareableHatches`   | Hatch kinds whose single block may serve several controllers.                                |
-| `requiredHatches`    | Optional `{ min, max }` per hatch kind and unit.                                             |
-| `defaultHatches`     | Hatch kinds enabled in a new plan.                                                           |
-| `wallshare`          | Whether casings of two units may overlap when the blocks match.                              |
-| `resize`             | Optional variable size: `{ axis, from, to, min, max, default, label }`, see below.           |
-| `zones`              | Optional hatch zones by legend `region` (`dot<N>`): the kinds meant for it and its tooltip.  |
-| `notes`              | Free-text notes: game version, quirks, hatch behaviour.                                      |
+| Field                | Meaning                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`, `name`, `tier` | Stable id (used in saved plans and links), display name, short tag such as `Steam` or `LV`.    |
+| `source`             | Link to the GT5-Unofficial source the structure was transcribed from.                          |
+| `size`               | `[x, y, z]` in blocks.                                                                         |
+| `layers`             | `layers[y][z]` is a string of length `x`. `~` controller, `-` must be air, space = not part.   |
+| `legend`             | Every other character: `{ blockId, hatches? }`. `hatches` lists kinds that may replace it.     |
+| `controller`         | `{ pos, facing, blockId }`; `pos` is the `~` cell, `facing` the front face (local frame).      |
+| `hatchBlocks`        | Block id placed for each hatch kind.                                                           |
+| `shareableHatches`   | Hatch kinds whose single block may serve several controllers.                                  |
+| `requiredHatches`    | Optional `{ min, max }` per hatch kind and unit.                                               |
+| `requiredAny`        | Optional `{ kinds, min }[]`: at least `min` hatches of any of `kinds` (GT's any input/output). |
+| `minCasings`         | Optional `{ chars, min, perSlab? }[]`: at least `min` cells of those legend keys stay casing.  |
+| `defaultHatches`     | Hatch kinds enabled in a new plan.                                                             |
+| `wallshare`          | Whether casings of two units may overlap when the blocks match.                                |
+| `resize`             | Optional variable size: `{ axis, from, to, min, max, default, label }`, see below.             |
+| `zones`              | Optional hatch zones by legend `region` (`dot<N>`): the kinds meant for it and its tooltip.    |
+| `notes`              | Free-text notes: game version, quirks, hatch behaviour.                                        |
 
 Coordinates follow Minecraft: X = east, Y = up, Z = south.
 
@@ -159,6 +162,15 @@ with one copy of a repeating slab `[from, to)` along `axis`. A plan's height or 
 it (`sizedDef` in [`src/model/resize.ts`](src/model/resize.ts)). A slab cell with a `region` gets one numbered
 region per copy (`layer` → `layer1`, `layer2`, …), and `requiredHatches.*.regions` naming it grow to match, so
 the Distillation Tower keeps one output hatch per layer. Never change `default`: plans without a size use it.
+
+**Casing minimums and hatch groups.** GT refuses to form a multiblock whose structure check fails, so the data
+states two of its checks (read from the controller classes by [`tools/gt-source/casing-min.mjs`](tools/gt-source/README.md)):
+`minCasings` is `checkCasingMin`, at least `min` cells drawn with the listed legend keys (together) must be casing, so
+hatches may replace only the rest; for a resizable def `min` is the smallest form's and `perSlab` what each added slab
+raises it by (`sizedDef` returns the minimum of its size). `requiredAny` is `checkHasAnyInput` / `checkHasAnyOutput`:
+at least one hatch of any of `kinds` (`itemIn` or `fluidIn`, `itemOut` or `fluidOut`), stated only when no kind of the
+group is already in `requiredHatches`. Both are validated (keys in the legend, the structure holds `min` cells) and
+not yet used by hatch placement.
 
 **Adding a multiblock**
 

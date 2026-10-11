@@ -36,6 +36,7 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["B"], "min": 15 }],
   "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
   "zones": {
     "dot1": {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { annealGroups, layoutCost, type Shape } from './anneal';
 import { AbortedError, FLOOR_CLEARANCE, arrangeSite } from './arrange';
 import { createSiteBuilder, localFootprints, localHeights } from './build';
+import { turnedReach } from './terminals';
 import type { SiteGroup, SiteState } from './types';
 
 function g(id: string, multiblockId = 'electric-blast-furnace', count = 1): SiteGroup {
@@ -299,5 +300,57 @@ describe('annealGroups limits, progress and cancel', () => {
         onProgress: () => controller.abort(),
       }),
     ).toThrow(AbortedError);
+  });
+});
+
+describe('annealGroups turns groups to face their partners', () => {
+  /**
+   * A square machine whose hatch for `r1` sits on its east side (local cell [5, 2] of 6 x 6, a box of one cell), fed from a port
+   * on the west edge; a second group elsewhere gives the search something to move. Turn 2 faces west.
+   */
+  const ends = new Map([['m', { r1: [5, 6, 2, 3] as const }]]);
+  const site = (): SiteState => ({
+    ...chain(),
+    size: [40, 40],
+    groups: [
+      { ...g('m'), origin: [20, 17] },
+      { ...g('x'), origin: [20, 30] },
+    ],
+    links: [{ id: 'i', from: { port: 'in' }, to: { group: 'm' }, resource: 'r1' }],
+    ports: [{ id: 'in', dir: 'in', resource: 'r1', pos: [1, 20] }],
+  });
+  /** x of the terminal of `m` on the site, from the group's turn and origin. */
+  const attachX = (gr: SiteGroup) => gr.origin[0] + turnedReach(ends.get('m')!.r1, [6, 6], gr.rotation)[0];
+
+  it('turns a square group so its hatch faces the link', () => {
+    const r = annealGroups(site(), fixed, { seed: 1, iterations: 6000, ends });
+    expect(r.improved).toBe(true);
+    const m = r.groups[0];
+    expect(m.rotation).toBe(2);
+    expect(attachX(m)).toBeLessThan(attachX(site().groups[0]));
+  });
+
+  it('is judged the same as before without terminals', () => {
+    const r = annealGroups(site(), fixed, { seed: 1, iterations: 3000 });
+    expect(layoutCost({ ...site(), groups: r.groups }, fixed).cost).toBeCloseTo(r.after, 6);
+  });
+
+  it('reaches the half turn in one move', () => {
+    // Short runs: the turn must be found by a single move, whatever else they did.
+    const found = Array.from({ length: 60 }, (_, seed) =>
+      annealGroups(site(), fixed, { seed: seed + 1, iterations: 25, ends }),
+    ).filter((r) => r.improved && r.groups[0].rotation === 2);
+    expect(found.length).toBeGreaterThan(0);
+  });
+
+  it('takes the terminals of a shape from the shape itself', () => {
+    const shape: Shape = {
+      limits: { x: null, y: 1, z: null },
+      size: [6, 6],
+      height: 1,
+      ends: ends.get('m')!,
+    };
+    const r = annealGroups(site(), fixed, { seed: 1, iterations: 6000, shapes: new Map([['m', [shape]]]) });
+    expect(r.groups[0].rotation).toBe(2);
   });
 });

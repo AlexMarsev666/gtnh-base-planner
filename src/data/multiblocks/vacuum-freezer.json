@@ -25,6 +25,11 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["C"], "min": 16 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "wallshare": true,
   "notes": "3x3x3 hollow cube of Frost Proof Machine Casings (at least 16) with the controller in the front centre of the middle layer. Hatches may replace any casing. GT also requires at least one input (bus or hatch) and one output of any kind. Sharing: GT5u adds every hatch it finds during the structure check to that controller's lists with no ownership check, so item and fluid buses and hatches in a shared wall serve every controller around them. Energy and maintenance are not marked shareable: several controllers draining one energy hatch starve each other, and maintenance repair flags are cleared by the first controller that reads them."

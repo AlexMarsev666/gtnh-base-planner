@@ -359,6 +359,7 @@
     "fluidOut": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A", "B"], "min": 229 }],
   "defaultHatches": ["fluidIn", "fluidOut", "maintenance"],
   "zones": {
     "dot2": {

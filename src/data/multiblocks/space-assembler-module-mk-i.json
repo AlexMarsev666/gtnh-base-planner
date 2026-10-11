@@ -26,6 +26,7 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": { "itemOut": { "min": 1 } },
+  "requiredAny": [{ "kinds": ["itemIn", "fluidIn"], "min": 1 }],
   "defaultHatches": ["itemIn", "itemOut"],
   "zones": {
     "dot1": {

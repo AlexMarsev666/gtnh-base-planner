@@ -36,6 +36,7 @@
   },
   "shareableHatches": ["itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "fluidIn": { "min": 1 }, "fluidOut": { "min": 1 } },
+  "minCasings": [{ "chars": ["A", "F"], "min": 96 }],
   "defaultHatches": ["itemOut", "fluidIn", "fluidOut"],
   "zones": {
     "dot1": {

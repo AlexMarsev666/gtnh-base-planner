@@ -40,6 +40,7 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A", "D"], "min": 20 }],
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
   "zones": {
     "dot1": {

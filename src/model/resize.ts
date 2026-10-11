@@ -24,9 +24,9 @@ export function effectiveSize(def: MultiblockDef, size: number | undefined): num
 const memo = new WeakMap<MultiblockDef, Map<number, MultiblockDef>>();
 
 /**
- * `def` at total size `n` along its resize axis (snapped to a valid step). Memoised per `(def, n)`, so the
- * per-def caches in geometry, layout and walls keep working. Returns `def` itself when it has no `resize`
- * or `n` is its stored (smallest) size.
+ * `def` at total size `n` along its resize axis (snapped to a valid step), with the `minCasings` of that size.
+ * Memoised per `(def, n)`, so the per-def caches in geometry, layout and walls keep working. Returns `def`
+ * itself when it has no `resize` or `n` is its stored (smallest) size.
  */
 export function sizedDef(def: MultiblockDef, size: number | undefined): MultiblockDef {
   const rule = def.resize;
@@ -124,6 +124,13 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
     requiredHatches = req as MultiblockDef['requiredHatches'];
   }
 
+  // Casing minimums grow with each added slab and name the characters of every slab copy; the expanded def states
+  // them for its own size (no `perSlab`).
+  const minCasings = def.minCasings?.map(({ chars, min, perSlab }) => ({
+    chars: chars.flatMap((ch) => perCopy.get(ch) ?? [ch]),
+    min: min + (perSlab ?? 0) * (copies - 1),
+  }));
+
   return {
     ...def,
     size,
@@ -131,6 +138,7 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
     legend,
     controller: { ...def.controller, pos },
     ...(requiredHatches ? { requiredHatches } : {}),
+    ...(minCasings ? { minCasings } : {}),
   };
 }
 

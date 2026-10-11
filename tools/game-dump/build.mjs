@@ -23,6 +23,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encodePng, TILE } from '../../scripts/build-atlas.mjs';
+import { createConstraints, withConstraints } from '../gt-source/casing-min.mjs';
 import { elementKinds, kindsForCell } from '../gt-source/hatch-elements.mjs';
 import { dotOfHint, HatchRules, parseCount, ruleLine } from '../gt-source/hatch-rules.mjs';
 import { Composer, meanColor, pixelHash } from './compose.mjs';
@@ -1089,6 +1090,22 @@ export async function build(opts) {
       `  retained ${def.id}: required ${JSON.stringify(r.def.requiredHatches)} -> ${JSON.stringify(def.requiredHatches)}, ` +
         `defaults ${r.def.defaultHatches.join()} -> ${def.defaultHatches.join()}`,
     );
+  }
+
+  // Casing minimums and "any input / any output" checks (`minCasings`, `requiredAny`) for the entries written here;
+  // hand-made entries keep theirs (tools/gt-source/casing-min.mjs patches those).
+  if (hatchRules && opts.gt5u) {
+    const constraints = await createConstraints(opts.gt5u, hatchRules);
+    const problems = [];
+    const apply = (def) => {
+      const r = constraints.of(def);
+      if (!r) return def;
+      problems.push(...r.problems);
+      return withConstraints(def, r);
+    };
+    for (const d of defs) d.def = apply(d.def);
+    retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
+    if (problems.length) throw new Error(['casing minimums could not be read:', ...problems].join('\n  '));
   }
 
   // Tooltip lines naming a hatch kind no cell of the dump accepts (a part built only in survival, a hatch the
