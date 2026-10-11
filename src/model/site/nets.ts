@@ -7,6 +7,7 @@ import { siteResource } from './demand';
 import { IN_KINDS, OUT_KINDS, type SiteHatch } from './group';
 import { endNode } from './ids';
 import type { SiteOccupancy } from './occupancy';
+import { isTransformer, transformerHatchOnFront } from './power';
 import { MAX_ROUTER_CELLS, routeNets, type RouteTerminal } from './router';
 import type { ResourceKind, SiteRouting, SiteState } from './types';
 
@@ -135,8 +136,31 @@ export function routeSiteNetworks(
 ): { routed: SiteNet[]; warnings: SiteWarning[]; depthUsed: number } {
   const [w, d] = site.size;
   const { depth: wanted, style } = routingOf(opts);
-  const { solids, keepFree } = occupancy;
+  const { solids } = occupancy;
+  const routed = nets.filter((n) => (n.kind === 'power' ? opts.cables : opts.pipes));
   const groupIndex = new Map(site.groups.map((g, i) => [g.id, i]));
+  // The cell in front of a controller stays free, except a transformer's front when a routed net has a
+  // terminal there (its input or output hatch sits on the front and takes a cable). `occupancy.keepFree` holds
+  // one cell per unit, in the order of the groups and their units (see analyzeOccupancy), so a unit's entry is
+  // found by position and a neighbour whose front cell coincides stays protected.
+  const open = new Set<string>();
+  for (const n of routed)
+    for (const t of n.terminals) {
+      const pg = t.hatch && groups[groupIndex.get(t.group!)!];
+      if (pg && pg.def && isSingleBlock(pg.def) && isTransformer(pg.group))
+        if (transformerHatchOnFront(pg.group, t.hatch!.kind))
+          open.add(`${t.group}\u0000${t.hatch!.unitIds[0]}`);
+    }
+  const skip = new Set<number>();
+  let at = 0;
+  for (const pg of groups) {
+    if (!pg.def) continue;
+    for (const u of pg.units) {
+      if (open.has(`${pg.group.id}\u0000${u.id}`)) skip.add(at);
+      at++;
+    }
+  }
+  const keepFree = skip.size ? occupancy.keepFree.filter((_, i) => !skip.has(i)) : [...occupancy.keepFree];
   const placedPort = new Map(ports.map((p) => [p.port.id, p]));
   /** Faces a pipe may use for each terminal. */
   const termFaces = (t: NetTerminalInfo): Dir[] => {
@@ -146,6 +170,9 @@ export function routeSiteNetworks(
     const single = pg.def && isSingleBlock(pg.def);
     const unit = single ? pg.units.find((u) => u.id === h.unitIds[0]) : undefined;
     const front = unit && pg.def ? controllerFacing(pg.def, unit) : null;
+    // A transformer takes power on its front and gives it on its other faces (a step-up one the reverse).
+    const onFront = single && isTransformer(pg.group) ? transformerHatchOnFront(pg.group, h.kind) : undefined;
+    if (onFront && front) return [front].filter((f) => !(h.blocked ?? []).includes(f));
     const no = new Set<Dir>([
       ...(h.blocked ?? []),
       ...(front ? [front] : []),
@@ -154,7 +181,6 @@ export function routeSiteNetworks(
     return [h.face, ...ATTACH_ORDER.filter((f) => f !== h.face)].filter((f) => !no.has(f));
   };
 
-  const routed = nets.filter((n) => (n.kind === 'power' ? opts.cables : opts.pipes));
   const routedHatches = new Set<SiteHatch>();
   for (const n of routed) for (const t of n.terminals) if (t.hatch) routedHatches.add(t.hatch);
   for (const pg of groups) {

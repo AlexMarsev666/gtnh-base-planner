@@ -125,8 +125,9 @@ export function blockLabel(id: string, manifest: TextureManifest = TEXTURES): st
 
 /** Whether a block id is a hatch or bus that any voltage tier can stand in for. */
 function isTiered(blockId: string): boolean {
-  // Single-block machines come in every voltage tier as well.
-  if (blockId.startsWith('site.machine.') || blockId === 'site.singleblock') return true;
+  // Single-block machines come in every voltage tier as well (a tiered look already names its tier).
+  if (blockId === 'site.singleblock' || (blockId.startsWith('site.machine.') && !blockId.includes('@')))
+    return true;
   return blockId.startsWith('gt.hatch.') && blockId !== 'gt.hatch.maintenance';
 }
 

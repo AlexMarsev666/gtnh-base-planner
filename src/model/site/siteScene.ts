@@ -1,5 +1,4 @@
-import { isSingleBlock } from '../../data/generic';
-import { singleMachineBlockId } from '../../data/single-machines';
+import { isSingleBlock, singleMachineLook } from '../../data/generic';
 import { DEFAULT_HATCH_COLORS } from '../colors';
 import { key } from '../geometry';
 import { buildSceneModel } from '../scene';
@@ -50,8 +49,10 @@ export function buildSiteScene(
       null,
       colors,
     );
-    // Each single-block machine shows the look of its own machine.
-    const look = single && pg.group.machine ? singleMachineBlockId(pg.group.machine) : null;
+    // Each single-block machine shows the look of its own machine in its tier (a transformer: with its step and
+    // amperage; the voxel's facing is the front, which a step-down transformer takes its input on).
+    const { machine, tier, step, amps } = pg.group;
+    const look = single && machine ? singleMachineLook(machine, tier, step, amps) : null;
     for (const v of local.voxels) {
       if (look) v.blockId = look;
       const k = key(v.pos);

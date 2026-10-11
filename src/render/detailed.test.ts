@@ -275,3 +275,50 @@ describe('isTranslucentBlock', () => {
     }
   });
 });
+
+describe('tiered looks of single-block machines', () => {
+  const colors = DEFAULT_HATCH_COLORS;
+
+  it('has no manifest entry for them and draws the hull of the tier with the machine front', async () => {
+    expect(TEXTURES.blocks['site.machine.macerator@HV']).toBeUndefined();
+    const p = createDetailedProvider({ loadAtlas });
+    await p.load();
+    const tiered = p.materials(
+      { blockId: 'site.machine.macerator@HV', kind: 'controller', facing: 'north' },
+      colors,
+    );
+    const plain = p.materials(
+      { blockId: 'site.machine.macerator', kind: 'controller', facing: 'north' },
+      colors,
+    );
+    const north = BOX_FACE_ORDER.indexOf('north');
+    const east = BOX_FACE_ORDER.indexOf('east');
+    expect(mapOf(tiered[north])).not.toBeNull();
+    // The front is the macerator's, over a different hull: the faces differ from the LV machine.
+    expect(tiered[east]).not.toBe(plain[east]);
+    expect(tiered[north]).not.toBe(plain[north]);
+  });
+
+  it('draws a transformer low side on every face but the front, top and bottom included', async () => {
+    const p = createDetailedProvider({ loadAtlas });
+    await p.load();
+    const down = p.materials(
+      { blockId: 'site.machine.transformer@HV:down:4', kind: 'controller', facing: 'north' },
+      colors,
+    );
+    const up = p.materials(
+      { blockId: 'site.machine.transformer@HV:up:4', kind: 'controller', facing: 'north' },
+      colors,
+    );
+    const hull = p.materials({ blockId: 'site.machine.macerator@MV', kind: 'casing' }, colors);
+    const north = BOX_FACE_ORDER.indexOf('north');
+    // Five faces share the overlay only if it is drawn on the side, top and bottom alike: three distinct textures.
+    expect(new Set(down).size).toBe(4);
+    for (const dir of ['east', 'up', 'down'] as const) {
+      const i = BOX_FACE_ORDER.indexOf(dir);
+      expect(down[i]).not.toBe(hull[i]);
+      expect(down[i]).not.toBe(up[i]);
+    }
+    expect(down[north]).not.toBe(up[north]);
+  });
+});

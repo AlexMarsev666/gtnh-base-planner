@@ -3,6 +3,7 @@ import { deriveSiteDemand } from './demand';
 import { placeGroups, type GroupCache } from './groups';
 import { buildSiteNetworks, routeSiteNetworks, routingOf } from './nets';
 import { analyzeOccupancy } from './occupancy';
+import { analysePower } from './power';
 import { placeSitePorts } from './ports';
 import type { RouteResult, RouteStats } from './router';
 import { buildSiteScene } from './siteScene';
@@ -42,6 +43,7 @@ export function createSiteBuilder(): SiteBuilder {
         ...occupancy.warnings,
         ...portWarnings,
         ...routing.warnings,
+        ...analysePower(site),
       ],
       stats: siteStats(groups, ports, routing.routed),
     };

@@ -1,9 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { TIERS } from '../src/model/core/types';
 import {
   BLOCK_MAP,
   HATCH_OVERLAYS,
+  TIER_NAMES,
   TILE,
   TILES,
   buildManifest,
@@ -108,5 +110,26 @@ describe('committed atlas', () => {
       expect(sources.length, name).toBeGreaterThan(0);
       for (const s of sources) expect(attribution, name).toContain(s);
     }
+  });
+});
+
+describe('tiered single-block machines', () => {
+  it('uses the tiers of the model', () => {
+    expect(TIER_NAMES).toEqual([...TIERS]);
+  });
+
+  it('keeps the untiered block and has the tiles of every tiered look, but no block of its own', () => {
+    expect(BLOCK_MAP['site.machine.macerator'].side).toBe('MACHINE_LV_SIDE');
+    expect(Object.keys(BLOCK_MAP).filter((id) => id.includes('@') && id.startsWith('site.machine.'))).toEqual(
+      [],
+    );
+    for (const tier of TIER_NAMES)
+      for (const part of ['SIDE', 'TOP', 'BOTTOM']) expect(TILES).toHaveProperty(`MACHINE_${tier}_${part}`);
+    // The overlays transformerLook names, for every high side and family GT registers.
+    expect(TILES).toHaveProperty('SINGLE_TRANSFORMER_IN_LV');
+    expect(TILES).toHaveProperty('SINGLE_TRANSFORMER_OUT_4A_ULV');
+    expect(TILES).toHaveProperty('SINGLE_TRANSFORMER_OUT_16A_MAX');
+    expect(TILES).toHaveProperty('SINGLE_TRANSFORMER_IN_64A_UXV');
+    expect(TILES).toHaveProperty('SINGLE_TRANSFORMER_IN_4A_UEV');
   });
 });

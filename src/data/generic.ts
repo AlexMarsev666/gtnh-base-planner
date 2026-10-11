@@ -1,5 +1,13 @@
+import type { Tier } from '../model/core/types';
 import type { MultiblockDef } from '../model/multiblock/types';
+import type { TransformerAmps, TransformerStep } from '../model/site/types';
 import { catalog, getMultiblock } from './catalog';
+import {
+  getSingleMachine,
+  singleMachineBlockId,
+  singleMachineTiers,
+  transformerValid,
+} from './single-machines';
 
 /**
  * Stand-ins used by sites (and the GTNH Planner import) for machines the catalog does not have:
@@ -70,4 +78,25 @@ export const siteDefs: readonly MultiblockDef[] = [...catalog, ...GENERIC];
 
 export function isSingleBlock(def: MultiblockDef): boolean {
   return def.id === SINGLE_BLOCK_ID;
+}
+
+/**
+ * Block id of a single-block machine's look in the atlas (scripts/build-atlas.mjs): `site.machine.<id>@<tier>`
+ * when the machine exists in that tier, `site.machine.transformer@<high tier>:<step>:<amps>` for a transformer
+ * (a step-down one shows its input on the front), else the untiered `site.machine.<id>` of earlier versions.
+ * A transformer GT has no block for (Hi-Amp below UEV) is drawn with 4 amps.
+ */
+export function singleMachineLook(
+  machine: string,
+  tier?: Tier,
+  step: TransformerStep = 'down',
+  amps: TransformerAmps = 4,
+): string {
+  const base = singleMachineBlockId(machine);
+  if (!tier) return base;
+  if (getSingleMachine(machine)?.transformer) {
+    const a = transformerValid(tier, amps) ? amps : 4;
+    return transformerValid(tier, a) ? `${base}@${tier}:${step}:${a}` : base;
+  }
+  return singleMachineTiers(machine).includes(tier) ? `${base}@${tier}` : base;
 }

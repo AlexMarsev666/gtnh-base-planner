@@ -6,7 +6,12 @@
  * Blocks used only by generated catalog entries live in `./blocks.generated.json` (tools/game-dump).
  */
 import generatedBlocks from './blocks.generated.json' with { type: 'json' };
-import { SINGLE_MACHINES, singleMachineBlockId } from './single-machines';
+import {
+  SINGLE_MACHINES,
+  machineLookName,
+  parseMachineLookId,
+  singleMachineBlockId,
+} from './single-machines';
 
 export interface BlockInfo {
   id: string;
@@ -115,6 +120,18 @@ export const BLOCKS: Readonly<Record<string, BlockInfo>> = Object.fromEntries(
   [...generated, ...machines, ...list].map((b) => [b.id, b]),
 );
 
+/** Tiered looks resolved so far (only valid ids are kept, a few hundred at most). */
+const lookInfo = new Map<string, BlockInfo>();
+
 export function blockInfo(id: string): BlockInfo {
-  return BLOCKS[id] ?? { id, name: id, color: '#999999' };
+  const known = BLOCKS[id];
+  if (known) return known;
+  // The tiered looks of single-block machines are not listed one by one: their id says what they are.
+  const cached = lookInfo.get(id);
+  if (cached) return cached;
+  const look = parseMachineLookId(id);
+  if (!look) return { id, name: id, color: '#999999' };
+  const info = { id, name: machineLookName(look), color: '#7c848c' };
+  lookInfo.set(id, info);
+  return info;
 }

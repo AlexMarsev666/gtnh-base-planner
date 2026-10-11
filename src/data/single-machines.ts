@@ -81,3 +81,35 @@ export function transformerLook(
     sides: `SINGLE_TRANSFORMER_${sides}_${amps}A_${tierTag(low)}`,
   };
 }
+
+/** What a tiered look id names (see `singleMachineLook` in generic.ts); the atlas has no block for these. */
+export interface MachineLookId {
+  machine: SingleMachine;
+  tier: Tier;
+  /** Transformers only. */
+  step?: 'up' | 'down';
+  amps?: TransformerAmps;
+}
+
+/**
+ * Parses `site.machine.<id>@<tier>` and `site.machine.transformer@<high tier>:<step>:<amps>`, or undefined for
+ * any other id (also for a machine or combination GT does not register).
+ */
+export function parseMachineLookId(blockId: string): MachineLookId | undefined {
+  const m = /^site\.machine\.([^@]+)@([A-Za-z]+)(?::(up|down):(4|16|64))?$/.exec(blockId);
+  const machine = m && byId.get(m[1]);
+  const tier = TIERS.find((t) => t === m?.[2]);
+  if (!m || !machine || !tier || !singleMachineTiers(machine.id).includes(tier)) return undefined;
+  if (!machine.transformer) return m[3] ? undefined : { machine, tier };
+  if (!m[3]) return undefined;
+  const amps = Number(m[4]) as TransformerAmps;
+  return transformerValid(tier, amps) ? { machine, tier, step: m[3] as 'up' | 'down', amps } : undefined;
+}
+
+/** Display name of a tiered look: "Macerator (HV)", "Transformer HV→MV 4A (step-down)". */
+export function machineLookName(look: MachineLookId): string {
+  if (!look.machine.transformer) return `${look.machine.name} (${look.tier})`;
+  const { hull } = transformerLook(look.tier, look.step!, look.amps);
+  const [from, to] = look.step === 'up' ? [hull, look.tier] : [look.tier, hull];
+  return `${look.machine.name} ${from}→${to} ${look.amps}A (step-${look.step})`;
+}

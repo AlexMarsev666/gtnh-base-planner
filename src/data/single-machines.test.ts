@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { TIERS } from '../model/core/types';
-import { BLOCKS } from './blocks';
+import { BLOCKS, blockInfo } from './blocks';
 import {
   SINGLE_MACHINES,
   getSingleMachine,
@@ -146,5 +146,20 @@ describe('single-block machine tiers', () => {
     expect(transformerValid('UEV', 16)).toBe(true);
     expect(transformerValid('MAX', 16)).toBe(true);
     expect(hullTiles('LuV').side).toBe('MACHINE_LuV_SIDE');
+  });
+});
+
+describe('tiered look ids', () => {
+  it('rest on the untiered block of every machine having a front (the renderer takes it from there)', () => {
+    for (const m of SINGLE_MACHINES)
+      expect(manifest.blocks[singleMachineBlockId(m.id)]?.front, m.id).toBeTruthy();
+  });
+
+  it('are named by rule, with no entry in the block list', () => {
+    expect(BLOCKS['site.machine.macerator@HV']).toBeUndefined();
+    expect(blockInfo('site.machine.macerator@HV').name).toBe('Macerator (HV)');
+    expect(blockInfo('site.machine.transformer@HV:down:4').name).toBe('Transformer HV→MV 4A (step-down)');
+    expect(blockInfo('site.machine.transformer@HV:up:64').name).toBe('Transformer MV→HV 64A (step-up)');
+    expect(blockInfo('site.machine.macerator@UXV').name).toBe('site.machine.macerator@UXV');
   });
 });

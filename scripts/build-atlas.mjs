@@ -44,6 +44,25 @@ const COLUMNS = 16;
 /** Client default of `Client.colorModulation.machineMetal` (Dyes.MACHINE_METAL). */
 const MACHINE_METAL = [210, 220, 255];
 
+/** Voltage tiers, lowest first (`TIERS` of src/model/core/types.ts; a test keeps the two equal). */
+export const TIER_NAMES = [
+  'ULV',
+  'LV',
+  'MV',
+  'HV',
+  'EV',
+  'IV',
+  'LuV',
+  'ZPM',
+  'UV',
+  'UHV',
+  'UEV',
+  'UIV',
+  'UMV',
+  'UXV',
+  'MAX',
+];
+
 /**
  * Atlas tiles: name → options. The source is `${ICONSETS}/${name}.png` unless `path` (repo-relative) is given;
  * it is stored as `tools/texture-sources/${name}.png`. `tint` multiplies RGB (the game tints the tiered
@@ -103,6 +122,12 @@ export const HAND_TILES = {
   MACHINE_EV_SIDE: { tint: MACHINE_METAL },
   MACHINE_EV_TOP: { tint: MACHINE_METAL },
   MACHINE_EV_BOTTOM: { tint: MACHINE_METAL },
+  // The hulls above EV, for the tiered looks of single-block machines
+  ...Object.fromEntries(
+    TIER_NAMES.slice(TIER_NAMES.indexOf('EV') + 1).flatMap((t) =>
+      ['SIDE', 'TOP', 'BOTTOM'].map((part) => [`MACHINE_${t}_${part}`, { tint: MACHINE_METAL }]),
+    ),
+  ),
   // Heating coils
   MACHINE_COIL_CUPRONICKEL: {},
   MACHINE_COIL_KANTHAL: {},
@@ -367,6 +392,32 @@ for (const m of SINGLE_MACHINES) {
     bottom: `MACHINE_${hull}_BOTTOM`,
     front,
   };
+}
+
+// Tiles of the tiered looks (no blocks: `site.machine.<id>@<tier>` and
+// `site.machine.transformer@<high tier>:<step>:<amps>` are resolved by the renderer, see
+// parseMachineLookId in src/data/single-machines.ts). The hull of every tier is above; a transformer shows
+// the energy hatch overlay of its high side on the front and of its low side on the other faces, in the
+// amperage family GT registers (Hi-Amp, 16 amps, from UEV).
+const TRANSFORMER = SINGLE_MACHINES.find((m) => m.transformer);
+if (TRANSFORMER) {
+  const overlay = (dir, multi, tier) => {
+    HAND_TILES[`SINGLE_TRANSFORMER_${dir}${multi ? `_${multi}A` : ''}_${tier.toUpperCase()}`] = {
+      path: `${ICONSETS}/OVERLAY_ENERGY_${dir}${multi ? `_MULTI_${multi}A` : ''}_${tier}.png`,
+    };
+  };
+  const [from, last] = TRANSFORMER.tiers.map((t) => TIER_NAMES.indexOf(t));
+  // The low side is one tier below: ULV is never a high side.
+  const first = Math.max(from, 1);
+  for (let i = first; i <= last; i++) {
+    for (const amps of [4, 16, 64]) {
+      if (amps === 16 && i < TIER_NAMES.indexOf('UEV')) continue;
+      for (const dir of ['IN', 'OUT']) {
+        overlay(dir, amps === 4 ? 0 : amps / 4, TIER_NAMES[i]);
+        overlay(dir, amps, TIER_NAMES[i - 1]);
+      }
+    }
+  }
 }
 
 const generated = existsSync(TEXTURES_GENERATED)

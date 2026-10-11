@@ -2,6 +2,7 @@ import type { Dir, Vec3 } from '../core/types';
 import type { MultiblockDef, Unit } from '../multiblock/types';
 import type { SceneModel } from '../render/types';
 import type { Demand, GroupBuild, SiteHatch } from './group';
+import type { PowerWarning } from './power';
 import type { RouteResult, RouteStats } from './router';
 import type { ResourceKind, SiteGroup, SitePort, SiteRouting, SiteState } from './types';
 
@@ -82,7 +83,8 @@ export type SiteWarning =
   | { type: 'unsupported'; group: string; resource: string }
   | { type: 'missing'; group: string; resource: string; units: number }
   | { type: 'unrouted'; resource: string; connected: number; total: number }
-  | { type: 'noport'; port: string };
+  | { type: 'noport'; port: string }
+  | PowerWarning;
 
 export interface SiteBuild {
   groups: PlacedGroup[];

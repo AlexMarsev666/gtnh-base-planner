@@ -21,6 +21,7 @@ export interface Faces {
 export const REPO: string;
 export const ICONSETS: string;
 export const TILE: number;
+export const TIER_NAMES: string[];
 export const TILES: Record<string, TileOptions>;
 export const BLOCK_MAP: Record<string, Faces>;
 export const HATCH_OVERLAYS: Record<string, string[]>;

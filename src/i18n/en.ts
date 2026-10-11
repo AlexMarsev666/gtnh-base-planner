@@ -292,6 +292,12 @@ export const t = {
           return `${res(w.resource)}: ${w.connected} of ${w.total} connected.`;
         case 'noport':
           return `No room on the edge for port ${w.port}.`;
+        case 'powerTier':
+          return `${name(w.group)}: ${res(w.resource)} carries ${w.expected}, but it takes ${w.got}.`;
+        case 'transformerInvalid':
+          return `${name(w.group)}: GT has no ${w.amps}A transformer at ${w.tier}.`;
+        case 'powerUnknownTier':
+          return `${res(w.resource)}: voltage tier unknown, so its transformers are not checked.`;
       }
     },
     problemCount: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,
