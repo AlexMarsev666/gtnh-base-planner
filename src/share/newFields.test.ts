@@ -214,16 +214,19 @@ describe('site group: tier, hatchTiers, mirror, wallshare, assign', () => {
     for (const k of ['tier', 'hatchTiers', 'mirror', 'wallshare', 'assign']) expect(k in plain).toBe(false);
   });
 
-  it('accepts unit "all", a zone alone, and drops empty or stale assignments', () => {
+  it('accepts unit "all", a zone alone, and drops empty assignments', () => {
     const site = siteWith({
       assign: { 'item:dust': { unit: 'all' }, 'item:gone': { zone: 'dot3' }, 'item:other': {} },
     });
-    expect(validateSiteState(site).groups[0].assign).toEqual({ 'item:dust': { unit: 'all' } });
+    expect(validateSiteState(site).groups[0].assign).toEqual({
+      'item:dust': { unit: 'all' },
+      'item:gone': { zone: 'dot3' },
+    });
     const zone = validateSiteState(siteWith({ assign: { 'item:dust': { zone: 'dot3' } } }));
     expect(zone.groups[0].assign).toEqual({ 'item:dust': { zone: 'dot3' } });
-    expect('assign' in validateSiteState(siteWith({ assign: { 'item:gone': { unit: 0 } } })).groups[0]).toBe(
-      false,
-    );
+    expect(validateSiteState(siteWith({ assign: { 'item:gone': { unit: 0 } } })).groups[0].assign).toEqual({
+      'item:gone': { unit: 0 },
+    });
   });
 
   it('takes the short hatch key for kinds without a resource only', () => {
@@ -267,12 +270,6 @@ describe('site group: transformer step and amps', () => {
     expect(siteFromJson(siteToJson(site))).toEqual(validateSiteState(site));
   });
 
-  it('leaves them out of a multiblock', () => {
-    const g = validateSiteState(siteWith({ step: 'up', amps: 16 })).groups[0];
-    expect('step' in g).toBe(false);
-    expect('amps' in g).toBe(false);
-  });
-
   it('rejects bad shapes', () => {
     for (const extra of [
       { step: 'sideways' },
@@ -289,7 +286,7 @@ describe('site group: transformer step and amps', () => {
 });
 
 describe('stale and out-of-range group settings', () => {
-  it('drops hatch tiers of a resource the site does not have, and keeps short keys', () => {
+  it('keeps hatch tiers of a resource the site does not have, and short keys', () => {
     const g = validateSiteState(
       siteWith({
         hatchTiers: {
@@ -300,9 +297,32 @@ describe('stale and out-of-range group settings', () => {
         },
       }),
     ).groups[0];
-    expect(g.hatchTiers).toEqual({ 'energy:0': 'MV', 'itemIn:item:dust:0': 'HV' });
-    const none = validateSiteState(siteWith({ hatchTiers: { 'itemIn:item:gone:0': 'HV' } })).groups[0];
-    expect('hatchTiers' in none).toBe(false);
+    expect(g.hatchTiers).toEqual({
+      'energy:0': 'MV',
+      'itemIn:item:dust:0': 'HV',
+      'itemIn:item:gone:0': 'HV',
+      'fluidOut:item:gone:shared': 'EV',
+    });
+  });
+
+  it('keeps a transformer step and amps on a group that is not a single block', () => {
+    const g = validateSiteState(siteWith({ step: 'up', amps: 16 })).groups[0];
+    expect(g).toMatchObject({ step: 'up', amps: 16 });
+  });
+
+  it('round-trips the group fields through JSON, a link and localStorage, unlinked choices included', async () => {
+    const site = siteWith({
+      tier: 'HV',
+      hatchTiers: { 'itemIn:item:dust:0': 'EV', 'energy:0': 'MV', 'itemIn:item:gone:1': 'LV' },
+      mirror: true,
+      wallshare: 'stack',
+      assign: { 'item:dust': { unit: 'all', zone: 'dot3' }, 'item:gone': { unit: 0 } },
+    });
+    expect(siteFromJson(siteToJson(site))).toEqual(site);
+    expect(await decodeSite(await encodeSite(site))).toEqual(site);
+    const st = memory();
+    expect(saveStoredSite(site, st)).toBe(true);
+    expect(loadStoredSite(st)).toEqual(site);
   });
 
   it('keeps settings for unit indices at or above the count', () => {

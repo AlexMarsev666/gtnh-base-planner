@@ -34,7 +34,7 @@ describe('legacy plan fixture', () => {
   });
 });
 
-describe.each(['site', 'import'])('legacy %s fixture', (name) => {
+describe.each(['site', 'import', 'oil-processing'])('legacy %s fixture', (name) => {
   it('decodes the JSON file', () => {
     expect(siteFromJson(read(`${name}.json`))).toEqual(json(`${name}.expected.json`));
   });
@@ -87,7 +87,7 @@ describe('legacy text in localStorage', () => {
   });
 
   it('loads stored sites', () => {
-    for (const name of ['site', 'import']) {
+    for (const name of ['site', 'import', 'oil-processing']) {
       const st = storage({ [SITE_STORAGE_KEY]: read(`${name}.json`) });
       expect(loadStoredSite(st)).toEqual(json(`${name}.expected.json`));
       expect(st.length).toBe(1);

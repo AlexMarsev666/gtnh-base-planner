@@ -252,17 +252,17 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
   }
   const assign = validateAssign(field(obj, 'assign'), what);
   if (assign) group.assign = assign;
-  // Transformer settings only mean something on a single-block machine; elsewhere they are left out.
+  // Transformer settings only mean something on a single-block machine; elsewhere the build ignores them.
   const step = field(obj, 'step');
   if (step !== undefined && step !== null) {
     if (step !== 'up' && step !== 'down') throw new PlanFormatError(`${what} step must be up or down.`);
-    if (isSingleBlock(def)) group.step = step;
+    group.step = step;
   }
   const amps = field(obj, 'amps');
   if (amps !== undefined && amps !== null) {
     if (typeof amps !== 'number' || !(TRANSFORMER_AMPS as readonly number[]).includes(amps))
       throw new PlanFormatError(`${what} amps must be ${TRANSFORMER_AMPS.join(', ')}.`);
-    if (isSingleBlock(def)) group.amps = amps as TransformerAmps;
+    group.amps = amps as TransformerAmps;
   }
   const sizeRaw = field(obj, 'size');
   if (sizeRaw !== undefined && sizeRaw !== null) {
@@ -441,22 +441,6 @@ export function validateSiteStateWithReport(input: unknown): SiteLoad {
   }
   const seed = field(obj, 'seed');
   if (seed !== undefined && seed !== null) site.seed = expectInt(seed, 'Seed', 0, MAX_SEED);
-  // An assignment or hatch tier for a resource the site no longer has is stale: drop it rather than refuse the
-  // site. Unit indices at or above `count` are kept: the count can grow back and the setting must survive.
-  for (const g of groups) {
-    if (g.assign) {
-      for (const k of Object.keys(g.assign)) if (!hasResource(k)) delete g.assign[k];
-      if (Object.keys(g.assign).length === 0) delete g.assign;
-    }
-    if (g.hatchTiers) {
-      for (const k of Object.keys(g.hatchTiers)) {
-        const resource = GROUP_HATCH_TIER_KEY_RE.exec(k)?.[2];
-        if (!NO_RESOURCE_KEY_RE.test(k) && (resource === undefined || !hasResource(resource)))
-          delete g.hatchTiers[k];
-      }
-      if (Object.keys(g.hatchTiers).length === 0) delete g.hatchTiers;
-    }
-  }
   return { site, replaced };
 }
 

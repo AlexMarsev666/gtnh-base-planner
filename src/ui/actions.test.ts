@@ -120,15 +120,15 @@ describe('tier, mirror and wall sharing transforms', () => {
     expect(withWallshare(defaultPlan(), 'auto').wallshare).toBeUndefined();
   });
 
-  it('switching multiblock drops hatch tiers and a machine tier the new one cannot take', () => {
+  it('switching multiblock drops hatch tiers but keeps the machine tier, allowed or not', () => {
     const p = withHatchTier(withTier(defaultPlan('electric-blast-furnace'), 'ZPM'), 'itemIn:0', 'EV');
     const ok = withMultiblock(p, 'assembly-line');
     expect(ok.tier).toBe('ZPM');
     expect(ok.hatchTiers).toBeUndefined();
     const low = withMultiblock(withTier(defaultPlan('electric-blast-furnace'), 'LV'), 'assembly-line');
-    expect(low.tier).toBeUndefined(); // the Assembly Line wants LuV
+    expect(low.tier).toBe('LV'); // the Assembly Line wants LuV; Settings shows "(not allowed)"
     const steam = withMultiblock(p, 'coke-oven');
-    expect(steam.tier).toBeUndefined();
+    expect(steam.tier).toBe('ZPM');
   });
 });
 

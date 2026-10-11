@@ -1,8 +1,9 @@
 import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SiteState } from '../model/site/types';
 import { emptySite } from '../share/siteCodec';
 import { site, siteGroup } from '../state/site';
-import { withGroupAdded, withGroupMoved } from './siteActions';
+import { withGroupAdded, withGroupMoved, withGroupPatched, withRouting } from './siteActions';
 import {
   COALESCE_MS,
   MAX_STEPS,
@@ -92,5 +93,38 @@ describe('site history', () => {
     expect(redo()).toBe(true);
     expect(redo()).toBe(true);
     expect(get(site).groups[0].origin).toEqual([5, 3]);
+  });
+
+  it('undoes and redoes each optional group and site field', () => {
+    site.set(emptySite());
+    stop = startSiteHistory();
+    site.update((s) => withGroupAdded(s, 'coke-oven'));
+    const gid = get(site).groups[0].id;
+    const steps: [string, (s: SiteState) => SiteState][] = [
+      ['tier', (s) => withGroupPatched(s, gid, { tier: 'HV' })],
+      ['hatchTiers', (s) => withGroupPatched(s, gid, { hatchTiers: { 'energy:0': 'EV' } })],
+      ['mirror', (s) => withGroupPatched(s, gid, { mirror: true })],
+      ['wallshare', (s) => withGroupPatched(s, gid, { wallshare: 'stack' })],
+      ['assign', (s) => withGroupPatched(s, gid, { assign: { 'item:dust': { unit: 1 } } })],
+      ['step', (s) => withGroupPatched(s, gid, { step: 'up' })],
+      ['amps', (s) => withGroupPatched(s, gid, { amps: 16 })],
+      ['routing', (s) => withRouting(s, { style: 'neat', depth: 2 })],
+      ['seed', (s) => ({ ...s, seed: 42 })],
+    ];
+    const states: SiteState[] = [get(site)];
+    for (const [name, change] of steps) {
+      vi.setSystemTime(Date.now() + COALESCE_MS * 2);
+      site.update(change);
+      expect(get(site), name).not.toEqual(states[states.length - 1]);
+      states.push(get(site));
+    }
+    for (let i = steps.length - 1; i >= 0; i--) {
+      expect(undo(), steps[i][0]).toBe(true);
+      expect(get(site), steps[i][0]).toEqual(states[i]);
+    }
+    for (let i = 1; i <= steps.length; i++) {
+      expect(redo(), steps[i - 1][0]).toBe(true);
+      expect(get(site), steps[i - 1][0]).toEqual(states[i]);
+    }
   });
 });

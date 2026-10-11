@@ -3,7 +3,6 @@ import { effectiveSize } from '../model/resize';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
 import type { Tier } from '../model/core/types';
 import type { PlanState, WallshareMode } from '../model/plan/types';
-import { allowedTiers } from '../model/tiers';
 import { get } from 'svelte/store';
 import { t } from '../i18n/en';
 import { defaultPlan, plan, selectedUnits } from '../state/store';
@@ -67,8 +66,6 @@ export function withMultiblock(p: PlanState, id: string): PlanState {
     enabledHatches: [...def.defaultHatches],
   };
   delete next.size;
-  // The machine tier may not exist for the new multiblock.
-  if (next.tier && !allowedTiers(def).includes(next.tier)) delete next.tier;
   return next;
 }
 
