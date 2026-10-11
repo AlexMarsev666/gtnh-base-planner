@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { FLOOR_CLEARANCE, arrangeSite, grownSize } from './arrange';
+import { siteFromJson } from '../../share/siteCodec';
+import { AbortedError, FLOOR_CLEARANCE, arrangeSite, grownSize } from './arrange';
 import { createSiteBuilder, localFootprints, localHeights } from './build';
 import type { SiteGroup, SiteState } from './types';
 
@@ -172,5 +174,95 @@ describe('arrangeSite on floors', () => {
     expect(placed.warnings.filter((w) => w.type === 'overlap' || w.type === 'outside')).toEqual([]);
     const top = Math.max(...placed.groups.map((pg) => pg.max[1]));
     expect(top).toBeGreaterThan(Math.max(...placed.groups.map((pg) => pg.max[1] - pg.min[1])));
+  });
+});
+
+describe('arrangeSite layout', () => {
+  it('lines groups up: a column shares its west edge, all columns their north edge', () => {
+    const site = { ...chain(), links: chain().links.slice(0, 4) };
+    const sizes: Record<string, [number, number]> = { a: [9, 5], b: [5, 9], c: [7, 7], d: [11, 6] };
+    const r = arrangeSite(site, (id) => sizes[id]);
+    const by = Object.fromEntries(r.groups.map((gr) => [gr.id, gr]));
+    // b and c are fed by a alone: one column.
+    expect(by.b.origin[0]).toBe(by.c.origin[0]);
+    // Every column starts at the same north edge.
+    const topOf = new Map<number, number>();
+    for (const gr of r.groups)
+      topOf.set(gr.origin[0], Math.min(topOf.get(gr.origin[0]) ?? Infinity, gr.origin[1]));
+    expect(topOf.size).toBe(3);
+    expect(new Set(topOf.values()).size).toBe(1);
+  });
+});
+
+describe('arrangeSite is idempotent', () => {
+  const fixture = (name: string) =>
+    siteFromJson(readFileSync(new URL(`../../share/fixtures/${name}`, import.meta.url), 'utf8'));
+
+  function line(n: number, size: [number, number]): SiteState {
+    const groups = Array.from({ length: n }, (_, i) => g(`g${i}`, 'electric-blast-furnace'));
+    const links = groups.slice(1).map((gr, i) => ({
+      id: `l${i}`,
+      from: { group: groups[i].id },
+      to: { group: gr.id },
+      resource: 'r',
+    }));
+    return { ...chain(), size, groups, links, resources: chain().resources };
+  }
+
+  const odd = (id: string): [number, number] => [
+    3 + (id.charCodeAt(id.length - 1) % 5),
+    4 + (id.length % 3) * 2,
+  ];
+  const cases: [string, SiteState, ((id: string) => [number, number]) | 'real', boolean][] = [
+    ['chain', chain(), 'real', false],
+    ['chain on floors', { ...chain(), size: [14, 30] }, 'real', true],
+    ['line', line(6, [60, 30]), odd, false],
+    ['line on floors', line(6, [20, 20]), odd, true],
+    ['too deep, rotated', { ...chain(), links: [], size: [40, 20] }, () => [4, 9], false],
+    ['site fixture', fixture('site.json'), 'real', false],
+    ['import fixture', fixture('import.json'), 'real', true],
+  ];
+
+  it.each(cases)('%s', (_, site, sizing, floors) => {
+    const build = createSiteBuilder();
+    const first = build(site, { pipes: false, cables: false });
+    const footprints = localFootprints(first);
+    const heights = localHeights(first);
+    const sizeOf = sizing === 'real' ? (id: string) => footprints.get(id) : sizing;
+    const opts = floors ? { floors: { heightOf: (id: string) => heights.get(id) ?? 6 } } : {};
+    const once = arrangeSite(site, sizeOf, opts);
+    const twice = arrangeSite({ ...site, groups: once.groups }, sizeOf, opts);
+    expect(twice).toEqual(once);
+    // Starting from turned groups changes nothing either.
+    const turned = site.groups.map((gr, i) => ({ ...gr, rotation: ((i + 1) % 4) as 0 | 1 | 2 | 3 }));
+    expect(arrangeSite({ ...site, groups: turned }, sizeOf, opts)).toEqual(once);
+  });
+});
+
+describe('arrangeSite progress and cancel', () => {
+  it('reports growing progress up to the total', () => {
+    const calls: [number, number][] = [];
+    let t = 0;
+    arrangeSite(chain(), () => [6, 6], {
+      now: () => (t += 100),
+      onProgress: (done, total) => calls.push([done, total]),
+    });
+    expect(calls.length).toBeGreaterThan(1);
+    for (let i = 1; i < calls.length; i++) expect(calls[i][0]).toBeGreaterThan(calls[i - 1][0]);
+    expect(calls[calls.length - 1][0]).toBe(calls[calls.length - 1][1]);
+  });
+
+  it('throws AbortedError when the signal is aborted, before or during', () => {
+    const controller = new AbortController();
+    controller.abort();
+    expect(() => arrangeSite(chain(), () => [6, 6], { signal: controller.signal })).toThrow(AbortedError);
+    const later = new AbortController();
+    expect(() =>
+      arrangeSite(chain(), () => [6, 6], {
+        signal: later.signal,
+        now: () => 0,
+        onProgress: () => later.abort(),
+      }),
+    ).toThrow(AbortedError);
   });
 });

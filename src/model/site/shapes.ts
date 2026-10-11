@@ -2,6 +2,7 @@ import { getSiteDef, isSingleBlock } from '../../data/generic';
 import type { PlanLimits } from '../multiblock/types';
 import type { Shape } from './anneal';
 import type { SiteBuilder } from './buildTypes';
+import { throwIfAborted } from './progress';
 import type { SiteGroup, SiteLink, SiteState } from './types';
 
 /**
@@ -43,6 +44,8 @@ export interface ShapeOptions {
   budgetMs?: number;
   /** Clock for `budgetMs`. Default `performance.now`. */
   now?: () => number;
+  /** Aborting throws `AbortedError`, checked before each group is measured. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -69,6 +72,7 @@ export function groupShapes(
   let unitsBuilt = 0;
   let spent = 0;
   for (const g of order) {
+    throwIfAborted(opts.signal);
     const def = getSiteDef(g.multiblockId)!;
     const seen = new Set([limitsKey(g.limits)]);
     const variants: PlanLimits[] = [];

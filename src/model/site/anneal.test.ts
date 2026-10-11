@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { annealGroups, layoutCost, type Shape } from './anneal';
-import { FLOOR_CLEARANCE, arrangeSite } from './arrange';
+import { AbortedError, FLOOR_CLEARANCE, arrangeSite } from './arrange';
 import { createSiteBuilder, localFootprints, localHeights } from './build';
 import type { SiteGroup, SiteState } from './types';
 
@@ -263,5 +263,41 @@ describe('annealGroups with other shapes', () => {
     const none = annealGroups(pair(), sizes, { seed: 5, iterations: 2000 });
     expect(none.groups.every((gr, i) => gr.limits === pair().groups[i].limits || true)).toBe(true);
     expect(none.groups[0].limits).toEqual(wide.limits);
+  });
+});
+
+describe('annealGroups limits, progress and cancel', () => {
+  const site = web(4, 3);
+  const laid = { ...site, groups: arrangeSite(site, fixed).groups };
+
+  it('cools by iterations, not by the clock: any clock gives the same layout', () => {
+    let t = 0;
+    const a = annealGroups(laid, fixed, { seed: 2, iterations: 3000 });
+    const b = annealGroups(laid, fixed, { seed: 2, iterations: 3000, now: () => (t += 3) });
+    expect(b).toEqual(a);
+    expect(a.truncated).toBe(false);
+    expect(a.iterations).toBe(3000);
+  });
+
+  it('says when the time limit cut the run', () => {
+    let t = 0;
+    const r = annealGroups(laid, fixed, { iterations: 1e6, budgetMs: 100, now: () => (t += 1) });
+    expect(r.truncated).toBe(true);
+    expect(r.iterations).toBeLessThan(1e6);
+  });
+
+  it('reports progress and throws AbortedError when aborted', () => {
+    const calls: number[] = [];
+    annealGroups(laid, fixed, { iterations: 640, onProgress: (done, total) => calls.push(done / total) });
+    expect(calls[0]).toBe(0);
+    expect(calls[calls.length - 1]).toBe(1);
+    const controller = new AbortController();
+    expect(() =>
+      annealGroups(laid, fixed, {
+        iterations: 1e6,
+        signal: controller.signal,
+        onProgress: () => controller.abort(),
+      }),
+    ).toThrow(AbortedError);
   });
 });

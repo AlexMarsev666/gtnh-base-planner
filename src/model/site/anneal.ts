@@ -1,6 +1,7 @@
 import type { Rotation } from '../core/types';
 import { FLOOR_CLEARANCE } from './arrange';
 import type { PlanLimits } from '../multiblock/types';
+import { throwIfAborted } from './progress';
 import type { SiteGroup, SiteLink, SiteState } from './types';
 
 /**
@@ -21,7 +22,8 @@ import type { SiteGroup, SiteLink, SiteState } from './types';
  * It is an estimate: the real router decides whether a layout connects. `optimizeSite` routes the best
  * few layouts and keeps the one that does best.
  *
- * Pure and deterministic for a given seed and iteration count; a time budget only ends the run early.
+ * Pure and deterministic for a given seed and iteration count; the time limit is only a safety net that
+ * ends the run early (`truncated`). The cooling follows the iterations, never the clock.
  */
 
 export interface AnnealOptions {
@@ -29,10 +31,14 @@ export interface AnnealOptions {
   seed?: number;
   /** Proposals to try. Default grows with the number of groups. */
   iterations?: number;
-  /** Stop after this many milliseconds (the cooling follows the clock, so a short run still ends cold). */
+  /** Safety limit: stop after this many milliseconds, whatever the iterations (the result is `truncated`). */
   budgetMs?: number;
   /** Clock for `budgetMs`. Default `performance.now`. */
   now?: () => number;
+  /** Called with (iterations done, iterations planned) every few iterations; the caller throttles. */
+  onProgress?: (done: number, total: number) => void;
+  /** Aborting throws `AbortedError`. */
+  signal?: AbortSignal;
   /** Weight of the bounding box's width + depth against the wire length. Default `DEFAULT_COMPACT`. */
   compact?: number;
   /** Height in blocks of each group, to tell whether two floors clear each other. Default 1. */
@@ -64,6 +70,8 @@ export interface AnnealResult {
   /** False when nothing better was found (or the start was not a valid layout); `groups` is then the start. */
   improved: boolean;
   iterations: number;
+  /** Whether the time limit ended the run before its iterations were done. */
+  truncated: boolean;
 }
 
 /**
@@ -473,6 +481,7 @@ export function annealGroups(
     after: before,
     improved: false,
     iterations: 0,
+    truncated: false,
   };
   // Only a layout that already respects the site and the corridors can be polished: every move keeps it so.
   if (m.n < 2 || m.nets.length === 0 || !m.allValid()) return unchanged;
@@ -611,15 +620,19 @@ export function annealGroups(
   let best = current;
   let bestState = m.snapshot();
   const started = now();
-  let progress = 0;
+  let truncated = false;
   let done = 0;
   for (; done < iterations; done++) {
     // A step judged by `evaluate` can take tens of milliseconds: read the clock every time then.
     if (done % 64 === 0 || opts.evaluate) {
-      progress = done / iterations;
-      if (opts.budgetMs !== undefined) progress = Math.max(progress, (now() - started) / opts.budgetMs);
-      if (progress >= 1) break;
+      throwIfAborted(opts.signal);
+      opts.onProgress?.(done, iterations);
+      if (opts.budgetMs !== undefined && now() - started >= opts.budgetMs) {
+        truncated = true;
+        break;
+      }
     }
+    const progress = done / iterations;
     const temp = t0 * Math.pow(t1 / t0, progress);
     m.begin();
     const pickMove = rand();
@@ -676,6 +689,7 @@ export function annealGroups(
   }
 
   m.restore(bestState);
-  if (best >= before - 1e-9) return { ...unchanged, iterations: done };
-  return { groups: toGroups(), before, after: best, improved: true, iterations: done };
+  if (!truncated) opts.onProgress?.(done, iterations);
+  if (best >= before - 1e-9) return { ...unchanged, iterations: done, truncated };
+  return { groups: toGroups(), before, after: best, improved: true, iterations: done, truncated };
 }
