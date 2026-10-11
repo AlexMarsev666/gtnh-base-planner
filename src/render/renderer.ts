@@ -13,6 +13,8 @@ export interface RendererOptions {
   onPick?: (unitIds: number[]) => void;
   /** Called on click with the id of the net (`RouteNet.id`) under the pointer, or null. */
   onPickNet?: (netId: number | null) => void;
+  /** Called on click with the cell of the hatch block under the pointer, or null when it is something else. */
+  onPickHatch?: (cell: Vec3 | null) => void;
   /** Called after a frame when the camera azimuth (`OrbitControls.theta`, radians) changed. */
   onView?: (theta: number) => void;
   /**
@@ -33,6 +35,8 @@ export interface Renderer {
   setViewMode(mode: ViewMode): Promise<void>;
   setXray(on: boolean): void;
   setSelected(unitIds: number[]): void;
+  /** Highlight single cells (the selected hatch); an empty list clears the highlight. */
+  setMarkedCells(cells: readonly Vec3[]): void;
   /** Animate flow arrows along nets that carry `flows` (site view). */
   setFlowAnimation(on: boolean): void;
   /** Reset camera to fit the scene. */
@@ -97,6 +101,23 @@ function center(p: Vec3): THREE.Vector3 {
   return new THREE.Vector3(p[0] + 0.5, p[1] + 0.5, p[2] + 0.5);
 }
 
+/** Line segment endpoints (x, y, z of each) of the 12 edges of every box. */
+function boxEdges(boxes: readonly THREE.Box3[]): number[] {
+  const positions: number[] = [];
+  const corner = (b: THREE.Box3, i: number): number[] => [
+    i & 1 ? b.max.x : b.min.x,
+    i & 2 ? b.max.y : b.min.y,
+    i & 4 ? b.max.z : b.min.z,
+  ];
+  const edges = [
+    [0, 1], [2, 3], [4, 5], [6, 7],
+    [0, 2], [1, 3], [4, 6], [5, 7],
+    [0, 4], [1, 5], [2, 6], [3, 7],
+  ]; // prettier-ignore
+  for (const b of boxes) for (const [a, c] of edges) positions.push(...corner(b, a), ...corner(b, c));
+  return positions;
+}
+
 function visualKey(v: Voxel): string {
   return `${v.blockId}|${v.kind}|${v.hatchKind ?? ''}|${v.facing ?? ''}|${v.baseBlockId ?? ''}|${v.conflict ? 1 : 0}`;
 }
@@ -109,6 +130,8 @@ interface VoxelBatch {
   conflict: boolean;
   /** A single material when all six faces match (one draw call instead of six). */
   baseMaterials: THREE.Material | THREE.Material[];
+  /** Drawn see-through (glass): a click goes on to what is behind it, like for a faded block. */
+  glass: boolean;
 }
 
 /** Device pixels per CSS pixel the canvas is drawn at (the same cap as the WebGL renderer). */
@@ -299,7 +322,9 @@ export function createRenderer(
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 5000);
   const content = new THREE.Group();
   const selection = new THREE.Group();
-  scene.add(content, selection);
+  /** The highlighted hatch cells; unlike the selection it never moves with a drag. */
+  const marks = new THREE.Group();
+  scene.add(content, selection, marks);
 
   const gizmo = buildGizmo();
   const half = GIZMO_SPAN / 2;
@@ -388,6 +413,7 @@ export function createRenderer(
   let flowOn = true;
   const clock = typeof performance === 'undefined' ? () => Date.now() : () => performance.now();
   let selected = new Set<number>();
+  let marked: readonly Vec3[] = [];
   let xray = false;
   const xrayMaterials = new Map<string, THREE.Material>();
   let fittedBoundsKey = '';
@@ -662,7 +688,8 @@ export function createRenderer(
       mesh.instanceMatrix.needsUpdate = true;
       mesh.computeBoundingSphere();
       content.add(mesh);
-      batches.push({ mesh, indices, kind: first.kind, conflict, baseMaterials });
+      const glass = [baseMaterials].flat().some((m) => m.transparent);
+      batches.push({ mesh, indices, kind: first.kind, conflict, baseMaterials, glass });
     }
   }
 
@@ -941,12 +968,14 @@ export function createRenderer(
     }
     applyXray();
     rebuildSelection();
+    rebuildMarks();
     requestRender();
   }
 
   function rebuildSelection(): void {
     disposeSelection();
     selection.position.set(0, 0, 0);
+    marks.position.set(0, 0, 0);
     if (!model || selected.size === 0) return;
     const voxels = model.voxels.filter((v) => v.unitIds.some((id) => selected.has(id)));
     if (voxels.length === 0) return;
@@ -969,21 +998,8 @@ export function createRenderer(
         if (!b) boxes.set(id, (b = new THREE.Box3()));
         b.expandByPoint(new THREE.Vector3(...v.pos)).expandByPoint(center(v.pos).addScalar(0.5));
       }
-    const positions: number[] = [];
-    const corner = (b: THREE.Box3, i: number): number[] => [
-      i & 1 ? b.max.x : b.min.x,
-      i & 2 ? b.max.y : b.min.y,
-      i & 4 ? b.max.z : b.min.z,
-    ];
-    const edges = [
-      [0, 1], [2, 3], [4, 5], [6, 7],
-      [0, 2], [1, 3], [4, 6], [5, 7],
-      [0, 4], [1, 5], [2, 6], [3, 7],
-    ]; // prettier-ignore
-    for (const b of boxes.values()) {
-      b.expandByScalar(0.035);
-      for (const [a, c] of edges) positions.push(...corner(b, a), ...corner(b, c));
-    }
+    for (const box of boxes.values()) box.expandByScalar(0.035);
+    const positions = boxEdges([...boxes.values()]);
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     const lines = new THREE.LineSegments(lineGeo, lineMat);
@@ -991,12 +1007,35 @@ export function createRenderer(
     selection.add(tint, lines);
   }
 
-  function disposeSelection(): void {
-    for (const child of [...selection.children]) {
-      selection.remove(child);
+  function disposeGroup(group: THREE.Group): void {
+    for (const child of [...group.children]) {
+      group.remove(child);
       if (child instanceof THREE.InstancedMesh) child.dispose();
       else if (child instanceof THREE.LineSegments) child.geometry.dispose();
     }
+  }
+  const disposeSelection = (): void => disposeGroup(selection);
+
+  /** A tint and an outline, a little bigger than the cell, around each marked cell (the selected hatch). */
+  function rebuildMarks(): void {
+    disposeGroup(marks);
+    if (marked.length === 0) return;
+    const tint = new THREE.InstancedMesh(boxGeo, tintMat, marked.length);
+    const matrix = new THREE.Matrix4();
+    const size = new THREE.Vector3(1.1, 1.1, 1.1);
+    const q = new THREE.Quaternion();
+    marked.forEach((c, i) => tint.setMatrixAt(i, matrix.compose(center(c), q, size)));
+    tint.instanceMatrix.needsUpdate = true;
+    tint.computeBoundingSphere();
+    tint.renderOrder = 2;
+    const boxes = marked.map((c) =>
+      new THREE.Box3(new THREE.Vector3(...c), center(c).addScalar(0.5)).expandByScalar(0.06),
+    );
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(boxEdges(boxes), 3));
+    const lines = new THREE.LineSegments(lineGeo, lineMat);
+    lines.renderOrder = 3;
+    marks.add(tint, lines);
   }
 
   // ---------------------------------------------------------------- picking
@@ -1033,7 +1072,7 @@ export function createRenderer(
         continue;
       }
       const voxels = batches.find((b) => b.mesh === hit.object);
-      if (voxels) hits.push({ hit, voxels, translucent: isFaded(voxels) });
+      if (voxels) hits.push({ hit, voxels, translucent: voxels.glass || isFaded(voxels) });
     }
     return choosePick(hits);
   }
@@ -1063,6 +1102,7 @@ export function createRenderer(
     drag.dx = dx;
     drag.dz = dz;
     selection.position.set(dx, 0, dz);
+    marks.position.set(dx, 0, dz);
     options.onDragOffset?.([dx, dz]);
     requestRender();
   }
@@ -1076,6 +1116,7 @@ export function createRenderer(
     if (!d) return;
     if (cancelled || (d.dx === 0 && d.dz === 0)) {
       selection.position.set(0, 0, 0);
+      marks.position.set(0, 0, 0);
       requestRender();
       // A press on the selection that did not move is a click.
       if (!cancelled && e) pick(e);
@@ -1108,16 +1149,19 @@ export function createRenderer(
       const id = found.pipes.netIds[found.hit.instanceId!];
       options.onPick([]);
       options.onPickNet?.(id >= 0 ? id : null);
+      options.onPickHatch?.(null);
       return;
     }
     if (found?.voxels) {
       const voxel = model.voxels[found.voxels.indices[found.hit.instanceId!]];
       options.onPick([...voxel.unitIds]);
       options.onPickNet?.(null);
+      options.onPickHatch?.(voxel.kind === 'hatch' ? voxel.pos : null);
       return;
     }
     options.onPick([]);
     options.onPickNet?.(null);
+    options.onPickHatch?.(null);
   }
 
   // ---------------------------------------------------------------- public API
@@ -1185,6 +1229,14 @@ export function createRenderer(
       if (unitIds.length === selected.size && unitIds.every((id) => selected.has(id))) return;
       selected = new Set(unitIds);
       rebuildSelection();
+      requestRender();
+    },
+
+    setMarkedCells(cells) {
+      if (cells.length === marked.length && cells.every((c, i) => c.every((n, a) => n === marked[i][a])))
+        return;
+      marked = cells.map((c) => [...c] as Vec3);
+      rebuildMarks();
       requestRender();
     },
 
@@ -1275,6 +1327,7 @@ export function createRenderer(
       canvas.removeEventListener('webglcontextrestored', onContextRestored);
       clearContent();
       disposeSelection();
+      disposeGroup(marks);
       for (const g of sharedGeometries) g.dispose();
       for (const m of ownedMaterials) m.dispose();
       disposeObjectTree(gizmo);

@@ -8,12 +8,14 @@
     testid?: string;
     /** Id of the element that explains or qualifies the choice. */
     describedby?: string;
+    /** Draw the row as the one picked in the 3D view (marked `data-emphasis` so the page can scroll to it). */
+    emphasis?: boolean;
     onchange: (value: string) => void;
   }
-  let { label, value, options, title, testid, describedby, onchange }: Props = $props();
+  let { label, value, options, title, testid, describedby, emphasis = false, onchange }: Props = $props();
 </script>
 
-<li class="select-row">
+<li class="select-row" class:emphasis data-emphasis={emphasis || undefined}>
   <label {title}>
     <span>{label}</span>
     <select
@@ -34,6 +36,13 @@
 <style>
   .select-row {
     min-height: 26px;
+  }
+  .emphasis {
+    margin: 0 -6px;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--line);
+    outline: 1px solid var(--faint);
   }
   label {
     display: flex;

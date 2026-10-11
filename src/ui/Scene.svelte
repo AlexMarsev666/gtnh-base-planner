@@ -17,6 +17,10 @@
     onviewfallback?: () => void;
     /** Site view: a pipe was clicked (net id), or something else (null). */
     onpicknet?: (netId: number | null) => void;
+    /** A hatch block was clicked (its cell), or something else (null). Called after `onpick`. */
+    onpickhatch?: (cell: Vec3 | null) => void;
+    /** Cells to highlight (the selected hatch). */
+    marked?: readonly Vec3[];
     /** Site view: animate flow arrows. */
     flow?: boolean;
     /** The camera azimuth changed (see `RendererOptions.onView`). */
@@ -39,6 +43,8 @@
     onfail,
     onviewfallback,
     onpicknet,
+    onpickhatch,
+    marked = [],
     flow = true,
     onview,
     onmove,
@@ -75,6 +81,7 @@
       r = createRenderer(canvas, {
         onPick: (ids) => onpick(ids),
         onPickNet: (id) => onpicknet?.(id),
+        onPickHatch: (cell) => onpickhatch?.(cell),
         onView: (theta) => onview?.(theta),
         onMoveSelection: (dx, dz) => onmove?.(dx, dz),
         onDragOffset: (o) => ondrag?.(o),
@@ -123,6 +130,11 @@
     const r = renderer;
     const ids = selected;
     if (r) guard('setSelected', () => r.setSelected(ids));
+  });
+  $effect(() => {
+    const r = renderer;
+    const cells = marked;
+    if (r) guard('setMarkedCells', () => r.setMarkedCells(cells));
   });
   $effect(() => {
     const r = renderer;

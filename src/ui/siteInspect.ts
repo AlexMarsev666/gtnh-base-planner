@@ -5,10 +5,11 @@ import {
   singleMachineTiers,
   transformerValid,
 } from '../data/single-machines';
-import { TIERS, type Tier } from '../model/core/types';
-import { withHatchZones } from '../model/hatches/zones';
+import { TIERS, type Tier, type Vec3 } from '../model/core/types';
+import { unitCells } from '../model/geometry';
+import { withHatchZones, zoneOfCell } from '../model/hatches/zones';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
-import type { SiteWarning } from '../model/site/buildTypes';
+import type { PlacedGroup, SiteWarning } from '../model/site/buildTypes';
 import type { Demand, SiteHatch } from '../model/site/group';
 import {
   TRANSFORMER_AMPS,
@@ -164,6 +165,74 @@ export function groupHatchRows(
     });
   });
   return [...rows.values()];
+}
+
+const sameCell = (a: Vec3, b: Vec3): boolean => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+
+/** The group and `groupHatchKeys` key of the hatch on `cell` (a clicked hatch block), or null when none is there. */
+export function groupHatchAt(
+  groups: readonly Pick<PlacedGroup, 'group' | 'hatches' | 'units'>[],
+  cell: Vec3,
+): { group: string; key: string } | null {
+  for (const pg of groups) {
+    const i = pg.hatches.findIndex((h) => sameCell(h.cell, cell));
+    if (i < 0) continue;
+    const keys = groupHatchKeys(
+      pg.hatches,
+      pg.units.map((u) => u.id),
+    );
+    return { group: pg.group.id, key: keys[i] };
+  }
+  return null;
+}
+
+/** Whether the built groups still have the picked hatch: the hatch on its cell is of that group, with its key. */
+export function groupPickHolds(
+  groups: readonly Pick<PlacedGroup, 'group' | 'hatches' | 'units'>[],
+  pick: { group: string; key: string; cell: Vec3 },
+): boolean {
+  const hit = groupHatchAt(groups, pick.cell);
+  return hit?.group === pick.group && hit.key === pick.key;
+}
+
+/** What the group inspector tells about one hatch of the group. */
+export interface GroupHatchInfo {
+  key: string;
+  kind: HatchKind;
+  resource?: string;
+  /** Unit numbers (from 1) the hatch serves. */
+  units: number[];
+  /** Cells of the hatch (a resource split over hatches of one unit shares the key). */
+  cells: Vec3[];
+  /** The zone its cell is in, with the zone's text when the multiblock has one. */
+  zone?: { name: string; text?: string };
+  /** Whether the hatch has a voltage tier to set. */
+  tiered: boolean;
+}
+
+/** The hatch of a placed group with this `groupHatchKeys` key, or undefined when the group has none like it. */
+export function groupHatchInfo(
+  placed: Pick<PlacedGroup, 'hatches' | 'units' | 'build'>,
+  key: string,
+): GroupHatchInfo | undefined {
+  const unitIds = placed.units.map((u) => u.id);
+  const keys = groupHatchKeys(placed.hatches, unitIds);
+  const i = keys.indexOf(key);
+  if (i < 0) return undefined;
+  const h = placed.hatches[i];
+  const unit = placed.units.find((u) => u.id === h.unitIds[0]);
+  const def = placed.build?.def && withHatchZones(placed.build.def);
+  const at = def && unit ? unitCells(def, unit).find((c) => sameCell(c.pos, h.cell)) : undefined;
+  const name = def && at ? zoneOfCell(def, at.local, at.char) : undefined;
+  return {
+    key,
+    kind: h.kind,
+    ...(h.resource !== undefined && !hasNoResource(h.kind) ? { resource: h.resource } : {}),
+    units: h.unitIds.flatMap((id) => (unitIds.includes(id) ? [unitIds.indexOf(id) + 1] : [])),
+    cells: placed.hatches.flatMap((x, j) => (keys[j] === key ? [x.cell] : [])),
+    ...(name !== undefined ? { zone: { name, text: def?.zones?.[name]?.text } } : {}),
+    tiered: h.kind !== 'maintenance' && h.kind !== 'steamIn',
+  };
 }
 
 /** How many entries of `SiteGroup.hatchTiers` name no hatch of the group (e.g. after the count was lowered). */

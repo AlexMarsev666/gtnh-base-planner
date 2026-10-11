@@ -3,8 +3,18 @@
   import { t } from '../i18n/en';
   import { groupIndexOfUnit, portIndexOfUnit } from '../model/site/ids';
   import { portIdForUnit, portUnitFor } from './siteSelection';
-  import { appMode, flowAnimation, isolate, site, siteGroup, siteNet, sitePort } from '../state/site';
-  import { plan, selectedUnits, viewMode, xray } from '../state/store';
+  import {
+    appMode,
+    flowAnimation,
+    isolate,
+    site,
+    siteGroup,
+    siteHatch,
+    siteNet,
+    sitePort,
+  } from '../state/site';
+  import { plan, selectedHatch, selectedUnits, viewMode, xray } from '../state/store';
+  import type { Vec3 } from '../model/core/types';
   import { selectMultiblock } from './actions';
   import { startSessions } from './appSession';
   import BlocksPanel from './BlocksPanel.svelte';
@@ -17,6 +27,7 @@
   import Notices from './Notices.svelte';
   import { notify } from './notices';
   import Picker from './Picker.svelte';
+  import { hatchKeyAt, hatchPickHolds, hatchTierRows } from './hatchTierRows';
   import { build, machineBusy, machineDef } from './pipeline';
   import Scene from './Scene.svelte';
   import { isTyping, siteKeyAction } from './keys';
@@ -38,6 +49,7 @@
   import { redoSite, undoSite } from './siteHistory';
   import SiteBar from './SiteBar.svelte';
   import { addGroup } from './siteCommands';
+  import { groupHatchAt, groupPickHolds } from './siteInspect';
   import SiteLegend from './SiteLegend.svelte';
   import SitePanel from './SitePanel.svelte';
   import { siteBuildInView, siteSceneInView } from './sitePipeline';
@@ -80,6 +92,26 @@
     return g ? g.units.map((u) => u.id) : [];
   });
 
+  /** Cells of the picked hatch, highlighted in the scene. */
+  const markedCells = $derived.by((): Vec3[] => {
+    if (!siteMode) {
+      const h = $selectedHatch;
+      return h && hatchPickHolds($build.scene?.hatches ?? [], h) ? [h.cell] : [];
+    }
+    const h = $siteHatch;
+    return h && groupPickHolds($siteBuildInView.build?.groups ?? [], h) ? [h.cell] : [];
+  });
+  // A rebuild that no longer has the hatch (another layout, count or machine) drops the pick.
+  $effect(() => {
+    const h = $selectedHatch;
+    if (h && $build.scene && !hatchPickHolds($build.scene.hatches, h)) selectedHatch.set(null);
+  });
+  $effect(() => {
+    const h = $siteHatch;
+    const groups = $siteBuildInView.build?.groups;
+    if (h && groups && !groupPickHolds(groups, h)) siteHatch.set(null);
+  });
+
   function onpick(ids: number[]) {
     if (!siteMode) {
       selectedUnits.set(ids);
@@ -97,6 +129,38 @@
       siteGroup.set(null);
       sitePort.set(null);
     }
+  }
+
+  /** Called after `onpick` with the cell of the hatch block that was clicked, null for anything else. */
+  function onpickhatch(cell: Vec3 | null) {
+    if (siteMode) {
+      const hit = cell ? groupHatchAt($siteBuildInView.build?.groups ?? [], cell) : null;
+      siteHatch.set(hit && cell ? { ...hit, cell } : null);
+      // A click does not open the panel; it shows the hatch when it is open already.
+      if (hit && !sitePanelOpen)
+        notify(t.hatchSelected(''), 6000, 'hatch', {
+          label: t.site.hatchDetails,
+          run: () => {
+            sitePanelOpen = true;
+            blocksOpen = false;
+          },
+        });
+      return;
+    }
+    const hatches = $build.scene?.hatches ?? [];
+    const key = cell ? hatchKeyAt(hatches, cell) : null;
+    selectedHatch.set(key && cell ? { key, cell } : null);
+    // Settings lists the hatches that have a tier; the others are only highlighted. A click never opens it.
+    const hatch = cell ? hatches.find((h) => h.cell.join() === cell.join()) : undefined;
+    if (key && hatch && !settingsOpen && hatchTierRows(hatches).some((r) => r.key === key))
+      notify(t.hatchSelected(t.hatchKinds[hatch.kind]), 6000, 'hatch', {
+        label: t.hatchSetTier,
+        run: () => {
+          settingsOpen = true;
+          pickerOpen = false;
+          blocksOpen = false;
+        },
+      });
   }
 
   function onpicknet(id: number | null) {
@@ -129,6 +193,7 @@
       if (siteMode) {
         if (importOpen) importOpen = false;
         else if (sitePicker) sitePicker = null;
+        else if ($siteHatch) siteHatch.set(null);
         else if (sitePanelOpen) sitePanelOpen = false;
         else if (blocksOpen) blocksOpen = false;
         else {
@@ -138,6 +203,7 @@
           isolate.set(null);
         }
       } else if (pickerOpen) pickerOpen = false;
+      else if ($selectedHatch) selectedHatch.set(null);
       else if (settingsOpen) settingsOpen = false;
       else if (blocksOpen) blocksOpen = false;
       return;
@@ -195,6 +261,8 @@
     {inset}
     {onpick}
     {onpicknet}
+    {onpickhatch}
+    marked={markedCells}
     onfail={() => (rendererFailed = true)}
     onviewfallback={() => {
       viewMode.set('simple');

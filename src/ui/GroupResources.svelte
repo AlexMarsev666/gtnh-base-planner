@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MultiblockDef } from '../model/multiblock/types';
+  import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
   import type { Demand } from '../model/site/group';
   import type { HatchAssign, SiteGroup } from '../model/site/types';
   import { t } from '../i18n/en';
@@ -18,8 +18,10 @@
     demand: Demand;
     /** Units in the group as built (the count may be higher than what fits). */
     units: number;
+    /** The resource of the hatch picked in the 3D view: its choices are emphasised. */
+    focus?: { kind: HatchKind; resource: string };
   }
-  let { group, def, demand, units }: Props = $props();
+  let { group, def, demand, units, focus }: Props = $props();
 
   const resources = $derived(groupResources(demand));
   const count = $derived(Math.max(units, group.count));
@@ -67,7 +69,10 @@
       {#each resources as r (r.kind + r.resource)}
         {@const a = group.assign?.[r.resource]}
         {@const zones = zoneChoices(def, r.kind, a?.zone)}
-        <li>
+        <li
+          class:emphasis={focus?.kind === r.kind && focus.resource === r.resource}
+          data-testid={focus?.kind === r.kind && focus.resource === r.resource ? 'assign-focus' : undefined}
+        >
           <p class="res">
             <span class="value">{$site.resources[r.resource]?.name ?? r.resource}</span>
             <span class="meta">{t.hatchKinds[r.kind]}</span>
@@ -124,6 +129,13 @@
   }
   .blocks > li {
     margin-bottom: 6px;
+  }
+  .emphasis {
+    margin: 0 -6px 6px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: var(--line);
+    outline: 1px solid var(--faint);
   }
   .res {
     margin: 0;

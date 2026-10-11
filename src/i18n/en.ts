@@ -89,6 +89,8 @@ export const t = {
     `${WALLSHARE_NAMES[wanted]} is not possible here (${WALLSHARE_REASONS[reason]}): used ${WALLSHARE_NAMES[used]}.`,
   hatchTiers: 'Hatch tiers',
   hatchTiersShow: (n: number) => `Set tiers of ${n} ${n === 1 ? 'hatch' : 'hatches'}`,
+  hatchSelected: (kind: string) => (kind ? `Hatch selected: ${kind}` : 'Hatch selected'),
+  hatchSetTier: 'Set tier',
   hatchTiersHide: 'Hide hatch tiers',
   hatchTiersSelected: 'Only hatches of the selected machines.',
   hatchTierName: (kind: string, n: number) => `${kind} ${n}`,
@@ -342,6 +344,13 @@ export const t = {
     unitGone: (n: number) => `Unit ${n} (not in the group)`,
     noResources: 'No resources yet. Link this group to another, or to a port.',
     hatchTiers: 'Hatch tiers',
+    pickedHatch: 'Selected hatch',
+    hatchDetails: 'Details',
+    hatchServes: (units: readonly number[]) =>
+      units.length === 0
+        ? 'Serves no unit of the group.'
+        : `Serves ${units.length > 1 ? 'units' : 'unit'} ${units.join(', ')}.`,
+    hatchZone: (name: string, text?: string) => `Zone ${name}${text ? `: ${text}` : ''}`,
     hatchTierShared: 'shared',
     hatchTierName: (kind: string, resource: string | undefined, unit: number | 'shared') =>
       `${kind}${resource ? ` ${resource}` : ''}${unit === 'shared' ? '' : ` · unit ${unit + 1}`}`,

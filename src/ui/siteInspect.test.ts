@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { getMultiblock } from '../data/catalog';
 import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
 import { SINGLE_MACHINES } from '../data/single-machines';
-import type { SiteWarning } from '../model/site/buildTypes';
+import { buildGroup } from '../model/site/group';
+import type { PlacedGroup, SiteWarning } from '../model/site/buildTypes';
 import {
   ampOptions,
+  groupHatchAt,
+  groupHatchInfo,
+  groupPickHolds,
   groupHatchRows,
   groupResources,
   groupTiers,
@@ -144,5 +149,57 @@ describe('warnings', () => {
     const { problems, info } = splitWarnings(w);
     expect(problems.map((x) => x.type)).toEqual(['outside']);
     expect(info.map((x) => x.type)).toEqual(['powerUnknownTier']);
+  });
+});
+
+describe('picking a group hatch', () => {
+  const oil = getMultiblock('oil-cracking-unit')!;
+  const none = { x: null, y: null, z: null };
+  const demand = { fluidIn: ['fluid:h2', 'fluid:oil'], fluidOut: ['fluid:out'] };
+  const assign = { 'fluid:oil': { zone: 'dot2' } };
+  const b = buildGroup(oil, 2, none, ['energy', 'maintenance'], demand, false, {}, { assign });
+  // The build is in group-local coordinates, which is all the lookups need.
+  const placed = {
+    group: { id: 'g1' },
+    units: b.units,
+    hatches: b.hatches,
+    build: b,
+  } as unknown as PlacedGroup;
+
+  it('maps a clicked hatch cell to its group and tier key', () => {
+    const oilHatch = b.hatches.find((h) => h.resource === 'fluid:oil')!;
+    const unit = b.units.findIndex((u) => oilHatch.unitIds.includes(u.id));
+    expect(groupHatchAt([placed], oilHatch.cell)).toEqual({
+      group: 'g1',
+      key: oilHatch.unitIds.length > 1 ? 'fluidIn:fluid:oil:shared' : `fluidIn:fluid:oil:${unit}`,
+    });
+    expect(groupHatchAt([placed], [99, 99, 99])).toBeNull();
+  });
+
+  it('describes the hatch: kind, resource, served units and zone', () => {
+    const oilHatch = b.hatches.find((h) => h.resource === 'fluid:oil')!;
+    const key = groupHatchAt([placed], oilHatch.cell)!.key;
+    const info = groupHatchInfo(placed, key)!;
+    expect(info.kind).toBe('fluidIn');
+    expect(info.resource).toBe('fluid:oil');
+    expect(info.units.length).toBeGreaterThan(0);
+    expect(info.zone?.name).toBe('dot2');
+    expect(info.zone?.text).toBeTruthy();
+    expect(info.tiered).toBe(true);
+    expect(info.cells).toContainEqual(oilHatch.cell);
+  });
+
+  it('drops a pick whose hatch moved or changed key', () => {
+    const h = b.hatches.find((x) => x.resource === 'fluid:oil')!;
+    const hit = groupHatchAt([placed], h.cell)!;
+    expect(groupPickHolds([placed], { ...hit, cell: h.cell })).toBe(true);
+    expect(groupPickHolds([placed], { ...hit, key: 'energy:9', cell: h.cell })).toBe(false);
+    expect(groupPickHolds([placed], { ...hit, cell: [99, 99, 99] })).toBe(false);
+  });
+
+  it('knows no hatch for a key the group does not have, and no tier for a maintenance hatch', () => {
+    expect(groupHatchInfo(placed, 'fluidIn:fluid:none:0')).toBeUndefined();
+    const m = b.hatches.find((h) => h.kind === 'maintenance');
+    if (m) expect(groupHatchInfo(placed, groupHatchAt([placed], m.cell)!.key)?.tiered).toBe(false);
   });
 });

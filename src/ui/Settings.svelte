@@ -4,7 +4,16 @@
   import { WALLSHARE_MODES } from '../model/plan/types';
   import { TIERS, type Tier } from '../model/core/types';
   import { allowedTiers } from '../model/tiers';
-  import { connectBelow, plan, selectedUnits, showCables, showPipes, xray } from '../state/store';
+  import { tick } from 'svelte';
+  import {
+    connectBelow,
+    plan,
+    selectedHatch,
+    selectedUnits,
+    showCables,
+    showPipes,
+    xray,
+  } from '../state/store';
   import {
     resetColors,
     resetHatchTiers,
@@ -72,6 +81,13 @@
     { value: '', label: t.defaultTier },
     ...hatchTierOptions(kind).map((x) => ({ value: x, label: x })),
   ];
+  // A hatch picked in the 3D view: open the list and bring its row into view.
+  let tierList = $state<HTMLElement>();
+  $effect(() => {
+    if (!$selectedHatch) return;
+    hatchTiersOpen = true;
+    void tick().then(() => tierList?.querySelector('[data-emphasis]')?.scrollIntoView({ block: 'nearest' }));
+  });
   const asTier = (v: string): Tier | undefined => TIERS.find((x) => x === v);
 
   function commitLimit(axis: keyof PlanLimits, text: string) {
@@ -237,13 +253,14 @@
       {#if hatchTiersOpen}
         {#if $selectedUnits.length}<p class="hint">{t.hatchTiersSelected}</p>{/if}
         {#if !tierRows.length}<p class="hint">{t.hatchTiersEmpty}</p>{/if}
-        <ul class="rows tier-list" data-testid="hatch-tier-list">
+        <ul class="rows tier-list" data-testid="hatch-tier-list" bind:this={tierList}>
           {#each tierRows as row (row.key)}
             <SelectRow
               label={t.hatchTierName(t.hatchKinds[row.kind], row.number)}
               value={$plan.hatchTiers?.[row.key] ?? ''}
               options={hatchTierChoices(row.kind)}
               testid={`hatch-tier-${row.key}`}
+              emphasis={row.key === $selectedHatch?.key}
               onchange={(v) => setHatchTier(row.key, asTier(v))}
             />
           {/each}

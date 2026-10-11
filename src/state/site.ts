@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import type { Vec3 } from '../model/core/types';
 import type { SiteState } from '../model/site/types';
 import { emptySite } from '../share/siteCodec';
 import type { AppMode } from '../share/sitePersist';
@@ -16,6 +17,12 @@ export const siteGroup = writable<string | null>(null);
 export const sitePort = writable<string | null>(null);
 siteGroup.subscribe((id) => id !== null && sitePort.set(null));
 sitePort.subscribe((id) => id !== null && siteGroup.set(null));
+/**
+ * The hatch picked in the 3D view: its `SiteGroup.hatchTiers` key (see `groupHatchKeys`) in the selected group.
+ * Shown in the group editor and highlighted; it never outlives the selection of its group.
+ */
+export const siteHatch = writable<{ group: string; key: string; cell: Vec3 } | null>(null);
+siteGroup.subscribe((id) => siteHatch.update((h) => (h && h.group !== id ? null : h)));
 /** Selected net id (from clicking a pipe): shown in the info line. */
 export const siteNet = writable<number | null>(null);
 /** Resource key whose nets are highlighted; every other net is drawn faded. */

@@ -26,7 +26,11 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
   many to remove.
 - **Machine tier and hatch tiers**: Settings → Tier sets the voltage tier of the energy and dynamo hatches, and
   Hatch tiers sets the tier of each hatch separately (only the tiers the game allows; they reset when the layout
-  changes).
+  changes). Clicking a hatch block in the 3D view picks that hatch: it is outlined, and a notice offers to open
+  Settings on its row in Hatch tiers (already open: the row is emphasised). In a template the group is selected
+  and its editor, once open, shows the hatch (kind, resource, the units it serves, its zone, its tier), with the
+  Unit and Zone choices of its resource emphasised.
+  Escape, or a click on anything else, clears it.
 - **Mirror and shared walls**: Mirror builds every machine mirrored left to right. Shared walls (Auto, Side walls, Stack,
   Back walls, Separate) is a preference: when it cannot be met another layout is used and a notice says which.
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).

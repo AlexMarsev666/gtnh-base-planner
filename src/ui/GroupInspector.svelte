@@ -8,7 +8,7 @@
   import type { SiteGroup } from '../model/site/types';
   import type { HatchKind } from '../model/multiblock/types';
   import { SITE_MAX_ELEVATION, SITE_MAX_SIZE } from '../share/siteCodec';
-  import { siteGroup } from '../state/site';
+  import { siteGroup, siteHatch } from '../state/site';
   import { hatchKindsOf } from './catalogView';
   import {
     COUNT_MAX,
@@ -20,6 +20,7 @@
     parseLimit,
     parseSize,
   } from './fields';
+  import GroupHatch from './GroupHatch.svelte';
   import GroupHatchTiers from './GroupHatchTiers.svelte';
   import GroupResources from './GroupResources.svelte';
   import MachineTypeEditor from './MachineTypeEditor.svelte';
@@ -35,7 +36,7 @@
     setSelectedOrigin,
   } from './siteEditing';
   import SelectRow from './SelectRow.svelte';
-  import { groupTiers, hasStructure, tierChoices } from './siteInspect';
+  import { groupHatchInfo, groupTiers, hasStructure, tierChoices } from './siteInspect';
   import ToggleRow from './ToggleRow.svelte';
 
   /** The editor of the selected template group: Machine, Packing and Placement. */
@@ -67,6 +68,11 @@
     tierChoices(tiers, group.tier, { any: t.site.tierAny, notAllowed: t.notAllowed }),
   );
   const wallshareOptions = WALLSHARE_MODES.map((m) => ({ value: m, label: t.wallshareModes[m] }));
+
+  /** The hatch picked in the 3D view, when it is one of this group's. */
+  const hatchInfo = $derived(
+    placed && $siteHatch?.group === group.id ? groupHatchInfo(placed, $siteHatch.key) : undefined,
+  );
 
   let replacing = $state(false);
   $effect(() => {
@@ -121,6 +127,8 @@
   {#if def?.generated}<p class="hint unverified" data-testid="unverified">
       {t.generatedTag}: {t.generatedHint}
     </p>{/if}
+
+  {#if hatchInfo}<GroupHatch {group} info={hatchInfo} />{/if}
 
   <div class="sub">
     <p class="sub-title"><span>{t.site.machine}</span></p>
@@ -190,7 +198,13 @@
   </div>
 
   {#if def}
-    <GroupResources {group} {def} demand={placed?.demand ?? {}} units={placed?.units.length ?? group.count} />
+    <GroupResources
+      {group}
+      {def}
+      demand={placed?.demand ?? {}}
+      units={placed?.units.length ?? group.count}
+      focus={hatchInfo?.resource ? { kind: hatchInfo.kind, resource: hatchInfo.resource } : undefined}
+    />
   {/if}
   <GroupHatchTiers {group} {placed} />
 

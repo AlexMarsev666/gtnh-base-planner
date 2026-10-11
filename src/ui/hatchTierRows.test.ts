@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { hatchTierOptions, hatchTierRows, unmatchedHatchTiers } from './hatchTierRows';
+import {
+  hatchCellsOf,
+  hatchKeyAt,
+  hatchPickHolds,
+  hatchTierOptions,
+  hatchTierRows,
+  unmatchedHatchTiers,
+} from './hatchTierRows';
 
 const h = (kind: Parameters<typeof hatchTierOptions>[0], unitIds: number[]) => ({ kind, unitIds });
 
@@ -38,5 +45,38 @@ describe('unmatched hatch tiers', () => {
     expect(unmatchedHatchTiers(undefined, hatches)).toBe(0);
     expect(unmatchedHatchTiers({ 'itemIn:0': 'EV', 'fluidIn:0': 'LV' }, hatches)).toBe(0);
     expect(unmatchedHatchTiers({ 'itemIn:1': 'EV', 'fluidIn:0': 'LV', 'energy:0': 'HV' }, hatches)).toBe(2);
+  });
+});
+
+describe('picking a hatch block', () => {
+  const placed = [
+    { kind: 'itemIn' as const, cell: [1, 0, 0] as [number, number, number] },
+    { kind: 'energy' as const, cell: [2, 0, 0] as [number, number, number] },
+    { kind: 'itemIn' as const, cell: [3, 1, 0] as [number, number, number] },
+  ];
+
+  it('maps a clicked cell to the key of the hatch on it', () => {
+    expect(hatchKeyAt(placed, [3, 1, 0])).toBe('itemIn:1');
+    expect(hatchKeyAt(placed, [2, 0, 0])).toBe('energy:0');
+    expect(hatchKeyAt(placed, [9, 9, 9])).toBeNull();
+  });
+
+  it('maps a key back to the cell to highlight', () => {
+    expect(hatchCellsOf(placed, 'itemIn:1')).toEqual([[3, 1, 0]]);
+    expect(hatchCellsOf(placed, 'itemIn:7')).toEqual([]);
+  });
+});
+
+describe('a picked hatch after a rebuild', () => {
+  const cell = (x: number): [number, number, number] => [x, 0, 0];
+  it('holds only while the hatch on its cell has the same key', () => {
+    const before = [
+      { kind: 'itemIn' as const, cell: cell(1) },
+      { kind: 'energy' as const, cell: cell(2) },
+    ];
+    const pick = { key: 'energy:0', cell: cell(2) };
+    expect(hatchPickHolds(before, pick)).toBe(true);
+    expect(hatchPickHolds([{ kind: 'itemIn', cell: cell(2) }, ...before.slice(1, 1)], pick)).toBe(false);
+    expect(hatchPickHolds([{ kind: 'energy', cell: cell(5) }], pick)).toBe(false);
   });
 });
