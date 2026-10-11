@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { key } from '../geometry';
 import type { Vec3 } from '../core/types';
-import { routeNets, SURFACE_PENALTY, type RouteNetSpec } from './router';
+import { NEAT_VERTICAL_TURN_EXTRA, routeNets, SURFACE_PENALTY, type RouteNetSpec } from './router';
 
 const box = (x: number, y: number, z: number) => ({ min: [0, 0, 0] as Vec3, max: [x, y, z] as Vec3 });
 
@@ -206,21 +206,50 @@ describe('routeNets underground levels and neat style', () => {
     expect(SURFACE_PENALTY).toBe(4);
   });
 
-  it('uses a deeper level only where the shallower one is blocked', () => {
+  it('does not dive for a short hop: the two vertical turns cost more than the surface blocks', () => {
+    const hop: RouteNetSpec = {
+      terminals: [
+        { cell: [2, 0, 5], faces: ['east'], role: 'source' },
+        { cell: [9, 0, 5], faces: ['west'], role: 'sink' },
+      ],
+    };
+    const [r] = routeNets(
+      input({ style: 'neat', nets: [hop], solids: [hop.terminals[0].cell, hop.terminals[1].cell] }),
+    );
+    expect(r.connected).toBe(2);
+    expect(r.stats.bends).toBe(0);
+    expect(r.stats.underground).toEqual([0, 0, 0]);
+    expect(NEAT_VERTICAL_TURN_EXTRA).toBeGreaterThan(0);
+  });
+
+  it('goes under a block in the way on the deeper level instead of hopping it', () => {
     const plate: Vec3[] = [];
     for (let z = 0; z < 12; z++) plate.push([12, -1, z]);
     const [r] = routeNets(input({ style: 'neat' }, plate));
     expect(r.connected).toBe(2);
     expect(r.stats.underground[1]).toBeGreaterThan(0);
-    expect(r.stats.underground[0]).toBeGreaterThan(r.stats.underground[1]);
+    expect(r.stats.surfaceTrunk).toBe(0);
+    // Down to the deeper level at the hatch and up at the other: the hop over the plate would add four
+    // vertical turns, a dip around it two. So the run stays on level -2 (bends 2) and level -1 is only the stub.
+    expect(r.stats.bends).toBe(2);
+    expect(r.stats.underground[0]).toBeLessThan(r.stats.underground[1]);
+  });
+
+  it('sidesteps a short obstacle on level -1 rather than dipping deeper', () => {
+    const block: Vec3[] = [[12, -1, 5]];
+    const [r] = routeNets(input({ style: 'neat' }, block));
+    expect(r.connected).toBe(2);
+    expect(r.stats.surfaceTrunk).toBe(0);
+    // A dip would cost four vertical turns, a jog two horizontal ones.
+    expect(r.stats.underground).toEqual([r.length - 2, 0, 0]);
+    expect(r.stats.bends).toBe(4);
   });
 
   it('never goes below the depth it is given', () => {
     const plate: Vec3[] = [];
     for (let z = 0; z < 12; z++) plate.push([12, -1, z]);
     const [r] = routeNets(input({ style: 'neat', box: { min: [0, -1, 0], max: [26, 6, 12] } }, plate));
-    expect(r.stats.underground).toEqual([r.stats.underground[0]]);
-    expect(r.stats.underground[0]).toBeGreaterThan(0);
+    expect(r.stats.underground).toHaveLength(1);
     for (const c of r.paths.flat()) expect(c[1]).toBeGreaterThanOrEqual(-1);
   });
 

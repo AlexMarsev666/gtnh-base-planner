@@ -120,6 +120,12 @@ export const NET_WORK_CAP = 20_000_000;
 export const SURFACE_PENALTY = 4;
 /** Neat style: added to the bend cost. */
 export const NEAT_TURN_EXTRA = 2;
+/**
+ * Neat style: added to the bend cost (instead of `NEAT_TURN_EXTRA`) where the run turns to or from the
+ * vertical. Dropping to the trench and coming back up costs two such turns, so a trunk goes down only where
+ * that saves more than it costs, and the stubs of a hatch are not left for a detour.
+ */
+export const NEAT_VERTICAL_TURN_EXTRA = 8;
 /** Neat style: extra cost of a step into a free cell with no other net's pipe beside it on its level. */
 export const NEAT_LONE_COST = 0.25;
 /**
@@ -280,6 +286,8 @@ interface Search {
   stamp: number;
   heap: Heap;
   turnCost: number;
+  /** Neat style: cost of a turn to or from a vertical run (`turnCost` for horizontal turns). */
+  verticalTurnCost: number;
   /** Neat style: runs beside other nets' pipes are cheaper. */
   neat: boolean;
   /** Neat style with an underground: least extra cost of a step into a cell that is not a stub. */
@@ -425,7 +433,9 @@ function search(
         if (!beside) step += NEAT_LONE_COST;
       }
       if (s.surface && s.surface[n] && s.stubMark[n] !== s.stubId) step += SURFACE_PENALTY;
-      const nc = cost + step + s.hist[n] + (dir !== NO_DIR && dir !== d ? turnCost : 0);
+      let turn = 0;
+      if (dir !== NO_DIR && dir !== d) turn = s.neat && (dir >= 4 || d >= 4) ? s.verticalTurnCost : turnCost;
+      const nc = cost + step + s.hist[n] + turn;
       const ns = n * STATES + d;
       if (seen[ns] === stamp && dist[ns] <= nc) continue;
       seen[ns] = stamp;
@@ -697,6 +707,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
     stamp: 0,
     heap: new Heap(),
     turnCost: Math.max(0, input.turnCost ?? 2) + (neat ? NEAT_TURN_EXTRA : 0),
+    verticalTurnCost: Math.max(0, input.turnCost ?? 2) + NEAT_VERTICAL_TURN_EXTRA,
     neat,
     extra: neat && input.trenchBelow !== undefined ? Math.min(TRENCH_COST, SURFACE_PENALTY) : 0,
     surface: neat && input.trenchBelow !== undefined ? new Uint8Array(cells) : null,
