@@ -200,3 +200,24 @@ test('a large build with pipes keeps the page responsive while it computes', asy
   await expect(page.getByTestId('preview-notice')).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test('the mirror setting survives a share link', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  await page.getByTestId('settings-toggle').click();
+  const mirror = page.getByTestId('toggle-mirror');
+  await expect(mirror).toHaveAttribute('aria-pressed', 'false');
+  await mirror.click();
+  await expect(mirror).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('share').click();
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain('#p=');
+
+  // A fresh page has nothing stored, so the link opens straight away; if it is offered, accept it.
+  const other = await context.newPage();
+  await other.goto(link);
+  const offer = other.getByTestId('shared-confirm').getByRole('button', { name: 'Open' });
+  if (await offer.isVisible()) await offer.click();
+  await other.getByTestId('settings-toggle').click();
+  await expect(other.getByTestId('toggle-mirror')).toHaveAttribute('aria-pressed', 'true');
+});

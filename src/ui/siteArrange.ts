@@ -80,6 +80,8 @@ export function arrangeHere(
   if (optimize && r.arranged.fits) {
     const o = optimizeSite(r.site, builder, {
       seed: site.seed,
+      // The user's layout must be beaten too, else Optimize changes nothing.
+      baseline: site,
       buildOptions: { routing },
       below,
       signal,

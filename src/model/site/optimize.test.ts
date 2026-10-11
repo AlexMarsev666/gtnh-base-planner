@@ -100,6 +100,42 @@ describe('optimizeSite', () => {
     expect(same.tried).toBeGreaterThan(0);
   });
 
+  describe('with a baseline (the user’s layout)', () => {
+    const key = (s: SiteState) => JSON.stringify(s.groups.map((g) => g.origin));
+    const run = (blocks: (user: string, arrangedKey: string) => (s: SiteState) => number) => {
+      const user = web();
+      const start = arranged();
+      const r = optimizeSite(start, stub(blocks(key(user), key(start))), {
+        iterations: 4000,
+        baseline: user,
+      });
+      return { user, start, r };
+    };
+
+    it('returns the baseline, unimproved, when nothing beats it', () => {
+      const { user, r } = run((u) => (s) => (key(s) === u ? 1 : 50));
+      expect(r.improved).toBe(false);
+      expect(r.site).toBe(user);
+      expect(r.start.blocks).toBe(1);
+    });
+
+    it('returns the arrangement as improved when it beats the baseline but the search does not beat it', () => {
+      const { start, r } = run((u, a) => (s) => (key(s) === u ? 40 : key(s) === a ? 10 : 100));
+      expect(r.improved).toBe(true);
+      expect(r.site).toBe(start);
+      expect(r.start.blocks).toBe(40);
+      expect(r.result.blocks).toBe(10);
+    });
+
+    it('returns a searched layout when it beats both', () => {
+      const { user, start, r } = run((u, a) => (s) => (key(s) === u ? 40 : key(s) === a ? 30 : 5));
+      expect(r.improved).toBe(true);
+      expect(r.site).not.toBe(user);
+      expect(r.site.groups).not.toEqual(start.groups);
+      expect(r.result.blocks).toBe(5);
+    });
+  });
+
   it('takes the annealed layout when the router finds it shorter', () => {
     const start = arranged();
     const startKey = JSON.stringify(start.groups.map((g) => g.origin));

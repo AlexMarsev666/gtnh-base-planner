@@ -30,7 +30,8 @@ export { AbortedError };
  *
  * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, pipe and
  * cable blocks, then the width + depth of the layout. The start wins ties, so the result is never worse than
- * the arrangement it was given; when nothing beats it, it is returned as it is (`improved: false`).
+ * the arrangement it was given; when nothing beats it, it is returned as it is (`improved: false`). With a
+ * `baseline` (the user's own layout) the result must also beat that, else the baseline is returned.
  */
 
 export interface OptimizeOptions extends Pick<AnnealOptions, 'now'> {
@@ -59,6 +60,12 @@ export interface OptimizeOptions extends Pick<AnnealOptions, 'now'> {
   refineHeat?: number;
   /** Called with (work done, work in all), at most ~20 times a second; the last call has done = total. */
   onProgress?: (done: number, total: number) => void;
+  /**
+   * The user's layout the arrangement `site` came from, scored the same way. The result must strictly beat
+   * the better of this and `site`; when nothing beats the baseline it is returned with `improved: false`
+   * (and `start` is its score), and when only the arrangement does, the arrangement is returned as improved.
+   */
+  baseline?: SiteState;
   /** Aborting throws `AbortedError`; the site is left as it was given. */
   signal?: AbortSignal;
 }
@@ -266,6 +273,10 @@ export function optimizeSite(
     };
 
     const start = route(site.groups);
+    const baseline = opts.baseline && {
+      site: opts.baseline,
+      score: scoreBuild(build(opts.baseline, true)),
+    };
     done += ROUTE_WEIGHT;
     report?.(done, total);
     let best = { groups: site.groups, score: start };
@@ -328,17 +339,28 @@ export function optimizeSite(
     }
     report?.(total, total);
 
-    const improved = best.groups !== site.groups;
-    result = improved ? { ...site, groups: best.groups } : site;
+    const found = best.groups !== site.groups;
+    if (baseline && !better(best.score, baseline.score)) {
+      result = baseline.site;
+      return {
+        site: result,
+        improved: false,
+        start: baseline.score,
+        result: baseline.score,
+        tried: scores.size,
+        reshaped: 0,
+        truncated,
+      };
+    }
+    const improved = found || !!baseline;
+    result = found ? { ...site, groups: best.groups } : site;
     return {
       site: result,
       improved,
-      start,
+      start: baseline?.score ?? start,
       result: best.score,
       tried: scores.size - 1,
-      reshaped: improved
-        ? best.groups.filter((g, i) => limitsKey(g) !== limitsKey(site.groups[i])).length
-        : 0,
+      reshaped: found ? best.groups.filter((g, i) => limitsKey(g) !== limitsKey(site.groups[i])).length : 0,
       truncated,
     };
   }

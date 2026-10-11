@@ -20,11 +20,20 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
   [`tools/game-dump`](tools/game-dump/README.md); they are tagged "From game" in the picker, because they are not
   checked by hand (hatch counts follow the controller's tooltip and structure check). Almost every GT multiblock can share walls in game (structure checks do not claim
   casings).
+- **Hatch zones and counts**: hatch placement follows GT5-Unofficial 5.09.54.205. Generated entries carry the
+  hatch zones the controller's tooltip names (hint dots) and its hatch counts, and a zone limits which hatch kinds
+  may go there. A machine whose hatches do not all fit says so ("hatches don't fit, N wanted and M fit") and how
+  many to remove.
+- **Machine tier and hatch tiers**: Settings → Tier sets the voltage tier of the energy and dynamo hatches, and
+  Hatch tiers sets the tier of each hatch separately (only the tiers the game allows; they reset when the layout
+  changes).
+- **Mirror and shared walls**: Mirror builds every machine mirrored left to right. Shared walls (Auto, Side walls, Stack,
+  Back walls, Separate) is a preference: when it cannot be met another layout is used and a notice says which.
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).
 - **Auto-packing** of N units with optional limits counted in multiblocks (at most N along X, N layers, N along Z); controllers always face outward, and rows that cannot share a back wall get a one-block walkway. Example: 15 Pyrolyse Ovens with X 5, Layers 1, Z 3 give three rows of five.
 - **Shared walls**: blocks that coincide in the same cell are counted once; incompatible overlaps are highlighted.
 - **Hatches**: enable hatch kinds per plan; shareable hatches serve several controllers from one block. A hatch faces open space rather than a gap between units, and never the ground: the build stands on its lowest layer. Hatches of different kinds are spread apart, and none faces a cell its pipe could not leave.
-- **Pipe routing** per hatch kind (items, fluids, steam), with length estimates. The kinds are negotiated rather than laid one after another (a cell two networks want gets dearer each round until one gives way), so no network walls in another kind's hatch. With pipes or cables on, a layout whose walkways cannot hold a line per kind is spaced out step by step (walkways and gaps of one or two blocks, same rows and layers) until every hatch is connected; a warning remains only for hatches that still cannot be reached (e.g. in a manual layout). Packing and routing run in the background, so the page stays responsive while a large build is laid out (the stats line says when it is still working, and pipes appear after an unrouted preview). Routing has a fixed work budget, so it never runs for minutes: on a very large build (such as several Nanochip Assembly Complexes) it can stop early and leave a few hatches unconnected, and the warning says so. Bends are priced in, so pipes run in straight trunks with fewer bends than plain shortest paths. A pipe may reach a hatch from any open side (the hatch is turned to face it, as with a wrench in game), and pipes never go underground.
+- **Pipe routing** per hatch kind (items, fluids, steam), with length estimates. The kinds are negotiated rather than laid one after another (a cell two networks want gets dearer each round until one gives way), so no network walls in another kind's hatch. With pipes or cables on, a layout whose walkways cannot hold a line per kind is spaced out step by step (walkways and gaps of one or two blocks, same rows and layers) until every hatch is connected; a warning remains only for hatches that still cannot be reached (e.g. in a manual layout). Packing and routing run in the background, so the page stays responsive while a large build is laid out (the stats line says when it is still working, and pipes appear after an unrouted preview). Routing has a fixed work budget, so it never runs for minutes: on a very large build (such as several Nanochip Assembly Complexes) it can stop early and leave a few hatches unconnected, and the warning says so. Bends are priced in, so pipes run in straight trunks with fewer bends than plain shortest paths. A pipe may reach a hatch from any open side (the hatch is turned to face it, as with a wrench in game). With Connect from below (or a template's routing depth) hatches may face down and pipes run in trenches under the build.
 - **Cable routing**: the Cables toggle connects energy hatches (and dynamo hatches of generators) with thinner cables, like pipes.
 - **Textured view**: real GregTech textures, layered and tinted the way the game draws them (glass is
   see-through, a hatch shows the casing it replaces with its own overlay), flat colours when they cannot load,
@@ -34,7 +43,9 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Templates** (the TEMPLATE view): several groups of multiblocks on a bounded ground area (30 × 30 by default, up to 256 × 256), joined by
   links that each carry one item, fluid or EU. Every group gets one hatch per resource it takes or gives, pipes are
   routed between groups and to input/output ports on the template edges, and animated arrows show which way each
-  pipe flows. Groups can be arranged automatically along the flow, moved and turned by hand. Large templates are
+  pipe flows. Groups can be arranged automatically along the flow, moved and turned by hand. Pipes are routed
+  Classic or Neat, on the ground or up to three layers under it; single-block machines have machine types and
+  tiers, and transformers between power tiers are checked. Large templates are
   laid out and routed in the background: the groups appear first, their pipes follow, and the page stays usable.
 - **GTNH Planner import**: open a chain exported from [GTNH Planner](https://gtnhplanner.com) (its board's
   Export JSON) and it becomes a template: one group per recipe node, links from its edges, ports for whatever enters
@@ -44,7 +55,9 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 
 1. Choose a multiblock in the catalog.
 2. Set the count and, if needed, the maximum footprint.
-3. Set the height or length of a resizable multiblock; toggle hatch kinds, pipes and cables.
+3. Set the height or length of a resizable multiblock; toggle hatch kinds, pipes and cables. Settings also holds
+   the tier, Mirror, Shared walls and Hatch tiers, and Connect from below (hatches facing down, pipes in a trench
+   under the build).
 4. Drag to orbit, scroll or pinch to zoom, right-drag to pan, double-click to reset. Click a block to select its unit.
 5. Copy a share link, or download the plan as JSON.
 
@@ -56,14 +69,20 @@ The planner checks layout rules for the transcribed structure only. It is not a 
 2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: ADD MULTIBLOCK, then ADD LINK with a start
    (a group or TEMPLATE INPUT), an end (a group or TEMPLATE OUTPUT) and a resource. In the single-machine view, SETTINGS →
    ADD TO TEMPLATE copies the current plan into the template as a group.
-3. ARRANGE lays the groups out west to east along the flow. OPTIMIZE arranges, then searches for a tighter layout
-   with shorter pipes in the background: simulated annealing on a cheap length estimate finds candidates, then a
-   second pass judges every step by the real router. It may also pack a group of several units another way (rows or
-   layers, which sets the group's limits), and says how many it changed. A result is kept only if the router connects at least as much with
-   fewer pipe blocks; otherwise the plain arrangement stays. It runs against a time budget of about ten seconds (a second or two for small chains), and a plan that is slow
-   to route gets fewer tries. A group's limits can be kept in its settings (editing them keeps them): Arrange and
-   Optimize never change those.
-   Editing the template while Arrange or Optimize runs stops it (a notice says so); closing the import dialog stops an import in progress.
+3. ARRANGE lays the groups out west to east along the flow. NEAT does that and switches to neat routing, at least
+   one layer under the ground, as one undo step (the layout and the routing come back together). OPTIMIZE arranges,
+   then searches for a tighter layout with shorter pipes in the background: simulated annealing on a cheap length
+   estimate finds candidates, then a second pass judges every step by the real router. It may also pack a group of
+   several units another way (rows or layers, which sets the group's limits), and says how many it changed. A
+   result is kept only if it beats the current layout (fewer problems, then more connected, then fewer pipe
+   blocks, then a smaller footprint); when nothing does, nothing changes and the notice says so. The search is repeatable: its work is counted in
+   iterations that grow with the size of the template, not in time, and its random numbers come from the
+   template's seed, so the same template and seed give the same result. Only a safety limit of a minute can cut it
+   short ("stopped at the time limit"). While Arrange, Neat or Optimize runs a progress bar names the phase and
+   Cancel stops it: the template and its undo history stay as they were. Editing the template meanwhile stops it
+   too (a notice says so), so a late result is never applied to a changed template. A group's limits can be kept
+   in its settings (editing them keeps them): Arrange and Optimize never change those. Closing the import dialog
+   stops an import in progress.
    Select a group (click it, or pick it in the panel)
    and drag it in the view, or move it with the arrow keys as seen on screen (Shift: 5 blocks) or the arrows in
    the panel; PageUp and PageDown raise and lower it (Shift: 5 blocks), R turns it (Shift+R back), F frames it
@@ -74,12 +93,17 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    change to the template (Ctrl+Shift+Z or Ctrl+Y redoes it). Moving a group past an edge grows the template
    that way (and ARRANGE grows it when the chain does not fit). While you move or turn groups the pipes wait,
    shown faded, and are routed again a moment after you stop.
-   The panel's Routing block sets the router (Classic or Neat) and how deep pipes may go under the ground (0 to 3);
-   a template saved before it existed keeps its old routing and offers Use neat routing. The selected group also
+   The panel's Routing block sets the router (Classic or Neat) and how deep pipes may go under the ground (0 to 3;
+   a very big template may be routed shallower, and the panel says so), and shows the route: blocks routed, bends,
+   blocks per underground level and, on the ground, trunk lines against stubs at hatches. X-ray sees through the
+   ground. A template saved before the Routing block existed keeps its old routing (classic, following the machine
+   view's Connect from below) and offers Use neat routing; old files and links load unchanged. The selected group also
    has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, a Resources list
-   (put a resource's hatch on one unit or all units, or into a hatch zone of the multiblock) and the tier of each
-   of its hatches. A single-block machine picks its machine type from a searchable list; a transformer also has a
-   direction and a low-side amperage (Hi-Amp, 16 A, exists from UEV). PROBLEMS lists what could not be met; Notes
+   (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them)
+   and the tier of each of its hatches. A single-block machine picks its machine type from a searchable list and
+   its tier; a transformer also has a direction and a low-side amperage (Hi-Amp, 16 A, exists from UEV). A link
+   whose voltage does not match the tier a machine takes, or a transformer GT does not make, is reported under
+   PROBLEMS. PROBLEMS lists what could not be met; Notes
    lists what the build did on its own (spread resources, a wall-sharing fallback) and is not a problem.
 4. Click a pipe or a legend entry to highlight one resource; the other nets fade. The bottom line shows the
    selected group or net, and PROBLEMS lists overlaps, groups outside the template, hatches that did not fit and
@@ -93,7 +117,7 @@ looked up among the machine types GT gives each multiblock ("Vacuum Furnace" is 
 `tools/gt-source/machine-types.mjs` collects. The template is sized to the chain, and each port sits on the
 edge nearest the groups it serves. After an import the template is shown at once with the plain layout, then optimized
 in the background (the box "Optimize the layout after import" in the dialog, on by default; Undo brings the plain layout
-back). ARRANGE and OPTIMIZE stay in the template panel for later. Storages between machines are passed
+back). ARRANGE, NEAT and OPTIMIZE stay in the template panel for later. Storages between machines are passed
 through; product drains become output ports, trash drains void ports. Thaumcraft aspect flows are left out.
 Odd values in an export do not stop the import: control characters in names are replaced, machine counts are
 clamped and impossible rates are dropped, and the dialog says how many values were adjusted.
@@ -116,9 +140,15 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 | `defaultHatches`     | Hatch kinds enabled in a new plan.                                                           |
 | `wallshare`          | Whether casings of two units may overlap when the blocks match.                              |
 | `resize`             | Optional variable size: `{ axis, from, to, min, max, default, label }`, see below.           |
+| `zones`              | Optional hatch zones by legend `region` (`dot<N>`): the kinds meant for it and its tooltip.  |
 | `notes`              | Free-text notes: game version, quirks, hatch behaviour.                                      |
 
 Coordinates follow Minecraft: X = east, Y = up, Z = south.
+
+**Saved plans and links.** A plan or template may also carry a tier, mirror, a shared-walls preference, hatch
+tiers, per-resource hatch assignments (unit, all units or zone), a routing style and depth, and an optimize seed.
+Each is optional: files and links saved before they existed decode exactly as before and are never rearranged on
+opening.
 
 **Variable size.** A multiblock that GT builds in several sizes stores its smallest form (`size[axis] === min`)
 with one copy of a repeating slab `[from, to)` along `axis`. A plan's height or length inserts more copies after

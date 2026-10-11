@@ -22,7 +22,7 @@
     withSiteSize,
     type LinkEnd,
   } from './siteActions';
-  import { addGroup, arrange } from './siteCommands';
+  import { addGroup, arrange, neatArrange } from './siteCommands';
   import { canRedo, canUndo, redoSite, undoAction, undoSite } from './siteHistory';
   import { ROUTING_DEPTHS, depthReduced, routingView, splitWarnings } from './siteInspect';
   import { siteBuild, siteRouteInfo } from './sitePipeline';
@@ -391,6 +391,15 @@
           onclick={() => arrange(true)}>{t.site.optimize}</button
         >
       </li>
+      <li class="row">
+        <button
+          class="link"
+          data-testid="site-neat"
+          title={t.site.neatHint}
+          disabled={!$site.groups.length}
+          onclick={() => neatArrange()}>{t.site.neat}</button
+        >
+      </li>
       <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
       <li class="row narrow-only"><button class="link" onclick={onimport}>{t.site.importOpen}</button></li>
     </ul>
@@ -435,6 +444,14 @@
           routeStats.underground.reduce((a, b) => a + b, 0),
         )}
       </p>
+      {#if routeStats.underground.length > 1}
+        <p class="hint" data-testid="site-route-levels">{t.site.routeStatsLevels(routeStats.underground)}</p>
+      {/if}
+      {#if routeStats.surfaceTrunk + routeStats.surfaceStub > 0}
+        <p class="hint" data-testid="site-route-surface">
+          {t.site.routeStatsSurface(routeStats.surfaceTrunk, routeStats.surfaceStub)}
+        </p>
+      {/if}
     {/if}
     {#if routingState.legacy}
       <p class="hint" data-testid="site-routing-legacy">{t.site.routingLegacy(routing.depth)}</p>

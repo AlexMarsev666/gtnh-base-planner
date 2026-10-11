@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { describe, expect, it, vi } from 'vitest';
 import { getSiteDef } from '../data/generic';
+import { t } from '../i18n/en';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteRouting, SiteState } from '../model/site/types';
@@ -106,6 +107,7 @@ describe('arrange', () => {
     const cleared: string[] = [];
     const said: [string, number | undefined, string | undefined][] = [];
     const deps = {
+      cleared,
       arrangeInSize: job as never,
       sites,
       below: writable(false),
@@ -122,11 +124,12 @@ describe('arrange', () => {
     floors: 1,
   });
 
-  it('shows a notice that stays while arranging, then replaces it with the outcome', async () => {
+  it('clears the old notice while arranging (the progress bar shows it), then says the outcome', async () => {
     const { s, sites, said, deps } = setup(async (x) => arranged(x));
     await arrange(false, deps);
-    expect(said[0]).toEqual([expect.stringMatching(/Arranging/), 0, 'arrange']);
-    expect(said[1][2]).toBe('arrange');
+    expect(deps.cleared).toEqual(['arrange']);
+    expect(said).toHaveLength(1);
+    expect(said[0][2]).toBe('arrange');
     expect(get(sites).name).toBe('arranged');
     expect(s.name).not.toBe('arranged');
   });
@@ -136,7 +139,7 @@ describe('arrange', () => {
       throw new Error('boom');
     });
     await arrange(true, deps);
-    expect(said[1]).toEqual([expect.stringContaining('boom'), 6000, 'arrange']);
+    expect(said[0]).toEqual([expect.stringContaining('boom'), 6000, 'arrange']);
   });
 
   it('says so when an edit stopped it, and when the result is discarded', async () => {
@@ -144,13 +147,13 @@ describe('arrange', () => {
       throw new JobCancelled('edit');
     });
     await arrange(true, stopped.deps);
-    expect(stopped.said[1]).toEqual([expect.stringMatching(/optimizing stopped/), 4000, 'arrange']);
+    expect(stopped.said[0]).toEqual([expect.stringMatching(/optimizing stopped/), 4000, 'arrange']);
     const later = setup(async (x) => {
       later.sites.set({ ...x, name: 'edited' });
       return arranged(x);
     });
     await arrange(false, later.deps);
-    expect(later.said[1]).toEqual([expect.stringMatching(/arranging stopped/), 4000, 'arrange']);
+    expect(later.said[0]).toEqual([expect.stringMatching(/arranging stopped/), 4000, 'arrange']);
     expect(get(later.sites).name).toBe('edited');
   });
 
@@ -159,14 +162,14 @@ describe('arrange', () => {
       throw new JobCancelled('arrange');
     });
     await arrange(false, newer.deps);
-    expect(newer.said).toHaveLength(1);
-    expect(newer.cleared).toEqual([]);
+    expect(newer.said).toHaveLength(0);
+    expect(newer.cleared).toEqual(['arrange']);
     const imp = setup(async () => {
       throw new JobCancelled('import');
     });
     await arrange(false, imp.deps);
-    expect(imp.said).toHaveLength(1);
-    expect(imp.cleared).toEqual(['arrange']);
+    expect(imp.said).toHaveLength(0);
+    expect(imp.cleared).toEqual(['arrange', 'arrange']);
   });
   it('arranges and optimises with the site routing, or the browser switch for sites without one', async () => {
     const seen: unknown[] = [];
@@ -203,8 +206,22 @@ describe('arrange', () => {
     });
     await arrange(true, stopped.deps);
     expect(get(stopped.sites)).toBe(stopped.s);
-    expect(stopped.said[1]).toEqual([expect.stringMatching(/optimizing stopped/), 4000, 'arrange']);
+    expect(stopped.said[0]).toEqual([t.site.arrangeStopped, 4000, 'arrange']);
     expect(get(arrangeOutcome)).toBeNull();
+  });
+
+  it('changes nothing and says so when optimising found nothing better', async () => {
+    const same = setup(async (x) => ({
+      ...arranged(x),
+      optimized: { improved: false, truncated: true, start: {}, result: {}, reshaped: 0 },
+    }));
+    const said: unknown[][] = [];
+    await arrange(true, { ...same.deps, notify: (...a: unknown[]) => void said.push(a) } as never);
+    expect(get(same.sites)).toBe(same.s);
+    expect(said).toEqual([
+      [`${t.site.optimizedSame} ${t.site.optimizeTruncated}`, 6000, 'arrange', undefined],
+    ]);
+    expect(get(arrangeOutcome)).toMatchObject({ kind: 'optimize', improved: false, truncated: true });
   });
 
   it('drops the result when the effective routing changed while it ran', async () => {
@@ -213,7 +230,7 @@ describe('arrange', () => {
       return arranged(x);
     });
     await arrange(false, later.deps);
-    expect(later.said[1]).toEqual([expect.stringMatching(/arranging stopped/), 4000, 'arrange']);
+    expect(later.said[0]).toEqual([expect.stringMatching(/arranging stopped/), 4000, 'arrange']);
     expect(get(later.sites)).toBe(later.s);
   });
 
@@ -242,6 +259,18 @@ describe('arrange', () => {
       expect(redo()).toBe(true);
       expect(get(site).routing).toEqual({ style: 'neat', depth: 1 });
       stop();
+    });
+
+    it('sets the template once, with neat routing at least one layer deep', async () => {
+      const { s, sites, deps } = setup(async (x) => arranged(x));
+      const sets: SiteState[] = [];
+      let first = true;
+      sites.subscribe((v) => (first ? (first = false) : sets.push(v)));
+      sites.set(s);
+      sets.length = 0;
+      await neatArrange(deps);
+      expect(sets).toHaveLength(1);
+      expect(sets[0].routing).toEqual({ style: 'neat', depth: 1 });
     });
 
     it('keeps a deeper setting', async () => {

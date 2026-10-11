@@ -201,17 +201,23 @@ export const t = {
     arrange: 'Arrange',
     arranged: 'Arranged along the flow.',
     arranging: 'Arranging…',
+    optimizingPhase: 'Optimizing…',
+    arrangeCancel: 'Cancel',
+    arrangeStopped: 'Stopped; the template is unchanged.',
+    neat: 'Neat',
+    neatHint:
+      'Arranges the template and routes neatly, mostly underground (neat routing, at least one layer deep). One undo step takes both back.',
     arrangeCancelled: (optimize: boolean) =>
       `Template edited: ${optimize ? 'optimizing' : 'arranging'} stopped.`,
     arrangeFailed: (msg: string) => `Arranging failed: ${msg}`,
     optimize: 'Optimize',
     optimizeHint:
       'Arrange, then search for a tighter layout with shorter pipes (simulated annealing) and keep it if the router agrees.',
-    optimizing: 'Arranging and optimizing…',
     optimized: (from: number, to: number, reshaped: number) =>
       `Optimized: ${from} → ${to} pipe and cable blocks, tested with the router.` +
       (reshaped > 0 ? ` ${reshaped} ${reshaped === 1 ? 'group' : 'groups'} packed another way.` : ''),
-    optimizedSame: 'Arranged along the flow; nothing tried beat it.',
+    optimizedSame: 'Nothing found that beats the current layout; nothing changed.',
+    optimizeTruncated: '(stopped at the time limit)',
     arrangedFloors: (n: number) => `Arranged along the flow, on ${n} floors.`,
     building: 'Laying out and routing…',
     needs: (w: number, d: number) => `Does not fit: needs ${w} × ${d}.`,
@@ -319,6 +325,10 @@ export const t = {
     undergroundViewHint: 'See through the ground and the machines to the pipes under them.',
     routeStats: (blocks: number, bends: number, underground: number) =>
       `${blocks} blocks routed, ${underground} under the ground, ${bends} ${bends === 1 ? 'bend' : 'bends'}.`,
+    routeStatsLevels: (levels: number[]) =>
+      `Under the ground by level: ${levels.map((n, i) => `−${i + 1}: ${n}`).join(', ')}.`,
+    routeStatsSurface: (trunk: number, stubs: number) =>
+      `On the ground: ${trunk} in trunk lines, ${stubs} in hatch stubs.`,
     tier: 'Tier',
     tierHint: 'Voltage tier of the energy hatches (a transformer: its high side).',
     tierAny: 'Any',

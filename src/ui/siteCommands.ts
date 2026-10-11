@@ -104,7 +104,8 @@ async function runArrange(
   const routing: SiteRouting =
     kind === 'neat' ? { style: 'neat', depth: (current.depth || 1) as RoutingDepth } : current;
   arrangeOutcome.set(null);
-  say(optimize ? t.site.optimizing : t.site.arranging, 0, 'arrange');
+  // The progress bar (see Notices) shows that it runs; an older outcome notice goes.
+  clear('arrange');
   const cancelled = () => say(t.site.arrangeCancelled(optimize), 4000, 'arrange');
   let r;
   try {
@@ -116,7 +117,8 @@ async function runArrange(
       clear('arrange');
       return;
     }
-    if (err instanceof JobCancelled) cancelled();
+    if (err instanceof JobCancelled && err.reason === 'aborted') say(t.site.arrangeStopped, 4000, 'arrange');
+    else if (err instanceof JobCancelled) cancelled();
     else {
       warnOnce('arrange', err);
       say(t.site.arrangeFailed(err instanceof Error ? err.message : String(err)), 6000, 'arrange');
@@ -128,7 +130,9 @@ async function runArrange(
     cancelled();
     return;
   }
-  sites.set(kind === 'neat' ? { ...r.site, routing } : r.site);
+  // An optimise that found nothing better changes nothing (and leaves no undo step).
+  const unchanged = r.fits && r.optimized?.improved === false;
+  if (!unchanged) sites.set(kind === 'neat' ? { ...r.site, routing } : r.site);
   arrangeOutcome.set({
     kind,
     fits: r.fits,
@@ -145,7 +149,7 @@ async function runArrange(
         : t.site.needs(r.needed[0], r.needed[1]),
     r.fits ? 6000 : 8000,
     'arrange',
-    undo(),
+    unchanged ? undefined : undo(),
   );
 }
 
@@ -166,7 +170,10 @@ interface ArrangeDeps {
 
 /** What optimising did, in the router's numbers (pipe and cable blocks). */
 function optimizedNotice(o: NonNullable<Arranged['optimized']>): string {
-  return o.improved ? t.site.optimized(o.start.blocks, o.result.blocks, o.reshaped) : t.site.optimizedSame;
+  const text = o.improved
+    ? t.site.optimized(o.start.blocks, o.result.blocks, o.reshaped)
+    : t.site.optimizedSame;
+  return o.truncated ? `${text} ${t.site.optimizeTruncated}` : text;
 }
 
 /** Whether `result` is the build of `s` itself: built and routed (not the groups alone). */

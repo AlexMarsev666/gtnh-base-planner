@@ -4,6 +4,8 @@
   import { downloadUnreadable, recovery, retryUnreadable, startNew } from './recovery';
   import { answerShared, pendingShared } from './session';
   import { answerSharedSite, pendingSite } from './siteSession';
+  import { arrangeProgress } from '../state/site';
+  import { cancelArrange } from './sitePipeline';
 </script>
 
 <div class="notices" role="status" aria-live="polite">
@@ -34,6 +36,19 @@
       <span>{t.site.sharedPrompt}</span>
       <button class="link active" onclick={() => answerSharedSite(true)}>{t.sharedOpen}</button>
       <button class="link" onclick={() => answerSharedSite(false)}>{t.sharedKeep}</button>
+    </p>
+  {/if}
+  {#if $arrangeProgress}
+    {@const p = $arrangeProgress}
+    <p class="notice" data-testid="arrange-progress">
+      <span>{p.phase === 'optimize' ? t.site.optimizingPhase : t.site.arranging}</span>
+      <progress
+        max={p.total || undefined}
+        value={p.total ? p.done : undefined}
+        aria-label={p.phase === 'optimize' ? t.site.optimizingPhase : t.site.arranging}
+      ></progress>
+      <button class="link" data-testid="arrange-cancel" onclick={cancelArrange}>{t.site.arrangeCancel}</button
+      >
     </p>
   {/if}
   {#each $notices as n (n.id)}
@@ -80,6 +95,12 @@
     padding: 2px 8px;
     pointer-events: auto;
     text-align: center;
+  }
+  progress {
+    width: 160px;
+    height: 8px;
+    align-self: center;
+    accent-color: var(--text);
   }
   .x {
     color: var(--muted);
