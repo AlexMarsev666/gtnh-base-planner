@@ -14,7 +14,7 @@ import { CABLE_KINDS, PIPE_KINDS, type RoutedKind } from '../model/routing/kinds
 import { routePipes } from '../model/routing/router';
 import { buildSceneModel } from '../model/scene';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
-import type { HatchResult, PackResult, PlanState, WallStats } from '../model/plan/types';
+import type { PackResult, PlanState, WallStats } from '../model/plan/types';
 import type { SceneModel } from '../model/render/types';
 import type { RouteNet } from '../model/routing/routeNet';
 import { computeWallStats } from '../model/walls';
@@ -52,7 +52,7 @@ export interface PipelineResult {
   pack: PackResult | null;
   /** True when the layout was loosened (gaps, walkways) so every hatch fits. */
   loosened: boolean;
-  hatches: HatchResult | null;
+  hatches: PlaceResult | null;
   /** Units that want more hatches than have a cell for them (from the hatch placement), if any. */
   capacity?: CapacityEntry[];
   /** Set when the plan's wall sharing preference could not be honoured, and what was used instead. */

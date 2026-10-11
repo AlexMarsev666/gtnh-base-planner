@@ -313,7 +313,7 @@
     {/if}
 
     {#if blocksOpen && !pickerOpen}
-      <BlocksPanel scene={$build.scene} onclose={() => (blocksOpen = false)} />
+      <BlocksPanel scene={$build.scene} tiers={$plan} onclose={() => (blocksOpen = false)} />
     {/if}
 
     {#if settingsOpen}

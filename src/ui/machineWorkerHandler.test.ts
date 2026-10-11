@@ -59,6 +59,16 @@ describe('machine worker handler', () => {
     expect(handle({ plan: { ...plan, count: plan.count + 1 }, pipes: true })).toHaveLength(2);
   });
 
+  it('does not preview again for a tier change', () => {
+    const { handle } = setup();
+    const plan = defaultPlan();
+    handle({ plan, pipes: true });
+    expect(handle({ plan: { ...plan, tier: 'HV' }, pipes: true })).toHaveLength(1);
+    expect(
+      handle({ plan: { ...plan, tier: 'HV', hatchTiers: { 'itemIn:0': 'EV' } }, pipes: true }),
+    ).toHaveLength(1);
+  });
+
   it('posts one build when nothing is routed, and it survives structured clone', () => {
     const out = handle({});
     expect(out).toHaveLength(1);

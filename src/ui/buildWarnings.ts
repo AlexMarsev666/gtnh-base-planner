@@ -1,4 +1,5 @@
 import { t } from '../i18n/en';
+import type { CapacityEntry, UnplacedHatch } from '../model/hatches/types';
 import { isSlowBuild } from './fields';
 import { clearSlot, notify } from './notices';
 import type { BuildResult } from './pipeline';
@@ -6,6 +7,33 @@ import type { BuildResult } from './pipeline';
 /** Notice slots of the machine view, and of the template view. */
 const MACHINE_SLOTS = ['pack', 'hatches', 'pipes'];
 const SITE_SLOTS = ['arrange', 'import', 'import-placeholders'];
+
+/**
+ * The one message for hatches that do not fit: the worst overload (most to remove) with the number of units
+ * with any overload, plus the unplaced hatches that capacity does not explain (those with another reason).
+ */
+export function hatchMessages(
+  capacity: readonly CapacityEntry[] | undefined,
+  unplaced: readonly UnplacedHatch[],
+): string[] {
+  const out: string[] = [];
+  if (capacity?.length) {
+    const worst = capacity.reduce((a, b) => (b.remove > a.remove ? b : a));
+    const units = capacity.reduce((n, e) => n + e.unitIds.length, 0);
+    out.push(
+      t.hatchesDontFit(
+        worst.needed,
+        worst.fits,
+        worst.remove,
+        units,
+        capacity.some((e) => e.mandatory),
+      ),
+    );
+  }
+  const other = unplaced.filter((u) => !(capacity?.length && u.reason === 'capacity')).length;
+  if (other) out.push(t.unplacedHatches(other));
+  return out;
+}
 
 /**
  * Tells the user once per new machine result when the model had to compromise: fewer units, a loosened
@@ -18,7 +46,7 @@ export function createBuildWarnings(): (result: BuildResult) => void {
   let lastPack: string | undefined;
   let lastHatches: string | undefined;
   let lastPipes: string | undefined;
-  return ({ def, pack, hatches, pipes, loosened, routingTruncated, pending }) => {
+  return ({ def, pack, hatches, capacity, pipes, loosened, routingTruncated, pending }) => {
     if (pending) return;
     const packSig = `${pack?.placed}/${pack?.requested}/${pack?.reason}/${loosened}/${pipes !== null}/${def?.id}/${def?.size.join()}`;
     if (packSig !== lastPack) {
@@ -30,9 +58,10 @@ export function createBuildWarnings(): (result: BuildResult) => void {
         notify(t.manyUnits(pack.requested), 8000, 'count');
       else clearSlot('count');
     }
-    const hatchSig = `${def?.id}/${hatches?.unplaced.length}`;
+    const hatchText = hatchMessages(capacity, hatches?.unplaced ?? []);
+    const hatchSig = `${def?.id}/${hatchText.join(' ')}`;
     if (hatchSig !== lastHatches) {
-      if (hatches?.unplaced.length) notify(t.unplacedHatches(hatches.unplaced.length), 6000, 'hatches');
+      if (hatchText.length) notify(hatchText.join(' '), 6000, 'hatches');
       else clearSlot('hatches');
     }
     const missing = pipes?.reduce((s, n) => s + (n.total - n.connected), 0) ?? 0;

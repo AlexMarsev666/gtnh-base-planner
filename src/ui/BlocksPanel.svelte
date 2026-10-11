@@ -1,19 +1,30 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import { matchesQuery, progress, requiredBlocks, sortBom, tickedLast } from '../model/bom';
+  import type { PlanState } from '../model/plan/types';
   import type { SceneModel } from '../model/render/types';
   import { checked, clearChecked, cycleSort, sortMode, toggleChecked } from '../state/checklist';
   import { blockIconFaces } from './catalogView';
   import { blockIcon } from './icons';
+  import { planBom } from './pipeline';
 
   interface Props {
     scene: SceneModel | null;
+    /** The machine plan, whose machine and hatch tiers the list shows (the template view passes none). */
+    tiers?: Pick<PlanState, 'tier' | 'hatchTiers'>;
     onclose: () => void;
   }
-  let { scene, onclose }: Props = $props();
+  let { scene, tiers, onclose }: Props = $props();
 
   const bom = $derived(
-    sortBom(scene ? requiredBlocks(scene) : { blocks: [], io: [], totalBlocks: 0 }, $sortMode),
+    sortBom(
+      scene
+        ? tiers
+          ? planBom(scene, tiers)
+          : requiredBlocks(scene)
+        : { blocks: [], io: [], totalBlocks: 0 },
+      $sortMode,
+    ),
   );
   const done = $derived(progress(bom, $checked));
   const hasAnything = $derived(bom.blocks.length > 0);

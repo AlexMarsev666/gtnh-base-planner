@@ -19,7 +19,7 @@ export type MachineWorkerResponse =
  * Handles machine requests. With pipes or cables on and an automatic layout, the unrouted build is posted
  * first, then the routed one. The two use separate pipelines: sharing one would make every request evict the
  * other's memo (the unrouted run has a different hatch key), so routing would restart from scratch even for a
- * colour change. A request that differs from the previous one only in colours posts no preview: the routed
+ * colour change. A request that differs from the previous one only in colours or tiers (which only the bill of materials reads) posts no preview: the routed
  * build comes straight from the memo, and the pipes on screen do not flash away.
  */
 export function createMachineHandler(
@@ -30,7 +30,12 @@ export function createMachineHandler(
   return (req: MachineWorkerRequest, post: (out: MachineWorkerResponse) => void): void => {
     try {
       const { id, plan, pipes, cables, below } = req;
-      const shape = JSON.stringify([{ ...plan, colors: undefined }, pipes, cables, below]);
+      const shape = JSON.stringify([
+        { ...plan, colors: undefined, tier: undefined, hatchTiers: undefined },
+        pipes,
+        cables,
+        below,
+      ]);
       const colourOnly = shape === lastShape;
       lastShape = shape;
       if ((pipes || cables) && !plan.manualUnits && !colourOnly)

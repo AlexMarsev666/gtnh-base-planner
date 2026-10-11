@@ -2,6 +2,21 @@ import type { SiteNote, SiteWarning } from '../model/site/buildTypes';
 import type { ResourceKind } from '../model/site/types';
 import type { HatchKind } from '../model/multiblock/types';
 import type { IoClass, SortMode } from '../model/bom';
+import type { WallshareFallback } from '../model/layout/types';
+import type { WallshareMode } from '../model/plan/types';
+
+const WALLSHARE_NAMES: Record<WallshareMode, string> = {
+  auto: 'Auto',
+  side: 'Side walls',
+  stack: 'Stack',
+  back: 'Back walls',
+  separate: 'Separate',
+};
+const WALLSHARE_REASONS: Record<WallshareFallback['reason'], string> = {
+  'no-wallshare': 'this machine cannot share walls',
+  limits: 'limits too tight',
+  geometry: 'no valid layout',
+};
 
 /** All user-visible strings (UNIT 8 owns this file). Use `t.key` in components; never build HTML strings. */
 export const t = {
@@ -49,6 +64,28 @@ export const t = {
   hatches: 'Hatches',
   hatchColor: (name: string) => `${name} colour`,
   resetColors: 'Reset colours',
+  machine: 'Machine',
+  tier: 'Tier',
+  tierHint: 'Voltage tier of the energy and dynamo hatches.',
+  anyTier: 'Any',
+  defaultTier: 'Default',
+  mirror: 'Mirror',
+  mirrorHint: 'Build every machine mirrored left to right.',
+  wallshare: 'Shared walls',
+  wallshareHint: 'How machines may touch. A preference: if it cannot be met, another layout is used.',
+  wallshareModes: WALLSHARE_NAMES,
+  wallshareFallback: (wanted: WallshareMode, used: WallshareMode, reason: WallshareFallback['reason']) =>
+    `${WALLSHARE_NAMES[wanted]} is not possible here (${WALLSHARE_REASONS[reason]}): used ${WALLSHARE_NAMES[used]}.`,
+  hatchTiers: 'Hatch tiers',
+  hatchTiersShow: (n: number) => `Set tiers of ${n} ${n === 1 ? 'hatch' : 'hatches'}`,
+  hatchTiersHide: 'Hide hatch tiers',
+  hatchTiersSelected: 'Only hatches of the selected machines.',
+  hatchTierName: (kind: string, n: number) => `${kind} ${n}`,
+  hatchTiersReset: 'Hatch tiers were reset because the layout changed.',
+  hatchTiersUnmatched: (n: number) => `${n} hatch ${n === 1 ? "tier doesn't" : "tiers don't"} match a hatch.`,
+  hatchTiersEmpty: 'No hatches to set.',
+  notAllowed: '(not allowed)',
+  resetHatchTiers: 'Reset hatch tiers',
   view: 'View',
   pipes: 'Pipes',
   cables: 'Cables',
@@ -102,6 +139,10 @@ export const t = {
   manyUnits: (n: number) =>
     `${n} units: a build this big can take a few seconds to lay out, pipe and draw, more in DETAILED view.`,
   unplacedHatches: (n: number) => `${n} ${n === 1 ? 'hatch' : 'hatches'} could not be placed.`,
+  hatchesDontFit: (needed: number, fits: number, remove: number, units: number, mandatory: boolean) =>
+    `Hatches don't fit: ${needed} needed, ${fits} fit. Remove ${remove}.` +
+    (mandatory ? ' Even the required hatches do not all fit.' : '') +
+    (units > 1 ? ` (${units} units)` : ''),
   unconnectedPipes: (n: number) => `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected.`,
   routingTruncated: (n: number) =>
     `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected: routing stopped early because this build is very large.`,

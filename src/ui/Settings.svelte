@@ -1,14 +1,31 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import type { MultiblockDef, PlanLimits } from '../model/multiblock/types';
-  import { connectBelow, plan, showCables, showPipes, xray } from '../state/store';
-  import { resetColors, resetPlan, setHatchColor, setLimit, setSize, toggleHatch } from './actions';
+  import { WALLSHARE_MODES } from '../model/plan/types';
+  import { TIERS, type Tier } from '../model/core/types';
+  import { allowedTiers } from '../model/tiers';
+  import { connectBelow, plan, selectedUnits, showCables, showPipes, xray } from '../state/store';
+  import {
+    resetColors,
+    resetHatchTiers,
+    resetPlan,
+    setHatchColor,
+    setHatchTier,
+    setLimit,
+    setMirror,
+    setSize,
+    setTier,
+    setWallshare,
+    toggleHatch,
+  } from './actions';
   import { hatchKindsOf } from './catalogView';
   import { LIMIT_MAX, LIMIT_MIN, formatLimit, parseLimit, parseSize } from './fields';
   import { notify } from './notices';
   import NumberStepper from './NumberStepper.svelte';
   import ToggleRow from './ToggleRow.svelte';
-  import { mergeColors } from './pipeline';
+  import { hatchTierOptions, hatchTierRows, unmatchedHatchTiers } from './hatchTierRows';
+  import { build, mergeColors } from './pipeline';
+  import SelectRow from './SelectRow.svelte';
   import { copyShareLink, downloadJson, openJsonFile, shareFallback } from './session';
   import { addPlanToSite } from './siteCommands';
 
@@ -33,6 +50,29 @@
     if (n !== null) setSize(n);
   }
   const colors = $derived(mergeColors($plan.colors));
+
+  const tiers = $derived(def ? allowedTiers(def) : []);
+  const tierOptions = $derived([
+    { value: '', label: t.anyTier },
+    ...tiers.map((x) => ({ value: x, label: x })),
+    // A loaded plan may name a tier this machine cannot take: show it, don't change it.
+    ...($plan.tier && !tiers.includes($plan.tier)
+      ? [{ value: $plan.tier, label: `${$plan.tier} ${t.notAllowed}` }]
+      : []),
+  ]);
+  const wallshareOptions = WALLSHARE_MODES.map((m) => ({ value: m, label: t.wallshareModes[m] }));
+  const fallback = $derived($build.wallshareFallback);
+
+  // Tiers of single hatches, for energy machines only (steam machines have no voltage tiers).
+  let hatchTiersOpen = $state(false);
+  const tierRows = $derived(hatchTierRows($build.scene?.hatches ?? [], $selectedUnits));
+  const unmatched = $derived(unmatchedHatchTiers($plan.hatchTiers, $build.scene?.hatches ?? []));
+  const hatchCount = $derived(hatchTierRows($build.scene?.hatches ?? []).length);
+  const hatchTierChoices = (kind: Parameters<typeof hatchTierOptions>[0]) => [
+    { value: '', label: t.defaultTier },
+    ...hatchTierOptions(kind).map((x) => ({ value: x, label: x })),
+  ];
+  const asTier = (v: string): Tier | undefined => TIERS.find((x) => x === v);
 
   function commitLimit(axis: keyof PlanLimits, text: string) {
     const v = parseLimit(text);
@@ -72,6 +112,45 @@
   <button class="link active add-to-site" data-testid="add-to-site" onclick={addPlanToSite}
     >{t.site.addToSite}</button
   >
+
+  <section>
+    <h2>{t.machine}</h2>
+    <ul class="rows">
+      {#if tiers.length}
+        <SelectRow
+          label={t.tier}
+          title={t.tierHint}
+          value={$plan.tier ?? ''}
+          options={tierOptions}
+          testid="machine-tier"
+          onchange={(v) => setTier(asTier(v))}
+        />
+      {/if}
+      <ToggleRow
+        on={!!$plan.mirror}
+        label={t.mirror}
+        title={t.mirrorHint}
+        testid="toggle-mirror"
+        ontoggle={() => setMirror(!$plan.mirror)}
+      />
+      <SelectRow
+        label={t.wallshare}
+        title={t.wallshareHint}
+        value={$plan.wallshare ?? 'auto'}
+        options={wallshareOptions}
+        testid="wallshare"
+        onchange={(v) => {
+          const mode = WALLSHARE_MODES.find((m) => m === v);
+          if (mode) setWallshare(mode);
+        }}
+      />
+    </ul>
+    {#if fallback}
+      <p class="hint" data-testid="wallshare-fallback">
+        {t.wallshareFallback(fallback.wanted, fallback.used, fallback.reason)}
+      </p>
+    {/if}
+  </section>
 
   {#if resize}
     <section>
@@ -141,6 +220,40 @@
       </ul>
       {#if Object.keys($plan.colors).length}
         <button class="link" onclick={resetColors}>{t.resetColors}</button>
+      {/if}
+    </section>
+  {/if}
+
+  {#if tiers.length && hatchCount}
+    <section>
+      <h2>{t.hatchTiers}</h2>
+      <button
+        class="link"
+        class:active={hatchTiersOpen}
+        data-testid="hatch-tiers-toggle"
+        onclick={() => (hatchTiersOpen = !hatchTiersOpen)}
+        >{hatchTiersOpen ? t.hatchTiersHide : t.hatchTiersShow(tierRows.length)}</button
+      >
+      {#if hatchTiersOpen}
+        {#if $selectedUnits.length}<p class="hint">{t.hatchTiersSelected}</p>{/if}
+        {#if !tierRows.length}<p class="hint">{t.hatchTiersEmpty}</p>{/if}
+        <ul class="rows tier-list" data-testid="hatch-tier-list">
+          {#each tierRows as row (row.key)}
+            <SelectRow
+              label={t.hatchTierName(t.hatchKinds[row.kind], row.number)}
+              value={$plan.hatchTiers?.[row.key] ?? ''}
+              options={hatchTierChoices(row.kind)}
+              testid={`hatch-tier-${row.key}`}
+              onchange={(v) => setHatchTier(row.key, asTier(v))}
+            />
+          {/each}
+        </ul>
+        {#if $plan.hatchTiers}
+          {#if unmatched}<p class="hint" data-testid="hatch-tiers-unmatched">
+              {t.hatchTiersUnmatched(unmatched)}
+            </p>{/if}
+          <button class="link" onclick={resetHatchTiers}>{t.resetHatchTiers}</button>
+        {/if}
       {/if}
     </section>
   {/if}
@@ -273,6 +386,10 @@
     list-style: none;
     margin: 0;
     padding: 0;
+  }
+  .tier-list {
+    max-height: 220px;
+    overflow-y: auto;
   }
   .row {
     display: flex;
