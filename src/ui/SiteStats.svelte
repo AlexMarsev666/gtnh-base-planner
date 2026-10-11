@@ -2,6 +2,7 @@
   import { getSiteDef } from '../data/generic';
   import { t } from '../i18n/en';
   import { site, siteGroup, siteNet } from '../state/site';
+  import { splitWarnings } from './siteInspect';
   import { siteBuild, siteBusy } from './sitePipeline';
 
   interface Props {
@@ -48,7 +49,7 @@
     return null;
   });
 
-  const problems = $derived(build?.warnings.length ?? 0);
+  const problems = $derived(splitWarnings(build?.warnings ?? []).problems.length);
 </script>
 
 {#if main.length || detail}

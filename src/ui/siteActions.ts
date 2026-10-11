@@ -2,11 +2,21 @@ import { getSiteDef, isSingleBlock } from '../data/generic';
 import { getSingleMachine } from '../data/single-machines';
 import { fallbackColor } from '../import/gtnhplanner';
 import { IO_KINDS } from '../model/site/group';
-import type { Endpoint, ResourceKind, SiteGroup, SiteState } from '../model/site/types';
+import type {
+  Endpoint,
+  HatchAssign,
+  ResourceKind,
+  SiteGroup,
+  SiteRouting,
+  SiteState,
+  TransformerAmps,
+  TransformerStep,
+} from '../model/site/types';
 import { effectiveSize } from '../model/resize';
-import type { Rotation } from '../model/core/types';
+import type { Rotation, Tier } from '../model/core/types';
+import { isTransformer } from '../model/site/power';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
-import type { PlanState } from '../model/plan/types';
+import type { HatchTiers, PlanState, WallshareMode } from '../model/plan/types';
 import {
   MAX_CORRIDOR,
   MAX_GROUPS,
@@ -112,6 +122,25 @@ export interface GroupPatch {
   label?: string | null;
   /** Hatch kinds the group places besides its link hatches (IO kinds are dropped: links decide those). */
   enabledHatches?: HatchKind[];
+  /** Machine tier (see `SiteGroup.tier`); null clears it. */
+  tier?: Tier | null;
+  /** Tier of single hatches (template keys, see `groupKey`); null or an empty map clears them. */
+  hatchTiers?: HatchTiers | null;
+  mirror?: boolean;
+  /** Wall sharing preference; `auto` clears it. */
+  wallshare?: WallshareMode;
+  /** Where each resource's hatch goes; null or an empty map clears every choice. */
+  assign?: Record<string, HatchAssign> | null;
+  /** Transformers: direction and low-side amperage (4 clears it). */
+  step?: TransformerStep;
+  amps?: TransformerAmps;
+}
+
+/** A group that is not a transformer has no direction or amperage. */
+function dropTransformerSettings(g: SiteGroup): void {
+  if (isTransformer(g)) return;
+  delete g.step;
+  delete g.amps;
 }
 
 export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): SiteState {
@@ -127,6 +156,9 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
         delete next.size;
         delete next.label;
         delete next.machine;
+        // Tier, hatch tiers and assignments stay, whether or not the new machine takes them: the panel shows
+        // what no longer fits. Only a transformer's settings go with the transformer.
+        dropTransformerSettings(next);
       }
     }
     if (patch.count !== undefined) next.count = clampCount(patch.count);
@@ -151,6 +183,32 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
       const def = getSiteDef(next.multiblockId);
       if (def && isSingleBlock(def)) next.machine = patch.machine;
     }
+    if (patch.machine !== undefined) {
+      // Another machine type keeps the tier (shown as not allowed if it does not exist); only a transformer
+      // has a direction and amperage.
+      dropTransformerSettings(next);
+    }
+    if (patch.tier === null) delete next.tier;
+    else if (patch.tier !== undefined) next.tier = patch.tier;
+    if (patch.hatchTiers !== undefined) {
+      if (patch.hatchTiers && Object.keys(patch.hatchTiers).length) next.hatchTiers = { ...patch.hatchTiers };
+      else delete next.hatchTiers;
+    }
+    if (patch.mirror === false) delete next.mirror;
+    else if (patch.mirror) next.mirror = true;
+    if (patch.wallshare === 'auto') delete next.wallshare;
+    else if (patch.wallshare) next.wallshare = patch.wallshare;
+    if (patch.assign !== undefined) {
+      const kept = Object.entries(patch.assign ?? {}).filter(
+        ([, a]) => a.unit !== undefined || (a.zone !== undefined && a.zone !== ''),
+      );
+      if (kept.length) next.assign = Object.fromEntries(kept);
+      else delete next.assign;
+    }
+    if (patch.step === 'down') delete next.step;
+    else if (patch.step) next.step = patch.step;
+    if (patch.amps === 4) delete next.amps;
+    else if (patch.amps) next.amps = patch.amps;
     if (patch.elevation !== undefined) {
       const e = clampInt(patch.elevation, 0, SITE_MAX_ELEVATION);
       if (e > 0) next.elevation = e;
@@ -366,6 +424,15 @@ export function withGrownToFit(
 export function withCorridor(s: SiteState, n: number): SiteState {
   const corridor = clampInt(n, 0, MAX_CORRIDOR);
   return corridor === s.corridor ? s : { ...s, corridor };
+}
+
+/** The routing of the template (style and depth); undefined goes back to the old, browser-wide behaviour. */
+export function withRouting(s: SiteState, routing: SiteRouting | undefined): SiteState {
+  if (JSON.stringify(s.routing) === JSON.stringify(routing)) return s;
+  const next = { ...s };
+  if (routing) next.routing = { style: routing.style, depth: routing.depth };
+  else delete next.routing;
+  return next;
 }
 
 export function withName(s: SiteState, name: string): SiteState {

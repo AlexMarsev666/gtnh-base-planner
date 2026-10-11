@@ -5,6 +5,17 @@ import type { IoClass, SortMode } from '../model/bom';
 import type { WallshareFallback } from '../model/layout/types';
 import type { WallshareMode } from '../model/plan/types';
 
+const HATCH_KIND_NAMES: Record<HatchKind, string> = {
+  itemIn: 'Item in',
+  itemOut: 'Item out',
+  fluidIn: 'Fluid in',
+  fluidOut: 'Fluid out',
+  energy: 'Energy',
+  dynamo: 'Dynamo',
+  maintenance: 'Maintenance',
+  muffler: 'Muffler',
+  steamIn: 'Steam in',
+};
 const WALLSHARE_NAMES: Record<WallshareMode, string> = {
   auto: 'Auto',
   side: 'Side walls',
@@ -292,6 +303,55 @@ export const t = {
     outputPort: 'Template output',
     kinds: { item: 'Item', fluid: 'Fluid', power: 'Power' } satisfies Record<ResourceKind, string>,
     problems: 'Problems',
+    notes: 'Notes',
+    routing: 'Routing',
+    routingStyle: 'Style',
+    routingStyles: { classic: 'Classic', neat: 'Neat' },
+    routingDepth: 'Depth',
+    routingDepthHint:
+      'The most layers under the ground that pipes and cables may use. 0 keeps them on the ground.',
+    routingDepthUsed: (asked: number, used: number) =>
+      `Depth ${used} is in use: the template is too big to route ${asked} layers under the ground.`,
+    routingLegacy: (depth: number) =>
+      `This template has no routing of its own yet: it uses classic routing, ${depth === 0 ? 'on the ground' : `${depth} layer${depth === 1 ? '' : 's'} under the ground`}, following the Connect from below switch of the machine view. Choosing a style or depth here gives it its own routing.`,
+    useNeat: 'Use neat routing',
+    undergroundView: 'X-ray',
+    undergroundViewHint: 'See through the ground and the machines to the pipes under them.',
+    routeStats: (blocks: number, bends: number, underground: number) =>
+      `${blocks} blocks routed, ${underground} under the ground, ${bends} ${bends === 1 ? 'bend' : 'bends'}.`,
+    tier: 'Tier',
+    tierHint: 'Voltage tier of the energy hatches (a transformer: its high side).',
+    tierAny: 'Any',
+    resources: 'Resources',
+    resourcesHint: 'Where the hatch of each resource goes. Auto spreads them over the units and zones.',
+    unit: 'Unit',
+    zone: 'Zone',
+    auto: 'Auto',
+    allUnits: 'All units',
+    unitN: (n: number) => `Unit ${n}`,
+    unitGone: (n: number) => `Unit ${n} (not in the group)`,
+    noResources: 'No resources yet. Link this group to another, or to a port.',
+    hatchTiers: 'Hatch tiers',
+    hatchTierShared: 'shared',
+    hatchTierName: (kind: string, resource: string | undefined, unit: number | 'shared') =>
+      `${kind}${resource ? ` ${resource}` : ''}${unit === 'shared' ? '' : ` · unit ${unit + 1}`}`,
+    machineType: 'Machine type',
+    machineTypeAny: 'Plain machine',
+    machineSearch: 'Search machine types',
+    machineNone: 'No machine type matches.',
+    transformer: 'Transformer',
+    step: 'Direction',
+    stepDown: 'Step down',
+    stepUp: 'Step up',
+    amps: 'Amperage',
+    ampsOption: (amps: number) => `${amps} A`,
+    transformerReset: 'Transformer settings were reset.',
+    ampsInvalid: (tier: string, amps: number) =>
+      `GT has no ${amps} A transformer at ${tier}. Pick another amperage or tier.`,
+    staleAssign: (n: number) =>
+      `${n} ${n === 1 ? 'choice' : 'choices'} for resources this group no longer takes or gives.`,
+    staleAssignClear: 'Clear',
+    hiAmpNote: 'Hi-Amp (16 A) transformers exist from UEV only.',
     flow: 'Flow animation',
     animation: 'Animation',
     animationHint: 'Moving flow arrows on pipes and cables',
@@ -334,27 +394,38 @@ export const t = {
         case 'noport':
           return `No room on the edge for port ${w.port}.`;
         case 'powerTier':
-          return `${name(w.group)}: ${res(w.resource)} carries ${w.expected}, but it takes ${w.got}.`;
+          return `${name(w.group)}: ${res(w.resource)} carries ${w.expected}, but this machine takes only ${w.got}.`;
         case 'transformerInvalid':
-          return `${name(w.group)}: GT has no ${w.amps}A transformer at ${w.tier}.`;
+          return `${name(w.group)}: GT has no ${w.amps} A transformer at ${w.tier}${w.amps === 16 ? ' (Hi-Amp starts at UEV)' : ''}.`;
         case 'powerUnknownTier':
-          return `${res(w.resource)}: voltage tier unknown, so its transformers are not checked.`;
+          return `${res(w.resource)}: its voltage is not known, so the transformers on it are not checked.`;
         case 'assignInactive':
-          return `${name(w.group)}: ${res(w.resource)} is assigned to unit ${w.unit + 1}, which this group does not have.`;
+          return `${name(w.group)}: ${res(w.resource)} is set to unit ${w.unit + 1}, but the group has no such unit.`;
         case 'capacity':
-          return `${name(w.group)}: ${w.needed} hatches wanted on a machine with room for ${w.fits}; remove ${w.remove}.`;
-        case 'hatch':
-          return `${name(w.group)}: ${w.reason === 'required' ? 'a required' : 'no place for a'} ${w.kind} hatch${w.region ? ` (${w.region})` : ''} on ${w.units} ${w.units === 1 ? 'unit' : 'units'}${w.resources.length ? `: ${w.resources.map(res).join(', ')}` : ''}.`;
+          return `${name(w.group)}: hatches don't fit, ${w.needed} wanted and ${w.fits} fit. Remove ${w.remove}.${w.mandatory ? ' Even the required hatches do not all fit.' : ''}${w.units > 1 ? ` (${w.units} units)` : ''}`;
+        case 'hatch': {
+          const what = HATCH_KIND_NAMES[w.kind].toLowerCase();
+          const where = w.units === 1 ? '1 unit' : `${w.units} units`;
+          const for_ = w.resources.length ? ` for ${w.resources.map(res).join(', ')}` : '';
+          const region = w.region ? ` in ${w.region}` : '';
+          return w.reason === 'required'
+            ? `${name(w.group)}: a required ${what} hatch${region} is missing on ${where}.`
+            : w.reason === 'max'
+              ? `${name(w.group)}: the ${what} hatches are at their maximum; one more${for_} found no room on ${where}.`
+              : w.reason === 'unsupported'
+                ? `${name(w.group)} cannot take a ${what} hatch${for_}.`
+                : `${name(w.group)}: no place for a ${what} hatch${for_}${region} on ${where}.`;
+        }
       }
     },
     note: (n: SiteNote, name: (groupId: string) => string, res: (key: string) => string): string => {
       switch (n.type) {
         case 'distributed':
-          return `${name(n.group)}: ${n.resources.map(res).join(', ')} spread over the units, as one of each did not fit on every unit.`;
+          return `${name(n.group)}: ${n.resources.map(res).join(', ')} spread over the units, as a full set did not fit on every unit.`;
         case 'split':
           return `${name(n.group)}: ${res(n.resource)} could not share one hatch and got ${n.hatches}.`;
         case 'wallshare':
-          return `${name(n.group)}: wall sharing '${n.wanted}' was not possible; used '${n.used}' (${n.reason}).`;
+          return `${name(n.group)}: ${WALLSHARE_NAMES[n.wanted]} is not possible (${WALLSHARE_REASONS[n.reason]}); used ${WALLSHARE_NAMES[n.used].toLowerCase()}.`;
       }
     },
     problemCount: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,
@@ -423,17 +494,7 @@ export const t = {
     } satisfies Record<IoClass, string>,
   },
 
-  hatchKinds: {
-    itemIn: 'Item in',
-    itemOut: 'Item out',
-    fluidIn: 'Fluid in',
-    fluidOut: 'Fluid out',
-    energy: 'Energy',
-    dynamo: 'Dynamo',
-    maintenance: 'Maintenance',
-    muffler: 'Muffler',
-    steamIn: 'Steam in',
-  } satisfies Record<HatchKind, string>,
+  hatchKinds: HATCH_KIND_NAMES,
 };
 
 export type Strings = typeof t;

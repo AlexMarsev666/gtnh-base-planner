@@ -41,6 +41,7 @@
   import SiteLegend from './SiteLegend.svelte';
   import SitePanel from './SitePanel.svelte';
   import { siteBuildInView, siteSceneInView } from './sitePipeline';
+  import { siteBomTiers } from '../model/site/siteScene';
   import SiteStats from './SiteStats.svelte';
   import StatsLine from './StatsLine.svelte';
   import TopBar from './TopBar.svelte';
@@ -57,6 +58,8 @@
 
   const def = $derived($machineDef);
   const siteMode = $derived($appMode === 'site');
+  /** The template's bill of materials comes from one build: its scene and the keys of its hatches match. */
+  const siteBom = $derived(siteMode ? $siteBuildInView.build : null);
 
   onMount(startSessions);
 
@@ -245,7 +248,11 @@
       />
       {#if ($siteGroup || $sitePort) && !importOpen}<MoveHint port={!!$sitePort} />{/if}
       {#if blocksOpen}
-        <BlocksPanel scene={$siteSceneInView} onclose={() => (blocksOpen = false)} />
+        <BlocksPanel
+          scene={siteBom?.scene ?? null}
+          siteTiers={siteBom ? siteBomTiers(siteBom.groups) : undefined}
+          onclose={() => (blocksOpen = false)}
+        />
       {/if}
       {#if sitePanelOpen}
         <SitePanel

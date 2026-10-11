@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from '../i18n/en';
-  import { matchesQuery, progress, requiredBlocks, sortBom, tickedLast } from '../model/bom';
+  import { matchesQuery, progress, requiredBlocks, sortBom, tickedLast, type BomTiers } from '../model/bom';
   import type { PlanState } from '../model/plan/types';
   import type { SceneModel } from '../model/render/types';
   import { checked, clearChecked, cycleSort, sortMode, toggleChecked } from '../state/checklist';
@@ -12,16 +12,18 @@
     scene: SceneModel | null;
     /** The machine plan, whose machine and hatch tiers the list shows (the template view passes none). */
     tiers?: Pick<PlanState, 'tier' | 'hatchTiers'>;
+    /** The template's hatch and machine tiers (see `siteBomTiers`); the machine view passes `tiers`. */
+    siteTiers?: BomTiers;
     onclose: () => void;
   }
-  let { scene, tiers, onclose }: Props = $props();
+  let { scene, tiers, siteTiers, onclose }: Props = $props();
 
   const bom = $derived(
     sortBom(
       scene
         ? tiers
           ? planBom(scene, tiers)
-          : requiredBlocks(scene)
+          : requiredBlocks(scene, undefined, siteTiers)
         : { blocks: [], io: [], totalBlocks: 0 },
       $sortMode,
     ),

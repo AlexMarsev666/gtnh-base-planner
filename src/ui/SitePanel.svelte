@@ -3,6 +3,7 @@
   import { t } from '../i18n/en';
   import type { Endpoint, ResourceKind } from '../model/site/types';
   import { MAX_CORRIDOR, SITE_MAX_SIZE, SITE_MIN_SIZE } from '../share/siteCodec';
+  import { ROUTING_STYLES } from '../model/site/types';
   import { flowAnimation, isolate, showIcons, site, siteCables, siteGroup, sitePipes } from '../state/site';
   import { connectBelow, xray } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
@@ -17,12 +18,15 @@
     withLinkRemoved,
     withName,
     withResourceColor,
+    withRouting,
     withSiteSize,
     type LinkEnd,
   } from './siteActions';
   import { addGroup, arrange } from './siteCommands';
   import { canRedo, canUndo, redoSite, undoAction, undoSite } from './siteHistory';
-  import { siteBuild } from './sitePipeline';
+  import { ROUTING_DEPTHS, depthReduced, routingView, splitWarnings } from './siteInspect';
+  import { siteBuild, siteRouteInfo } from './sitePipeline';
+  import SelectRow from './SelectRow.svelte';
   import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
   import ToggleRow from './ToggleRow.svelte';
 
@@ -60,7 +64,22 @@
     return `${name} (${g.origin[0]}, ${g.origin[1]})`;
   }
 
-  const warnings = $derived(build?.warnings ?? []);
+  const warnings = $derived(splitWarnings(build?.warnings ?? []));
+  const notes = $derived(build?.notes ?? []);
+
+  const routingState = $derived(routingView($site, $connectBelow));
+  const routing = $derived(routingState.routing);
+  const routingStyles = ROUTING_STYLES.map((v) => ({ value: v, label: t.site.routingStyles[v] }));
+  const routingDepths = ROUTING_DEPTHS.map((d) => ({ value: String(d), label: String(d) }));
+  function setStyle(v: string) {
+    const style = ROUTING_STYLES.find((x) => x === v);
+    if (style) updateSite((s) => withRouting(s, { ...routing, style }));
+  }
+  function setDepth(v: string) {
+    const depth = ROUTING_DEPTHS.find((x) => String(x) === v);
+    if (depth !== undefined) updateSite((s) => withRouting(s, { ...routing, depth }));
+  }
+  const routeStats = $derived($siteRouteInfo?.routeStats);
 
   // The inspector is at the top: bring it into view when a group gets selected (from the scene too).
   let drawer = $state<HTMLElement>();
@@ -281,11 +300,25 @@
     {/if}
   </section>
 
-  {#if warnings.length}
+  {#if warnings.problems.length}
     <section>
       <h2>{t.site.problems}</h2>
-      <ul class="rows problems">
-        {#each warnings as w, i (i)}
+      <ul class="rows problems" data-testid="site-problem-list">
+        {#each warnings.problems as w, i (i)}
+          <li>{t.site.warning(w, groupName, resName)}</li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
+
+  {#if notes.length || warnings.info.length}
+    <section>
+      <h2>{t.site.notes}</h2>
+      <ul class="rows problems info" data-testid="site-note-list">
+        {#each notes as n, i (i)}
+          <li>{t.site.note(n, groupName, resName)}</li>
+        {/each}
+        {#each warnings.info as w, i (i)}
           <li>{t.site.warning(w, groupName, resName)}</li>
         {/each}
       </ul>
@@ -363,18 +396,61 @@
     </ul>
   </section>
 
+  <section data-testid="site-routing">
+    <h2>{t.site.routing}</h2>
+    <ul class="rows">
+      <SelectRow
+        label={t.site.routingStyle}
+        value={routing.style}
+        options={routingStyles}
+        testid="site-routing-style"
+        onchange={setStyle}
+      />
+      <SelectRow
+        label={t.site.routingDepth}
+        value={String(routing.depth)}
+        options={routingDepths}
+        testid="site-routing-depth"
+        onchange={setDepth}
+      />
+      <ToggleRow
+        on={$xray}
+        label={t.site.undergroundView}
+        title={t.site.undergroundViewHint}
+        testid="site-xray"
+        ontoggle={() => xray.update((v) => !v)}
+      />
+    </ul>
+    <p class="hint">{t.site.routingDepthHint}</p>
+    {#if $siteRouteInfo && depthReduced($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
+      <p class="hint warn" data-testid="site-depth-reduced">
+        {t.site.routingDepthUsed($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
+      </p>
+    {/if}
+    {#if routeStats}
+      <p class="hint" data-testid="site-route-stats">
+        {t.site.routeStats(
+          routeStats.length,
+          routeStats.bends,
+          routeStats.underground.reduce((a, b) => a + b, 0),
+        )}
+      </p>
+    {/if}
+    {#if routingState.legacy}
+      <p class="hint" data-testid="site-routing-legacy">{t.site.routingLegacy(routing.depth)}</p>
+      <button
+        class="link active"
+        data-testid="site-use-neat"
+        onclick={() => updateSite((s) => withRouting(s, routingState.neatOffer))}>{t.site.useNeat}</button
+      >
+    {/if}
+  </section>
+
   <section>
     <h2>{t.view}</h2>
     <ul class="rows">
       <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
       <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
-      <ToggleRow
-        on={$connectBelow}
-        label={t.below}
-        title={t.belowHint}
-        testid="site-below"
-        ontoggle={() => connectBelow.update((v) => !v)}
-      />
       <ToggleRow on={$flowAnimation} label={t.site.flow} ontoggle={() => flowAnimation.update((v) => !v)} />
       <ToggleRow
         on={$showIcons}
@@ -382,7 +458,6 @@
         testid="site-icons"
         ontoggle={() => showIcons.update((v) => !v)}
       />
-      <ToggleRow on={$xray} label={t.xray} ontoggle={() => xray.update((v) => !v)} />
     </ul>
   </section>
 
@@ -591,6 +666,15 @@
     text-transform: none;
     letter-spacing: 0.02em;
     margin-bottom: 4px;
+  }
+  .hint.warn,
+  .info li {
+    color: var(--muted);
+  }
+  .hint.warn {
+    color: var(--text);
+    border-left: 2px solid var(--pick);
+    padding-left: 8px;
   }
   .url {
     text-align: left;

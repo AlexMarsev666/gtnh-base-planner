@@ -1,7 +1,9 @@
 import { isSingleBlock, singleMachineLook } from '../../data/generic';
 import { DEFAULT_HATCH_COLORS } from '../colors';
 import { key } from '../geometry';
+import type { BomTiers } from '../bom';
 import { buildSceneModel } from '../scene';
+import { groupKey, hatchTier } from '../tiers';
 import type { Vec3 } from '../core/types';
 import type { SceneModel, Voxel } from '../render/types';
 import type { RouteNet } from '../routing/routeNet';
@@ -163,4 +165,46 @@ export function buildSiteScene(
     labels,
     site: { size: [w, d] },
   };
+}
+
+/**
+ * The `SiteGroup.hatchTiers` key of each hatch of a group, in the order given (see `groupKey`): kinds without a
+ * resource by their number among the hatches of the kind, the others by resource and unit index (the position
+ * in `unitIds`), or `shared` for a hatch serving several units.
+ */
+export function groupHatchKeys(
+  hatches: readonly Pick<SiteHatch, 'kind' | 'resource' | 'unitIds'>[],
+  unitIds: readonly number[],
+): string[] {
+  const seen = new Map<string, number>();
+  return hatches.map((h) => {
+    const n = seen.get(h.kind) ?? 0;
+    seen.set(h.kind, n + 1);
+    const index = unitIds.indexOf(h.unitIds[0]);
+    return groupKey(h.kind, n, h.resource, h.unitIds.length > 1 || index < 0 ? 'shared' : index);
+  });
+}
+
+/**
+ * Tiers for the bill of materials of a built site, matching `SceneModel.hatches` of `buildSiteScene` (the
+ * groups' hatches in group order). Each hatch gets the tier `hatchTier` names for its group: its own entry,
+ * else the group's tier for energy and dynamo hatches. Undefined when no group has any, so an untiered
+ * template lists exactly what it did before.
+ */
+export function siteBomTiers(groups: readonly PlacedGroup[]): BomTiers | undefined {
+  const hatchKeys: string[] = [];
+  const hatchTiers: Record<string, NonNullable<ReturnType<typeof hatchTier>>> = {};
+  for (const pg of groups) {
+    const keys = groupHatchKeys(
+      pg.hatches,
+      pg.units.map((u) => u.id),
+    );
+    pg.hatches.forEach((h, i) => {
+      const global = `${pg.group.id}|${keys[i]}`;
+      hatchKeys.push(global);
+      const tier = hatchTier(h.kind, keys[i], pg.group.tier, pg.group.hatchTiers);
+      if (tier) hatchTiers[global] = tier;
+    });
+  }
+  return Object.keys(hatchTiers).length ? { hatchKeys, hatchTiers } : undefined;
 }

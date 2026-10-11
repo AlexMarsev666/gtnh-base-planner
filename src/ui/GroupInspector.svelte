@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
+  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef, isSingleBlock } from '../data/generic';
   import { t } from '../i18n/en';
   import type { PlacedGroup } from '../model/site/buildTypes';
   import { IO_KINDS } from '../model/site/group';
+  import { TIERS } from '../model/core/types';
+  import { WALLSHARE_MODES } from '../model/plan/types';
   import type { SiteGroup } from '../model/site/types';
   import type { HatchKind } from '../model/multiblock/types';
   import { SITE_MAX_ELEVATION, SITE_MAX_SIZE } from '../share/siteCodec';
@@ -18,6 +20,9 @@
     parseLimit,
     parseSize,
   } from './fields';
+  import GroupHatchTiers from './GroupHatchTiers.svelte';
+  import GroupResources from './GroupResources.svelte';
+  import MachineTypeEditor from './MachineTypeEditor.svelte';
   import NudgePad from './NudgePad.svelte';
   import NumberStepper from './NumberStepper.svelte';
   import { groupLimitAxis, type GroupPatch } from './siteActions';
@@ -29,6 +34,8 @@
     rotateSelected,
     setSelectedOrigin,
   } from './siteEditing';
+  import SelectRow from './SelectRow.svelte';
+  import { groupTiers, hasStructure, tierChoices } from './siteInspect';
   import ToggleRow from './ToggleRow.svelte';
 
   /** The editor of the selected template group: Machine, Packing and Placement. */
@@ -54,6 +61,12 @@
   const footprint = $derived(
     placed ? ([placed.max[0] - placed.min[0], placed.max[2] - placed.min[2]] as const) : null,
   );
+
+  const tiers = $derived(groupTiers(group, def));
+  const tierOptions = $derived(
+    tierChoices(tiers, group.tier, { any: t.site.tierAny, notAllowed: t.notAllowed }),
+  );
+  const wallshareOptions = WALLSHARE_MODES.map((m) => ({ value: m, label: t.wallshareModes[m] }));
 
   let replacing = $state(false);
   $effect(() => {
@@ -129,6 +142,7 @@
         >{t.site.replace}</button
       >
     </div>
+    {#if def && isSingleBlock(def)}<MachineTypeEditor {group} />{/if}
     {#if replacing}
       <div class="row wrap replace">
         <span>{t.site.replaceWith}</span>
@@ -141,7 +155,44 @@
         {/if}
       </div>
     {/if}
+    <ul class="rows opts">
+      {#if tiers.length}
+        <SelectRow
+          label={t.site.tier}
+          title={t.site.tierHint}
+          value={group.tier ?? ''}
+          options={tierOptions}
+          testid="site-group-tier"
+          onchange={(v) => patch({ tier: TIERS.find((x) => x === v) ?? null })}
+        />
+      {/if}
+      {#if hasStructure(def)}
+        <ToggleRow
+          on={!!group.mirror}
+          label={t.mirror}
+          title={t.mirrorHint}
+          testid="site-group-mirror"
+          ontoggle={() => patch({ mirror: !group.mirror })}
+        />
+        <SelectRow
+          label={t.wallshare}
+          title={t.wallshareHint}
+          value={group.wallshare ?? 'auto'}
+          options={wallshareOptions}
+          testid="site-group-wallshare"
+          onchange={(v) => {
+            const mode = WALLSHARE_MODES.find((m) => m === v);
+            if (mode) patch({ wallshare: mode });
+          }}
+        />
+      {/if}
+    </ul>
   </div>
+
+  {#if def}
+    <GroupResources {group} {def} demand={placed?.demand ?? {}} units={placed?.units.length ?? group.count} />
+  {/if}
+  <GroupHatchTiers {group} {placed} />
 
   <div class="sub">
     <p class="sub-title">
@@ -375,6 +426,9 @@
     grid-template-columns: repeat(3, auto);
     justify-content: space-between;
     gap: 6px 12px;
+  }
+  .opts {
+    margin-top: 6px;
   }
   .rows {
     list-style: none;

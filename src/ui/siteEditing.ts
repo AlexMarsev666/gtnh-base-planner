@@ -149,6 +149,12 @@ export function patchGroup(id: string, patch: GroupPatch): void {
   const before = get(site);
   updateSite((s) => withGroupPatched(s, id, patch));
   const patched = get(site);
+  // Another machine or machine type can end a transformer's direction and amperage: say so.
+  if ((patch.machine !== undefined || patch.multiblockId !== undefined) && patched !== before) {
+    const was = before.groups.find((g) => g.id === id);
+    const now = patched.groups.find((g) => g.id === id);
+    if (was && now && (was.step || was.amps) && !now.step && !now.amps) notify(t.site.transformerReset);
+  }
   if (patched !== before) growAfterBuild(id, patched);
 }
 

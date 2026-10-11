@@ -74,6 +74,13 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    change to the template (Ctrl+Shift+Z or Ctrl+Y redoes it). Moving a group past an edge grows the template
    that way (and ARRANGE grows it when the chain does not fit). While you move or turn groups the pipes wait,
    shown faded, and are routed again a moment after you stop.
+   The panel's Routing block sets the router (Classic or Neat) and how deep pipes may go under the ground (0 to 3);
+   a template saved before it existed keeps its old routing and offers Use neat routing. The selected group also
+   has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, a Resources list
+   (put a resource's hatch on one unit or all units, or into a hatch zone of the multiblock) and the tier of each
+   of its hatches. A single-block machine picks its machine type from a searchable list; a transformer also has a
+   direction and a low-side amperage (Hi-Amp, 16 A, exists from UEV). PROBLEMS lists what could not be met; Notes
+   lists what the build did on its own (spread resources, a wall-sharing fallback) and is not a problem.
 4. Click a pipe or a legend entry to highlight one resource; the other nets fade. The bottom line shows the
    selected group or net, and PROBLEMS lists overlaps, groups outside the template, hatches that did not fit and
    pipes that could not be routed.

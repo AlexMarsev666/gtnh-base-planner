@@ -3,12 +3,14 @@
   interface Props {
     label: string;
     value: string;
-    options: { value: string; label: string }[];
+    options: { value: string; label: string; disabled?: boolean }[];
     title?: string;
     testid?: string;
+    /** Id of the element that explains or qualifies the choice. */
+    describedby?: string;
     onchange: (value: string) => void;
   }
-  let { label, value, options, title, testid, onchange }: Props = $props();
+  let { label, value, options, title, testid, describedby, onchange }: Props = $props();
 </script>
 
 <li class="select-row">
@@ -18,11 +20,12 @@
       class="field select"
       {value}
       aria-label={label}
+      aria-describedby={describedby}
       data-testid={testid}
       onchange={(e) => onchange(e.currentTarget.value)}
     >
       {#each options as o (o.value)}
-        <option value={o.value} selected={o.value === value}>{o.label}</option>
+        <option value={o.value} selected={o.value === value} disabled={o.disabled}>{o.label}</option>
       {/each}
     </select>
   </label>
