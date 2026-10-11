@@ -16,7 +16,7 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockspecialcasings.2@0",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "maintenance"],
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
       "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings@1" },
@@ -29,17 +29,18 @@
     "itemOut": "gt.hatch.outputBus",
     "fluidIn": "gt.hatch.inputHatch",
     "fluidOut": "gt.hatch.outputHatch",
+    "energy": "gt.hatch.energy",
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": { "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "maintenance"],
+  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "zones": {
     "dot1": {
-      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "maintenance"],
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
       "text": "0-1 Catalyst Housing: Any metal machine casing\n1+ Energy Hatch: Any metal machine casing\n1 Maintenance Hatch: Any metal machine casing\n1+ Input Bus/Hatch: Any metal machine casing\n1+ Output Bus/Hatch: Any metal machine casing"
     }
   },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEChemicalPlant (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
+  "notes": "92 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: MTEChemicalPlant (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

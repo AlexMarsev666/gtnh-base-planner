@@ -18,7 +18,7 @@ const CASES: { id: string; size?: number }[] = [
   { id: 'distillation-tower', size: 5 },
   { id: 'oil-cracking-unit' },
   { id: 'pyrolyse-oven' },
-  { id: 'advanced-assembly-line' },
+  { id: 'assembly-line' },
 ];
 
 /** Where each kind's pipes lead to in the `toward` cases: far out on opposite sides. */

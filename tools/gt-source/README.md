@@ -40,3 +40,32 @@ node tools/gt-source/machine-types.mjs ../gt5u
 Four catalog entries still come from the old converter, because the game dump cannot build them (their mods are
 not on the dump's dev server): Extreme Entity Crusher, Large Essentia Smeltery, Research Completer and Space
 Elevator. Their GT shapes are in `src/data/gt-shapes.generated.json`, checked by `src/data/gt-structures.test.ts`.
+
+## Hatch elements per hint dot
+
+`hatch-elements.mjs` reads the `.addElement('x', ...)` calls of a controller's structure definition (the nearest class
+of its chain that has any) and gives, per hint dot, the hatch kinds the element carrying that dot accepts.
+`node tools/gt-source/hatch-elements.mjs ../gt5u <source class>` prints them. `tools/game-dump/build.mjs` adds them to
+the dump's kinds of every hint cell (the dump's probe misses custom elements). Same rule for every class:
+
+| Source                                                                                                                                           | Kind                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `InputBus`, `InputBus_Steam`                                                                                                                     | itemIn                                                                                                                                           |
+| `OutputBus`, `OutputBus_Steam`                                                                                                                   | itemOut                                                                                                                                          |
+| `InputHatch`, `SolidifierHatch`, `Cryotheum/PyrotheumHatch`                                                                                      | fluidIn                                                                                                                                          |
+| `OutputHatch`                                                                                                                                    | fluidOut                                                                                                                                         |
+| `Energy`                                                                                                                                         | energy                                                                                                                                           |
+| `Dynamo`                                                                                                                                         | dynamo                                                                                                                                           |
+| `ExoticEnergy`, `MultiAmpEnergy`, TecTech `EnergyMulti`, GT++ `TTEnergy`, `ExoticDynamo`, `DynamoMulti`, `TTDynamo`                              | none (multi-amp and laser hatches are not plain Energy / Dynamo Hatches: `addEnergyInputToMachineList`, `addDynamoToMachineList` turn them away) |
+| `Maintenance`, `Muffler`                                                                                                                         | maintenance, muffler                                                                                                                             |
+| `.hatchClass(MTEHatchInput/InputBus/Output/OutputBus/Energy/Dynamo/Maintenance/Muffler/SteamBusInput/SteamBusOutput.class)`                      | the matching kind                                                                                                                                |
+| adder `add{Input,InputBus,InputHatch,Output,OutputBus,OutputHatch,Energy,Dynamo,Maintenance,Muffler}...ToMachineList`, `addSteamBusInput/Output` | the matching kinds                                                                                                                               |
+| adder `addToMachineList`, TecTech `addClassicToMachineList` (their bodies switch over every plain hatch class)                                   | itemIn, itemOut, fluidIn, fluidOut, energy, dynamo, maintenance, muffler                                                                         |
+| any other adder `Foo::bar` (only when the call names no element)                                                                                 | the hatch classes `bar`'s body tests with `instanceof` (not those it returns false for)                                                          |
+
+Dot sources: `.hint(N)`, `.dot(N)`, `X.newAny(casing, N, ...)`, `ofHatchAdder(adder, casing, N)`, `ofHatchAdderOptional(adder,
+casing, N, ...)`. `ofChain(...)` / `buildAndChain(...)` is one cell: first member's dot, kinds of all members. Where several
+elements share a dot (Circuit Assembly Line: energy hatch and first input bus are both dot 3), a cell takes the elements whose
+kind set contains all the kinds the dump gave it (the smallest set; the union of those tied; none fits: the dump's kinds stay), and a kind-less cell on such a dot gets nothing. Machine-specific elements (data,
+laser, beamline, ...) are in no table and give no kind. Not resolved: element lists held in local variables
+(`layeredOutputHatch` in the Sparge Tower).

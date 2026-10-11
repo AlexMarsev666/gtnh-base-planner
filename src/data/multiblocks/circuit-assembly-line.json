@@ -51,5 +51,5 @@
     "dot3": { "kinds": ["energy"], "text": "1 Energy Hatch: Any layer 3 casing" }
   },
   "wallshare": true,
-  "notes": "Built by the game itself: MTECircuitAssemblyLine (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
+  "notes": "The tooltip limits it (\"1 Output Bus: Bottom center of last slice\"); the planner allows it on every cell of that dot. Built by the game itself: MTECircuitAssemblyLine (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

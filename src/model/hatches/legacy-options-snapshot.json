@@ -1038,254 +1038,152 @@
     ],
     "unplaced": []
   },
-  "advanced-assembly-line/1/ground/toward": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [4, 0, 1], "face": "east", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
-    ],
-    "unplaced": [
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" }
-    ]
-  },
-  "advanced-assembly-line/1/ground/avoid": {
+  "assembly-line/1/ground/toward": {
     "hatches": [
       { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] }
-    ],
-    "unplaced": [
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" }
-    ]
-  },
-  "advanced-assembly-line/1/ground/both": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
-    ],
-    "unplaced": [
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" }
-    ]
-  },
-  "advanced-assembly-line/1/below/toward": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [4, 0, 1], "face": "east", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] }
     ],
     "unplaced": []
   },
-  "advanced-assembly-line/1/below/avoid": {
+  "assembly-line/1/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "assembly-line/1/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "assembly-line/1/below/toward": {
     "hatches": [
       { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] }
+      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] }
     ],
-    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+    "unplaced": []
   },
-  "advanced-assembly-line/1/below/both": {
+  "assembly-line/1/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "assembly-line/1/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "assembly-line/3/ground/toward": {
     "hatches": [
       { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
-    ],
-    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
-  },
-  "advanced-assembly-line/3/ground/toward": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
       { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
-      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
-      { "kind": "energy", "cell": [0, 3, 3], "face": "west", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 3, 3], "face": "up", "unitIds": [2] },
       { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
-      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] }
-    ],
-    "unplaced": [
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" }
-    ]
-  },
-  "advanced-assembly-line/3/ground/avoid": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "maintenance", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
-      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
-      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
-      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "fluidIn", "cell": [0, 0, 4], "face": "south", "unitIds": [2] }
-    ],
-    "unplaced": [
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" }
-    ]
-  },
-  "advanced-assembly-line/3/ground/both": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
-      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
-      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
       { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [4, 0, 4], "face": "south", "unitIds": [2] }
-    ],
-    "unplaced": [
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 0, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 1, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" },
-      { "unitId": 2, "kind": "itemIn" }
-    ]
-  },
-  "advanced-assembly-line/3/below/toward": {
-    "hatches": [
-      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
-      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
-      { "kind": "energy", "cell": [0, 3, 3], "face": "west", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [8, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [7, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [6, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [5, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [4, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [2, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [1, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
-      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] }
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] }
     ],
     "unplaced": []
   },
-  "advanced-assembly-line/3/below/avoid": {
+  "assembly-line/3/ground/avoid": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "maintenance", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "south", "unitIds": [2] },
       { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [4, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [5, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [6, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [7, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [8, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [1, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [2, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [3, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "fluidIn", "cell": [1, 0, 2], "face": "down", "unitIds": [0, 2] },
-      { "kind": "fluidIn", "cell": [7, 0, 0], "face": "north", "unitIds": [1] }
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [8, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 0, 4], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] }
     ],
-    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+    "unplaced": [{ "unitId": 2, "kind": "itemOut" }]
   },
-  "advanced-assembly-line/3/below/both": {
+  "assembly-line/3/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [3, 0, 4], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] }
+    ],
+    "unplaced": [{ "unitId": 2, "kind": "itemOut" }]
+  },
+  "assembly-line/3/below/toward": {
     "hatches": [
       { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
       { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
-      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemOut", "cell": [4, 0, 4], "face": "east", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "assembly-line/3/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "south", "unitIds": [2] },
       { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [8, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [7, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [6, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [5, 0, 1], "face": "down", "unitIds": [1] },
-      { "kind": "itemIn", "cell": [4, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
-      { "kind": "itemIn", "cell": [3, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [2, 0, 3], "face": "down", "unitIds": [2] },
-      { "kind": "itemIn", "cell": [1, 0, 3], "face": "down", "unitIds": [2] },
       { "kind": "fluidIn", "cell": [1, 0, 2], "face": "down", "unitIds": [0, 2] },
-      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] }
+      { "kind": "fluidIn", "cell": [8, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] }
     ],
-    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+    "unplaced": [{ "unitId": 2, "kind": "itemOut" }]
+  },
+  "assembly-line/3/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [4, 0, 2], "face": "down", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 0], "face": "north", "unitIds": [1] }
+    ],
+    "unplaced": [{ "unitId": 2, "kind": "itemOut" }]
   }
 }

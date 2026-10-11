@@ -11,12 +11,28 @@
     ["~", "A"],
     ["A", "A"]
   ],
-  "legend": { "A": { "blockId": "gtnhintergalactic:gt.blockcasingsSE@0" } },
+  "legend": {
+    "A": {
+      "blockId": "gtnhintergalactic:gt.blockcasingsSE@0",
+      "hatches": ["itemIn", "itemOut", "fluidIn"],
+      "region": "dot1"
+    }
+  },
   "controller": { "pos": [0, 3, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@14004" },
-  "hatchBlocks": {},
-  "shareableHatches": [],
-  "requiredHatches": {},
-  "defaultHatches": [],
+  "hatchBlocks": {
+    "itemIn": "gt.hatch.inputBus",
+    "itemOut": "gt.hatch.outputBus",
+    "fluidIn": "gt.hatch.inputHatch"
+  },
+  "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
+  "requiredHatches": { "itemOut": { "min": 1 } },
+  "defaultHatches": ["itemIn", "itemOut"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn"],
+      "text": "1+ Input Bus/Hatch: Any casing\n1+ Output Bus: Any casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: TileEntityModuleAssemblerT1 (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
+  "notes": "9 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: TileEntityModuleAssemblerT1 (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

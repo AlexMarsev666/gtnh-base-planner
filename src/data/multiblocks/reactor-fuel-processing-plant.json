@@ -17,7 +17,7 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.2@2",
-      "hatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+      "hatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
       "region": "dot1"
     },
     "B": { "blockId": "miscutils:gtplusplus.blockcasings.2@1" },
@@ -30,22 +30,24 @@
     "fluidIn": "gt.hatch.inputHatch",
     "fluidOut": "gt.hatch.outputHatch",
     "energy": "gt.hatch.energy",
-    "maintenance": "gt.hatch.maintenance"
+    "maintenance": "gt.hatch.maintenance",
+    "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {
     "fluidIn": { "min": 2, "max": 4 },
     "fluidOut": { "min": 1, "max": 2 },
     "energy": { "min": 1, "max": 1 },
-    "maintenance": { "min": 1, "max": 1 }
+    "maintenance": { "min": 1, "max": 1 },
+    "muffler": { "min": 1, "max": 1 }
   },
-  "defaultHatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+  "defaultHatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
   "zones": {
     "dot1": {
-      "kinds": ["fluidIn", "fluidOut", "energy", "maintenance"],
+      "kinds": ["fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
       "text": "1 Energy Hatch: Any hastelloy-X casing\n1 Maintenance Hatch: Any hastelloy-X casing\n1 Muffler Hatch: Any hastelloy-X casing\n2+ Input Hatch: Any hastelloy-X casing\n1+ Output Hatch: Any hastelloy-X casing"
     }
   },
   "wallshare": true,
-  "notes": "Built by the game itself: MTERefinery (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
+  "notes": "17 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: MTERefinery (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

@@ -23,6 +23,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encodePng, TILE } from '../../scripts/build-atlas.mjs';
+import { elementKinds, kindsForCell } from '../gt-source/hatch-elements.mjs';
 import { dotOfHint, HatchRules, parseCount, ruleLine } from '../gt-source/hatch-rules.mjs';
 import { Composer, meanColor, pixelHash } from './compose.mjs';
 import { listJars, TextureJars } from './jars.mjs';
@@ -171,7 +172,11 @@ function readStructures(dir) {
  * One dump document → a MultiblockDef (without catalog ids resolved) plus the blocks it uses.
  * Throws with a reason when the structure cannot be shown.
  */
-export function convertStructure(doc, { id, name }, tooltip = { rules: [], checks: null }) {
+export function convertStructure(
+  doc,
+  { id, name },
+  tooltip = { rules: [], checks: null, elements: new Map() },
+) {
   const variant = [...doc.variants].sort((a, b) => a.trigger_stack_size - b.trigger_stack_size)[0];
   const ctrl = doc.controller;
   const ctrlBlock =
@@ -211,6 +216,20 @@ export function convertStructure(doc, { id, name }, tooltip = { rules: [], check
   for (const h of variant.hints ?? []) {
     const k = vkey(h.d);
     if (k !== vkey(ctrlBlock.d) && !cells.has(k)) cell(h.d).special = true;
+  }
+  // The kinds the structure definition's element for each hint dot accepts (the probe misses custom hatch
+  // elements: fusion's energy injector, steam buses, ...) join the dump's.
+  const fromSource = new Set();
+  for (const h of variant.hints ?? []) {
+    const k = vkey(h.d);
+    if (k === vkey(ctrlBlock.d)) continue;
+    const c = cells.get(k); // every hint has a cell by now
+    const kinds = sourceKinds(tooltip.elements, tooltip.rules, dotOfHint(h.hint), c.hatches);
+    const added = kinds.filter((x) => !c.hatches.includes(x));
+    if (!added.length) continue;
+    c.hatches = sortKinds([...c.hatches, ...added]);
+    c.special = false;
+    fromSource.add(k);
   }
   // A hatch slot or hint with nothing placed and no block or controller next to it is not part of the structure
   // (the hatch probe or the hologram visited a cell outside it, e.g. high above the Solar Factory).
@@ -364,6 +383,19 @@ export function convertStructure(doc, { id, name }, tooltip = { rules: [], check
   const names = classNames(ctrl.source_class);
   const notes = [
     sealed.length ? `The structure has no open face for: ${sealed.join(', ')} (left out of the plan).` : '',
+    // A line that limits a part to "the last" slice or the like: the planner allows it on every cell of the dot.
+    ...tooltip.rules
+      .filter(
+        (r) =>
+          /(^|[^a-z])last([^a-z]|$)/i.test(r.text ?? '') &&
+          r.kinds.some((k) => ['itemOut', 'fluidOut'].includes(k)),
+      )
+      .map(
+        (r) => `The tooltip limits it ("${ruleLine(r)}"); the planner allows it on every cell of that dot.`,
+      ),
+    fromSource.size
+      ? `${fromSource.size} hatch cells also take the kinds their structure element accepts in the source.`
+      : '',
     dropped.size
       ? `Machine-specific hatches (${[...dropped].sort().join(', ')}) are shown as their cells only.`
       : '',
@@ -394,6 +426,19 @@ export function convertStructure(doc, { id, name }, tooltip = { rules: [], check
   const blocks = new Set(Object.values(legend).map((e) => e.blockId));
   blocks.add(def.controller.blockId);
   return { def, blocks, variant, dropped, conflicts };
+}
+
+/**
+ * The kinds the structure definition's element for hint dot `dot` adds to a cell the dump gave `dumped`. An
+ * element that takes any hatch (`addToMachineList`) accepts more than the machine uses, so where the tooltip has
+ * lines naming the dot, only the kinds they list are added.
+ */
+function sourceKinds(elements, rules, dot, dumped) {
+  const kinds = kindsForCell(elements?.get(dot), dumped);
+  const lines = rules.filter((r) => r.dots.includes(dot));
+  if (!lines.length) return kinds;
+  const named = new Set(lines.flatMap((r) => r.kinds));
+  return kinds.filter((k) => named.has(k) || dumped.includes(k));
 }
 
 /**
@@ -486,7 +531,7 @@ export function zonesOf(regionKinds, rules) {
  * the controller facing north in world axes, so the entry's frame is that rotated until north is the entry's
  * `controller.facing` (the entry already holds StructureLib's shape mirrored into those axes).
  */
-export function zonesForHandMade(def, doc, rules) {
+export function zonesForHandMade(def, doc, rules, elements = new Map()) {
   const variant = [...doc.variants].sort((a, b) => a.trigger_stack_size - b.trigger_stack_size)[0];
   const ctrl = doc.controller;
   const ctrlBlock =
@@ -521,9 +566,15 @@ export function zonesForHandMade(def, doc, rules) {
   const cells = {};
   const regionKinds = {};
   let missed = 0;
-  for (const s of variant.hatch_slots ?? []) {
-    if (vkey(s.d) === vkey(ctrlBlock.d) || !hintAt.has(vkey(s.d))) continue;
-    const slotKinds = sortKinds(s.kinds.map((k) => HATCH_KIND[k]).filter(Boolean));
+  // The dump's kinds of each hint cell, with those the source's element for its dot accepts.
+  const slotAt = new Map((variant.hatch_slots ?? []).map((x) => [vkey(x.d), x]));
+  const hintCells = (variant.hints ?? []).filter((h) => vkey(h.d) !== vkey(ctrlBlock.d));
+  for (const s of hintCells.map((h) => ({ d: h.d, kinds: slotAt.get(vkey(h.d))?.kinds ?? [] }))) {
+    const dumped = sortKinds(s.kinds.map((k) => HATCH_KIND[k]).filter(Boolean));
+    const slotKinds = sortKinds([
+      ...dumped,
+      ...sourceKinds(elements, rules, dotOfHint(hintAt.get(vkey(s.d))), dumped),
+    ]);
     if (!slotKinds.length) continue;
     const pos = at(s.d);
     const entry = def.legend[charAt(pos) ?? ''];
@@ -794,7 +845,11 @@ export async function build(opts) {
     const rules = hatchRules?.rulesOf(cls).rules ?? [];
     if (hatchRules && !rules.length && !unparsed.includes(doc.controller.display_name))
       unparsed.push(doc.controller.display_name);
-    return { rules, checks: hatchRules?.checksOf(cls) ?? null };
+    return {
+      rules,
+      checks: hatchRules?.checksOf(cls) ?? null,
+      elements: hatchRules ? elementKinds(hatchRules, cls).dots : new Map(),
+    };
   };
   let manifest;
   if (opts.textures) manifest = JSON.parse(readFileSync(opts.textures, 'utf8'));
@@ -983,7 +1038,7 @@ export async function build(opts) {
       );
       continue;
     }
-    const r = zonesForHandMade(h.def, doc, tooltipOf(doc).rules);
+    const r = zonesForHandMade(h.def, doc, tooltipOf(doc).rules, tooltipOf(doc).elements);
     if (r.zones) handZones[h.id] = r.zones;
     else leftOut.push(`${h.id} (${r.why})`);
   }
@@ -1041,11 +1096,15 @@ export async function build(opts) {
   if (hatchRules) {
     const lines = [];
     for (const doc of docs) {
-      const { rules } = tooltipOf(doc);
+      const { rules, elements } = tooltipOf(doc);
       const accepted = new Set();
-      for (const v of doc.variants)
+      for (const v of doc.variants) {
         for (const s of v.hatch_slots ?? [])
           for (const k of s.kinds) if (HATCH_KIND[k]) accepted.add(HATCH_KIND[k]);
+        // Kinds the source's element accepts for a hint dot the dump shows.
+        for (const h of v.hints ?? [])
+          for (const set of elements.get(dotOfHint(h.hint)) ?? []) for (const k of set) accepted.add(k);
+      }
       const missing = sortKinds(
         rules
           .filter((r) => !r.any && r.method !== 'addSteamHatch')

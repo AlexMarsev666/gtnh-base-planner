@@ -141,3 +141,12 @@ had), so a machine the dev server cannot build does not disappear.
 - `jars.mjs` - block sprites read from mod jars.
 - `extractor.patch` - the changes to the extractor, against gtnh-process-line-solver `19deba9`.
 - `textures.generated.json` - generated.
+
+### Hatch kinds from the source
+
+The dump's hatch kinds come from probing StructureLib's `IHatchElement` lists, which misses custom elements (fusion's
+energy injector, steam buses, TecTech multi-amp hatches, `ofHatchAdder(Foo::addClassicToMachineList)`). `build.mjs` adds, to
+every hint cell, the kinds that the structure definition's element for that dot accepts
+([`hatch-elements.mjs`](../gt-source/README.md), mapping table there). The def's notes say how many cells got kinds this
+way. The final report "tooltip kinds no dumped cell accepts" counts the dump and the source together; what stays on it is
+a part the dump does not build (the Cleanroom, which is left out anyway).
