@@ -390,6 +390,57 @@ describe('buildSite', () => {
     expect(b.nets[0].links).toEqual(['x', 'y']);
     expect(b.nets[0].route!.connected).toBe(3);
   });
+
+  describe('routing options', () => {
+    const build = (opts: object) => createSiteBuilder()(chain, { pipes: true, cables: true, ...opts });
+    const same = (x: object, y: object) => expect(JSON.stringify(x)).toBe(JSON.stringify(y));
+
+    it('classic depth 1 is the legacy below, classic depth 0 the default', () => {
+      same(build({ routing: { style: 'classic', depth: 1 } }), build({ below: true }));
+      same(build({ routing: { style: 'classic', depth: 0 } }), build({}));
+      same(build({ routing: { style: 'classic', depth: 0 } }), build({ below: false }));
+    });
+
+    it('reports where the routed blocks are', () => {
+      for (const routing of [
+        { style: 'classic', depth: 0 },
+        { style: 'neat', depth: 2 },
+      ] as const) {
+        const b = build({ routing });
+        const r = b.stats.routeStats;
+        expect(r.length).toBe(b.stats.pipeBlocks + b.stats.cableBlocks);
+        expect(r.length).toBe(r.surfaceTrunk + r.surfaceStub + r.underground.reduce((x, y) => x + y, 0));
+        expect(r.underground).toHaveLength(routing.depth);
+        expect(b.stats.connected).toBe(b.stats.terminals);
+      }
+    });
+
+    it('clamps the depth when the search grid would be too big', () => {
+      const big = site({
+        size: [256, 256],
+        groups: [group('ebf', 'electric-blast-furnace', [100, 100], { count: 1, elevation: 12 })],
+        ports: [{ id: 'p', dir: 'in', resource: 'item:dust' }],
+        links: [{ id: 'l', from: { port: 'p' }, to: { group: 'ebf' }, resource: 'item:dust' }],
+      });
+      const ask = (depth: 0 | 1 | 2 | 3) =>
+        createSiteBuilder()(big, { pipes: true, cables: false, routing: { style: 'neat', depth } });
+      expect(ask(0).routing.depthUsed).toBe(0);
+      expect(ask(1).routing.depthUsed).toBe(1);
+      const deep = ask(3);
+      expect(deep.routing.depth).toBe(3);
+      expect(deep.routing.depthUsed).toBeLessThan(3);
+      expect(deep.routing.depthUsed).toBeGreaterThanOrEqual(1);
+    });
+
+    it('neat keeps the trunks off the surface, and is deterministic', () => {
+      const routing = { style: 'neat', depth: 2 } as const;
+      const neat = build({ routing });
+      const classic = build({ routing: { style: 'classic', depth: 2 } });
+      expect(neat.stats.routeStats.underground[0]).toBeGreaterThan(0);
+      expect(neat.stats.routeStats.surfaceTrunk).toBeLessThan(classic.stats.routeStats.surfaceTrunk);
+      same(neat, build({ routing }));
+    });
+  });
 });
 
 describe('placeholder', () => {

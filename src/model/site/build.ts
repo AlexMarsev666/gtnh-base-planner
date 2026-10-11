@@ -1,10 +1,10 @@
 import type { PlacedGroup, PlacedPort, SiteBuild, SiteBuilder, SiteNet } from './buildTypes';
 import { deriveSiteDemand } from './demand';
 import { placeGroups, type GroupCache } from './groups';
-import { buildSiteNetworks, routeSiteNetworks } from './nets';
+import { buildSiteNetworks, routeSiteNetworks, routingOf } from './nets';
 import { analyzeOccupancy } from './occupancy';
 import { placeSitePorts } from './ports';
-import type { RouteResult } from './router';
+import type { RouteResult, RouteStats } from './router';
 import { buildSiteScene } from './siteScene';
 import { groupToward } from './toward';
 
@@ -21,7 +21,7 @@ export function createSiteBuilder(): SiteBuilder {
       site,
       demand.demands,
       groupToward(site, demand.endsOf),
-      !!opts.below,
+      routingOf(opts).depth > 0,
       cache,
       !opts.keepCache,
     );
@@ -34,6 +34,7 @@ export function createSiteBuilder(): SiteBuilder {
       groups,
       ports,
       nets,
+      routing: { ...routingOf(opts), depthUsed: routing.depthUsed },
       scene: buildSiteScene(site, groups, ports, routing.routed, occupancy.conflictCells, opts.isolate),
       warnings: [
         ...demand.warnings,
@@ -61,6 +62,16 @@ function siteStats(
   }
   const sum = (list: readonly SiteNet[], f: (r: RouteResult) => number) =>
     list.reduce((s, n) => s + (n.route ? f(n.route) : 0), 0);
+  const routeStats: RouteStats = { length: 0, bends: 0, surfaceTrunk: 0, surfaceStub: 0, underground: [] };
+  for (const n of routed) {
+    const r = n.route?.stats;
+    if (!r) continue;
+    routeStats.length += r.length;
+    routeStats.bends += r.bends;
+    routeStats.surfaceTrunk += r.surfaceTrunk;
+    routeStats.surfaceStub += r.surfaceStub;
+    r.underground.forEach((v, i) => (routeStats.underground[i] = (routeStats.underground[i] ?? 0) + v));
+  }
   return {
     groups: groups.length,
     units: groups.reduce((s, g) => s + g.units.length, 0),
@@ -76,6 +87,7 @@ function siteStats(
     ),
     connected: sum(routed, (r) => r.connected),
     terminals: sum(routed, (r) => r.total),
+    routeStats,
   };
 }
 

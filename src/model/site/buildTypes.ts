@@ -2,8 +2,8 @@ import type { Dir, Vec3 } from '../core/types';
 import type { MultiblockDef, Unit } from '../multiblock/types';
 import type { SceneModel } from '../render/types';
 import type { Demand, GroupBuild, SiteHatch } from './group';
-import type { RouteResult } from './router';
-import type { ResourceKind, SiteGroup, SitePort, SiteState } from './types';
+import type { RouteResult, RouteStats } from './router';
+import type { ResourceKind, SiteGroup, SitePort, SiteRouting, SiteState } from './types';
 
 /** What building a site produces: placed groups and ports, nets, warnings, the scene and totals. */
 
@@ -20,6 +20,11 @@ export interface SiteBuildOptions {
    * ground (a trench). Default false.
    */
   below?: boolean;
+  /**
+   * Routing style and underground depth (up to `depth` layers under the ground, -1 preferred). Overrides
+   * `below` when given; absent, `below` means classic with depth 1 (or 0).
+   */
+  routing?: SiteRouting;
   /**
    * Keep the packs of groups this site does not use (the builder otherwise drops them, so memory stays bounded
    * while editing). For searches that build many layouts of one site and come back to the same packs.
@@ -85,6 +90,8 @@ export interface SiteBuild {
   nets: SiteNet[];
   scene: SceneModel;
   warnings: SiteWarning[];
+  /** The routing asked for, and the underground depth used (less than asked when the grid would be too big). */
+  routing: SiteRouting & { depthUsed: number };
   stats: {
     groups: number;
     units: number;
@@ -94,6 +101,8 @@ export interface SiteBuild {
     cableBlocks: number;
     connected: number;
     terminals: number;
+    /** Where the routed blocks of all nets are, and how often they turn. */
+    routeStats: RouteStats;
   };
 }
 

@@ -17,6 +17,11 @@ import type { Dir, Vec3 } from '../core/types';
  * routed for real, and the removed nets are routed again. A round is kept only if it connects more
  * terminals (or as many with fewer pipe blocks). The rounds stop after a share of the first pass's work
  * (counted in states searched, so the result stays deterministic). Pure and deterministic.
+ *
+ * Underground levels (`trenchBelow`) cost `TRENCH_COST` per block and level, so -1 is preferred and deeper
+ * levels are used only where they save pipe. The neat style adds a penalty per surface block (except short
+ * stubs at the terminals), dearer bends and a small surcharge for a pipe that runs alone instead of beside
+ * another net's pipe, so trunks go underground, straight and in parallel lines.
  */
 
 export interface RouteTerminal {
@@ -38,6 +43,7 @@ export interface RouteResult {
   length: number;
   connected: number;
   total: number;
+  stats: RouteStats;
   /** Per terminal: the face its pipe attaches to, or null when not connected. */
   attach: (Dir | null)[];
   /**
@@ -60,10 +66,26 @@ export interface RouterInput {
   /** Rip-up rounds after the first pass. Default 3. */
   rounds?: number;
   /**
-   * Cells below this height (a trench under the ground) cost `TRENCH_COST` more per block, so pipes go
-   * underground only where that saves pipe.
+   * Cells below this height (a trench under the ground) cost `TRENCH_COST` more per block and level below
+   * it, so pipes go underground only where that saves pipe, and deeper only where that saves more.
    */
   trenchBelow?: number;
+  /** `neat` prices surface blocks, bends and lone runs (see `NEAT_*`). Default `classic`. */
+  style?: 'classic' | 'neat';
+}
+
+/** What a routed net is made of. */
+export interface RouteStats {
+  /** Pipe blocks. */
+  length: number;
+  /** Direction changes along the paths. */
+  bends: number;
+  /** Blocks on or above the ground that are not stubs. */
+  surfaceTrunk: number;
+  /** Blocks on or above the ground right at a terminal, and the run from there down into the ground. */
+  surfaceStub: number;
+  /** Blocks per underground level: index 0 is level -1. */
+  underground: number[];
 }
 
 /**
@@ -88,7 +110,27 @@ const HIST_STEP = 3;
 const RIPUP_WORK_FACTOR = 0.5;
 const MIN_RIPUP_WORK = 1_000_000;
 /** Extra cost of a pipe block in the trench (see `RouterInput.trenchBelow`). */
-const TRENCH_COST = 1;
+export const TRENCH_COST = 1;
+/**
+ * States one net may search per attempt (a first route, or one rip-up try): past it the net keeps what it
+ * has connected so far, so a single hard net cannot run unbounded. Normal sites stay far below it.
+ */
+export const NET_WORK_CAP = 20_000_000;
+/** Neat style: extra cost of a surface block, except stubs at the terminals. */
+export const SURFACE_PENALTY = 4;
+/** Neat style: added to the bend cost. */
+export const NEAT_TURN_EXTRA = 2;
+/** Neat style: extra cost of a step into a free cell with no other net's pipe beside it on its level. */
+export const NEAT_LONE_COST = 0.25;
+/**
+ * Neat style: weight of the A* estimate. The lone-run surcharge makes a step cost up to 1.125 times its
+ * base (2) where no pipe is beside it, and an unweighted bound would let the search flood every equal-length
+ * path (over 30 times slower on a big empty site). With this weight the estimate is no longer a strict lower
+ * bound where a run goes beside other pipes (it may exceed the true cost by up to about 12%), so the path
+ * found is at most that much dearer than the cheapest one. It still under-estimates wherever the surface,
+ * history or bend costs apply, which is what keeps the search fast.
+ */
+export const NEAT_H_WEIGHT = 1.12;
 
 interface Grid {
   ox: number;
@@ -238,6 +280,18 @@ interface Search {
   stamp: number;
   heap: Heap;
   turnCost: number;
+  /** Neat style: runs beside other nets' pipes are cheaper. */
+  neat: boolean;
+  /** Neat style with an underground: least extra cost of a step into a cell that is not a stub. */
+  extra: number;
+  /** Per cell, 1 on or above the ground (neat style with an underground). */
+  surface: Uint8Array | null;
+  /** Cells of the net being routed that are its stubs are marked with `stubId` in `stubMark`. */
+  stubMark: Uint32Array;
+  stubId: number;
+  stubCount: number;
+  /** `work` at which the net being routed gives up (`NET_WORK_CAP` past its start). */
+  workLimit: number;
   /** Extra cost per cell learned from congestion in earlier rounds (negotiated routing). */
   hist: Float32Array;
   /** States taken off the heap so far: the measure of work for the rip-up budget. */
@@ -259,6 +313,8 @@ interface NetState {
   paths: number[][];
   /** Per terminal: the attach cell it is connected through, or -1. */
   via: Int32Array;
+  /** Cells the net's terminals use as stubs: next to a terminal, and the free run down from there. */
+  stubs: number[];
 }
 
 /** Above this many goals the A* estimate uses their bounding box instead of the nearest one. */
@@ -268,8 +324,24 @@ const EXACT_GOALS = 16;
  * A lower bound on the cost from `cell` to the attach cell of any goal (terminal block) in `goals` (grid
  * coordinates, x y z per goal): Manhattan distance to the nearest one, less the step onto its block. With
  * many goals, the distance to their bounding box. Every step costs at least 1, so the bound is consistent.
+ *
+ * Neat style (`extra` > 0): a step into a cell that is not one of the net's `stubs` cells costs at least
+ * 1 + `extra` (underground: 1 + level cost >= 1 + TRENCH_COST; surface: 1 + SURFACE_PENALTY; history,
+ * bends and the lone-run surcharge only add). A path of p >= m - 1 steps enters at most `stubs` cells (every
+ * stub cell of the net, not just the goal's),
+ * so it costs at least p + extra * max(0, p - stubs), which grows with p, so the bound at p = m - 1 is
+ * admissible (before `NEAT_H_WEIGHT`, which trades at most 12% optimality for speed). It is not
+ * consistent (it can drop by 1 + extra for a cheap stub step); the search re-opens states reached more
+ * cheaply, so it still finds the cheapest path.
  */
-function estimate(g: Grid, goals: Int32Array, box: Int32Array, cell: number): number {
+function estimate(
+  g: Grid,
+  goals: Int32Array,
+  box: Int32Array,
+  cell: number,
+  extra: number,
+  stubs: number,
+): number {
   const x = cell % g.dx;
   const r = (cell - x) / g.dx;
   const y = r % g.dy;
@@ -287,7 +359,8 @@ function estimate(g: Grid, goals: Int32Array, box: Int32Array, cell: number): nu
       if (m < best) best = m;
     }
   }
-  return best > 0 ? best - 1 : 0;
+  const p = best > 0 ? best - 1 : 0;
+  return extra > 0 && p > stubs ? (p + extra * (p - stubs)) * NEAT_H_WEIGHT : p;
 }
 
 /**
@@ -314,7 +387,7 @@ function search(
       box[a] = Math.min(box[a], goals[i + a]);
       box[a + 3] = Math.max(box[a + 3], goals[i + a]);
     }
-  const h = (cell: number) => (goals.length ? estimate(g, goals, box, cell) : 0);
+  const h = (cell: number) => (goals.length ? estimate(g, goals, box, cell, s.extra, s.stubCount) : 0);
   heap.clear();
   for (const c of tree) {
     const st = c * STATES + NO_DIR;
@@ -329,7 +402,7 @@ function search(
     const cost = dist[st];
     // A stale entry: the state was reached more cheaply after it was queued.
     if (heap.lastCost > cost + h(cell)) continue;
-    s.work++;
+    if (++s.work > s.workLimit) return null;
     if (target[cell] > 0 && parent[st] !== -1) {
       const path: number[] = [];
       for (let t = st; t !== -1; t = parent[t]) path.push((t / STATES) | 0);
@@ -346,6 +419,12 @@ function search(
       }
       const c = claim[n];
       if (c !== 0 && c !== net + 1) continue;
+      if (s.neat && o === FREE) {
+        let beside = false;
+        for (let a = 0; a < 4; a++) if (occ[n + offsets[a]] >= PIPE) beside = true;
+        if (!beside) step += NEAT_LONE_COST;
+      }
+      if (s.surface && s.surface[n] && s.stubMark[n] !== s.stubId) step += SURFACE_PENALTY;
       const nc = cost + step + s.hist[n] + (dir !== NO_DIR && dir !== d ? turnCost : 0);
       const ns = n * STATES + d;
       if (seen[ns] === stamp && dist[ns] <= nc) continue;
@@ -378,6 +457,10 @@ function usable(g: Grid, net: number, c: number, soft = false): boolean {
  */
 function routeNet(g: Grid, s: Search, net: number, st: NetState, soft: boolean): number[] {
   const n = st.terms.length;
+  s.workLimit = s.work + NET_WORK_CAP;
+  s.stubId++;
+  for (const c of st.stubs) s.stubMark[c] = s.stubId;
+  s.stubCount = st.stubs.length;
   const via = new Int32Array(n).fill(-1);
   const target = new Uint8Array(g.occ.length);
   const at = new Map<number, number[]>();
@@ -533,6 +616,27 @@ function flowsOf(g: Grid, st: NetState): [Vec3, Vec3][] {
   return out;
 }
 
+/** Totals of one routed net: where its blocks are, and how often its paths turn. */
+function statsOf(g: Grid, st: NetState, trench: number | undefined, depth: number): RouteStats {
+  const ground = trench ?? 0;
+  const out: RouteStats = {
+    length: st.cells.length,
+    bends: 0,
+    surfaceTrunk: 0,
+    surfaceStub: 0,
+    underground: new Array<number>(depth).fill(0),
+  };
+  const stubs = new Set(st.stubs);
+  for (const c of st.cells) {
+    const y = pos(g, c)[1];
+    if (y >= ground) out[stubs.has(c) ? 'surfaceStub' : 'surfaceTrunk']++;
+    else out.underground[ground - y - 1]++;
+  }
+  for (const p of st.paths)
+    for (let i = 2; i < p.length; i++) if (p[i] - p[i - 1] !== p[i - 1] - p[i - 2]) out.bends++;
+  return out;
+}
+
 export function routeNets(input: RouterInput): RouteResult[] {
   const nets = input.nets;
   const empty = (spec: RouteNetSpec): RouteResult => ({
@@ -542,6 +646,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
     total: spec.terminals.length,
     attach: spec.terminals.map(() => null),
     flows: [],
+    stats: { length: 0, bends: 0, surfaceTrunk: 0, surfaceStub: 0, underground: [] },
   });
   const g = makeGrid(input.box);
   if (!g || nets.length === 0) return nets.map(empty);
@@ -564,6 +669,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
     cells: [],
     paths: [],
     via: new Int32Array(spec.terminals.length).fill(-1),
+    stubs: [],
   }));
   // Claim one cell in front of each terminal for its net: its preferred free side, or the next one when
   // another terminal took it. Terminals with the fewest free sides choose first, so a hatch with a single
@@ -582,6 +688,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
       if (c !== undefined) g.claim[c] = net + 1;
     });
 
+  const neat = input.style === 'neat';
   const cells = g.occ.length;
   const s: Search = {
     dist: new Float32Array(cells * STATES),
@@ -589,16 +696,45 @@ export function routeNets(input: RouterInput): RouteResult[] {
     seen: new Uint32Array(cells * STATES),
     stamp: 0,
     heap: new Heap(),
-    turnCost: Math.max(0, input.turnCost ?? 2),
+    turnCost: Math.max(0, input.turnCost ?? 2) + (neat ? NEAT_TURN_EXTRA : 0),
+    neat,
+    extra: neat && input.trenchBelow !== undefined ? Math.min(TRENCH_COST, SURFACE_PENALTY) : 0,
+    surface: neat && input.trenchBelow !== undefined ? new Uint8Array(cells) : null,
+    stubMark: new Uint32Array(cells),
+    stubId: 0,
+    stubCount: 0,
+    workLimit: Infinity,
     hist: new Float32Array(cells),
     work: 0,
   };
-  if (input.trenchBelow !== undefined) {
-    // The trench starts dearer; congestion history adds to it like to any other cell.
-    const yEnd = Math.min(g.dy, input.trenchBelow - g.oy);
+  const trench = input.trenchBelow;
+  if (trench !== undefined) {
+    // The trench starts dearer, more so the deeper the level; congestion history adds to it like to any
+    // other cell. Neat: surface cells are marked, and pay `SURFACE_PENALTY` unless they are stubs.
     for (let z = 0; z < g.dz; z++)
-      for (let y = 0; y < yEnd; y++)
-        s.hist.fill(TRENCH_COST, g.dx * (y + g.dy * z), g.dx * (y + g.dy * z) + g.dx);
+      for (let y = 0; y < g.dy; y++) {
+        const k = trench - (y + g.oy);
+        const base = g.dx * (z * g.dy + y);
+        if (k > 0) s.hist.fill(TRENCH_COST * k, base, base + g.dx);
+        else s.surface?.fill(1, base, base + g.dx);
+      }
+  }
+  // Stubs of each net: the cell at each of its terminals and the free run below it down to the ground.
+  for (const st of states) {
+    const set = new Set<number>();
+    for (const t of st.terms)
+      for (const c0 of t.cells) {
+        if (c0 < 0 || g.open[c0] !== 1 || g.occ[c0] !== FREE) continue;
+        let c = c0;
+        set.add(c);
+        if (trench === undefined) continue;
+        while ((Math.floor(c / g.dx) % g.dy) + g.oy > trench) {
+          c += g.offsets[5];
+          if (g.occ[c] !== FREE) break;
+          set.add(c);
+        }
+      }
+    st.stubs = [...set].sort((a, b) => a - b);
   }
 
   // Nets with more terminals and wider spans first: they are the hardest to fit in later.
@@ -679,7 +815,9 @@ export function routeNets(input: RouterInput): RouteResult[] {
     if (!beats(score(states), roundStart)) break;
   }
 
+  const depth = Math.max(0, (trench ?? 0) - g.oy - 1);
   return states.map((st) => ({
+    stats: statsOf(g, st, trench, depth),
     paths: st.paths.map((p) => p.map((i) => pos(g, i))),
     length: st.cells.length,
     connected: connectedCount(st),

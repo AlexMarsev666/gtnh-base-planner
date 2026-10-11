@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { key } from '../geometry';
 import type { Vec3 } from '../core/types';
-import { routeNets, type RouteNetSpec } from './router';
+import { routeNets, SURFACE_PENALTY, type RouteNetSpec } from './router';
 
 const box = (x: number, y: number, z: number) => ({ min: [0, 0, 0] as Vec3, max: [x, y, z] as Vec3 });
 
@@ -169,5 +169,62 @@ describe('routeNets', () => {
     const connected = res.reduce((s, r) => s + r.connected, 0);
     expect(connected).toBe(res.reduce((s, r) => s + r.total, 0));
     if (process.env.PERF) expect(ms).toBeLessThan(3000);
+  });
+});
+
+describe('routeNets underground levels and neat style', () => {
+  const span: RouteNetSpec = {
+    terminals: [
+      { cell: [2, 0, 5], faces: ['east'], role: 'source' },
+      { cell: [22, 0, 5], faces: ['west'], role: 'sink' },
+    ],
+  };
+  const solids: Vec3[] = [span.terminals[0].cell, span.terminals[1].cell];
+  const input = (extra: object, more: Vec3[] = []) => ({
+    box: { min: [0, -3, 0] as Vec3, max: [26, 6, 12] as Vec3 },
+    solids: [...solids, ...more],
+    keepFree: [],
+    nets: [span],
+    trenchBelow: 0,
+    ...extra,
+  });
+
+  it('keeps the classic style on the surface when going down costs more', () => {
+    const [r] = routeNets(input({}));
+    expect(r.connected).toBe(2);
+    expect(r.stats.underground).toEqual([0, 0, 0]);
+    expect(r.stats.length).toBe(r.length);
+  });
+
+  it('sends neat trunks under the ground, with stubs at the terminals', () => {
+    const [r] = routeNets(input({ style: 'neat' }));
+    expect(r.connected).toBe(2);
+    expect(r.stats.surfaceTrunk).toBe(0);
+    expect(r.stats.surfaceStub).toBe(2);
+    expect(r.stats.underground).toEqual([r.length - 2, 0, 0]);
+    expect(r.stats.bends).toBe(2);
+    expect(SURFACE_PENALTY).toBe(4);
+  });
+
+  it('uses a deeper level only where the shallower one is blocked', () => {
+    const plate: Vec3[] = [];
+    for (let z = 0; z < 12; z++) plate.push([12, -1, z]);
+    const [r] = routeNets(input({ style: 'neat' }, plate));
+    expect(r.connected).toBe(2);
+    expect(r.stats.underground[1]).toBeGreaterThan(0);
+    expect(r.stats.underground[0]).toBeGreaterThan(r.stats.underground[1]);
+  });
+
+  it('never goes below the depth it is given', () => {
+    const plate: Vec3[] = [];
+    for (let z = 0; z < 12; z++) plate.push([12, -1, z]);
+    const [r] = routeNets(input({ style: 'neat', box: { min: [0, -1, 0], max: [26, 6, 12] } }, plate));
+    expect(r.stats.underground).toEqual([r.stats.underground[0]]);
+    expect(r.stats.underground[0]).toBeGreaterThan(0);
+    for (const c of r.paths.flat()) expect(c[1]).toBeGreaterThanOrEqual(-1);
+  });
+
+  it('is deterministic', () => {
+    expect(routeNets(input({ style: 'neat' }))).toEqual(routeNets(input({ style: 'neat' })));
   });
 });
