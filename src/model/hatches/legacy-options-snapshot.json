@@ -1,0 +1,1291 @@
+{
+  "electric-blast-furnace/1/ground/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [1, 3, 1], "face": "up", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "electric-blast-furnace/1/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [2, 0, 1], "face": "east", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 3, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "muffler" }]
+  },
+  "electric-blast-furnace/1/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "muffler" }]
+  },
+  "electric-blast-furnace/1/below/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [1, 3, 1], "face": "up", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "electric-blast-furnace/1/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 3, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "muffler" }]
+  },
+  "electric-blast-furnace/1/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "muffler" }]
+  },
+  "electric-blast-furnace/3/ground/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [5, 3, 1], "face": "up", "unitIds": [2] },
+      { "kind": "muffler", "cell": [3, 3, 1], "face": "up", "unitIds": [1] },
+      { "kind": "muffler", "cell": [1, 3, 1], "face": "up", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [3, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 1], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 3, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [5, 3, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": [{ "unitId": 1, "kind": "energy" }]
+  },
+  "electric-blast-furnace/3/ground/avoid": {
+    "hatches": [
+      { "kind": "muffler", "cell": [3, 3, 1], "face": "up", "unitIds": [1] },
+      { "kind": "muffler", "cell": [5, 3, 1], "face": "up", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 1], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "muffler" },
+      { "unitId": 1, "kind": "energy" }
+    ]
+  },
+  "electric-blast-furnace/3/ground/both": {
+    "hatches": [
+      { "kind": "muffler", "cell": [5, 3, 1], "face": "up", "unitIds": [2] },
+      { "kind": "muffler", "cell": [3, 3, 1], "face": "up", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [3, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 1], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 3, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [5, 3, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "muffler" },
+      { "unitId": 1, "kind": "energy" }
+    ]
+  },
+  "electric-blast-furnace/3/below/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [5, 3, 1], "face": "up", "unitIds": [2] },
+      { "kind": "muffler", "cell": [3, 3, 1], "face": "up", "unitIds": [1] },
+      { "kind": "muffler", "cell": [1, 3, 1], "face": "up", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [3, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "energy", "cell": [3, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 1], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 3, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [5, 3, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "electric-blast-furnace/3/below/avoid": {
+    "hatches": [
+      { "kind": "muffler", "cell": [3, 3, 1], "face": "up", "unitIds": [1] },
+      { "kind": "muffler", "cell": [5, 3, 1], "face": "up", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 1], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "muffler" }]
+  },
+  "electric-blast-furnace/3/below/both": {
+    "hatches": [
+      { "kind": "muffler", "cell": [5, 3, 1], "face": "up", "unitIds": [2] },
+      { "kind": "muffler", "cell": [3, 3, 1], "face": "up", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [3, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "energy", "cell": [3, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 1], "face": "east", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 3, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [5, 3, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "muffler" }]
+  },
+  "large-chemical-reactor/1/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/1/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 2, 2], "face": "east", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/1/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [1, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 2, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/1/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/1/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 2, 2], "face": "east", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/1/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [1, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 2, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/3/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 2, 1], "face": "up", "unitIds": [1, 2] },
+      { "kind": "fluidIn", "cell": [1, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 2, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [5, 2, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [6, 0, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/3/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [2, 2, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [5, 2, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 2, 1], "face": "up", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [5, 2, 1], "face": "up", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/3/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 2, 1], "face": "up", "unitIds": [1, 2] },
+      { "kind": "fluidIn", "cell": [1, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 2, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [5, 2, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [6, 0, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/3/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 2, 1], "face": "up", "unitIds": [1, 2] },
+      { "kind": "fluidIn", "cell": [1, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 2, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [5, 2, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [6, 0, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/3/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [2, 2, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [5, 2, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 2, 1], "face": "up", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [5, 2, 1], "face": "up", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "large-chemical-reactor/3/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 2, 1], "face": "up", "unitIds": [1, 2] },
+      { "kind": "fluidIn", "cell": [1, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 2, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [5, 2, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [6, 0, 2], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/1/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 1, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/1/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 1, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 2, 0], "face": "east", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 3, 0], "face": "east", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 4, 0], "face": "east", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/1/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 1, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/1/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 1, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/1/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 1, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 2, 0], "face": "east", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 3, 0], "face": "east", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [2, 4, 0], "face": "east", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/1/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 1, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "east", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [1, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/3/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 1, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 1, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 3, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 3, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [6, 0, 0], "face": "east", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [4, 1, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 2, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 4, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/3/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 1, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 1, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 3, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 3, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 1, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 2, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 4, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/3/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 1, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 1, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 3, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 3, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 1, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 2, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 4, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/3/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 1, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 1, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 3, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 3, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [2, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [6, 0, 0], "face": "east", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [4, 1, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 2, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 4, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/3/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 1, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 1, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 3, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 3, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 1, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 2, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 4, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "distillation-tower/3/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [3, 1, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [5, 1, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 3, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 3, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [5, 3, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [1, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [4, 0, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 1, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 1, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 2, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 3, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 3, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [4, 4, 2], "face": "south", "unitIds": [1, 2] },
+      { "kind": "fluidOut", "cell": [0, 4, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/1/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/1/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 1], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/1/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/1/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/1/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [4, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 1], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/1/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "oil-cracking-unit/3/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [12, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [12, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [6, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [10, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [6, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [12, 2, 1], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [10, 2, 1], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [6, 2, 1], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 2], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 2], "face": "up", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidOut" },
+      { "unitId": 2, "kind": "fluidOut" }
+    ]
+  },
+  "oil-cracking-unit/3/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [12, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [12, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [6, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [2, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 1, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [10, 1, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [12, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [2, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 1], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [10, 2, 1], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [2, 2, 2], "face": "up", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 2], "face": "up", "unitIds": [1] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidOut" },
+      { "unitId": 2, "kind": "fluidOut" }
+    ]
+  },
+  "oil-cracking-unit/3/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [12, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [12, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "energy", "cell": [6, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [10, 1, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [2, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 2, 2], "face": "south", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [12, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [10, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 1], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidOut" },
+      { "unitId": 2, "kind": "fluidOut" }
+    ]
+  },
+  "oil-cracking-unit/3/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [12, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [12, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [6, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [10, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [6, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [2, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [12, 2, 1], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [10, 2, 1], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [6, 2, 1], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 2], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 2], "face": "up", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidOut" },
+      { "unitId": 2, "kind": "fluidOut" }
+    ]
+  },
+  "oil-cracking-unit/3/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [12, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [12, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [6, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [2, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 1, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [10, 1, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [12, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [2, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 1], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [10, 2, 1], "face": "up", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [2, 2, 2], "face": "up", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 2], "face": "up", "unitIds": [1] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidOut" },
+      { "unitId": 2, "kind": "fluidOut" }
+    ]
+  },
+  "oil-cracking-unit/3/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 1, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [12, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 0, 2], "face": "south", "unitIds": [0] },
+      { "kind": "energy", "cell": [12, 0, 2], "face": "south", "unitIds": [2] },
+      { "kind": "energy", "cell": [6, 0, 2], "face": "south", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [10, 1, 2], "face": "south", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [2, 1, 2], "face": "south", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 2, 2], "face": "south", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [12, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [10, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 1], "face": "up", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [2, 2, 1], "face": "up", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 2, 2], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidIn" },
+      { "unitId": 1, "kind": "fluidOut" },
+      { "unitId": 2, "kind": "fluidOut" }
+    ]
+  },
+  "pyrolyse-oven/1/ground/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [6, 2, 4], "face": "east", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 2, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/1/ground/avoid": {
+    "hatches": [
+      { "kind": "muffler", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [6, 0, 1], "face": "east", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/1/ground/both": {
+    "hatches": [
+      { "kind": "muffler", "cell": [6, 2, 4], "face": "east", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 2, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/1/below/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [6, 2, 4], "face": "east", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 2, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/1/below/avoid": {
+    "hatches": [
+      { "kind": "muffler", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [6, 0, 1], "face": "east", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/1/below/both": {
+    "hatches": [
+      { "kind": "muffler", "cell": [6, 2, 4], "face": "east", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [6, 2, 2], "face": "east", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [0, 0, 2], "face": "west", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/3/ground/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [18, 2, 4], "face": "east", "unitIds": [2] },
+      { "kind": "muffler", "cell": [10, 2, 4], "face": "south", "unitIds": [1] },
+      { "kind": "muffler", "cell": [4, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [13, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [15, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [12, 2, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [2, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [12, 2, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "fluidIn", "cell": [4, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [6, 0, 4], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [13, 0, 4], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [6, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [17, 0, 0], "face": "north", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/3/ground/avoid": {
+    "hatches": [
+      { "kind": "muffler", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "muffler", "cell": [8, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "muffler", "cell": [14, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [13, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [15, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [12, 2, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [16, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [12, 0, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [6, 0, 4], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [14, 0, 4], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/3/ground/both": {
+    "hatches": [
+      { "kind": "muffler", "cell": [18, 2, 4], "face": "east", "unitIds": [2] },
+      { "kind": "muffler", "cell": [10, 2, 4], "face": "south", "unitIds": [1] },
+      { "kind": "muffler", "cell": [4, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [13, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [15, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [12, 2, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [2, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [18, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [12, 0, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [6, 0, 4], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [14, 0, 4], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/3/below/toward": {
+    "hatches": [
+      { "kind": "muffler", "cell": [18, 2, 4], "face": "east", "unitIds": [2] },
+      { "kind": "muffler", "cell": [10, 2, 4], "face": "south", "unitIds": [1] },
+      { "kind": "muffler", "cell": [4, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [13, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [2, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [15, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [12, 2, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [2, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [12, 2, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "fluidIn", "cell": [4, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [6, 0, 4], "face": "south", "unitIds": [0, 1] },
+      { "kind": "itemOut", "cell": [13, 0, 4], "face": "south", "unitIds": [2] },
+      { "kind": "fluidOut", "cell": [6, 0, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [17, 0, 0], "face": "north", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/3/below/avoid": {
+    "hatches": [
+      { "kind": "muffler", "cell": [2, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "muffler", "cell": [8, 2, 0], "face": "north", "unitIds": [1] },
+      { "kind": "muffler", "cell": [14, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [13, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [15, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [12, 2, 0], "face": "north", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [0, 2, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [16, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [12, 0, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [6, 0, 4], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [14, 0, 4], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "pyrolyse-oven/3/below/both": {
+    "hatches": [
+      { "kind": "muffler", "cell": [18, 2, 4], "face": "east", "unitIds": [2] },
+      { "kind": "muffler", "cell": [10, 2, 4], "face": "south", "unitIds": [1] },
+      { "kind": "muffler", "cell": [4, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [13, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "energy", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [15, 0, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [12, 2, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemIn", "cell": [2, 2, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [6, 2, 0], "face": "north", "unitIds": [0, 1] },
+      { "kind": "fluidIn", "cell": [18, 2, 0], "face": "north", "unitIds": [2] },
+      { "kind": "itemOut", "cell": [12, 0, 4], "face": "south", "unitIds": [1, 2] },
+      { "kind": "itemOut", "cell": [0, 0, 4], "face": "south", "unitIds": [0] },
+      { "kind": "fluidOut", "cell": [6, 0, 4], "face": "south", "unitIds": [0, 1] },
+      { "kind": "fluidOut", "cell": [14, 0, 4], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": []
+  },
+  "advanced-assembly-line/1/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [4, 0, 1], "face": "east", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" }
+    ]
+  },
+  "advanced-assembly-line/1/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" }
+    ]
+  },
+  "advanced-assembly-line/1/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" }
+    ]
+  },
+  "advanced-assembly-line/1/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [4, 0, 1], "face": "east", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": []
+  },
+  "advanced-assembly-line/1/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+  },
+  "advanced-assembly-line/1/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 0], "face": "north", "unitIds": [0] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+  },
+  "advanced-assembly-line/3/ground/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 3, 3], "face": "west", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" }
+    ]
+  },
+  "advanced-assembly-line/3/ground/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [7, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [0, 0, 4], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" }
+    ]
+  },
+  "advanced-assembly-line/3/ground/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [4, 0, 4], "face": "south", "unitIds": [2] }
+    ],
+    "unplaced": [
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 0, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 1, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" },
+      { "unitId": 2, "kind": "itemIn" }
+    ]
+  },
+  "advanced-assembly-line/3/below/toward": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [0, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [0, 3, 3], "face": "west", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [0, 0, 1], "face": "west", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [8, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [7, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [6, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [5, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [2, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [1, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] }
+    ],
+    "unplaced": []
+  },
+  "advanced-assembly-line/3/below/avoid": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [4, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [5, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [6, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [7, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [8, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [1, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [2, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [3, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [1, 0, 2], "face": "down", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [7, 0, 0], "face": "north", "unitIds": [1] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+  },
+  "advanced-assembly-line/3/below/both": {
+    "hatches": [
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "west", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [5, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 1], "face": "north", "unitIds": [0] },
+      { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
+      { "kind": "energy", "cell": [1, 3, 3], "face": "up", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [9, 0, 1], "face": "east", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 3], "face": "east", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [0, 0, 3], "face": "west", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [8, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [7, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [6, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [5, 0, 1], "face": "down", "unitIds": [1] },
+      { "kind": "itemIn", "cell": [4, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [2, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [1, 0, 1], "face": "down", "unitIds": [0] },
+      { "kind": "itemIn", "cell": [3, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [2, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "itemIn", "cell": [1, 0, 3], "face": "down", "unitIds": [2] },
+      { "kind": "fluidIn", "cell": [1, 0, 2], "face": "down", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [9, 0, 0], "face": "north", "unitIds": [1] }
+    ],
+    "unplaced": [{ "unitId": 0, "kind": "itemIn" }]
+  }
+}

@@ -13,6 +13,7 @@ import type { HatchKind, MultiblockDef, Unit } from '../multiblock/types';
 import { CLEAR_AHEAD, FACE_ORDER, FLOOD_LIMIT } from './constants';
 import { comparePos } from './geometry';
 import type { Site } from './types';
+import { zoneOfCell } from './zones';
 
 /** Discovering every cell a hatch may take, with its open faces, around a set of placed units. */
 
@@ -81,6 +82,8 @@ function outsideCells(b: Box, solid: Uint8Array, ground: number): Uint8Array {
 
 const NO_REGIONS: ReadonlyMap<number, string> = new Map();
 
+const NO_ZONES: ReadonlyMap<number, string> = new Map();
+
 const NO_BLOCKED: ReadonlyMap<HatchKind, Set<Dir>> = new Map();
 
 /** Per def: the rotated local offset of every structure cell, per rotation. */
@@ -139,6 +142,7 @@ export function findSites(
     blockId?: string;
     kinds: ReadonlySet<HatchKind>;
     regions: ReadonlyMap<number, string>;
+    zones: ReadonlyMap<number, string>;
     blocked: ReadonlyMap<HatchKind, Set<Dir>>;
   }
   const cells = localCells(def);
@@ -205,6 +209,7 @@ export function findSites(
           blockId: cell.blockId,
           kinds: legendKinds(def, cell.char, allowed),
           regions: NO_REGIONS,
+          zones: NO_ZONES,
           blocked: NO_BLOCKED,
         };
         byKey.set(k, entry);
@@ -218,6 +223,11 @@ export function findSites(
       if (legend?.region !== undefined) {
         if (entry.regions === NO_REGIONS) entry.regions = new Map();
         (entry.regions as Map<number, string>).set(unit.id, legend.region);
+      }
+      const zone = zoneOfCell(def, cell.local, cell.char);
+      if (zone !== undefined) {
+        if (entry.zones === NO_ZONES) entry.zones = new Map();
+        (entry.zones as Map<number, string>).set(unit.id, zone);
       }
       if (legend?.disallowFaces) {
         if (entry.blocked === NO_BLOCKED) entry.blocked = new Map();
@@ -356,6 +366,7 @@ export function findSites(
       kinds: e.kinds,
       faces,
       regions: e.regions,
+      zones: e.zones,
       blocked: e.blocked,
     });
   }

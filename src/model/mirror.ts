@@ -1,4 +1,5 @@
 import type { Dir, HorizontalDir } from './core/types';
+import type { ZonedDef } from './hatches/types';
 import type { HatchKind, LegendEntry, MultiblockDef, ResizeRule } from './multiblock/types';
 
 /**
@@ -25,6 +26,8 @@ const memo = new WeakMap<MultiblockDef, MultiblockDef>();
  * with an X-axis resize whose slab cells carry regions, the copies would be numbered from the other end of
  * the structure; no catalog entry has one, and mirror.test.ts asserts that).
  * The resize rule is kept in terms of the smallest form (`rule.min`), like the stored definitions.
+ * Hatch zone cells (`ZonedDef.zoneCells`) move with the structure, and `zoneMirrored` marks it a mirror
+ * image so `withHatchZones` can place the zones of the catalog file on a mirrored (and resized) def.
  */
 export function mirroredDef(def: MultiblockDef): MultiblockDef {
   let out = memo.get(def);
@@ -67,13 +70,18 @@ function mirror(def: MultiblockDef): MultiblockDef {
     def.controller.pos[1],
     def.controller.pos[2],
   ];
-  return {
+  const zoned = def as ZonedDef;
+  const out: ZonedDef = {
     ...def,
     layers,
     legend,
     controller: { ...def.controller, pos, facing },
     ...(def.resize ? { resize: mirrorRule(def.resize) } : {}),
+    ...(zoned.zoneCells ? { zoneCells: mirrorCells(zoned.zoneCells, sx) } : {}),
   };
+  if (zoned.zoneMirrored) delete out.zoneMirrored;
+  else out.zoneMirrored = true;
+  return out;
 }
 
 function mirrorEntry(entry: LegendEntry): LegendEntry {
@@ -85,6 +93,6 @@ function mirrorEntry(entry: LegendEntry): LegendEntry {
 }
 
 /** The slab `[from, to)` seen from the other end of the smallest form (size `min` along the axis). */
-function mirrorRule(rule: ResizeRule): ResizeRule {
+export function mirrorRule(rule: ResizeRule): ResizeRule {
   return rule.axis === 'x' ? { ...rule, from: rule.min - rule.to, to: rule.min - rule.from } : rule;
 }

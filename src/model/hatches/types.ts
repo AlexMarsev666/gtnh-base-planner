@@ -1,6 +1,7 @@
 import type { CellKey } from '../geometry';
 import type { Dir, Vec3 } from '../core/types';
-import type { HatchKind } from '../multiblock/types';
+import type { HatchKind, MultiblockDef } from '../multiblock/types';
+import type { HatchPlacement, HatchResult } from '../plan/types';
 
 /** Hatch placement inputs, and the cells and ranks it works with. */
 
@@ -19,6 +20,8 @@ export interface Site {
   faces: { dir: Dir; front: CellKey; rank: number }[];
   /** Per containing unit, the legend region of this cell (see `LegendEntry.region`). */
   regions: ReadonlyMap<number, string>;
+  /** Per containing unit, the hatch zone of this cell (see `withHatchZones`); absent outside any zone. */
+  zones: ReadonlyMap<number, string>;
   /** World-frame sides a hatch of a kind must not face here (`LegendEntry.disallowFaces`, any unit). */
   blocked: ReadonlyMap<HatchKind, ReadonlySet<Dir>>;
 }
@@ -62,6 +65,88 @@ export interface PlaceOptions {
    * port or the next machine is. Among otherwise equal cells and faces, the one nearest it wins.
    */
   toward?: Partial<Record<HatchKind, Vec3>>;
+  /**
+   * An explicit list of hatches to place instead of one (or `requiredHatches.min`) of every enabled kind; the
+   * `enabled` argument is then ignored. Omitted = the usual behaviour. See `HatchRequest`.
+   */
+  requests?: readonly HatchRequest[];
+}
+
+/**
+ * One hatch every listed unit needs: it is placed once per request, and a shareable kind may serve several of
+ * the units with one block. Several requests of one kind give each unit several hatches of it.
+ */
+export interface HatchRequest {
+  kind: HatchKind;
+  /** Unit ids that need the hatch; `'each'` = all units placed. Ids that are not placed are ignored. */
+  units: readonly number[] | 'each';
+  /** Only cells of this zone (`MultiblockDef.zones` key, or a legend `region`) may take it. */
+  zone?: string;
+  /**
+   * Names what the hatch is for (e.g. which fluid): copied to the placement (`KeyedHatch.key`) and to its
+   * `unplaced` entry. A fluid hatch (fluidIn, fluidOut, steamIn) serves one key only: it is never put on a
+   * cell shared with a unit that did not ask for it, so two keys never end up in one block. (A hatch on a
+   * wall shared by two units serves both, as in GT, where it joins every adjacent controller's list.)
+   */
+  key?: string;
+}
+
+/** A hatch placement that remembers the `HatchRequest.key` it was placed for (absent without requests). */
+export interface KeyedHatch extends HatchPlacement {
+  key?: string;
+}
+
+/** A hatch that was asked for and could not be placed. */
+export interface UnplacedHatch {
+  unitId: number;
+  kind: HatchKind;
+  /** `HatchRequest.key` of the request (only with `PlaceOptions.requests`). */
+  key?: string;
+  /**
+   * Why (only with `PlaceOptions.requests`): the unit wants more hatches than it has cells (`capacity`, see
+   * `CapacityEntry`), it is at the kind's maximum (`max`), or no cell fits the request (`noCell`: no
+   * allowed kind, zone, side or free cell); the def has no hatch block for the kind (`unsupported`); the unit
+   * id is not placed (`noUnit`); or the requests give a unit fewer hatches than `requiredHatches` asks of
+   * it, or none in a required `region` (`required`: nothing was added for it, it is only reported).
+   */
+  reason?: 'capacity' | 'max' | 'noCell' | 'unsupported' | 'noUnit' | 'required';
+  /** The `requiredHatches` region still without a hatch (reason `required`). */
+  region?: string;
+}
+
+/** Units that want more hatches than have a cell with an open face. One entry per distinct overload. */
+export interface CapacityEntry {
+  /** Hatches the unit wants. */
+  needed: number;
+  /** How many of them cells can take (a cell shared with another unit counts for each of them). */
+  fits: number;
+  /** `needed - fits`: hatches to remove. */
+  remove: number;
+  /** Units with exactly this overload, ascending. */
+  unitIds: number[];
+  /** Set when even the mandatory hatches (`requiredHatches` min >= 1) do not all fit. */
+  mandatory?: true;
+}
+
+/** `placeHatches` result: a `HatchResult` that also carries request keys, reasons and what is overfull. */
+export interface PlaceResult extends HatchResult {
+  hatches: KeyedHatch[];
+  unplaced: UnplacedHatch[];
+  /** Present only when some unit wants more hatches than fit. */
+  capacity?: CapacityEntry[];
+}
+
+/** A def with the hatch zones of a hand-made entry (see `withHatchZones`). */
+export interface ZonedDef extends MultiblockDef {
+  /** Zone of local cells (`x,y,z`); a legend char can hold cells of several zones, so `region` is left alone. */
+  zoneCells?: Record<string, string>;
+  /** The `size` `zoneCells` are valid for (a copy resized afterwards carries stale cells). */
+  zoneSize?: Vec3;
+  /**
+   * The structure is a mirror image (`mirroredDef`); the file's cells are in the unmirrored frame. Set by
+   * mirroring and carried by `sizedDef`, so the order of the two does not matter.
+   */
+  zoneMirrored?: true;
 }
 
 /** Cells (`x,y,z`) a hatch kind must not take, e.g. to try its hatches elsewhere (see `improveHatches`). */

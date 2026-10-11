@@ -35,6 +35,29 @@ function resolve(id: string, count: number, limits = unlimited) {
 }
 
 describe('resolveLayout', () => {
+  it('passes an explicit hatch list on to placement, and nothing extra without one', () => {
+    const def = getMultiblock('electric-blast-furnace')!;
+    const calls: unknown[][] = [];
+    const spy: LayoutDeps = {
+      layoutCandidates,
+      placeHatches: (...args) => {
+        calls.push(args.slice(3));
+        return placeHatches(...args);
+      },
+    };
+    const requests = [{ kind: 'energy' as const, units: 'each' as const, key: 'power' }];
+    const pack = packUnits(def, 2, unlimited);
+    const r = resolveLayout(def, pack, def.defaultHatches, unlimited, spy, undefined, requests);
+    expect(calls[0]).toEqual([undefined, { requests }]);
+    expect(r.hatches.hatches.map((h) => [h.kind, h.key])).toEqual([
+      ['energy', 'power'],
+      ['energy', 'power'],
+    ]);
+    calls.length = 0;
+    resolveLayout(def, pack, def.defaultHatches, unlimited, spy);
+    expect(calls[0]).toEqual([]);
+  });
+
   it('keeps the compact layout when every hatch fits', () => {
     const r = resolve('coke-oven', 12);
     expect(r.loosened).toBe(false);
