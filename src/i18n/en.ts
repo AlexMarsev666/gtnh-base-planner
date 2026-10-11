@@ -1,4 +1,4 @@
-import type { SiteWarning } from '../model/site/buildTypes';
+import type { SiteNote, SiteWarning } from '../model/site/buildTypes';
 import type { ResourceKind } from '../model/site/types';
 import type { HatchKind } from '../model/multiblock/types';
 import type { IoClass, SortMode } from '../model/bom';
@@ -298,6 +298,22 @@ export const t = {
           return `${name(w.group)}: GT has no ${w.amps}A transformer at ${w.tier}.`;
         case 'powerUnknownTier':
           return `${res(w.resource)}: voltage tier unknown, so its transformers are not checked.`;
+        case 'assignInactive':
+          return `${name(w.group)}: ${res(w.resource)} is assigned to unit ${w.unit + 1}, which this group does not have.`;
+        case 'capacity':
+          return `${name(w.group)}: ${w.needed} hatches wanted on a machine with room for ${w.fits}; remove ${w.remove}.`;
+        case 'hatch':
+          return `${name(w.group)}: ${w.reason === 'required' ? 'a required' : 'no place for a'} ${w.kind} hatch${w.region ? ` (${w.region})` : ''} on ${w.units} ${w.units === 1 ? 'unit' : 'units'}${w.resources.length ? `: ${w.resources.map(res).join(', ')}` : ''}.`;
+      }
+    },
+    note: (n: SiteNote, name: (groupId: string) => string, res: (key: string) => string): string => {
+      switch (n.type) {
+        case 'distributed':
+          return `${name(n.group)}: ${n.resources.map(res).join(', ')} spread over the units, as one of each did not fit on every unit.`;
+        case 'split':
+          return `${name(n.group)}: ${res(n.resource)} could not share one hatch and got ${n.hatches}.`;
+        case 'wallshare':
+          return `${name(n.group)}: wall sharing '${n.wanted}' was not possible; used '${n.used}' (${n.reason}).`;
       }
     },
     problemCount: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,

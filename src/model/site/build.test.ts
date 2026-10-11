@@ -10,7 +10,7 @@ import { deriveSiteDemand, hatchKindFor } from './demand';
 import { placeGroups, type GroupCache } from './groups';
 import { groupIndexOfUnit, portIndexOfUnit, portUnitId } from './ids';
 import { groupToward } from './toward';
-import { buildGroup, groupPoint, placeUnit, singleBlockLimits, withDemand } from './group';
+import { buildGroup, groupPoint, placeUnit, singleBlockLimits } from './group';
 import type { SiteGroup, SiteState } from './types';
 
 const ebf = getMultiblock('electric-blast-furnace')!;
@@ -85,8 +85,6 @@ describe('group transform', () => {
 
 describe('hatch demand', () => {
   it('places one hatch per resource on every unit and tags it', () => {
-    const def = withDemand(ebf, { itemIn: ['item:dust'], fluidIn: ['fluid:o2'], itemOut: ['item:hot'] });
-    expect(def.requiredHatches?.itemIn?.min).toBe(1);
     const b = buildGroup(ebf, 2, noLimits, [], { itemIn: ['item:dust', 'item:x'], itemOut: ['item:hot'] });
     expect(b.missing).toEqual([]);
     for (const u of b.units)

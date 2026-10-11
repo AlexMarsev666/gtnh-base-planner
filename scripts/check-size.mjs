@@ -13,7 +13,7 @@
 // the same script, so the routing of a large build no longer blocks the page): site worker 129.5 KB.
 //
 // Raised with GT5-Unofficial 5.09.54.205 (hatch zones and tooltip text in every catalog entry), tiers, mirror,
-// neat routing and transformer looks (October 2026): main JS 383 KB.
+// neat routing, transformer looks and template hatch requests (October 2026): main JS 386 KB, site worker 149 KB.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -24,7 +24,7 @@ const dist = process.argv[2] ?? 'dist';
 /** [what, file matcher, measure, budget in bytes] */
 const budgets = [
   ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 395 * KB],
-  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 150 * KB],
+  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 165 * KB],
   ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 6 * KB],
   ['texture atlas', /^textures\/atlas\.png$/, 'raw', 170 * KB],
   ['whole site', /./, 'raw', 4.75 * 1024 * KB],

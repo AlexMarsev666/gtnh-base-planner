@@ -1,7 +1,7 @@
 import type { Dir, Vec3 } from '../core/types';
 import type { MultiblockDef, Unit } from '../multiblock/types';
 import type { SceneModel } from '../render/types';
-import type { Demand, GroupBuild, SiteHatch } from './group';
+import type { Demand, GroupBuild, GroupNote, GroupProblem, SiteHatch, WithGroup } from './group';
 import type { PowerWarning } from './power';
 import type { RouteResult, RouteStats } from './router';
 import type { ResourceKind, SiteGroup, SitePort, SiteRouting, SiteState } from './types';
@@ -84,7 +84,11 @@ export type SiteWarning =
   | { type: 'missing'; group: string; resource: string; units: number }
   | { type: 'unrouted'; resource: string; connected: number; total: number }
   | { type: 'noport'; port: string }
-  | PowerWarning;
+  | PowerWarning
+  | WithGroup<GroupProblem>;
+
+/** What a group's build did on its own, without anything being wrong (see `GroupNote`). */
+export type SiteNote = WithGroup<GroupNote>;
 
 export interface SiteBuild {
   groups: PlacedGroup[];
@@ -92,6 +96,7 @@ export interface SiteBuild {
   nets: SiteNet[];
   scene: SceneModel;
   warnings: SiteWarning[];
+  notes: SiteNote[];
   /** The routing asked for, and the underground depth used (less than asked when the grid would be too big). */
   routing: SiteRouting & { depthUsed: number };
   stats: {

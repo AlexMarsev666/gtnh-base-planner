@@ -9,7 +9,7 @@ import { allUnplaced, kindsToPlace, quota, sortedIds } from './quota';
 import { FLUID_KINDS, type Stage, shortOfMin, stagesOf, wantedOfKinds, wantedOfStages } from './requests';
 import { compareEntries, compareFaces, EntryHeap, type FaceScore } from './scoring';
 import { findSites } from './sites';
-import { withHatchZones } from './zones';
+import { inZone, resolveZone, withHatchZones } from './zones';
 import type {
   Entry,
   HatchAvoid,
@@ -97,7 +97,8 @@ function placeRequested(
     def,
     requests.map((r) => r.kind),
   );
-  const { stages, rejected } = stagesOf(def, requests, ids, kinds);
+  const resolved = requests.map((r) => (r.zone === undefined ? r : { ...r, zone: resolveZone(def, r.zone) }));
+  const { stages, rejected } = stagesOf(def, resolved, ids, kinds);
   let placed: PlaceResult = { hatches: [], unplaced: [] };
   if (stages.length > 0) {
     try {
@@ -408,7 +409,7 @@ function place(
       later,
       max,
       (s) =>
-        (st.zone === undefined || s.unitIds.every((id) => s.zones.get(id) === st.zone)) &&
+        (st.zone === undefined || s.unitIds.every((id) => inZone(s, id, st.zone!))) &&
         (!fluid || s.unitIds.every((id) => union.get(g)!.has(id))),
       st.key,
     );
@@ -419,7 +420,7 @@ function place(
         (e) =>
           e.units.includes(id) &&
           !e.used.has(id) &&
-          (st.zone === undefined || siteAt.get(e.cell)?.zones.get(id) === st.zone),
+          (st.zone === undefined || inZone(siteAt.get(e.cell)!, id, st.zone)),
       );
       if (h) {
         h.used.add(id);

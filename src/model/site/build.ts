@@ -40,11 +40,13 @@ export function createSiteBuilder(): SiteBuilder {
       warnings: [
         ...demand.warnings,
         ...placed.warnings,
+        ...placed.problems,
         ...occupancy.warnings,
         ...portWarnings,
         ...routing.warnings,
         ...analysePower(site),
       ],
+      notes: placed.notes,
       stats: siteStats(groups, ports, routing.routed),
     };
   };

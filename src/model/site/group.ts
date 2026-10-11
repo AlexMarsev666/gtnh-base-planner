@@ -3,10 +3,25 @@ import { rotateDir, rotatedSize, step, unitCells } from '../geometry';
 import { layoutCandidates, packUnits } from '../layout/packer';
 import { resolveLayout } from '../plan';
 import { placeHatches } from '../hatches/placement';
+import type { HatchAvoid, HatchRequest, PlaceOptions, PlaceResult, UnplacedHatch } from '../hatches/types';
 import type { Dir, Rotation, Vec3 } from '../core/types';
 import type { HatchKind, MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
-import type { HatchPlacement, HatchResult, PackResult, WallStats } from '../plan/types';
+import type { HatchPlacement, PackResult, WallshareMode, WallStats } from '../plan/types';
 import { computeWallStats } from '../walls';
+import {
+  distributedRequests,
+  fullRequests,
+  completeRequests,
+  groupRequests,
+  overloaded,
+  rebalanced,
+  type GroupNote,
+  type GroupProblem,
+  type HatchProblemReason,
+} from './requests';
+import type { HatchAssign } from './types';
+
+export type { GroupNote, GroupProblem, WithGroup } from './requests';
 
 /** Hatch kinds that carry a link's resource into or out of a group. */
 export const IN_KINDS: readonly HatchKind[] = ['itemIn', 'fluidIn', 'steamIn', 'energy'];
@@ -61,7 +76,7 @@ function towardPoints(
 export type Demand = Partial<Record<HatchKind, string[]>>;
 
 export interface GroupBuild {
-  /** The def the group was built with (sized, with hatch counts raised to the demand). */
+  /** The def the group was built with (sized, and mirrored when asked). */
   def: MultiblockDef;
   /** Units and hatches in group-local coordinates, normalised so the min corner is (0, 0, 0). */
   units: Unit[];
@@ -70,66 +85,24 @@ export interface GroupBuild {
   size: Vec3;
   pack: PackResult;
   loosened: boolean;
-  unplaced: HatchResult['unplaced'];
+  unplaced: UnplacedHatch[];
   stats: WallStats;
   /** A unit that ended up without a hatch for one of the resources it needs. */
   missing: { kind: HatchKind; resource: string; unitId: number }[];
+  /** What the build did on its own (see `GroupNote`). */
+  notes: GroupNote[];
+  /** Choices and requirements it could not meet (see `GroupProblem`). */
+  problems: GroupProblem[];
 }
 
-const demandDefs = new WeakMap<MultiblockDef, Map<string, MultiblockDef>>();
+/** Times the spread resources are moved to units with room after a placement (see `rebalanced`). */
+const REBALANCE_PASSES = 3;
 
-/**
- * `def` with `requiredHatches[kind].min` raised to the number of resources of that kind, so the hatch
- * placer puts one hatch per resource on every unit. Memoised per (def, demand) so the packer's per-def
- * caches stay warm.
- */
-export function withDemand(def: MultiblockDef, demand: Demand): MultiblockDef {
-  const counts = Object.entries(demand)
-    .filter(([, list]) => list && list.length > 0)
-    .map(([k, list]) => [k as HatchKind, list!.length] as const)
-    .sort(([a], [b]) => (a < b ? -1 : 1));
-  if (counts.length === 0) return def;
-  const k = JSON.stringify(counts);
-  let byKey = demandDefs.get(def);
-  if (!byKey) demandDefs.set(def, (byKey = new Map()));
-  let out = byKey.get(k);
-  if (!out) {
-    const req = { ...def.requiredHatches };
-    for (const [kind, n] of counts) {
-      const r = req[kind];
-      req[kind] = { ...r, min: Math.max(r?.min ?? 0, n) };
-    }
-    out = { ...def, requiredHatches: req };
-    byKey.set(k, out);
-  }
-  return out;
-}
-
-/**
- * Give each hatch of `kind` one of `resources`, so that every unit gets each resource once where it can:
- * each hatch takes the resource the most of its (still unserved) units need, lowest index on ties.
- */
-function assign(hatches: SiteHatch[], kind: HatchKind, resources: string[], unitIds: number[]): SiteHatch[] {
-  const need = new Map(unitIds.map((id) => [id, new Set(resources)]));
-  const uses = new Map(resources.map((r) => [r, 0]));
-  return hatches.map((h) => {
-    if (h.kind !== kind || resources.length === 0) return h;
-    let best = resources[0];
-    let bestScore = -1;
-    for (const r of resources) {
-      let score = 0;
-      for (const id of h.unitIds) if (need.get(id)?.has(r)) score++;
-      // Nobody needs anything here any more: spread the spare hatches over the resources.
-      const tie = score === bestScore && score === 0 && (uses.get(r) ?? 0) < (uses.get(best) ?? 0);
-      if (score > bestScore || tie) {
-        best = r;
-        bestScore = score;
-      }
-    }
-    for (const id of h.unitIds) need.get(id)?.delete(best);
-    uses.set(best, (uses.get(best) ?? 0) + 1);
-    return { ...h, resource: best };
-  });
+/** The per-group choices `buildGroup` honours besides the machine and the demand. */
+export interface GroupOptions {
+  /** Where each resource's hatch goes (`SiteGroup.assign`). */
+  assign?: Readonly<Record<string, HatchAssign>>;
+  wallshare?: WallshareMode;
 }
 
 /** Blocks from one layer of single-block machines to the next: the machine and two free blocks for pipes. */
@@ -197,25 +170,79 @@ function blockedFaces(def: MultiblockDef, units: Unit[], h: HatchPlacement): Dir
  * kind; `base` the other hatch kinds to place (energy, maintenance, muffler, ...).
  */
 export function buildGroup(
-  raw: MultiblockDef,
+  def: MultiblockDef,
   count: number,
   limits: PlanLimits,
   base: readonly HatchKind[],
   demand: Demand,
   below = false,
   toward: Toward = {},
+  opts: GroupOptions = {},
 ): GroupBuild {
-  if (isSingleBlock(raw)) return buildSingleBlocks(raw, count, limits, demand);
-  const def = withDemand(raw, demand);
-  const enabled = [...new Set([...base, ...(Object.keys(demand) as HatchKind[])])].filter(
-    (k) => def.hatchBlocks[k] !== undefined && (!IO_KINDS.includes(k) || (demand[k]?.length ?? 0) > 0),
-  );
-  const packed = packUnits(def, count, limits);
+  if (isSingleBlock(def)) return buildSingleBlocks(def, count, limits, demand, opts.assign);
+  const packed = packUnits(def, count, limits, opts.wallshare);
   const targets = towardPoints(def, packed.units, toward);
   // With `below`, hatches may face down from the lowest layer (see `PlaceOptions`); with `toward`, each
   // kind's hatches lean to the side its pipes leave by.
-  const place: typeof placeHatches = (d, u, e, a) => placeHatches(d, u, e, a, { below, toward: targets });
-  const resolved = resolveLayout(def, packed, enabled, limits, { placeHatches: place, layoutCandidates });
+  // Requirements of kinds the group did not ask for (not enabled, no resources) are not its business: the
+  // engine reports them, legacy builds neither placed nor reported them.
+  const place = (d: MultiblockDef, u: Unit[], e: HatchKind[], a?: HatchAvoid, o?: PlaceOptions) => {
+    const r = placeHatches(d, u, e, a, { below, toward: targets, ...o });
+    const asked = o?.requests;
+    if (!asked) return r;
+    return {
+      ...r,
+      unplaced: r.unplaced.filter((x) => x.reason !== 'required' || asked.some((q) => q.kind === x.kind)),
+    };
+  };
+  const deps = {
+    placeHatches: place,
+    layoutCandidates: (d: MultiblockDef, n: number, l: PlanLimits) =>
+      layoutCandidates(d, n, l, opts.wallshare),
+  };
+  const unitIds = packed.units.map((u) => u.id).sort((a, b) => a - b);
+  const wanted = groupRequests(def, base, demand, opts.assign, unitIds, count);
+  const notes: GroupNote[] = [];
+  const problems = [...wanted.problems];
+  if (packed.fallback) notes.push({ type: 'wallshare', ...packed.fallback });
+  const demandKinds = (Object.keys(demand) as HatchKind[]).filter((k) => demand[k]?.length);
+  const pad = (r: HatchRequest[]) => completeRequests(def, r, unitIds, demandKinds);
+  let requests = pad(fullRequests(wanted));
+  let resolved = resolveLayout(def, packed, [], limits, deps, undefined, requests);
+  if (overloaded(wanted, resolved.hatches.capacity, resolved.hatches.unplaced)) {
+    // The full set does not fit: spread the resources over the units, from the layout just chosen, and move
+    // what still finds no cell to units with room for it.
+    let raw = distributedRequests(def, unitIds, wanted, resolved.hatches.capacity);
+    let second = resolveLayout(def, resolved.pack, [], limits, deps, undefined, pad(raw));
+    let best = { raw, second };
+    for (let pass = 0; pass <= REBALANCE_PASSES && second.hatches.unplaced.length > 0; pass++) {
+      const placed = new Map<string, number>();
+      for (const h of second.hatches.hatches)
+        for (const id of h.unitIds) placed.set(String(id), (placed.get(String(id)) ?? 0) + 1);
+      const moved = rebalanced(raw, second.hatches.unplaced, placed, unitIds, pass < REBALANCE_PASSES);
+      if (!moved) break;
+      raw = moved;
+      second = resolveLayout(def, second.pack, [], limits, deps, undefined, pad(raw));
+      if (second.hatches.unplaced.length < best.second.hatches.unplaced.length) best = { raw, second };
+    }
+    ({ raw, second } = best);
+    // A tie keeps the full set.
+    if (second.hatches.unplaced.length < resolved.hatches.unplaced.length) {
+      requests = pad(raw);
+      resolved = second;
+      const subset = requests
+        .filter((r) => r.key !== undefined && wanted.auto.some((a) => a.resource === r.key))
+        .filter((r) => r.units !== 'each' && r.units.length < unitIds.length)
+        .map((r) => r.key!);
+      if (subset.length > 0) notes.push({ type: 'distributed', resources: [...new Set(subset)] });
+    }
+  }
+  // An `all` resource the engine could not share among the units.
+  for (const r of wanted.fixed) {
+    if (r.key === undefined || r.units === 'each' || r.units.length < 2) continue;
+    const n = resolved.hatches.hatches.filter((h) => h.kind === r.kind && h.key === r.key).length;
+    if (n > 1) notes.push({ type: 'split', resource: r.key, hatches: n });
+  }
   const lo: [number, number, number] = [Infinity, Infinity, Infinity];
   const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   for (const u of resolved.pack.units) {
@@ -231,22 +258,22 @@ export function buildGroup(
   }
   const shift = (p: Vec3): Vec3 => [p[0] - lo[0], p[1] - lo[1], p[2] - lo[2]];
   const units = resolved.pack.units.map((u) => ({ ...u, origin: shift(u.origin) }));
-  let hatches: SiteHatch[] = resolved.hatches.hatches.map((h) => {
+  const hatches: SiteHatch[] = resolved.hatches.hatches.map(({ key, ...h }) => {
     const out: SiteHatch = { ...h, cell: shift(h.cell) };
+    if (key !== undefined) out.resource = key;
     const blocked = blockedFaces(def, resolved.pack.units, h);
     if (blocked?.length) out.blocked = blocked;
     return out;
   });
-  const unitIds = units.map((u) => u.id);
+  // Every unit a request names should have its hatch.
   const missing: GroupBuild['missing'] = [];
-  for (const [kind, list] of Object.entries(demand) as [HatchKind, string[]][]) {
-    if (!list?.length) continue;
-    hatches = assign(hatches, kind, list, unitIds);
-    for (const id of unitIds)
-      for (const r of list)
-        if (!hatches.some((h) => h.kind === kind && h.resource === r && h.unitIds.includes(id)))
-          missing.push({ kind, resource: r, unitId: id });
+  for (const r of requests) {
+    if (r.key === undefined) continue;
+    for (const id of r.units === 'each' ? unitIds : r.units)
+      if (!hatches.some((h) => h.kind === r.kind && h.resource === r.key && h.unitIds.includes(id)))
+        missing.push({ kind: r.kind, resource: r.key, unitId: id });
   }
+  problems.push(...problemsOf(resolved.hatches));
   return {
     def,
     units,
@@ -257,7 +284,52 @@ export function buildGroup(
     unplaced: resolved.hatches.unplaced,
     stats: computeWallStats(def, units, hatches),
     missing,
+    notes,
+    problems,
   };
+}
+
+/** The capacity overload of a placement (the worst one) and its other unmet hatches, one entry each. */
+function problemsOf(r: PlaceResult): GroupProblem[] {
+  const out: GroupProblem[] = [];
+  if (r.capacity?.length) {
+    const worst = r.capacity.reduce((a, c) => (c.remove > a.remove ? c : a));
+    const units = r.capacity.reduce((n, c) => n + c.unitIds.length, 0);
+    out.push({
+      type: 'capacity',
+      needed: worst.needed,
+      fits: worst.fits,
+      remove: worst.remove,
+      units,
+      ...(r.capacity.some((c) => c.mandatory) ? { mandatory: true as const } : {}),
+    });
+  }
+  const seen = new Map<
+    string,
+    { kind: HatchKind; reason: HatchProblemReason; region?: string; keys: Set<string>; ids: Set<number> }
+  >();
+  for (const u of r.unplaced) {
+    if (u.reason === undefined || u.reason === 'capacity' || u.reason === 'noUnit') continue;
+    const id = `${u.kind}\u0000${u.reason}\u0000${u.region ?? ''}`;
+    let e = seen.get(id);
+    if (!e) {
+      e = { kind: u.kind, reason: u.reason, keys: new Set(), ids: new Set() };
+      if (u.region !== undefined) e.region = u.region;
+      seen.set(id, e);
+    }
+    if (u.key !== undefined) e.keys.add(u.key);
+    e.ids.add(u.unitId);
+  }
+  for (const e of seen.values())
+    out.push({
+      type: 'hatch',
+      kind: e.kind,
+      reason: e.reason,
+      ...(e.region !== undefined ? { region: e.region } : {}),
+      resources: [...e.keys],
+      units: e.ids.size,
+    });
+  return out;
 }
 
 function buildSingleBlocks(
@@ -265,6 +337,7 @@ function buildSingleBlocks(
   count: number,
   limits: PlanLimits,
   demand: Demand,
+  assign: GroupOptions['assign'],
 ): GroupBuild {
   const units = singleBlockLayout(count, limits);
   const flows = Object.entries(demand).flatMap(([kind, list]) =>
@@ -272,8 +345,21 @@ function buildSingleBlocks(
   );
   const hatches: SiteHatch[] = [];
   const missing: GroupBuild['missing'] = [];
+  const problems: GroupProblem[] = [];
+  const ids = new Set(units.map((u) => u.id));
+  for (const [, resource] of flows) {
+    const unit = assign?.[resource]?.unit;
+    if (
+      typeof unit === 'number' &&
+      !ids.has(unit) &&
+      !problems.some((p) => p.type === 'assignInactive' && p.resource === resource)
+    )
+      problems.push({ type: 'assignInactive', resource, unit });
+  }
   for (const u of units)
     flows.forEach(([kind, resource], i) => {
+      const only = assign?.[resource]?.unit;
+      if (typeof only === 'number' && only !== u.id) return;
       // More flows than faces: the extras share the top face (a pipe may still come in from any side).
       hatches.push({
         kind,
@@ -310,6 +396,8 @@ function buildSingleBlocks(
     unplaced: [],
     stats,
     missing,
+    notes: [],
+    problems,
   };
 }
 

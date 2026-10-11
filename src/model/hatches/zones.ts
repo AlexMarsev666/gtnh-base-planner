@@ -3,7 +3,7 @@ import { key } from '../geometry';
 import { mirrorCells, mirrorRule } from '../mirror';
 import type { Vec3 } from '../core/types';
 import type { MultiblockDef, ResizeRule } from '../multiblock/types';
-import type { ZonedDef } from './types';
+import type { Site, ZonedDef } from './types';
 
 /** Hatch zones of hand-made entries: where GT's hint dots mark which cells take which hatches. */
 
@@ -72,4 +72,22 @@ export function withHatchZones<T extends MultiblockDef>(def: T): T | ZonedDef {
 /** The zone of a hatch cell of `def` (local position, legend char `char`), if it has one. */
 export function zoneOfCell(def: MultiblockDef, local: Vec3, char: string): string | undefined {
   return (def as ZonedDef).zoneCells?.[key(local)] ?? def.legend[char]?.region;
+}
+
+/** Marks a request zone that names a legend `region` (it is not a key of `def.zones`), see `resolveZone`. */
+const REGION_ZONE = 'region:';
+
+/**
+ * A request's zone as placement matches it: a key of `def.zones` stays, any other name falls back to the legend
+ * `region` of that name (e.g. a Distillation Tower's `layer1` or `top`).
+ */
+export function resolveZone(def: MultiblockDef, zone: string): string {
+  return def.zones?.[zone] !== undefined ? zone : REGION_ZONE + zone;
+}
+
+/** Whether the cell of `site` lies, for unit `id`, in the zone `resolveZone` gave. */
+export function inZone(site: Pick<Site, 'zones' | 'regions'>, id: number, zone: string): boolean {
+  return zone.startsWith(REGION_ZONE)
+    ? site.regions.get(id) === zone.slice(REGION_ZONE.length)
+    : site.zones.get(id) === zone;
 }

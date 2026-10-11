@@ -1,4 +1,5 @@
 import type { HatchKind } from '../multiblock/types';
+import { inZone } from './zones';
 import type { CapacityEntry, Site } from './types';
 
 /** Whether a unit's cells can hold all the hatches it wants (checked before anything is placed). */
@@ -37,7 +38,7 @@ export function capacityOf(
     const takes = (w: Wanted, s: Site): boolean =>
       s.kinds.has(w.kind) &&
       (s.unitIds.length === 1 || shares(w.kind)) &&
-      (w.zone === undefined || s.zones.get(id) === w.zone) &&
+      (w.zone === undefined || inZone(s, id, w.zone)) &&
       s.faces.some((f) => !s.blocked.get(w.kind)?.has(f.dir));
     // A hatch no cell could ever take (wrong kind or zone) is not about room: placement reports it itself.
     const list = all.filter((w) => cells.some((s) => takes(w, s)));

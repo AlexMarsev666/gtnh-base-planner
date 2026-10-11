@@ -123,6 +123,25 @@ describe('requests with zones', () => {
   });
 });
 
+describe('zone names that are legend regions', () => {
+  it('falls back to the region when the name is not a zone of the def', () => {
+    const tower = sizedDef(getMultiblock('distillation-tower')!, 5);
+    const r = placeHatches(tower, [unit(1)], [], undefined, {
+      requests: [
+        { kind: 'fluidOut', units: 'each', zone: 'top', key: 't' },
+        { kind: 'fluidOut', units: 'each', zone: 'layer2', key: 'l' },
+      ],
+    });
+    expect(r.unplaced.filter((u) => u.reason === 'noCell')).toEqual([]);
+    expect(r.hatches.map((h) => h.key).sort()).toEqual(['l', 't']);
+    const missing = r.unplaced
+      .filter((u) => u.reason === 'required' && u.kind === 'fluidOut')
+      .map((u) => u.region);
+    expect(missing).not.toContain('top');
+    expect(missing).not.toContain('layer2');
+  });
+});
+
 describe('capacity', () => {
   it('summarises an over-full unit once, with what to remove', () => {
     const r = placeHatches(ring(), [unit(1)], [], undefined, {

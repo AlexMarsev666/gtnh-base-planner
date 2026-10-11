@@ -1,4 +1,5 @@
 import { getSiteDef } from '../../data/generic';
+import { mirroredDef } from '../mirror';
 import { effectiveSize, sizedDef } from '../resize';
 import type { PlacedGroup, SiteWarning } from './buildTypes';
 import {
@@ -9,7 +10,10 @@ import {
   rotatedGroupSize,
   type Demand,
   type GroupBuild,
+  type GroupNote,
+  type GroupProblem,
   type Toward,
+  type WithGroup,
 } from './group';
 import { GROUP_STRIDE } from './ids';
 import type { SiteGroup, SiteState } from './types';
@@ -32,8 +36,15 @@ export function placeGroups(
   below: boolean,
   cache: GroupCache,
   prune = true,
-): { groups: PlacedGroup[]; warnings: SiteWarning[] } {
+): {
+  groups: PlacedGroup[];
+  warnings: SiteWarning[];
+  notes: WithGroup<GroupNote>[];
+  problems: WithGroup<GroupProblem>[];
+} {
   const warnings: SiteWarning[] = [];
+  const notes: WithGroup<GroupNote>[] = [];
+  const problems: WithGroup<GroupProblem>[] = [];
   const used = new Set<string>();
   const groups: PlacedGroup[] = site.groups.map((g, index) => {
     const raw = getSiteDef(g.multiblockId);
@@ -51,7 +62,14 @@ export function placeGroups(
       warnings.push({ type: 'error', group: g.id, message: `Unknown multiblock "${g.multiblockId}"` });
       return { ...empty, error: 'unknown' };
     }
-    const def = sizedDef(raw, effectiveSize(raw, g.size));
+    const sized = sizedDef(raw, effectiveSize(raw, g.size));
+    const def = g.mirror ? mirroredDef(sized) : sized;
+    // Only the choices that name a resource this group has can matter (a stale entry must not rebuild it).
+    const assign = Object.fromEntries(
+      Object.entries(g.assign ?? {})
+        .filter(([r]) => Object.values(demand).some((list) => list?.includes(r)))
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
     const base = g.enabledHatches.filter((k) => !IO_KINDS.includes(k));
     const toward = towardOf(g);
     const ck = JSON.stringify([
@@ -63,12 +81,18 @@ export function placeGroups(
       demand,
       below,
       toward,
+      g.mirror ?? false,
+      g.wallshare ?? 'auto',
+      assign,
     ]);
     used.add(ck);
     let built = cache.get(ck);
     if (!built) {
       try {
-        built = buildGroup(def, g.count, g.limits, base, demand, below, toward);
+        built = buildGroup(def, g.count, g.limits, base, demand, below, toward, {
+          assign,
+          wallshare: g.wallshare,
+        });
       } catch (err) {
         // Shown on the group; a malformed definition must not stop the rest of the site.
         built = { error: err instanceof Error ? err.message : String(err) };
@@ -93,7 +117,11 @@ export function placeGroups(
     const elevation = g.elevation ?? 0;
     if (b.pack.placed < b.pack.requested)
       warnings.push({ type: 'fewer', group: g.id, placed: b.pack.placed, requested: b.pack.requested });
-    if (b.unplaced.length) warnings.push({ type: 'unplaced', group: g.id, count: b.unplaced.length });
+    // Unmet requirements (`reason` required) and the overload are told by `problems`, once each.
+    const failed = b.unplaced.filter((u) => u.reason !== 'required' && u.reason !== 'capacity').length;
+    if (failed) warnings.push({ type: 'unplaced', group: g.id, count: failed });
+    for (const n of b.notes) notes.push({ ...n, group: g.id });
+    for (const p of b.problems) problems.push({ ...p, group: g.id });
     const missingBy = new Map<string, number>();
     for (const m of b.missing) missingBy.set(m.resource, (missingBy.get(m.resource) ?? 0) + 1);
     for (const [resource, n] of missingBy)
@@ -111,5 +139,5 @@ export function placeGroups(
     };
   });
   if (prune) for (const k of [...cache.keys()]) if (!used.has(k)) cache.delete(k);
-  return { groups, warnings };
+  return { groups, warnings, notes, problems };
 }
