@@ -32,7 +32,12 @@ export interface Mode {
 }
 
 export interface DefCache {
+  /** The four rotations of the def as drawn (variant 0). */
   shapes: Shape[];
+  /** Block codes of the casings, shared by the shapes of every variant so their grids compare. */
+  blocks: Map<string, number>;
+  /** `shapes` of the other variants (index 1..3), built when a pair asks for one. */
+  variantShapes: (Shape[] | undefined)[];
   pairs: Map<string, boolean>;
   modes: Mode[] | null;
   results: Map<string, LayoutResult>;

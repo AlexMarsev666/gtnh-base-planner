@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { getMultiblock } from '../data/catalog';
 import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
 import { SINGLE_MACHINES } from '../data/single-machines';
+import { defOfUnit, unitCells } from '../model/geometry';
+import { withHatchZones, zoneOfCell } from '../model/hatches/zones';
+import type { Unit } from '../model/multiblock/types';
 import { buildGroup } from '../model/site/group';
 import type { PlacedGroup, SiteWarning } from '../model/site/buildTypes';
 import {
@@ -188,6 +191,29 @@ describe('picking a group hatch', () => {
     expect(info.zone?.text).toBeTruthy();
     expect(info.tiered).toBe(true);
     expect(info.cells).toContainEqual(oilHatch.cell);
+  });
+
+  it('names the zone of a hatch cell of a mirrored unit in the oriented frame', () => {
+    const zoned = withHatchZones(oil);
+    const unit: Unit = { id: 0, origin: [0, 0, 0], rotation: 0, variant: 1 };
+    const flipped = defOfUnit(zoned, unit);
+    // A hatch cell whose zone differs from the unflipped def's zone at the same local position.
+    const at = unitCells(zoned, unit).find(
+      (c) =>
+        c.role === 'casing' &&
+        zoneOfCell(flipped, c.local, c.char) !== undefined &&
+        zoneOfCell(flipped, c.local, c.char) !== zoneOfCell(zoned, c.local, c.char),
+    )!;
+    expect(at).toBeDefined();
+    const hatch = { kind: 'fluidIn', cell: at.pos, face: 'north', unitIds: [0], resource: 'fluid:oil' };
+    const p = {
+      group: { id: 'g1' },
+      units: [unit],
+      hatches: [hatch],
+      build: { def: oil },
+    } as unknown as PlacedGroup;
+    const info = groupHatchInfo(p, groupHatchAt([p], at.pos)!.key)!;
+    expect(info.zone?.name).toBe(zoneOfCell(flipped, at.local, at.char));
   });
 
   it('drops a pick whose hatch moved or changed key', () => {

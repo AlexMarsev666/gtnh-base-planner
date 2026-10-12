@@ -6,7 +6,7 @@ import {
   transformerValid,
 } from '../data/single-machines';
 import { TIERS, type Tier, type Vec3 } from '../model/core/types';
-import { unitCells } from '../model/geometry';
+import { defOfUnit, unitCells } from '../model/geometry';
 import { withHatchZones, zoneOfCell } from '../model/hatches/zones';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
 import type { PlacedGroup, SiteWarning } from '../model/site/buildTypes';
@@ -224,7 +224,7 @@ export function groupHatchInfo(
   const unit = placed.units.find((u) => u.id === h.unitIds[0]);
   const def = placed.build?.def && withHatchZones(placed.build.def);
   const at = def && unit ? unitCells(def, unit).find((c) => sameCell(c.pos, h.cell)) : undefined;
-  const name = def && at ? zoneOfCell(def, at.local, at.char) : undefined;
+  const name = def && at ? zoneOfCell(defOfUnit(def, unit!), at.local, at.char) : undefined;
   return {
     key,
     kind: h.kind,

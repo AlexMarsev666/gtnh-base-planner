@@ -1,5 +1,5 @@
 import { isSingleBlock } from '../../data/generic';
-import { DefinitionError, rotateDir, rotatedSize, step, unitCells } from '../geometry';
+import { DefinitionError, defOfUnit, rotateDir, rotatedSize, step, unitCells } from '../geometry';
 import { layoutCandidates, packUnits } from '../layout/packer';
 import { resolveLayout } from '../plan';
 import { placeHatches } from '../hatches/placement';
@@ -169,7 +169,8 @@ function blockedFaces(def: MultiblockDef, units: Unit[], h: HatchPlacement): Dir
   const cell = unitCells(def, unit).find(
     (c) => c.pos[0] === h.cell[0] && c.pos[1] === h.cell[1] && c.pos[2] === h.cell[2],
   );
-  const dirs = cell?.role === 'casing' ? def.legend[cell.char]?.disallowFaces?.[h.kind] : undefined;
+  const dirs =
+    cell?.role === 'casing' ? defOfUnit(def, unit).legend[cell.char]?.disallowFaces?.[h.kind] : undefined;
   return dirs?.map((d) => rotateDir(d, unit.rotation));
 }
 
@@ -501,6 +502,7 @@ export function placeUnit(
     id: u.id,
     origin: [Math.min(a[0], b[0]), a[1], Math.min(a[2], b[2])],
     rotation: ((u.rotation + r) % 4) as Rotation,
+    ...(u.variant ? { variant: u.variant } : {}),
   };
 }
 

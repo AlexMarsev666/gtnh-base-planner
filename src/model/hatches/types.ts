@@ -158,6 +158,8 @@ export interface ZonedDef extends MultiblockDef {
    * mirroring and carried by `sizedDef`, so the order of the two does not matter.
    */
   zoneMirrored?: true;
+  /** The same for a structure flipped along Y (`orientedDef` variant 2 or 3). */
+  zoneFlipped?: true;
 }
 
 /** Cells (`x,y,z`) a hatch kind must not take, e.g. to try its hatches elsewhere (see `improveHatches`). */

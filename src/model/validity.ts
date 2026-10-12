@@ -1,5 +1,6 @@
 import { TIERS, type Dir, type Rotation, type Tier, type Vec3 } from './core/types';
-import { hintedAgainstFaces, localCells, rotateDir, rotateLocal } from './geometry';
+import { defOfUnit, hintedAgainstFaces, localCells, rotateDir, rotateLocal } from './geometry';
+import { composeVariants, variantOfDef } from './mirror';
 import { casingCells } from './hatches/floor';
 import { effectiveGlassTier } from './tiers';
 import type { HatchKind, MultiblockDef, Unit } from './multiblock/types';
@@ -31,6 +32,8 @@ export type ProblemKind =
   | { type: 'casings'; chars: string[]; have: number; min: number }
   /** A hatch faces a side its cell's legend entry hints against (`LegendEntry.disallowFaces`, or outside its `allowFaces`). */
   | { type: 'forbiddenFace'; kind: HatchKind; cell: Vec3; face: Dir }
+  /** The unit stands in an orientation GT does not allow (`MultiblockDef.variants`); `variant` is relative to the catalog entry. */
+  | { type: 'orientation'; variant: 1 | 2 | 3 }
   /** A hatch of a kind in `glassTierLimits.kinds` has a tier above the glass's: GT refuses to form. */
   | { type: 'glassTier'; kind: HatchKind; hatchTier: Tier; glassTier: Tier }
   /** A maintenance hatch serves several units: a manual repair fixes one machine at a time. */
@@ -61,7 +64,7 @@ export interface GlassCheck {
 /** The problems per unit id; units without any are absent. */
 export type UnitValidity = Record<number, ValidityProblem[]>;
 
-/** Per def and rotation: the legend char at each offset from a unit's origin (spaces and air included). */
+/** Per def (a unit's oriented def) and rotation: the legend char at each offset from a unit's origin (spaces and air included). */
 const offsetChars = new WeakMap<MultiblockDef, Map<string, string>[]>();
 
 function charsAt(def: MultiblockDef, rotation: Rotation): Map<string, string> {
@@ -96,6 +99,10 @@ export function checkValidity(
     for (const id of h.unitIds) (byUnit.get(id) ?? byUnit.set(id, []).get(id)!).push(h);
   for (const unit of units) {
     const problems: ValidityProblem[] = [];
+    const ud = defOfUnit(def, unit);
+    const variant = composeVariants(variantOfDef(def), unit.variant ?? 0);
+    if (def.variants && !def.variants.includes(variant))
+      problems.push(problem({ type: 'orientation', variant: variant as 1 | 2 | 3 }));
     const mine = byUnit.get(unit.id) ?? [];
     const have = (kind: HatchKind): number => mine.filter((h) => h.kind === kind).length;
     for (const kind of Object.keys(required) as HatchKind[]) {
@@ -115,7 +122,7 @@ export function checkValidity(
         problems.push(problem({ type: 'requiredAny', kinds: [...group.kinds], have: n, min: group.min }));
     }
     if (needCells) {
-      const at = charsAt(def, unit.rotation);
+      const at = charsAt(ud, unit.rotation);
       const taken = mins.map(() => 0);
       for (const h of mine) {
         const char = at.get(
@@ -123,7 +130,7 @@ export function checkValidity(
         );
         if (char === undefined) continue;
         mins.forEach((m, i) => m.chars.includes(char) && taken[i]++);
-        const dirs = hintedAgainstFaces(def.legend[char], h.kind);
+        const dirs = hintedAgainstFaces(ud.legend[char], h.kind);
         if (dirs?.some((d) => rotateDir(d, unit.rotation) === h.face))
           problems.push(problem({ type: 'forbiddenFace', kind: h.kind, cell: h.cell, face: h.face }));
       }

@@ -211,7 +211,8 @@ facing horizontally. A player sets them with the wrench (roll, horizontal flip; 
 allows no roll reaches only 0 and 1. An absent field allows all four (GT's default `!f.isVerticallyFliped()` reaches them through the roll). It
 is a list because GT has sets that are no product of two flags: the large turbines (`f.isNotFlipped()`, roll allowed) are `[0, 2]`.
 Upright-only machines (Coke Oven, drilling rigs, distillation towers, air filters, fishing port) are `[0, 1]`; machines that allow
-neither roll nor flip (Bricked Blast Furnace, Windmill, Extreme Industrial Greenhouse, the two reactors) are `[0]`. Nothing in the planner reads it yet.
+neither roll nor flip (Bricked Blast Furnace, Windmill, Extreme Industrial Greenhouse, the two reactors) are `[0]`.
+A unit carries its own variant (`Unit.variant`, 1 to 3, absent = 0; in the plan JSON `manualUnits[i].variant`, in a `#p=` link the unit's rotation slot holds `rotation + 4 * variant`), relative to the def the model is given: a mirrored plan hands it the mirrored def, so the variant composes on top of the mirror. A unit in a variant `variants` does not list (counting the plan mirror) gets an `orientation` error in the buildability check. The packer does not choose variants yet; manual units can have any.
 `glassTierLimits` is a multiblock's `chainAllGlasses` check, `glassTier < hatch.getTierForStructure()`: the `kinds`
 (`energy`) may not be of a higher voltage tier than the glass in `chars`. The planner compares the hatch's tier (the
 machine tier, or the hatch's own entry in Hatch tiers) with the glass tier: the `glassTier` of the plan or template group

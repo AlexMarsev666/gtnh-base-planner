@@ -1,6 +1,6 @@
 import zonesFile from '../../data/hatch-zones.generated.json';
 import { key } from '../geometry';
-import { mirrorCells, mirrorRule } from '../mirror';
+import { flipCells, flipRule } from '../mirror';
 import type { Vec3 } from '../core/types';
 import type { MultiblockDef, ResizeRule } from '../multiblock/types';
 import type { Site, ZonedDef } from './types';
@@ -45,8 +45,8 @@ export function resizeZoneCells(
  * The def with the hatch zones of its entry in `hatch-zones.generated.json` (`zones`, and `zoneCells` for
  * the cell of each; mapped through `resizeZoneCells` when the def is a resized form, also when it is a
  * resized copy of a def that already had them; for a mirror image (`ZonedDef.zoneMirrored`) the cells are
- * resized in the unmirrored frame, then mirrored at the sized width, so it does not matter whether
- * `sizedDef` or `mirroredDef` came first). A def with `zones` and no `zoneCells` (generated entries,
+ * resized in the unflipped frame, then flipped at the sized size (`zoneFlipped` likewise for Y), so it does
+ * not matter whether `sizedDef` or `orientedDef` came first). A def with `zones` and no `zoneCells` (generated entries,
  * whose cells carry `region: "dot<N>"`), one whose `zoneCells` fit its size, and one the file does not list
  * come back unchanged, so applying it twice is harmless. Legend chars and `region`s are left alone: one
  * char holds cells of several zones, and a region may already be in use (`requiredHatches.regions`).
@@ -59,11 +59,13 @@ export function withHatchZones<T extends MultiblockDef>(def: T): T | ZonedDef {
   if (!entry) return def;
   let out = cache.get(def);
   if (!out) {
-    // A mirrored def's resize rule is seen from the other end; mirroring the rule again gives the file's.
-    const rule = def.resize && zoned.zoneMirrored ? mirrorRule(def.resize) : def.resize;
+    // A flipped def's resize rule is seen from the other end; flipping the rule again gives the file's.
+    const fx = !!zoned.zoneMirrored;
+    const fy = !!zoned.zoneFlipped;
+    const rule = def.resize ? flipRule(def.resize, fx, fy) : undefined;
     const n = rule ? def.size[['x', 'y', 'z'].indexOf(rule.axis)] : 0;
     let zoneCells = rule && n !== rule.min ? resizeZoneCells(entry.cells, rule, n) : entry.cells;
-    if (zoned.zoneMirrored) zoneCells = mirrorCells(zoneCells, def.size[0]);
+    if (fx || fy) zoneCells = flipCells(zoneCells, def.size, fx, fy);
     cache.set(def, (out = { ...def, zones: entry.zones, zoneCells, zoneSize: def.size }));
   }
   return out;

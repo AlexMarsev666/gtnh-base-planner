@@ -190,17 +190,20 @@ function validateUnit(value: unknown, index: number): Unit {
   const pos = origin.map((c, i) =>
     expectInt(c, `${what} ${'xyz'[i]}`, -MAX_COORD, MAX_COORD),
   ) as unknown as Vec3;
+  const variant = field(obj, 'variant');
+  const v = variant === undefined ? 0 : expectInt(variant, `${what} variant`, 0, 3);
   return {
     id: expectInt(field(obj, 'id'), `${what} id`, 0, MAX_UNIT_ID),
     origin: [pos[0], pos[1], pos[2]],
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
+    ...(v ? { variant: v as Unit['variant'] } : {}),
   };
 }
 
 /**
  * Strict validation of untrusted input (JSON files, links, localStorage):
  * known multiblock id, count 1..MAX_COUNT, integer limits (units per axis) 1..MAX_LIMIT or null, known hatch kinds, `#rrggbb` colours,
- * manual units with integer coordinates within ±512 and rotation 0..3, an integer size 1..64. Throws with a
+ * manual units with integer coordinates within ±512 and rotation 0..3, variant 0..3, an integer size 1..64. Throws with a
  * readable message.
  *
  * Returns a fresh, normalised copy: hatch kinds in `HATCH_KINDS` order, lower-case colours,
@@ -357,7 +360,13 @@ function toCompact(plan: PlanState): CompactPlan {
   });
   if (hasColors) out.c = colors;
   if (plan.manualUnits && plan.manualUnits.length > 0) {
-    out.u = plan.manualUnits.flatMap((u) => [u.origin[0], u.origin[1], u.origin[2], u.rotation]);
+    // The orientation variant rides in the rotation slot: rotation + 4 * variant (0..15).
+    out.u = plan.manualUnits.flatMap((u) => [
+      u.origin[0],
+      u.origin[1],
+      u.origin[2],
+      u.rotation + 4 * (u.variant ?? 0),
+    ]);
     if (plan.manualUnits.some((u, i) => u.id !== i)) out.i = plan.manualUnits.map((u) => u.id);
   }
   if (plan.size !== undefined) out.s = plan.size;
@@ -433,11 +442,15 @@ function fromCompact(input: unknown): PlanState {
     const unitCount = flat.length / 4;
     const idList = ids === undefined ? null : expectArray(ids, 'Unit ids', MAX_COUNT);
     if (idList && idList.length !== unitCount) throw new PlanFormatError('Unit ids are damaged.');
-    plan.manualUnits = Array.from({ length: unitCount }, (_, k) => ({
-      id: idList ? idList[k] : k,
-      origin: [flat[4 * k], flat[4 * k + 1], flat[4 * k + 2]],
-      rotation: flat[4 * k + 3],
-    }));
+    plan.manualUnits = Array.from({ length: unitCount }, (_, k) => {
+      const r = expectInt(flat[4 * k + 3], 'Unit rotation', 0, 15);
+      return {
+        id: idList ? idList[k] : k,
+        origin: [flat[4 * k], flat[4 * k + 1], flat[4 * k + 2]],
+        rotation: r % 4,
+        ...(r >= 4 ? { variant: Math.floor(r / 4) } : {}),
+      };
+    });
   } else if (ids !== undefined) {
     throw new PlanFormatError('Unit ids without units.');
   }

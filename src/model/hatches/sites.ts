@@ -1,6 +1,7 @@
 import {
   type CellKey,
   controllerFacing,
+  defOfUnit,
   localCells,
   outsideAllowedFaces,
   packCell,
@@ -150,8 +151,6 @@ export function findSites(
     disfavored: ReadonlyMap<HatchKind, Set<Dir>>;
     chars: ReadonlyMap<number, string>;
   }
-  const cells = localCells(def);
-  const offsets = rotatedOffsets(def);
   let lo: [number, number, number] = [Infinity, Infinity, Infinity];
   let hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   for (const u of units) {
@@ -186,7 +185,9 @@ export function findSites(
   const controllerFronts = new Set<CellKey>();
   let ground = Infinity;
   for (const unit of units) {
-    const rotated = offsets[unit.rotation];
+    const ud = defOfUnit(def, unit);
+    const cells = localCells(ud);
+    const rotated = rotatedOffsets(ud)[unit.rotation];
     const [ux, uy, uz] = unit.origin;
     for (let ci = 0; ci < cells.length; ci++) {
       const cell = cells[ci];
@@ -212,7 +213,7 @@ export function findSites(
           ids: [unit.id],
           ok: true,
           blockId: cell.blockId,
-          kinds: legendKinds(def, cell.char, allowed),
+          kinds: legendKinds(ud, cell.char, allowed),
           regions: NO_REGIONS,
           zones: NO_ZONES,
           blocked: NO_BLOCKED,
@@ -230,12 +231,12 @@ export function findSites(
         if (entry.chars === NO_CHARS) entry.chars = new Map();
         (entry.chars as Map<number, string>).set(unit.id, cell.char);
       }
-      const legend = def.legend[cell.char];
+      const legend = ud.legend[cell.char];
       if (legend?.region !== undefined) {
         if (entry.regions === NO_REGIONS) entry.regions = new Map();
         (entry.regions as Map<number, string>).set(unit.id, legend.region);
       }
-      const zone = zoneOfCell(def, cell.local, cell.char);
+      const zone = zoneOfCell(ud, cell.local, cell.char);
       if (zone !== undefined) {
         if (entry.zones === NO_ZONES) entry.zones = new Map();
         (entry.zones as Map<number, string>).set(unit.id, zone);

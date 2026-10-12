@@ -1,4 +1,5 @@
 import {
+  defOfUnit,
   localCells,
   packCell,
   rotateLocal,
@@ -71,7 +72,6 @@ function isFaceContact(def: MultiblockDef, pair: PairInfo, units: Map<number, Un
   if (!ua || !ub) return false;
   const ba = unitBounds(def, ua);
   const bb = unitBounds(def, ub);
-  const sides = sideCounts(def);
   for (let axis = 0; axis < 3; axis++) {
     if (pair.min[axis] !== pair.max[axis]) continue;
     const v = pair.min[axis];
@@ -82,8 +82,8 @@ function isFaceContact(def: MultiblockDef, pair: PairInfo, units: Map<number, Un
     ];
     for (const [low, lowB, high, highB] of orders) {
       if (lowB.max[axis] - 1 !== v || highB.min[axis] !== v) continue;
-      const lowSide = sides[low.rotation][axis * 2 + 1];
-      const highSide = sides[high.rotation][axis * 2];
+      const lowSide = sideCounts(defOfUnit(def, low))[low.rotation][axis * 2 + 1];
+      const highSide = sideCounts(defOfUnit(def, high))[high.rotation][axis * 2];
       if (pair.count === lowSide || pair.count === highSide) return true;
     }
   }

@@ -191,6 +191,12 @@ export interface Unit {
   id: number;
   origin: Vec3;
   rotation: Rotation;
+  /**
+   * Orientation of the unit relative to the def it is given (`orientedDef`): 0 as is, 1 mirrored along X, 2
+   * upside down, 3 mirrored along Y. Absent = 0. A plan or group that is mirrored hands the model the mirrored
+   * def, so `variant` composes on top of the mirror; `variantOfDef` gives the variant of that def.
+   */
+  variant?: 0 | 1 | 2 | 3;
 }
 
 /** A structure cell of a unit in world space. */

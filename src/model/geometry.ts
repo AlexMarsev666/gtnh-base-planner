@@ -1,5 +1,6 @@
 import type { Dir, HorizontalDir, Rotation, Vec3 } from './core/types';
 import type { HatchKind, LegendEntry, MultiblockDef, Unit, UnitCell } from './multiblock/types';
+import { orientedDef } from './mirror';
 
 /**
  * Shared geometry helpers. Implemented in the foundation; all model units must use these.
@@ -177,14 +178,24 @@ export function localCells(def: MultiblockDef): LocalCell[] {
   return out;
 }
 
+/**
+ * The def a unit is built from: `def` in the unit's `variant` (see `orientedDef`). Flips keep the size, so
+ * `rotatedSize`, `unitBounds` and `rotateLocal` take any of the variants; the cells, legend entries and
+ * controller of a unit come from here.
+ */
+export function defOfUnit(def: MultiblockDef, unit: Pick<Unit, 'variant'>): MultiblockDef {
+  return unit.variant ? orientedDef(def, unit.variant) : def;
+}
+
 /** Structure cells of a placed unit in world coords. */
 export function unitCells(def: MultiblockDef, unit: Unit): UnitCell[] {
-  return localCells(def).map((c) => ({ ...c, pos: toWorld(def, unit, c.local) }));
+  const d = defOfUnit(def, unit);
+  return localCells(d).map((c) => ({ ...c, pos: toWorld(d, unit, c.local) }));
 }
 
 /** World direction the unit's controller faces. */
 export function controllerFacing(def: MultiblockDef, unit: Unit): Dir {
-  return rotateDir(def.controller.facing, unit.rotation);
+  return rotateDir(defOfUnit(def, unit).controller.facing, unit.rotation);
 }
 
 /** World bounding box (inclusive min, exclusive max) of a unit. */

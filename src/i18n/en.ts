@@ -565,6 +565,12 @@ export const t = {
           return `${HATCH_KIND_NAMES[p.kind]} hatch faces ${FACE_NAMES[p.face]}, a side GT's auto-placement doesn't use (hint only; the machine still forms)`;
         case 'glassTier':
           return `${kind(p.kind)} hatch ${p.hatchTier} is above the glass (${p.glassTier})`;
+        case 'orientation':
+          return p.variant === 1
+            ? "GT doesn't allow this machine mirrored"
+            : p.variant === 2
+              ? "GT doesn't allow this machine upside down"
+              : "GT doesn't allow this machine flipped vertically";
         case 'sharedMaintenance':
           return 'shared maintenance hatch: a manual repair fixes one machine at a time; use an auto-maintenance hatch (hint only; the machine still forms)';
         case 'sharedEnergy':

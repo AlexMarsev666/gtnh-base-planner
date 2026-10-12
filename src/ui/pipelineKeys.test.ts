@@ -30,6 +30,7 @@ describe('pipeline keys', () => {
       { ...layoutInput, mirror: true },
       { ...layoutInput, wallshare: 'stack' },
       { ...layoutInput, manualUnits: oneUnit },
+      { ...layoutInput, manualUnits: [{ ...oneUnit[0], variant: 3 }] },
     ]).map((i) => layoutKey(i));
     expect(new Set([base, ...changed]).size).toBe(changed.length + 1);
     // Limits compare by value, whatever their key order.

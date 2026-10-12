@@ -1,4 +1,4 @@
-import { controllerFacing, rotateDir, step } from '../geometry';
+import { controllerFacing, defOfUnit, rotateDir, step } from '../geometry';
 import type { Dir } from '../core/types';
 import type { HatchKind, MultiblockDef, Unit, UnitCell } from '../multiblock/types';
 import type { HatchPlacement } from '../plan/types';
@@ -68,7 +68,8 @@ export function blockedSides(
   units.forEach((u, ui) => {
     for (const c of cellsOf[ui]) {
       const kind = hatchAt.get(c.pos.join());
-      const dirs = kind && c.role === 'casing' ? def.legend[c.char]?.disallowFaces?.[kind] : undefined;
+      const dirs =
+        kind && c.role === 'casing' ? defOfUnit(def, u).legend[c.char]?.disallowFaces?.[kind] : undefined;
       if (!kind || !dirs) continue;
       const id = `${kind}|${c.pos.join()}`;
       let set = blocked.get(id);

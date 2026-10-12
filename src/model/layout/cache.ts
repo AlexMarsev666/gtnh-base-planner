@@ -18,7 +18,15 @@ const caches = new WeakMap<MultiblockDef, DefCache>();
 export function defCache(def: MultiblockDef): DefCache {
   let c = caches.get(def);
   if (!c) {
-    c = { shapes: buildShapes(def), pairs: new Map(), modes: null, results: new Map() };
+    const blocks = new Map<string, number>();
+    c = {
+      shapes: buildShapes(def, blocks),
+      blocks,
+      variantShapes: [],
+      pairs: new Map(),
+      modes: null,
+      results: new Map(),
+    };
     caches.set(def, c);
   }
   return c;
@@ -29,6 +37,7 @@ export function cloneResult(r: LayoutResult): LayoutResult {
     id: u.id,
     origin: [u.origin[0], u.origin[1], u.origin[2]] as Vec3,
     rotation: u.rotation,
+    ...(u.variant ? { variant: u.variant } : {}),
   }));
   const source = sourceOf.get(r.units);
   if (source) sourceOf.set(units, source);
