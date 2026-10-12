@@ -123,7 +123,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    blocks per underground level and, on the ground, trunk lines against stubs at hatches. X-ray sees through the
    ground. A template saved before the Routing block existed keeps its old routing (classic, following the machine
    view's Connect from below) and offers Use neat routing; old files and links load unchanged. The selected group also
-   has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, Share maintenance and Share energy, a Resources list
+   has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, Share maintenance and Share energy, Quadruple input hatches (on by default; off gives every fluid its own regular input hatch, shown only for machines with fluid inputs; stored in the template only when off), a Resources list
    (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them)
    and the tier of each of its hatches. A bus holds several items and an input hatch from EV several fluids, so a unit gets
    as few of them as fit its resources: an item bus has (tier + 1)² slots (LV 4, MV 9, HV 16, ... UHV 100), and the

@@ -105,6 +105,8 @@ export const t = {
   shareEnergy: 'Share energy hatches',
   shareEnergyHint:
     'One energy hatch in a shared wall serves two machines (2 A, 1 A each), so their recipes must stay within 1 A.',
+  quadFluid: 'Quadruple input hatches',
+  quadFluidHint: 'Off: one regular input hatch per fluid.',
   wallshare: 'Shared walls',
   wallshareHint: 'How machines may touch. A preference: if it cannot be met, another layout is used.',
   wallshareModes: WALLSHARE_NAMES,

@@ -101,6 +101,8 @@ export interface SiteGroup {
   shareMaintenance?: boolean;
   /** One energy hatch in a shared wall may serve two units (see `PlanState.shareEnergy`). */
   shareEnergy?: boolean;
+  /** Fluid inputs may merge into Quadruple Input Hatches (EV and up). Stored only as `false` (one regular hatch per fluid); absent = on. */
+  quadFluid?: false;
   /**
    * Where each resource's hatch goes, by resource key: onto one unit (its index in the group, or `all`) and/or
    * into a hatch zone of the multiblock (a region name such as `dot2`). Absent = automatic.

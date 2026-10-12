@@ -122,6 +122,8 @@ export interface GroupOptions {
   /** The group's tier and `SiteGroup.hatchTiers`: they set how many resources a bus or input hatch holds. */
   tier?: Tier;
   hatchTiers?: Readonly<Record<string, Tier>>;
+  /** Fluid inputs may share Quadruple Input Hatches (`SiteGroup.quadFluid`); false = one regular hatch per fluid. */
+  quadFluid?: boolean;
 }
 
 /**
@@ -135,6 +137,7 @@ function capacityFor(opts: GroupOptions): (kind: HatchKind, resource: string, un
   return (kind, resource, unitIndex) => {
     const own = groupHatchKey(kind, resource, unitIndex);
     const key = has(own) ? own : groupHatchKey(kind, resource, 'shared');
+    if (kind === 'fluidIn' && opts.quadFluid === false) return 1;
     return hatchCapacity(kind, hatchTier(kind, key, tier, opts.hatchTiers, followsGroupTier) ?? tier);
   };
 }

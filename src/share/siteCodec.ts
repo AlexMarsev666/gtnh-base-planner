@@ -259,6 +259,10 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
   }
   if (expectFlag(field(obj, 'shareMaintenance'), `${what} share maintenance`)) group.shareMaintenance = true;
   if (expectFlag(field(obj, 'shareEnergy'), `${what} share energy`)) group.shareEnergy = true;
+  // Stored only when off (true is the default); anything but a boolean is refused.
+  const quad = field(obj, 'quadFluid');
+  if (quad === false) group.quadFluid = false;
+  else expectFlag(quad, `${what} quadruple input hatches`);
   const assign = validateAssign(field(obj, 'assign'), what);
   if (assign) group.assign = assign;
   // Transformer settings only mean something on a single-block machine; elsewhere the build ignores them.

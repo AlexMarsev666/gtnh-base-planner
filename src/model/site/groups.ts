@@ -108,6 +108,7 @@ export function placeGroups(
       assign,
       tier,
       busTiers,
+      g.quadFluid ?? true,
     ]);
     used.add(ck);
     let built = cache.get(ck);
@@ -118,6 +119,7 @@ export function placeGroups(
           wallshare: g.wallshare,
           tier,
           hatchTiers: busTiers,
+          quadFluid: g.quadFluid,
         });
       } catch (err) {
         // Shown on the group; a malformed definition must not stop the rest of the site.

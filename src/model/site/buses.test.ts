@@ -81,6 +81,13 @@ describe('fluid input hatches', () => {
     expect(served(five, 'fluidIn').map((l) => l.length)).toEqual([4, 1]);
   });
 
+  it('are one regular hatch per fluid when the group turns quadruple hatches off', () => {
+    const three = { fluidIn: names('fluid', 3) };
+    const b = build(oil, 1, three, { tier: 'EV', quadFluid: false }, base);
+    expect(served(b, 'fluidIn')).toEqual(three.fluidIn.map((f) => [f]));
+    expect(b.hatches.filter((h) => h.kind === 'fluidIn').every((h) => h.block === undefined)).toBe(true);
+  });
+
   it('keep a regular hatch for a lone fluid and one hatch per output fluid', () => {
     const one = build(oil, 1, { fluidIn: ['fluid:a'] }, { tier: 'EV' }, base);
     expect(one.hatches.find((h) => h.kind === 'fluidIn')!.block).toBeUndefined();

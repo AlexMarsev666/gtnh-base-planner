@@ -475,4 +475,15 @@ describe('shared maintenance and energy hatches', () => {
     expect('shareEnergy' in plain).toBe(false);
     expect(() => validateSiteState(siteWith({ shareEnergy: 'true' }))).toThrow(PlanFormatError);
   });
+
+  it('site group: quadFluid is stored only when off and round-trips', async () => {
+    const off = validateSiteState(siteWith({ quadFluid: false }));
+    expect(off.groups[0].quadFluid).toBe(false);
+    expect(siteFromJson(siteToJson(off))).toEqual(off);
+    expect(await decodeSite(await encodeSite(off))).toEqual(off);
+    const on = validateSiteState(siteWith({ quadFluid: true }));
+    expect('quadFluid' in on.groups[0]).toBe(false);
+    expect(await encodeSite(on)).toBe(await encodeSite(validateSiteState(siteWith({}))));
+    expect(() => validateSiteState(siteWith({ quadFluid: 'no' }))).toThrow(PlanFormatError);
+  });
 });

@@ -213,6 +213,15 @@
           onchange={(v) => patch({ coil: v || null })}
         />
       {/if}
+      {#if def && hatchKindsOf(def).includes('fluidIn')}
+        <ToggleRow
+          on={group.quadFluid !== false}
+          label={t.quadFluid}
+          title={t.quadFluidHint}
+          testid="site-group-quad-fluid"
+          ontoggle={() => patch({ quadFluid: group.quadFluid === false })}
+        />
+      {/if}
       {#if hasStructure(def)}
         <ToggleRow
           on={!!group.mirror}

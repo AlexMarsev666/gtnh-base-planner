@@ -1,6 +1,7 @@
 import { coilById } from '../data/coils';
 import { getSiteDef, isSingleBlock } from '../data/generic';
 import { getSingleMachine } from '../data/single-machines';
+import { hatchKindsOf } from './catalogView';
 import { fallbackColor } from '../import/gtnhplanner';
 import { IO_KINDS } from '../model/site/group';
 import type {
@@ -137,6 +138,8 @@ export interface GroupPatch {
   /** Share maintenance / energy hatches between units (see `SiteGroup.shareMaintenance`); false clears it. */
   shareMaintenance?: boolean;
   shareEnergy?: boolean;
+  /** Merge fluid inputs into Quadruple Input Hatches (see `SiteGroup.quadFluid`); true clears it. */
+  quadFluid?: boolean;
   /** Where each resource's hatch goes; null or an empty map clears every choice. */
   assign?: Record<string, HatchAssign> | null;
   /** Transformers: direction and low-side amperage (4 clears it). */
@@ -171,6 +174,8 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
           delete next.shareMaintenance;
           delete next.shareEnergy;
         }
+        // Likewise the quadruple-hatch option on a machine without fluid inputs.
+        if (!hatchKindsOf(def).includes('fluidIn')) delete next.quadFluid;
         // Tier, hatch tiers and assignments stay, whether or not the new machine takes them: the panel shows
         // what no longer fits. Only a transformer's settings go with the transformer.
         dropTransformerSettings(next);
@@ -213,7 +218,7 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
       if (patch.hatchTiers && Object.keys(patch.hatchTiers).length) next.hatchTiers = { ...patch.hatchTiers };
       else delete next.hatchTiers;
     }
-    // Mirror, wall sharing and shared hatches reshape the build, which moves the hatch tier keys (as in the
+    // Mirror, wall sharing, shared hatches and quadruple input hatches reshape the build, which moves the hatch tier keys (as in the
     // machine view): they drop the tiers unless the patch sets new ones.
     let reshaped = false;
     if (patch.mirror !== undefined && !!patch.mirror !== !!g.mirror) reshaped = true;
@@ -229,6 +234,9 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
     if (patch.shareEnergy !== undefined && !!patch.shareEnergy !== !!g.shareEnergy) reshaped = true;
     if (patch.shareEnergy === false) delete next.shareEnergy;
     else if (patch.shareEnergy) next.shareEnergy = true;
+    if (patch.quadFluid !== undefined && patch.quadFluid !== (g.quadFluid ?? true)) reshaped = true;
+    if (patch.quadFluid === false) next.quadFluid = false;
+    else if (patch.quadFluid) delete next.quadFluid;
     if (reshaped && patch.hatchTiers === undefined) delete next.hatchTiers;
     if (patch.assign !== undefined) {
       const kept = Object.entries(patch.assign ?? {}).filter(

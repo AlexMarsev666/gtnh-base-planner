@@ -33,9 +33,15 @@ describe('group tiers, mirror, wall sharing, assignments and routing', () => {
       { wallshare: 'stack' },
       { shareEnergy: true },
       { shareMaintenance: true },
+      { quadFluid: false },
     ] as const)
       expect(withGroupPatched(tiered, id, patch).groups[0].hatchTiers, JSON.stringify(patch)).toBeUndefined();
-    for (const patch of [{ mirror: false }, { wallshare: 'auto' }, { shareEnergy: false }] as const)
+    for (const patch of [
+      { mirror: false },
+      { wallshare: 'auto' },
+      { shareEnergy: false },
+      { quadFluid: true },
+    ] as const)
       expect(withGroupPatched(tiered, id, patch).groups[0].hatchTiers, JSON.stringify(patch)).toBeDefined();
     // A patch that sets tiers keeps its own.
     const both = withGroupPatched(tiered, id, { mirror: true, hatchTiers: { 'energy:1': 'IV' } });
@@ -50,6 +56,16 @@ describe('group tiers, mirror, wall sharing, assignments and routing', () => {
     expect('shareEnergy' in solo.groups[0] || 'shareMaintenance' in solo.groups[0]).toBe(false);
     const other = withGroupPatched(a, id, { multiblockId: 'vacuum-freezer' });
     expect(other.groups[0]).toMatchObject({ shareEnergy: true, shareMaintenance: true });
+  });
+
+  it('clears the quadruple-hatch option when the machine takes no fluid inputs', () => {
+    const { s, id } = ebf();
+    const off = withGroupPatched(s, id, { quadFluid: false });
+    expect(off.groups[0].quadFluid).toBe(false);
+    expect(withGroupPatched(off, id, { multiblockId: 'vacuum-freezer' }).groups[0].quadFluid).toBe(false);
+    expect('quadFluid' in withGroupPatched(off, id, { multiblockId: 'implosion-compressor' }).groups[0]).toBe(
+      false,
+    );
   });
 
   it('stores hatch tiers and clears the map when it is empty', () => {
