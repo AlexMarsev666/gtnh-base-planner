@@ -1,4 +1,5 @@
 import { getMultiblock } from '../data/catalog';
+import { COILS, coilById } from '../data/coils';
 import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { effectiveSize } from '../model/resize';
 import { TIERS, type Rotation, type Tier, type Vec3 } from '../model/core/types';
@@ -41,6 +42,7 @@ export { LinkTooLargeError, MAX_PAYLOAD_BYTES, PlanFormatError } from './binary'
  *   t  tier index               index into `TIERS` (append only); omitted = default
  *   k  { "<key>": tier index }  hatch tier overrides, keys as in `HatchTiers`; omitted when empty
  *   g  glass tier index         index into `TIERS`; omitted = the multiblock's own glass
+ *   o  coil index               index into `COILS` (append only); omitted = the multiblock's own coil
  *   f  1                        mirrored; omitted = not mirrored
  *   w  wallshare index          index into `WALLSHARE_MODES`; omitted = auto
  *   a  1                        one maintenance hatch may serve several units; omitted = not shared
@@ -128,6 +130,13 @@ export function expectTier(value: unknown, what: string): Tier {
     throw new PlanFormatError(`${what} is not a known tier.`);
   }
   return value as Tier;
+}
+
+export function expectCoil(value: unknown, what: string): string {
+  if (typeof value !== 'string' || !coilById(value)) {
+    throw new PlanFormatError(`${what} is not a known heating coil.`);
+  }
+  return value;
 }
 
 export function expectWallshare(value: unknown, what: string): WallshareMode {
@@ -281,6 +290,8 @@ export function validatePlanState(input: unknown): PlanState {
   if (hatchTiers) plan.hatchTiers = hatchTiers;
   const glassTier = field(obj, 'glassTier');
   if (glassTier !== undefined && glassTier !== null) plan.glassTier = expectTier(glassTier, 'Glass tier');
+  const coil = field(obj, 'coil');
+  if (coil !== undefined && coil !== null) plan.coil = expectCoil(coil, 'Coil');
   if (expectFlag(field(obj, 'mirror'), 'Mirror')) plan.mirror = true;
   const wallshareRaw = field(obj, 'wallshare');
   if (wallshareRaw !== undefined && wallshareRaw !== null) {
@@ -309,6 +320,7 @@ interface CompactPlan {
   t?: number;
   k?: Record<string, number>;
   g?: number;
+  o?: number;
   f?: 1;
   w?: number;
   a?: 1;
@@ -328,6 +340,7 @@ const COMPACT_KEYS = new Set([
   't',
   'k',
   'g',
+  'o',
   'f',
   'w',
   'a',
@@ -376,6 +389,7 @@ function toCompact(plan: PlanState): CompactPlan {
     for (const key of Object.keys(plan.hatchTiers).sort()) out.k[key] = TIERS.indexOf(plan.hatchTiers[key]);
   }
   if (plan.glassTier !== undefined) out.g = TIERS.indexOf(plan.glassTier);
+  if (plan.coil !== undefined) out.o = COILS.findIndex((c) => c.id === plan.coil);
   if (plan.mirror) out.f = 1;
   if (plan.wallshare !== undefined && plan.wallshare !== 'auto')
     out.w = WALLSHARE_MODES.indexOf(plan.wallshare);
@@ -475,6 +489,8 @@ function fromCompact(input: unknown): PlanState {
   }
   const g = field(obj, 'g');
   if (g !== undefined) plan.glassTier = TIERS[expectInt(g, 'Glass tier', 0, TIERS.length - 1)];
+  const o = field(obj, 'o');
+  if (o !== undefined) plan.coil = COILS[expectInt(o, 'Coil', 0, COILS.length - 1)].id;
   const f = field(obj, 'f');
   if (f !== undefined) {
     if (f !== 1) throw new PlanFormatError('Mirror flag is damaged.');

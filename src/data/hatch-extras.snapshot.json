@@ -70,5 +70,28 @@
     "mega-oil-cracker",
     "miniature-wormhole-generator"
   ],
-  "dataAccess": ["advanced-assembly-line", "assembly-line"]
+  "dataAccess": ["advanced-assembly-line", "assembly-line"],
+  "coils": [
+    "digester",
+    "dimensionally-transcendent-plasma-forge",
+    "electric-blast-furnace",
+    "exothermic-hearth",
+    "exxonmobil-chemical-plant",
+    "hot-isostatic-pressurization-unit",
+    "industrial-arc-furnace",
+    "industrial-autoclave",
+    "industrial-coke-oven",
+    "large-chemical-reactor",
+    "large-fluid-extractor",
+    "large-thermal-refinery",
+    "mega-alloy-blast-smelter",
+    "mega-oil-cracker",
+    "multi-smelter",
+    "oil-cracking-unit",
+    "planetary-gas-siphon",
+    "pyrolyse-oven",
+    "utupu-tanuri",
+    "volcanus",
+    "zyngen"
+  ]
 }

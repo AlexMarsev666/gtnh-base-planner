@@ -10,6 +10,7 @@ const layoutInput: LayoutInput = {
   count: 4,
   limits: { x: null, y: 1, z: null } as PlanLimits,
   mirror: false,
+  coil: undefined,
   wallshare: undefined,
   manualUnits: undefined,
 };
@@ -28,6 +29,8 @@ describe('pipeline keys', () => {
       { ...layoutInput, limits: { x: null, y: 2, z: null } },
       { ...layoutInput, limits: { x: null, y: 1, z: 2 } },
       { ...layoutInput, mirror: true },
+      { ...layoutInput, coil: 'kanthal' },
+      { ...layoutInput, coil: 'eternal' },
       { ...layoutInput, wallshare: 'stack' },
       { ...layoutInput, manualUnits: oneUnit },
       { ...layoutInput, manualUnits: [{ ...oneUnit[0], variant: 3 }] },

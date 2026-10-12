@@ -93,6 +93,12 @@ node tools/gt-source/hatch-extras.mjs ../gt5u --write   # patch the files and sr
   `GlassTier.RegisterGlassTiers` (`addCustomGlass`) or the planner's `gt.glass.reinforced` stand-in; another element placing
   such a block makes the keys ambiguous and fails the run. Other comparisons with the glass tier (a fixed minimum, a
   recipe's voltage, the laser source) are listed as "not modelled".
+- `coils.mjs`: `MultiblockDef.coils` and the table of heating coils. The table is every block class that `implements IHeatingCoil`
+  (`BlockCasings5`): its `register(N, ...)` metas, the `HeatingCoilLevel` each meta gives (`getCoilHeatFromDamage`), the heat
+  (`getHeat`) and the level's lang name; `node tools/gt-source/coils.mjs <checkout> --write` writes `src/data/coils.generated.json`.
+  A class has coils when its chain calls `ofCoil(` (or tests `instanceof IHeatingCoil`); the cells are the legend keys with a
+  block of the table (or the `gt.coil.cupronickel` stand-in), and another element placing such a block fails the run.
+  `hatch-extras.mjs` writes the `coils` field and `src/data/hatch-extras.snapshot.json` lists the ids that carry it.
 - `data-access.mjs`: the `dataAccess` hatch kind (`hatch-elements.mjs` knows `DataAccess` / `MTEHatchDataAccess`). The cells
   are the legend keys that already take it, else those of the element's zone, else the key of the casing block the element
   places when that is one key; an entry that cannot be told apart (a hand-made one with a plain grate beside the data one)

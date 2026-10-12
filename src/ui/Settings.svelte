@@ -5,7 +5,7 @@
   import { TIERS, type Tier } from '../model/core/types';
   import { allowedTiers } from '../model/tiers';
   import Buildability from './Buildability.svelte';
-  import { glassChoices, validityLines, type ValidityLine } from './validityText';
+  import { coilChoices, glassChoices, validityLines, type ValidityLine } from './validityText';
   import { tick } from 'svelte';
   import {
     connectBelow,
@@ -20,6 +20,7 @@
     resetColors,
     resetHatchTiers,
     resetPlan,
+    setCoil,
     setHatchColor,
     setHatchTier,
     setLimit,
@@ -170,6 +171,16 @@
           options={glassChoices(def, $plan.glassTier)}
           testid="machine-glass"
           onchange={(v) => setGlassTier(asTier(v))}
+        />
+      {/if}
+      {#if def?.coils}
+        <SelectRow
+          label={t.coil}
+          title={t.coilHint}
+          value={$plan.coil ?? ''}
+          options={coilChoices(def)}
+          testid="machine-coil"
+          onchange={(v) => setCoil(v || undefined)}
         />
       {/if}
       <ToggleRow

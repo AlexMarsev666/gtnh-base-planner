@@ -38,6 +38,7 @@
     { "kinds": ["itemIn", "fluidIn"], "min": 1 },
     { "kinds": ["itemOut", "fluidOut"], "min": 1 }
   ],
+  "coils": { "chars": ["K"] },
   "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
   "wallshare": true,
   "notes": "3x4x3. Bottom layer: Heat Proof Machine Casings that take input/output buses and hatches, energy and maintenance. Two coil layers (any heating coil tier; Cupronickel shown, the tier sets the furnace heat). Top layer: Heat Proof casings that only take output hatches (gas outputs such as CO2), with a mandatory muffler hatch in the top centre. GT also requires at least one input (bus or hatch) and one output of any kind. Sharing: GT5u adds every hatch it finds during the structure check to that controller's lists with no ownership check, so a bus or hatch in a shared wall serves every controller whose structure contains it. Item and fluid IO are marked shareable. Energy and maintenance hatches are not shared unless the Share options ask for it (a shared energy hatch gives each of two machines 1 A, and a shared maintenance hatch is repaired one machine at a time). Side walls are bottom casing, coils and top casing, the same on every side, so units can share any side wall."

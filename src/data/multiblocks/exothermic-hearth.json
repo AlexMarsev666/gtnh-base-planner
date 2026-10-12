@@ -1120,6 +1120,7 @@
   ],
   "minCasings": [{ "chars": ["A"], "min": 1800 }],
   "glassTierLimits": { "chars": ["C"], "kinds": ["energy"] },
+  "coils": { "chars": ["H"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
   "zones": {
     "dot1": {

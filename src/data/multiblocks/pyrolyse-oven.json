@@ -37,6 +37,7 @@
     { "kinds": ["itemOut", "fluidOut"], "min": 1 }
   ],
   "minCasings": [{ "chars": ["G", "D", "F"], "min": 60 }],
+  "coils": { "chars": ["K"] },
   "defaultHatches": ["itemIn", "itemOut", "fluidOut", "energy", "maintenance", "muffler"],
   "wallshare": true,
   "notes": "Current (reworked) GT:NH Pyrolyse Oven, 7x6x5 and not a full box: blank cells are not checked. Pyrolyse Oven Casings (at least 60) form the floor (G: output bus/hatch, energy, maintenance), a plain casing ring (D, no hatches) and the upper casing layer (F: input bus/hatch, muffler). There are 12 heating coils (any tier; Cupronickel shown, the tier sets speed), 4 Steel Firebox Casings beside the controller, 8 Steel Pipe Casings and 2 Steel Frame Boxes forming two chimneys at the back. GT also requires at least one input and one output of any kind. The old 5x4x5 box version (MTEPyrolyseOvenLegacy) is deprecated and not modelled. The left and right faces are identical (G, D and F casings), so ovens can share side walls. The front and back faces differ from each other. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so item and fluid IO in a shared side wall serves both ovens. Mufflers in a shared wall are shared; energy and maintenance hatches are not unless the Share options ask for it (a shared energy hatch gives each of two machines 1 A, and a shared maintenance hatch is repaired one machine at a time)."

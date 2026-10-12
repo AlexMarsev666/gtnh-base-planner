@@ -126,6 +126,7 @@
   },
   "minCasings": [{ "chars": ["B", "F", "G", "I"], "min": 145 }],
   "glassTierLimits": { "chars": ["C"], "kinds": ["energy"] },
+  "coils": { "chars": ["D"] },
   "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "maintenance"],
   "zones": {
     "dot1": {

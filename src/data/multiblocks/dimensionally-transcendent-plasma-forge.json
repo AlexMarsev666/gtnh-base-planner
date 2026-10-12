@@ -871,6 +871,7 @@
     { "kinds": ["itemOut", "fluidOut"], "min": 1 }
   ],
   "minCasings": [{ "chars": ["B"], "min": 1250 }],
+  "coils": { "chars": ["D"] },
   "defaultHatches": ["itemIn", "itemOut", "energy"],
   "zones": {
     "dot1": {

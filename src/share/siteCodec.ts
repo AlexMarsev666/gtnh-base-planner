@@ -1,3 +1,4 @@
+import { coilById } from '../data/coils';
 import { PLACEHOLDER_ID, getSiteDef, isSingleBlock } from '../data/generic';
 import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { getSingleMachine } from '../data/single-machines';
@@ -247,6 +248,9 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
   const glassTier = field(obj, 'glassTier');
   if (glassTier !== undefined && glassTier !== null)
     group.glassTier = expectTier(glassTier, `${what} glass tier`);
+  const coil = field(obj, 'coil');
+  // A coil this version does not know (a newer table) is left out rather than refusing the template.
+  if (typeof coil === 'string' && coilById(coil)) group.coil = coil;
   if (expectFlag(field(obj, 'mirror'), `${what} mirror`)) group.mirror = true;
   const wallshare = field(obj, 'wallshare');
   if (wallshare !== undefined && wallshare !== null) {

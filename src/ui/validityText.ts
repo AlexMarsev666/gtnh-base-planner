@@ -1,4 +1,5 @@
 import { blockInfo } from '../data/blocks';
+import { COILS, COILS_BY_HEAT } from '../data/coils';
 import { t } from '../i18n/en';
 import { TIERS, type Tier, type Vec3 } from '../model/core/types';
 import type { MultiblockDef } from '../model/multiblock/types';
@@ -69,6 +70,19 @@ export function groupValidity(placed: Pick<PlacedGroup, 'build' | 'index' | 'gla
     out[placed.index * GROUP_STRIDE + Number(id)] = [...ps];
   for (const [id, ps] of Object.entries(placed.glassValidity ?? {})) (out[Number(id)] ??= []).push(...ps);
   return out;
+}
+
+/**
+ * Choices of the heating coil picker: the coil the machine draws (empty value) and every coil of the table, weakest
+ * first. `def` is the catalog def, not one with a coil chosen.
+ */
+export function coilChoices(def: MultiblockDef): { value: string; label: string }[] {
+  const id = def.coils ? def.legend[def.coils.chars[0]]?.blockId : undefined;
+  const drawn = COILS.find((c) => c.blockId === id)?.name ?? (id === undefined ? '' : blockInfo(id).name);
+  return [
+    { value: '', label: drawn ? t.coilDrawn(drawn) : t.defaultTier },
+    ...COILS_BY_HEAT.map((c) => ({ value: c.id, label: c.name })),
+  ];
 }
 
 /**

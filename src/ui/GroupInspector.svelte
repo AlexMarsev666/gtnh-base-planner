@@ -40,7 +40,7 @@
   import SelectRow from './SelectRow.svelte';
   import { groupHatchInfo, groupTiers, hasStructure, tierChoices } from './siteInspect';
   import ToggleRow from './ToggleRow.svelte';
-  import { glassChoices, groupValidity, validityLines } from './validityText';
+  import { coilChoices, glassChoices, groupValidity, validityLines } from './validityText';
 
   /** The editor of the selected template group: Machine, Packing and Placement. */
   interface Props {
@@ -201,6 +201,16 @@
           options={glassChoices(def, group.glassTier)}
           testid="site-group-glass"
           onchange={(v) => patch({ glassTier: TIERS.find((x) => x === v) ?? null })}
+        />
+      {/if}
+      {#if def?.coils}
+        <SelectRow
+          label={t.coil}
+          title={t.coilHint}
+          value={group.coil ?? ''}
+          options={coilChoices(def)}
+          testid="site-group-coil"
+          onchange={(v) => patch({ coil: v || null })}
         />
       {/if}
       {#if hasStructure(def)}

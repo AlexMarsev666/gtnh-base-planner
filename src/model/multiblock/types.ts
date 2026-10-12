@@ -89,6 +89,15 @@ export interface GlassTierLimit {
 }
 
 /**
+ * The heating coil of a structure (GT `ofCoil`): any coil tier forms the machine as long as all its coils are the
+ * same, so the player picks one (`PlanState.coil`) and every cell of `chars` is drawn with it.
+ */
+export interface CoilCells {
+  /** Legend keys of the heating coil; their `blockId` is a coil block of `src/data/coils.ts` (or a stand-in). */
+  chars: string[];
+}
+
+/**
  * A group of hatch kinds of which a unit needs `min` in total (GT `checkHasAnyInput` / `checkHasAnyOutput`:
  * any input bus or hatch, any output bus or hatch), whichever the player picks. `kinds` are the kinds some cell of
  * the def can take. Not stated when `requiredHatches` already demands one of them.
@@ -162,6 +171,8 @@ export interface MultiblockDef {
   minCasings?: CasingMinimum[];
   /** Hatch kinds the tier of the tiered glass limits (see `GlassTierLimit`). */
   glassTierLimits?: GlassTierLimit;
+  /** The legend keys of the heating coil, when the structure takes any coil tier (see `CoilCells`). */
+  coils?: CoilCells;
   /** Hatch kinds enabled by default in a new plan. */
   defaultHatches: HatchKind[];
   /**

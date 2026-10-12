@@ -39,6 +39,8 @@ export interface PlanState {
   hatchTiers?: HatchTiers;
   /** Tier of the glass that limits the energy hatches (`MultiblockDef.glassTierLimits`); absent = the def's glass. */
   glassTier?: Tier;
+  /** Heating coil (an id of `src/data/coils.ts`) of a multiblock with `MultiblockDef.coils`; absent = the def's own coil. */
+  coil?: string;
   /** Every unit is built mirrored in X. Absent = not mirrored. */
   mirror?: boolean;
   /** Wall sharing mode; absent = `auto`. */

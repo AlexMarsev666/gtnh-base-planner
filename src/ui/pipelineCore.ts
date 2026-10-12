@@ -6,6 +6,7 @@ import type { CapacityEntry, PlaceResult } from '../model/hatches/types';
 import { loosenings } from '../model/layout/variants';
 import { alongX } from '../model/orient';
 import { resolveLayout, resolveRoutedLayout, type ResolvedLayout } from '../model/plan';
+import { withCoil } from '../model/coil';
 import { effectiveSharing, withSharing } from '../model/hatches/sharing';
 import { mirroredDef } from '../model/mirror';
 import { effectiveSize, sizedDef } from '../model/resize';
@@ -132,11 +133,13 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     // A resizable multiblock is built at the plan's height / length, and mirrored in X when asked.
     const sized = raw ? sizedDef(raw, size) : undefined;
     const mirrored = sized && p.mirror ? mirroredDef(sized) : sized;
+    // The heating coil the plan picks (a multiblock without one keeps its def).
+    const coiled = mirrored && withCoil(mirrored, p.coil);
     // Only the options that change this multiblock count (see `effectiveSharing`).
-    const sharing = mirrored
-      ? effectiveSharing(mirrored, { maintenance: p.shareMaintenance, energy: p.shareEnergy })
+    const sharing = coiled
+      ? effectiveSharing(coiled, { maintenance: p.shareMaintenance, energy: p.shareEnergy })
       : { maintenance: false, energy: false };
-    const def = mirrored && withSharing(mirrored, sharing);
+    const def = coiled && withSharing(coiled, sharing);
     const empty: PipelineResult = {
       def,
       pack: null,
@@ -159,6 +162,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       count: p.count,
       limits: p.limits,
       mirror: !!p.mirror,
+      coil: coiled === mirrored ? undefined : p.coil,
       wallshare: p.wallshare,
       manualUnits: p.manualUnits,
     });

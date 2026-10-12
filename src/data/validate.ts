@@ -1,6 +1,7 @@
 import type { Dir, HorizontalDir } from '../model/core/types';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
 import { BLOCKS } from './blocks';
+import { isCoilBlock } from './coils';
 
 export const HATCH_KINDS: readonly HatchKind[] = [
   'itemIn',
@@ -250,6 +251,20 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
     for (const k of kinds) {
       if (!isHatchKind(k)) err(`glassTierLimits has invalid hatch kind "${k}"`);
       else if (!allowed.has(k)) err(`glassTierLimits lists "${k}" but no legend cell allows it`);
+    }
+  }
+
+  // heating coil
+  const coils = def.coils;
+  if (coils !== undefined) {
+    const chars = Array.isArray(coils?.chars) ? coils.chars : [];
+    if (chars.length === 0) err('coils.chars must be a non-empty array');
+    if (new Set(chars).size !== chars.length) err('coils.chars lists a character twice');
+    for (const ch of chars) {
+      if (!(ch in legend)) err(`coils.chars lists "${ch}" which is not a legend key`);
+      else if (!isCoilBlock(legend[ch].blockId))
+        err(`coils.chars lists "${ch}" whose block ${legend[ch].blockId} is no heating coil`);
+      else if (legend[ch].hatches?.length) err(`coils.chars lists "${ch}" which takes hatches`);
     }
   }
 

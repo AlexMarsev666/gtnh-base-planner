@@ -10,7 +10,7 @@ import type { RoutedKind } from '../model/routing/kinds';
  */
 
 /**
- * Packing: the (sized, maybe mirrored) multiblock, count, limits and wall sharing preference, or the manual
+ * Packing: the (sized, maybe mirrored, coloured by its heating coil) multiblock, count, limits and wall sharing preference, or the manual
  * units in place of a packed layout.
  */
 export function layoutKey(input: {
@@ -19,6 +19,8 @@ export function layoutKey(input: {
   count: number;
   limits: PlanLimits;
   mirror: boolean;
+  /** The heating coil that changes the def's blocks (undefined when the def has none or the plan picks none). */
+  coil: string | undefined;
   wallshare: WallshareMode | undefined;
   manualUnits: readonly Unit[] | undefined;
 }): string {
@@ -29,6 +31,7 @@ export function layoutKey(input: {
     input.size ?? null,
     input.count,
     input.mirror,
+    input.coil ?? null,
     input.wallshare ?? 'auto',
     limits.x ?? null,
     limits.y ?? null,

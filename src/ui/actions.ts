@@ -1,3 +1,4 @@
+import { coilById } from '../data/coils';
 import { getMultiblock } from '../data/catalog';
 import { effectiveSize } from '../model/resize';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
@@ -68,6 +69,8 @@ export function withMultiblock(p: PlanState, id: string): PlanState {
   delete next.size;
   // The glass tier is a choice for that machine's glass.
   delete next.glassTier;
+  // The heating coil is a choice for that machine's coils.
+  delete next.coil;
   // The sharing options are hidden on a machine that cannot share walls, so they could not be cleared there.
   if (!def.wallshare) {
     delete next.shareMaintenance;
@@ -108,6 +111,15 @@ export function withGlassTier(p: PlanState, tier: Tier | undefined): PlanState {
   const next = { ...p };
   if (tier) next.glassTier = tier;
   else delete next.glassTier;
+  return next;
+}
+
+/** Heating coil (an id of `src/data/coils.ts`); undefined clears it (the multiblock's own coil). */
+export function withPlanCoil(p: PlanState, coil: string | undefined): PlanState {
+  if (p.coil === coil || (coil !== undefined && !coilById(coil))) return p;
+  const next = { ...p };
+  if (coil) next.coil = coil;
+  else delete next.coil;
   return next;
 }
 
@@ -179,6 +191,7 @@ export const toggleHatch = (k: HatchKind) => reshape((p) => withHatchToggled(p, 
 export const setHatchColor = (k: HatchKind, c: string) => plan.update((p) => withHatchColor(p, k, c));
 export const setTier = (tier: Tier | undefined) => plan.update((p) => withTier(p, tier));
 export const setGlassTier = (tier: Tier | undefined) => plan.update((p) => withGlassTier(p, tier));
+export const setCoil = (coil: string | undefined) => plan.update((p) => withPlanCoil(p, coil));
 export const setHatchTier = (key: string, tier: Tier | undefined) =>
   plan.update((p) => withHatchTier(p, key, tier));
 export const resetHatchTiers = () => plan.update(withDefaultHatchTiers);

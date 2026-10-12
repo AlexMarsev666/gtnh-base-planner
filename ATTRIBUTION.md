@@ -81,6 +81,16 @@ the machine-metal colour in the atlas.
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_HSSS.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_NAQUADAH.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_NAQUADAHALLOY.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_KANTHAL_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_NICHROME_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_TUNGSTENSTEEL_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_HSSG_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_NAQUADAHALLOY_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_ELECTRUMFLUX_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_HSSS_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_TRINIUM_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_INFINITY_BACKGROUND.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_COIL_ETERNAL_BACKGROUND.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/REINFORCED_GLASS.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_CASING_TURBINE_STEEL.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_CASING_TURBINE_STAINLESSSTEEL.png`

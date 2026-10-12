@@ -42,6 +42,7 @@
     { "kinds": ["itemOut", "fluidOut"], "min": 1 }
   ],
   "minCasings": [{ "chars": ["A"], "min": 40 }],
+  "coils": { "chars": ["D"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
   "zones": {
     "dot1": {

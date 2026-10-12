@@ -6,6 +6,7 @@ type Extras = {
   } | null;
   allowFaces: Record<string, Record<string, string[]>>;
   glassTierLimits: { chars: string[]; kinds: string[] } | null;
+  coils?: { chars: string[] } | null;
 };
 
 export function withExtras<T extends object>(def: T, extras: Extras): T;

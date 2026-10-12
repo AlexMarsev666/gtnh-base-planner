@@ -42,6 +42,11 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Glass tier**: machines whose hatches are limited by their tiered glass (for example the Mega Oil Cracker) get a Glass
   choice next to Tier, in Settings and in the group editor. It shows the glass the machine draws ("HV (drawn)") and lets you pick
   another tier; an energy hatch above it is a problem under Buildability. Template changes can be undone like other edits.
+- **Heating coil**: machines whose structure takes any heating coil (Electric Blast Furnace, Volcanus, Multi Smelter, Pyrolyse
+  Oven, Mega Alloy Blast Smelter, Large Chemical Reactor and so on) get a Heating coil choice, in Settings and in the group
+  editor. The first entry is the coil the machine draws ("Cupronickel (drawn)"); picking another one draws every coil of the machine
+  with it in the 3D view and the block list. GT forms the machine with any tier as long as all its coils are the same, so no
+  heat is shown. Changing the machine drops the choice; template changes can be undone like other edits.
 - **Mirror and shared walls**: Mirror builds every machine mirrored left to right (unavailable for machines GT doesn't let
   be mirrored). Shared walls (Auto, Side walls, Stack, Back walls, Separate) is a preference: when it cannot be met another
   layout is used and a notice says which. Where GT allows it the packer may also flip (upside down) or mirror neighbours so
@@ -159,6 +164,7 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 | `requiredHatches`    | Optional `{ min, max }` per hatch kind and unit.                                               |
 | `requiredAny`        | Optional `{ kinds, min }[]`: at least `min` hatches of any of `kinds` (GT's any input/output). |
 | `minCasings`         | Optional `{ chars, min, perSlab? }[]`: at least `min` cells of those legend keys stay casing.  |
+| `coils`              | Optional `{ chars }`: the legend keys of the heating coil (any tier forms; see below).         |
 | `glassTierLimits`    | Optional `{ chars, kinds }`: hatches of `kinds` stay at or below the tier of the glass.        |
 | `defaultHatches`     | Hatch kinds enabled in a new plan.                                                             |
 | `variants`           | Optional `(0                                                                                   | 1   | 2   | 3)[]`: the orientations GT allows, when not all four, see below. |
@@ -223,10 +229,20 @@ machine tier, or the hatch's own entry in Hatch tiers) with the glass tier: the 
 unchanged), or when it is not set the tier of the glass the multiblock draws at `chars` (`src/data/glass-tiers.ts`,
 from GT's `GlassTier.RegisterGlassTiers`: the Borosilicate series `bartworks:BW_TieredGlass@0..10` is HV to UXV). A hatch
 above it is a `glassTier` error from `checkValidity`; a glass with no known tier (the planner's own
-`gt.glass.reinforced` stand-in) sets no limit. Nothing in the interface sets or shows it yet. `dataAccess` is the Data Access Hatch of the
+`gt.glass.reinforced` stand-in) sets no limit. The Glass picker sets it. `dataAccess` is the Data Access Hatch of the
 Assembly Lines (GT's `DataHatchElement.DataAccess`), a hatch kind like the others: on the grate casings of the later slices,
 none required and at most one (`requiredHatches`, from `al_too_many_data_access_hatch`). It is the last of the hatch kinds
 (bit 9 of a link's hatch mask), so links made before it decode as they did.
+
+**Heating coils.** A structure with GT's `ofCoil(...)` element (or its own `instanceof IHeatingCoil` check, the Large
+Chemical Reactor) forms with any coil tier as long as all its coils are the same. `coils.chars` names the legend keys that
+hold the coil (a block of the table or the `gt.coil.cupronickel` stand-in of a hand-made entry), read by
+[`tools/gt-source/coils.mjs`](tools/gt-source/README.md) / `hatch-extras.mjs` from the class (fixed coil casings such as
+`Casings.ElectrumFluxCoilBlock` are not coils in this sense). The table of coils is `src/data/coils.generated.json`
+(`HeatingCoilLevel` and the `BlockCasings5` metas; `src/data/coils.ts`, with the heat as data only). The `coil` of a plan or template
+group (an id of the table such as `kanthal`; saved as `coil` in plan and template JSON and as `o`, the table index, in a machine plan link, so old
+plans and links open unchanged) makes `withCoil` (`src/model/coil.ts`) draw those keys with the coil's block; walls compare blocks,
+so units with the same coil still share walls. A plan or group with a coil for a machine that has none ignores it.
 
 **Adding a multiblock**
 

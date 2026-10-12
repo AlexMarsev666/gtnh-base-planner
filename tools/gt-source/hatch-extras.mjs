@@ -8,6 +8,7 @@
  *   - `allowFaces` on legend entries: the sides a hatch of a kind may face (`hatch-faces.mjs`);
  *   - `glassTierLimits`: the hatch kinds whose tier may not exceed the tiered glass's, and the legend keys of that
  *     glass (`glass-tier.mjs`);
+ *   - `coils`: the legend keys of the heating coil, for structures that use `ofCoil` (`coils.mjs`);
  *   - the `dataAccess` hatch kind of the Assembly Lines (`data-access.mjs`): on the cells of its element, with
  *     `hatchBlocks.dataAccess` and `requiredHatches.dataAccess` (at most what the controller's check allows).
  *
@@ -22,6 +23,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createConstraints, sourceClassOf } from './casing-min.mjs';
 import { dataAccessOf, DATA_ACCESS_BLOCK } from './data-access.mjs';
+import { coilsOf, coilTable } from './coils.mjs';
 import { glassChars, glassLimits, tieredGlassBlocks } from './glass-tier.mjs';
 import { faceLeaves, facesOf } from './hatch-faces.mjs';
 import { HatchRules } from './hatch-rules.mjs';
@@ -34,12 +36,12 @@ const MULTI_DIR = join(ROOT, 'src/data/multiblocks');
 const LIMIT_ORDER = ['energy', 'dynamo'];
 
 /**
- * `{ dataAccess, allowFaces, glassTierLimits, problems, notes, other }` for one catalog def: `dataAccess` is
+ * `{ dataAccess, allowFaces, glassTierLimits, coils, problems, notes, other }` for one catalog def: `dataAccess` is
  * `{ chars, max }` (the legend keys to give the kind) or null, `allowFaces` is `{ char: { kind: Dir[] } }`,
- * `glassTierLimits` is `{ chars, kinds }` or null. `problems` are readings that failed, `notes` readings worth a look,
+ * `glassTierLimits` is `{ chars, kinds }` or null, `coils` is `{ chars }` or null. `problems` are readings that failed, `notes` readings worth a look,
  * `other` the comparisons with the glass tier that are not modelled.
  */
-export function extrasOf(def, sourceClass, rules, blocks, names, glassBlocks) {
+export function extrasOf(def, sourceClass, rules, blocks, names, glassBlocks, coilBlocks) {
   const problems = [];
   const notes = [];
   const chain = rules.chain(sourceClass);
@@ -51,7 +53,9 @@ export function extrasOf(def, sourceClass, rules, blocks, names, glassBlocks) {
       ? { chars: access.add, max: access.max, split: withKeys(def, access.split) }
       : null;
   // The sides are read for the legend as it will be with the data hatch.
-  const staged = dataAccess ? withExtras(def, { dataAccess, allowFaces: {}, glassTierLimits: null }) : def;
+  const staged = dataAccess
+    ? withExtras(def, { dataAccess, allowFaces: {}, glassTierLimits: null, coils: null })
+    : def;
   const { leaves, problems: faceProblems } = faceLeaves(rules, sourceClass);
   problems.push(...faceProblems);
   const faces = facesOf(staged, leaves);
@@ -69,7 +73,17 @@ export function extrasOf(def, sourceClass, rules, blocks, names, glassBlocks) {
     } catch (e) {
       problems.push(`${sourceClass}: ${e.message}`);
     }
-  return { dataAccess, allowFaces: faces.allowFaces, glassTierLimits, problems, notes, other: limits.other };
+  const heating = coilsOf(def, sourceClass, rules, blocks, names, coilBlocks);
+  problems.push(...heating.problems);
+  return {
+    dataAccess,
+    allowFaces: faces.allowFaces,
+    glassTierLimits,
+    coils: heating.coils,
+    problems,
+    notes,
+    other: limits.other,
+  };
 }
 
 const KEY_CHARS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'];
@@ -96,7 +110,7 @@ function splitLayers(rows, split) {
 }
 
 /** A def with the extras in their place in the key order (`hatchBlocks`, `requiredHatches`, before `defaultHatches`). */
-export function withExtras(def, { dataAccess, allowFaces, glassTierLimits }) {
+export function withExtras(def, { dataAccess, allowFaces, glassTierLimits, coils }) {
   const legend = {};
   for (const [ch, entry] of Object.entries(def.legend)) {
     const { allowFaces: _old, ...rest } = entry;
@@ -110,8 +124,11 @@ export function withExtras(def, { dataAccess, allowFaces, glassTierLimits }) {
   }
   const out = {};
   for (const [k, v] of Object.entries(def)) {
-    if (k === 'glassTierLimits') continue;
-    if (k === 'defaultHatches' && glassTierLimits) out.glassTierLimits = glassTierLimits;
+    if (k === 'glassTierLimits' || k === 'coils') continue;
+    if (k === 'defaultHatches') {
+      if (glassTierLimits) out.glassTierLimits = glassTierLimits;
+      if (coils) out.coils = coils;
+    }
     if (k === 'legend') out[k] = legend;
     else if (k === 'layers' && dataAccess?.split.length) out[k] = splitLayers(v, dataAccess.split);
     else if (k === 'hatchBlocks' && dataAccess) out[k] = { ...v, dataAccess: DATA_ACCESS_BLOCK };
@@ -135,7 +152,7 @@ function withAfter(entry, key, value, anchors) {
 }
 
 /** The JSON text of a def with the extras set (or removed), changing nothing else. */
-export function patchDef(text, def, { dataAccess, allowFaces, glassTierLimits }) {
+export function patchDef(text, def, { dataAccess, allowFaces, glassTierLimits, coils }) {
   let out = text;
   const entry = (ch) => legendOpen(out, ch);
   for (const ch of Object.keys(def.legend)) {
@@ -162,13 +179,14 @@ export function patchDef(text, def, { dataAccess, allowFaces, glassTierLimits })
     const required = { min: 0, ...(dataAccess.max === null ? {} : { max: dataAccess.max }) };
     out = setProp(out, openOf(out, ['requiredHatches']), 'dataAccess', required);
   }
-  // Always last before `defaultHatches`, after the `minCasings` casing-min.mjs puts there.
+  // Always last before `defaultHatches` (the glass, then the coils), after the `minCasings` casing-min.mjs puts there.
   out = removeProp(out, openOf(out, []), 'glassTierLimits');
-  return glassTierLimits
-    ? setProp(out, openOf(out, []), 'glassTierLimits', jsonLine(glassTierLimits), {
-        before: 'defaultHatches',
-      })
-    : out;
+  out = removeProp(out, openOf(out, []), 'coils');
+  if (glassTierLimits)
+    out = setProp(out, openOf(out, []), 'glassTierLimits', jsonLine(glassTierLimits), {
+      before: 'defaultHatches',
+    });
+  return coils ? setProp(out, openOf(out, []), 'coils', jsonLine(coils), { before: 'defaultHatches' }) : out;
 }
 
 async function formatted(file, text) {
@@ -188,10 +206,11 @@ async function formatted(file, text) {
 export async function createExtras(checkout, rules = new HatchRules(checkout)) {
   const { blocks, names } = await createConstraints(checkout, rules);
   const glassBlocks = tieredGlassBlocks(rules, blocks);
+  const coilBlocks = coilTable(rules);
   return {
     of(def) {
       const cls = sourceClassOf(def);
-      return cls ? extrasOf(def, cls, rules, blocks, names, glassBlocks) : null;
+      return cls ? extrasOf(def, cls, rules, blocks, names, glassBlocks, coilBlocks) : null;
     },
   };
 }
@@ -217,10 +236,12 @@ export async function run(
   const faced = results.filter((r) => Object.keys(r.allowFaces).length);
   const limited = results.filter((r) => r.glassTierLimits);
   const access = results.filter((r) => r.dataAccess);
+  const heated = results.filter((r) => r.coils);
   const entries = faced.reduce((n, r) => n + Object.keys(r.allowFaces).length, 0);
   log(`allowFaces: ${faced.length} entries, ${entries} legend entries`);
   log(`glassTierLimits: ${limited.length} entries`);
   log(`dataAccess: ${access.length} entries`);
+  log(`coils: ${heated.length} entries`);
   for (const r of results) for (const n of r.notes) log(`note: ${n}`);
   for (const r of results) for (const o of r.other) log(`glass tier, not modelled: ${r.def.id}: ${o}`);
   if (problems.length) {
@@ -240,6 +261,7 @@ export async function run(
     allowFaces: Object.fromEntries(faced.map((r) => [r.def.id, r.allowFaces])),
     glassTierLimits: ids(limited),
     dataAccess: ids(access),
+    coils: ids(heated),
   };
   const file = join(dir, '../hatch-extras.snapshot.json');
   writeFileSync(file, await formatted(file, JSON.stringify(snapshot)));

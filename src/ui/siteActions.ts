@@ -1,3 +1,4 @@
+import { coilById } from '../data/coils';
 import { getSiteDef, isSingleBlock } from '../data/generic';
 import { getSingleMachine } from '../data/single-machines';
 import { fallbackColor } from '../import/gtnhplanner';
@@ -128,6 +129,8 @@ export interface GroupPatch {
   hatchTiers?: HatchTiers | null;
   /** Glass tier (see `SiteGroup.glassTier`); null clears it. */
   glassTier?: Tier | null;
+  /** Heating coil, an id of `src/data/coils.ts` (see `SiteGroup.coil`); null clears it. */
+  coil?: string | null;
   mirror?: boolean;
   /** Wall sharing preference; `auto` clears it. */
   wallshare?: WallshareMode;
@@ -162,6 +165,7 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
         delete next.label;
         delete next.machine;
         delete next.glassTier;
+        delete next.coil;
         // The sharing options are hidden on a machine that cannot share walls, so they could not be cleared.
         if (!def.wallshare) {
           delete next.shareMaintenance;
@@ -203,6 +207,8 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
     else if (patch.tier !== undefined) next.tier = patch.tier;
     if (patch.glassTier === null) delete next.glassTier;
     else if (patch.glassTier !== undefined) next.glassTier = patch.glassTier;
+    if (patch.coil === null) delete next.coil;
+    else if (patch.coil !== undefined && coilById(patch.coil)) next.coil = patch.coil;
     if (patch.hatchTiers !== undefined) {
       if (patch.hatchTiers && Object.keys(patch.hatchTiers).length) next.hatchTiers = { ...patch.hatchTiers };
       else delete next.hatchTiers;

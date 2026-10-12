@@ -17,6 +17,7 @@ const extras = {
   dataAccess: { chars: ['d'], max: 1, split: [] },
   allowFaces: { A: { itemIn: ['down'] }, d: { dataAccess: ['north'] } },
   glassTierLimits: { chars: ['g'], kinds: ['energy'] },
+  coils: { chars: ['A'] },
 };
 
 describe('withExtras and patchDef', () => {
@@ -35,7 +36,9 @@ describe('withExtras and patchDef', () => {
     });
     expect(built.hatchBlocks.dataAccess).toBe('gt.hatch.dataAccess');
     expect(built.requiredHatches.dataAccess).toEqual({ min: 0, max: 1 });
-    expect(Object.keys(built).slice(-2)).toEqual(['glassTierLimits', 'defaultHatches']);
+    expect(Object.keys(built).slice(-3)).toEqual(['glassTierLimits', 'coils', 'defaultHatches']);
+    expect(Object.keys(patched).slice(-3)).toEqual(['glassTierLimits', 'coils', 'defaultHatches']);
+    expect(built.coils).toEqual({ chars: ['A'] });
   });
 
   it('draw the plain cells of a key that gets a hatch with a key of their own', () => {
@@ -85,6 +88,7 @@ describe('withExtras and patchDef', () => {
     const parsed = JSON.parse(none);
     expect(parsed.legend.A.allowFaces).toBeUndefined();
     expect(parsed.glassTierLimits).toBeUndefined();
+    expect(parsed.coils).toBeUndefined();
     const built = withExtras(JSON.parse(once), { dataAccess: null, allowFaces: {}, glassTierLimits: null });
     expect(built.legend.A).toEqual(parsed.legend.A);
     expect(built.glassTierLimits).toBeUndefined();

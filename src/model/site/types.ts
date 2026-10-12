@@ -91,6 +91,8 @@ export interface SiteGroup {
   hatchTiers?: HatchTiers;
   /** Tier of the glass that limits the hatches (see `PlanState.glassTier`); absent = the def's glass. */
   glassTier?: Tier;
+  /** Heating coil of the group's units (see `PlanState.coil`); absent = the def's own coil. */
+  coil?: string;
   /** Units are built mirrored in X. Absent = not mirrored. */
   mirror?: boolean;
   /** Wall sharing mode inside the group; absent = `auto`. */

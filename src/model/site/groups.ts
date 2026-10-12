@@ -1,4 +1,5 @@
 import { getSiteDef } from '../../data/generic';
+import { withCoil } from '../coil';
 import { effectiveSharing, withSharing } from '../hatches/sharing';
 import { mirroredDef } from '../mirror';
 import { effectiveSize, sizedDef } from '../resize';
@@ -68,7 +69,8 @@ export function placeGroups(
       return { ...empty, error: 'unknown' };
     }
     const sized = sizedDef(raw, effectiveSize(raw, g.size));
-    const shaped = g.mirror ? mirroredDef(sized) : sized;
+    const turned = g.mirror ? mirroredDef(sized) : sized;
+    const shaped = withCoil(turned, g.coil);
     const sharing = effectiveSharing(shaped, { maintenance: g.shareMaintenance, energy: g.shareEnergy });
     const def = withSharing(shaped, sharing);
     // Only the choices that name a resource this group has can matter (a stale entry must not rebuild it).
@@ -89,6 +91,7 @@ export function placeGroups(
       below,
       toward,
       g.mirror ?? false,
+      shaped === turned ? null : g.coil,
       g.wallshare ?? 'auto',
       sharing.maintenance,
       sharing.energy,
