@@ -1,6 +1,7 @@
 import { t } from '../i18n/en';
 import { isCable } from '../model/routing/kinds';
 import type { PipelineResult } from './pipeline';
+import { errorCount } from './validityText';
 
 export interface StatsParts {
   main: string[];
@@ -19,6 +20,8 @@ export function statsParts(r: PipelineResult, selectedIds: number[]): StatsParts
     main.push(t.saved(r.stats.savedBlocks));
     if (r.stats.conflicts.length) main.push(t.conflicts(r.stats.conflicts.length));
   }
+  const errors = errorCount(r.validity);
+  if (errors) main.push(t.validity.wontForm(errors));
   const pipes = r.pipes?.filter((n) => !isCable(n.kind)) ?? [];
   const cables = r.pipes?.filter((n) => isCable(n.kind)) ?? [];
   if (pipes.length) main.push(t.pipeLength(pipes.reduce((s, n) => s + n.length, 0)));

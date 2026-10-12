@@ -20,6 +20,7 @@
     parseLimit,
     parseSize,
   } from './fields';
+  import Buildability from './Buildability.svelte';
   import GroupHatch from './GroupHatch.svelte';
   import GroupHatchTiers from './GroupHatchTiers.svelte';
   import GroupResources from './GroupResources.svelte';
@@ -38,6 +39,7 @@
   import SelectRow from './SelectRow.svelte';
   import { groupHatchInfo, groupTiers, hasStructure, tierChoices } from './siteInspect';
   import ToggleRow from './ToggleRow.svelte';
+  import { glassChoices, groupValidity, validityLines } from './validityText';
 
   /** The editor of the selected template group: Machine, Packing and Placement. */
   interface Props {
@@ -72,6 +74,16 @@
   /** The hatch picked in the 3D view, when it is one of this group's. */
   const hatchInfo = $derived(
     placed && $siteHatch?.group === group.id ? groupHatchInfo(placed, $siteHatch.key) : undefined,
+  );
+
+  const lines = $derived(
+    placed
+      ? validityLines(
+          groupValidity(placed),
+          placed.units.map((u) => u.id),
+          def,
+        )
+      : undefined,
   );
 
   let replacing = $state(false);
@@ -111,7 +123,12 @@
 
 <div class="inspector" data-testid="site-group-editor" aria-label={name}>
   <div class="head">
-    <span class="name">{name} ×{units}</span>
+    <span class="name"
+      >{name} ×{units}{#if lines?.errors.length}
+        <span class="badge" title={t.validity.badgeHint} data-testid="site-group-badge"
+          >{t.validity.badge}</span
+        >{/if}</span
+    >
     <span class="acts">
       <button class="link" onclick={frameSelected}>{t.site.frame}</button>
       <button class="link" onclick={() => siteGroup.set(null)}>{t.site.deselect}</button>
@@ -174,6 +191,16 @@
           onchange={(v) => patch({ tier: TIERS.find((x) => x === v) ?? null })}
         />
       {/if}
+      {#if def?.glassTierLimits}
+        <SelectRow
+          label={t.validity.glass}
+          title={t.validity.glassHint}
+          value={group.glassTier ?? ''}
+          options={glassChoices(def, group.glassTier)}
+          testid="site-group-glass"
+          onchange={(v) => patch({ glassTier: TIERS.find((x) => x === v) ?? null })}
+        />
+      {/if}
       {#if hasStructure(def)}
         <ToggleRow
           on={!!group.mirror}
@@ -196,6 +223,13 @@
       {/if}
     </ul>
   </div>
+
+  {#if lines}
+    <div class="sub">
+      <p class="sub-title"><span>{t.validity.title}</span></p>
+      <Buildability errors={lines.errors} hints={lines.hints} testid="site-group-buildability" />
+    </div>
+  {/if}
 
   {#if def}
     <GroupResources
@@ -346,6 +380,12 @@
 </div>
 
 <style>
+  .badge {
+    margin-left: 6px;
+    padding: 0 4px;
+    border: 1px solid var(--pick);
+    color: var(--pick);
+  }
   .unverified {
     color: var(--pick);
   }

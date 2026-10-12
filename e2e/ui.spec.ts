@@ -221,3 +221,33 @@ test('the mirror setting survives a share link', async ({ page, context }) => {
   await other.getByTestId('settings-toggle').click();
   await expect(other.getByTestId('toggle-mirror')).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('buildability lists a hatch above the glass and clears when the glass tier is raised', async ({
+  page,
+}) => {
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await expect(page.getByTestId('scene')).toBeVisible();
+
+  await page.getByTestId('multiblock-name').click();
+  await page
+    .getByTestId('picker')
+    .getByTestId('picker-item')
+    .filter({ has: page.getByText('Mega Oil Cracker', { exact: true }) })
+    .click();
+  await page.getByTestId('settings-toggle').click();
+  const drawer = page.getByTestId('settings');
+  await drawer.getByTestId('machine-tier').selectOption('IV');
+
+  await drawer.getByTestId('machine-glass').selectOption('HV');
+  await expect(drawer.getByTestId('buildability-verdict')).toContainText(/won't form/i);
+  await expect(drawer.getByTestId('buildability-errors')).toContainText(/above the glass \(HV\)/);
+  await expect(page.getByTestId('stats')).toContainText(/won't form/i);
+
+  await drawer.getByTestId('machine-glass').selectOption('IV');
+  // With no errors left the list is gone and the verdict says so.
+  await expect(drawer.getByTestId('buildability-verdict')).toContainText(/will form/i);
+  await expect(drawer.getByTestId('buildability-errors')).toHaveCount(0);
+
+  expect(errors).toEqual([]);
+});

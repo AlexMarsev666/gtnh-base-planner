@@ -4,6 +4,8 @@
   import { WALLSHARE_MODES } from '../model/plan/types';
   import { TIERS, type Tier } from '../model/core/types';
   import { allowedTiers } from '../model/tiers';
+  import Buildability from './Buildability.svelte';
+  import { glassChoices, validityLines, type ValidityLine } from './validityText';
   import { tick } from 'svelte';
   import {
     connectBelow,
@@ -22,6 +24,7 @@
     setHatchTier,
     setLimit,
     setMirror,
+    setGlassTier,
     setSize,
     setTier,
     setWallshare,
@@ -32,7 +35,7 @@
   import { notify } from './notices';
   import NumberStepper from './NumberStepper.svelte';
   import ToggleRow from './ToggleRow.svelte';
-  import { hatchTierOptions, hatchTierRows, unmatchedHatchTiers } from './hatchTierRows';
+  import { hatchKeyAt, hatchTierOptions, hatchTierRows, unmatchedHatchTiers } from './hatchTierRows';
   import { build, mergeColors } from './pipeline';
   import SelectRow from './SelectRow.svelte';
   import { copyShareLink, downloadJson, openJsonFile, shareFallback } from './session';
@@ -88,6 +91,19 @@
     hatchTiersOpen = true;
     void tick().then(() => tierList?.querySelector('[data-emphasis]')?.scrollIntoView({ block: 'nearest' }));
   });
+  const lines = $derived(
+    validityLines(
+      $build.validity,
+      ($build.pack?.units ?? []).map((u) => u.id),
+      $build.def,
+    ),
+  );
+  /** Select the unit of a problem, and its hatch when it names one. */
+  function pickProblem(line: ValidityLine) {
+    selectedUnits.set([line.unitId]);
+    const key = line.cell ? hatchKeyAt($build.scene?.hatches ?? [], line.cell) : null;
+    selectedHatch.set(line.cell && key ? { key, cell: line.cell } : null);
+  }
   const asTier = (v: string): Tier | undefined => TIERS.find((x) => x === v);
 
   function commitLimit(axis: keyof PlanLimits, text: string) {
@@ -142,6 +158,16 @@
           onchange={(v) => setTier(asTier(v))}
         />
       {/if}
+      {#if def?.glassTierLimits}
+        <SelectRow
+          label={t.validity.glass}
+          title={t.validity.glassHint}
+          value={$plan.glassTier ?? ''}
+          options={glassChoices(def, $plan.glassTier)}
+          testid="machine-glass"
+          onchange={(v) => setGlassTier(asTier(v))}
+        />
+      {/if}
       <ToggleRow
         on={!!$plan.mirror}
         label={t.mirror}
@@ -167,6 +193,13 @@
       </p>
     {/if}
   </section>
+
+  {#if $build.pack}
+    <section>
+      <h2>{t.validity.title}</h2>
+      <Buildability errors={lines.errors} hints={lines.hints} onpick={pickProblem} />
+    </section>
+  {/if}
 
   {#if resize}
     <section>

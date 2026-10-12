@@ -175,7 +175,7 @@ Large Essentia Smeltery, Research Completer); выходная шина Advanced
 | 1A     | `minCasings` (131 из 244 машин, `checkCasingMin`), `anyInput`/`anyOutput`; затем `allowFaces`, стекло, `dataAccess` | `developer` → `gtnh-expert`                                  | готово                  |
 | 1B     | Повороты в Выровнять/Оптимизировать: стоимость по клеткам люков с поворотом, ходы на 90/180/270°                    | `developer` → `algorithms-reviewer`                          | готово                  |
 | 2A     | Минимум корпусов при расстановке, `model/validity.ts`: «соберётся ли машина» в духе ошибок GT                       | `developer` → `algorithms-reviewer`                          | готово                  |
-| 2B     | Интерфейс проверки, выбор тира стекла                                                                               | `developer` → `architecture-reviewer`                        | после 2A                |
+| 2B     | Интерфейс проверки, выбор тира стекла                                                                               | `developer` → `architecture-reviewer`                        | готово                  |
 | 3A     | Общий глушитель по умолчанию; техобслуживание и энерговвод — опции (по умолчанию выкл.)                             | `developer` → `algorithms-reviewer`                          | волна 3                 |
 | 3E     | Ориентация юнита: крен 180° и зеркало на юнит; поле `orientations` из дампа (`getAlignmentLimits`)                  | `developer` → `gtnh-expert`, `qa-reviewer`                   | волна 3, дизайн-заметка |
 | 3D     | Перекрытие по всем смещениям и ориентациям (Steam Separator 5×5×5, IEM 15×7, EOH, DTPF)                             | `developer` → `algorithms-reviewer`                          | волна 3                 |
@@ -193,4 +193,4 @@ AAL), разделение клеток по форме GT (`tools/gt-source/sha
 Бэклог из волны 2: структура Exo Foundry обрезана дампом (47 из 55 слоёв); 4 машины без места под обязательные
 люки (Advanced Assembly Line, Nuclear Salt Processing Plant, Source Chamber, Synchrotron); машины, которые берут
 энерговвод/техобслуживание без требования (проверить `gtnh-expert`); неполные виды люков во 2-й зоне CAL и AAL;
-расстановка ещё не читает `allowFaces` и `glassTierLimits` (следующий шаг).
+`allowFaces` и `glassTierLimits` в расстановке и проверке — сделано (`1994b8e`); Hi-Amp трансформеры 16A с LV (GT++).

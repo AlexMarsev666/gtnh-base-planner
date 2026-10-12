@@ -4,6 +4,8 @@ import type { HatchKind } from '../model/multiblock/types';
 import type { IoClass, SortMode } from '../model/bom';
 import type { WallshareFallback } from '../model/layout/types';
 import type { WallshareMode } from '../model/plan/types';
+import type { Dir } from '../model/core/types';
+import type { ValidityProblem } from '../model/validity';
 
 const HATCH_KIND_NAMES: Record<HatchKind, string> = {
   itemIn: 'Item in',
@@ -16,6 +18,14 @@ const HATCH_KIND_NAMES: Record<HatchKind, string> = {
   muffler: 'Muffler',
   steamIn: 'Steam in',
   dataAccess: 'Data access',
+};
+const FACE_NAMES: Record<Dir, string> = {
+  up: 'top',
+  down: 'bottom',
+  north: 'north',
+  south: 'south',
+  east: 'east',
+  west: 'west',
 };
 const WALLSHARE_NAMES: Record<WallshareMode, string> = {
   auto: 'Auto',
@@ -513,6 +523,44 @@ export const t = {
       steam: 'Steam pipes',
       energy: 'Energy cables',
     } satisfies Record<IoClass, string>,
+  },
+
+  validity: {
+    title: 'Buildability',
+    forms: 'Will form',
+    wontForm: (n: number) => `Won't form: ${n} ${n === 1 ? 'problem' : 'problems'}`,
+    hints: 'Hints',
+    unit: (n: number) => `Unit ${n}`,
+    /** Per-group badge in the template view. */
+    badge: "Won't form",
+    badgeHint: 'GT would not form this machine as laid out. See Buildability below.',
+    groupProblem: (name: string, n: number) =>
+      `${name}: won't form, ${n} ${n === 1 ? 'problem' : 'problems'} (see its Buildability).`,
+    glass: 'Glass',
+    glassHint: 'Tier of the glass that limits the hatches. GT refuses to form when a hatch is above it.',
+    glassDrawn: (tier: string) => `${tier} (drawn)`,
+    /** What is wrong, without the unit; `casings` names the casing blocks GT counts. */
+    text: (p: ValidityProblem, casings: string): string => {
+      const kind = (k: HatchKind) => HATCH_KIND_NAMES[k].toLowerCase();
+      switch (p.type) {
+        case 'missingEnergy':
+          return p.min > 1 ? `${p.have} of ${p.min} energy hatches` : 'no energy hatch';
+        case 'missingMaintenance':
+          return p.min > 1 ? `${p.have} of ${p.min} maintenance hatches` : 'no maintenance hatch';
+        case 'hatchCount':
+          return p.min !== undefined
+            ? `${p.have} ${kind(p.kind)} ${p.have === 1 ? 'hatch' : 'hatches'}, GT needs ${p.min}`
+            : `${p.have} ${kind(p.kind)} hatches, GT allows ${p.max}`;
+        case 'requiredAny':
+          return `${p.have} of ${p.min} needed hatches (${p.kinds.map(kind).join(' or ')})`;
+        case 'casings':
+          return `${casings} (${p.have} left after hatches, GT needs at least ${p.min})`;
+        case 'forbiddenFace':
+          return `${HATCH_KIND_NAMES[p.kind]} hatch faces ${FACE_NAMES[p.face]}, a side GT's auto-placement doesn't use (hint only; the machine still forms)`;
+        case 'glassTier':
+          return `${kind(p.kind)} hatch ${p.hatchTier} is above the glass (${p.glassTier})`;
+      }
+    },
   },
 
   hatchKinds: HATCH_KIND_NAMES,

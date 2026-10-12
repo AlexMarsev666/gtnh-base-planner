@@ -33,6 +33,15 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
   and its editor, once open, shows the hatch (kind, resource, the units it serves, its zone, its tier), with the
   Unit and Zone choices of its resource emphasised.
   Escape, or a click on anything else, clears it.
+- **Buildability**: Settings → Buildability says whether GT would form each unit as laid out: "Will form", or "Won't form: N problems"
+  (also in the stats line). Problems are listed per unit in words (no energy hatch, 14 casings left where GT needs 18 and which
+  casing, an energy hatch above the glass); a click selects that unit, and the hatch when the problem names one. Hints are
+  listed apart in a quieter colour: GT would turn a hatch away from the side it was put on when placing it itself, but the machine
+  still forms. In a template the group editor has the same block, a "Won't form" badge next to the group's name, and Problems
+  lists each such group.
+- **Glass tier**: machines whose hatches are limited by their tiered glass (for example the Mega Oil Cracker) get a Glass
+  choice next to Tier, in Settings and in the group editor. It shows the glass the machine draws ("HV (drawn)") and lets you pick
+  another tier; an energy hatch above it is a problem under Buildability. Template changes can be undone like other edits.
 - **Mirror and shared walls**: Mirror builds every machine mirrored left to right. Shared walls (Auto, Side walls, Stack,
   Back walls, Separate) is a preference: when it cannot be met another layout is used and a notice says which.
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).

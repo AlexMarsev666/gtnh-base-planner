@@ -29,6 +29,7 @@
   import SelectRow from './SelectRow.svelte';
   import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
   import ToggleRow from './ToggleRow.svelte';
+  import { errorCount, groupValidity } from './validityText';
 
   interface Props {
     onclose: () => void;
@@ -66,6 +67,12 @@
 
   const warnings = $derived(splitWarnings(build?.warnings ?? []));
   const notes = $derived(build?.notes ?? []);
+  /** Groups GT would not form, with their number of problems. */
+  const wontForm = $derived(
+    (build?.groups ?? [])
+      .map((g) => ({ id: g.group.id, n: errorCount(groupValidity(g)) }))
+      .filter((g) => g.n > 0),
+  );
 
   const routingState = $derived(routingView($site, $connectBelow));
   const routing = $derived(routingState.routing);
@@ -300,12 +307,15 @@
     {/if}
   </section>
 
-  {#if warnings.problems.length}
+  {#if warnings.problems.length || wontForm.length}
     <section>
       <h2>{t.site.problems}</h2>
       <ul class="rows problems" data-testid="site-problem-list">
         {#each warnings.problems as w, i (i)}
           <li>{t.site.warning(w, groupName, resName)}</li>
+        {/each}
+        {#each wontForm as g (g.id)}
+          <li data-testid="site-wont-form">{t.validity.groupProblem(groupName(g.id), g.n)}</li>
         {/each}
       </ul>
     </section>
