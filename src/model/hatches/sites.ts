@@ -2,6 +2,7 @@ import {
   type CellKey,
   controllerFacing,
   localCells,
+  outsideAllowedFaces,
   packCell,
   rotateDir,
   rotatedSize,
@@ -146,6 +147,7 @@ export function findSites(
     regions: ReadonlyMap<number, string>;
     zones: ReadonlyMap<number, string>;
     blocked: ReadonlyMap<HatchKind, Set<Dir>>;
+    disfavored: ReadonlyMap<HatchKind, Set<Dir>>;
     chars: ReadonlyMap<number, string>;
   }
   const cells = localCells(def);
@@ -214,6 +216,7 @@ export function findSites(
           regions: NO_REGIONS,
           zones: NO_ZONES,
           blocked: NO_BLOCKED,
+          disfavored: NO_BLOCKED,
           chars: NO_CHARS,
         };
         byKey.set(k, entry);
@@ -244,6 +247,15 @@ export function findSites(
           let set = blocked.get(kind);
           if (!set) blocked.set(kind, (set = new Set()));
           for (const d of dirs) set.add(rotateDir(d, unit.rotation));
+        }
+      }
+      if (legend?.allowFaces) {
+        if (entry.disfavored === NO_BLOCKED) entry.disfavored = new Map();
+        const disfavored = entry.disfavored as Map<HatchKind, Set<Dir>>;
+        for (const kind of Object.keys(legend.allowFaces) as HatchKind[]) {
+          let set = disfavored.get(kind);
+          if (!set) disfavored.set(kind, (set = new Set()));
+          for (const d of outsideAllowedFaces(legend, kind)) set.add(rotateDir(d, unit.rotation));
         }
       }
     }
@@ -376,6 +388,7 @@ export function findSites(
       regions: e.regions,
       zones: e.zones,
       blocked: e.blocked,
+      disfavored: e.disfavored,
       chars: e.chars,
     });
   }

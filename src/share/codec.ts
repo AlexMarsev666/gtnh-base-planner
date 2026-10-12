@@ -40,6 +40,7 @@ export { LinkTooLargeError, MAX_PAYLOAD_BYTES, PlanFormatError } from './binary'
  *                               (so a multiblock's `resize.default` must never change)
  *   t  tier index               index into `TIERS` (append only); omitted = default
  *   k  { "<key>": tier index }  hatch tier overrides, keys as in `HatchTiers`; omitted when empty
+ *   g  glass tier index         index into `TIERS`; omitted = the multiblock's own glass
  *   f  1                        mirrored; omitted = not mirrored
  *   w  wallshare index          index into `WALLSHARE_MODES`; omitted = auto
  */
@@ -273,6 +274,8 @@ export function validatePlanState(input: unknown): PlanState {
   if (tier !== undefined && tier !== null) plan.tier = expectTier(tier, 'Tier');
   const hatchTiers = validateHatchTiers(field(obj, 'hatchTiers'), 'Hatch tiers');
   if (hatchTiers) plan.hatchTiers = hatchTiers;
+  const glassTier = field(obj, 'glassTier');
+  if (glassTier !== undefined && glassTier !== null) plan.glassTier = expectTier(glassTier, 'Glass tier');
   if (expectFlag(field(obj, 'mirror'), 'Mirror')) plan.mirror = true;
   const wallshareRaw = field(obj, 'wallshare');
   if (wallshareRaw !== undefined && wallshareRaw !== null) {
@@ -298,11 +301,12 @@ interface CompactPlan {
   s?: number;
   t?: number;
   k?: Record<string, number>;
+  g?: number;
   f?: 1;
   w?: number;
 }
 
-const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's', 't', 'k', 'f', 'w']);
+const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's', 't', 'k', 'g', 'f', 'w']);
 
 function hatchMask(kinds: readonly HatchKind[]): number {
   let mask = 0;
@@ -339,6 +343,7 @@ function toCompact(plan: PlanState): CompactPlan {
     out.k = {};
     for (const key of Object.keys(plan.hatchTiers).sort()) out.k[key] = TIERS.indexOf(plan.hatchTiers[key]);
   }
+  if (plan.glassTier !== undefined) out.g = TIERS.indexOf(plan.glassTier);
   if (plan.mirror) out.f = 1;
   if (plan.wallshare !== undefined && plan.wallshare !== 'auto')
     out.w = WALLSHARE_MODES.indexOf(plan.wallshare);
@@ -430,6 +435,8 @@ function fromCompact(input: unknown): PlanState {
     }
     plan.hatchTiers = tiers;
   }
+  const g = field(obj, 'g');
+  if (g !== undefined) plan.glassTier = TIERS[expectInt(g, 'Glass tier', 0, TIERS.length - 1)];
   const f = field(obj, 'f');
   if (f !== undefined) {
     if (f !== 1) throw new PlanFormatError('Mirror flag is damaged.');

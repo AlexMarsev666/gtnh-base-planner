@@ -62,12 +62,15 @@ describe('tiered looks', () => {
   it('picks the transformer of its step and amperage', () => {
     expect(singleMachineLook('transformer', 'HV')).toBe('site.machine.transformer@HV:down:4');
     expect(singleMachineLook('transformer', 'EV', 'up', 64)).toBe('site.machine.transformer@EV:up:64');
-    // Hi-Amp below UEV does not exist: drawn as 4 amps.
-    expect(singleMachineLook('transformer', 'IV', 'down', 16)).toBe('site.machine.transformer@IV:down:4');
+    expect(singleMachineLook('transformer', 'IV', 'down', 16)).toBe('site.machine.transformer@IV:down:16');
     expect(singleMachineLook('transformer', 'UEV', 'down', 16)).toBe('site.machine.transformer@UEV:down:16');
     expect(singleMachineLook('transformer')).toBe('site.machine.transformer');
     expect(parseMachineLookId('site.machine.transformer@UEV:up:16')).toMatchObject({ step: 'up', amps: 16 });
-    expect(parseMachineLookId('site.machine.transformer@IV:down:16')).toBeUndefined();
+    expect(parseMachineLookId('site.machine.transformer@IV:down:16')).toMatchObject({
+      step: 'down',
+      amps: 16,
+    });
+    expect(parseMachineLookId('site.machine.transformer@ULV:down:4')).toBeUndefined();
     expect(parseMachineLookId('site.machine.transformer@HV')).toBeUndefined();
   });
 
@@ -224,7 +227,8 @@ describe('power tiers', () => {
       analysePower(site([transformer('t', [4, 4], { tier, amps })], []));
     expect(none('UEV', 16)).toEqual([]);
     expect(none('IV', 64)).toEqual([]);
-    expect(none('IV', 16)).toEqual([{ type: 'transformerInvalid', group: 't', tier: 'IV', amps: 16 }]);
+    expect(none('IV', 16)).toEqual([]);
+    expect(none('ULV', 16)).toEqual([{ type: 'transformerInvalid', group: 't', tier: 'ULV', amps: 16 }]);
   });
 
   it('only notes the input net of a transformer whose tier is unknown', () => {

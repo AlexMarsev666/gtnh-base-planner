@@ -1,3 +1,4 @@
+import { glassBlockTier } from '../data/glass-tiers';
 import { PLACEHOLDER_ID, SINGLE_BLOCK_ID } from '../data/generic';
 import { singleMachineTiers } from '../data/single-machines';
 import { TIERS, type Tier } from './core/types';
@@ -116,4 +117,22 @@ export function hatchTier(
   return tier && followsMachineTier(kind) && TIERS.indexOf(tier) > TIERS.indexOf(HIGHEST_TIER)
     ? HIGHEST_TIER
     : tier;
+}
+
+/**
+ * The tier of the glass that limits the hatches of `def` (`glassTierLimits`): the one set on the plan or group,
+ * else the lowest tiered glass the def draws at those legend chars. Undefined when the def has no such limit
+ * or its glass has no known tier (no limit then).
+ */
+export function effectiveGlassTier(def: MultiblockDef, glassTier?: Tier): Tier | undefined {
+  const limits = def.glassTierLimits;
+  if (!limits) return undefined;
+  if (glassTier) return glassTier;
+  let lowest: Tier | undefined;
+  for (const ch of limits.chars) {
+    const blockId = def.legend[ch]?.blockId;
+    const tier = blockId === undefined ? undefined : glassBlockTier(blockId);
+    if (tier && (!lowest || TIERS.indexOf(tier) < TIERS.indexOf(lowest))) lowest = tier;
+  }
+  return lowest;
 }

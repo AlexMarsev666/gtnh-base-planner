@@ -31,7 +31,7 @@ export function createMachineHandler(
     try {
       const { id, plan, pipes, cables, below } = req;
       const shape = JSON.stringify([
-        { ...plan, colors: undefined, tier: undefined, hatchTiers: undefined },
+        { ...plan, colors: undefined, tier: undefined, hatchTiers: undefined, glassTier: undefined },
         pipes,
         cables,
         below,

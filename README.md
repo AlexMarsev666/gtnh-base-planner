@@ -108,7 +108,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, a Resources list
    (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them)
    and the tier of each of its hatches. A single-block machine picks its machine type from a searchable list and
-   its tier; a transformer also has a direction and a low-side amperage (Hi-Amp, 16 A, exists from UEV). A link
+   its tier; a transformer also has a direction and a low-side amperage (4 A, 16 A Hi-Amp or 64 A Power, from an LV high side up). A link
    whose voltage does not match the tier a machine takes, or a transformer GT does not make, is reported under
    PROBLEMS. PROBLEMS lists what could not be met; Notes
    lists what the build did on its own (spread resources, a wall-sharing fallback) and is not a problem.
@@ -178,20 +178,29 @@ wall shared by units takes a casing from each of them; the mandatory hatches are
 cells but no room is reported with the reason `casings`), the room counts in the "hatches don't fit" summary, and
 the `requiredAny` hatch is placed of the first enabled kind of its group. `checkValidity` (`src/model/validity.ts`)
 then lists per unit what the game's structure check would still object to (missing energy or maintenance,
-`requiredHatches` or `requiredAny` unmet, casings under the minimum) as `error`s, plus `hint`s for what GT still forms but would not recommend (a hatch on a
-side its legend hints against: GT does not check hatch facing); nothing shows it yet.
+`requiredHatches` or `requiredAny` unmet, casings under the minimum, a hatch above the glass tier) as `error`s, plus `hint`s for what GT still forms but would not recommend (a hatch on a
+side its legend hints against, or outside its `allowFaces`: GT does not check hatch facing); nothing shows it yet.
 
 **Hatch sides, glass tier and the data access hatch.** Three more things GT's structure definitions and checks say
 about hatches, read by [`tools/gt-source/hatch-extras.mjs`](tools/gt-source/README.md) for every controller class (also for
-hand-made entries) and validated like the rest; none is used by hatch placement yet. A legend entry's `allowFaces` is
+hand-made entries) and validated like the rest. A legend entry's `allowFaces` is
 `{ kind: sides[] }`, the only sides (local frame, so `north` is the front of a controller facing north) GT's
 auto-placement turns a hatch of that kind to there, from `.allowOnly(...)` / `.disallowOnly(...)`: the Assembly Line's
 input and maintenance hatches `down`, its data access hatch `north`. These are hints of GT's survival hologram, not rules
-of the structure check (a hatch facing any side still forms the machine); the planner uses them as the sides a hatch may
-be given. A kind that is not listed has no limit, a side is open when it is in `allowFaces` and not in `disallowFaces`
-(which already says the same for older entries, and is not repeated).
+of the structure check (a hatch facing any side still forms the machine). A kind that is not listed has no limit, a side
+is open when it is in `allowFaces` and not in `disallowFaces` (which already says the same for older entries, and is not
+repeated). Placement turns a hatch to an open side when it can (`disallowFaces` is a hard rule there, `allowFaces` a
+preference: an Assembly Line's floor casings only allow `down`, which is the ground unless connections from below are
+on, so the hatch faces another side and the validity check gives a hint). Pipe routing turns a hatch to the side its
+pipe reaches it from (never one `disallowFaces` forbids), so it may end up outside `allowFaces`; the hint then says so.
 `glassTierLimits` is a multiblock's `chainAllGlasses` check, `glassTier < hatch.getTierForStructure()`: the `kinds`
-(`energy`) may not be of a higher voltage tier than the glass in `chars`. `dataAccess` is the Data Access Hatch of the
+(`energy`) may not be of a higher voltage tier than the glass in `chars`. The planner compares the hatch's tier (the
+machine tier, or the hatch's own entry in Hatch tiers) with the glass tier: the `glassTier` of the plan or template group
+(optional, saved as `glassTier` in plan and template JSON and as `g` in a machine plan link, so old plans and links open
+unchanged), or when it is not set the tier of the glass the multiblock draws at `chars` (`src/data/glass-tiers.ts`,
+from GT's `GlassTier.RegisterGlassTiers`: the Borosilicate series `bartworks:BW_TieredGlass@0..10` is HV to UXV). A hatch
+above it is a `glassTier` error from `checkValidity`; a glass with no known tier (the planner's own
+`gt.glass.reinforced` stand-in) sets no limit. Nothing in the interface sets or shows it yet. `dataAccess` is the Data Access Hatch of the
 Assembly Lines (GT's `DataHatchElement.DataAccess`), a hatch kind like the others: on the grate casings of the later slices,
 none required and at most one (`requiredHatches`, from `al_too_many_data_access_hatch`). It is the last of the hatch kinds
 (bit 9 of a link's hatch mask), so links made before it decode as they did.

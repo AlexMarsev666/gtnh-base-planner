@@ -375,3 +375,54 @@ describe('effectiveRouting', () => {
     expect(effectiveRouting(site, false)).toEqual({ style: 'neat', depth: 3 });
   });
 });
+
+describe('glass tier', () => {
+  it('round-trips on a plan through JSON, a link and localStorage', async () => {
+    const plan = { ...richPlan(), glassTier: 'UV' } as PlanState;
+    expect(planFromJson(planToJson(plan))).toEqual(plan);
+    expect(await decodePlan(await encodePlan(plan))).toEqual(plan);
+    const st = memory();
+    expect(saveStoredPlan(plan, st)).toBe(true);
+    expect(loadStoredPlan(st)).toEqual(plan);
+    expect(plansEqual(plan, { ...plan, glassTier: 'ZPM' })).toBe(false);
+  });
+
+  it('uses the link key g, and a link without it (or a plan without the field) decodes unchanged', async () => {
+    const old = await decodePlan(
+      await rawLink({ v: 1, m: 'distillation-tower', h: 0, t: 4, k: { 'energy:0': 5 } }),
+    );
+    expect(old).toMatchObject({ tier: 'EV', hatchTiers: { 'energy:0': 'IV' } });
+    expect('glassTier' in old).toBe(false);
+    const withGlass = await decodePlan(await rawLink({ v: 1, m: 'distillation-tower', h: 0, g: 8 }));
+    expect(withGlass.glassTier).toBe('UV');
+    const plain = defaultPlan();
+    expect(await encodePlan({ ...plain })).toBe(await encodePlan(plain));
+    expect(validatePlanState({ ...plain, glassTier: null } as unknown as PlanState)).toEqual(plain);
+    expect(planFromJson(planToJson(richPlan())).glassTier).toBeUndefined();
+  });
+
+  it('rejects bad plan values', async () => {
+    for (const glassTier of ['XL', 3, []])
+      expect(() => validatePlanState({ ...defaultPlan(), glassTier } as unknown as PlanState)).toThrow(
+        PlanFormatError,
+      );
+    for (const g of [99, -1, 1.5, '8']) {
+      const link = await rawLink({ v: 1, m: 'distillation-tower', h: 0, g });
+      await expect(decodePlan(link), String(g)).rejects.toThrow(PlanFormatError);
+    }
+  });
+
+  it('round-trips on a site group, drops it when unset, and rejects bad values', async () => {
+    const site = siteWith({ glassTier: 'UV' });
+    expect(validateSiteState(site).groups[0].glassTier).toBe('UV');
+    expect(siteFromJson(siteToJson(site))).toEqual(site);
+    expect(await decodeSite(await encodeSite(site))).toEqual(site);
+    const st = memory();
+    expect(saveStoredSite(site, st)).toBe(true);
+    expect(loadStoredSite(st)).toEqual(site);
+    expect('glassTier' in validateSiteState(siteWith({ glassTier: null })).groups[0]).toBe(false);
+    expect('glassTier' in validateSiteState(richSite()).groups[0]).toBe(false);
+    for (const glassTier of ['XL', 3, []])
+      expect(() => validateSiteState(siteWith({ glassTier }))).toThrow(PlanFormatError);
+  });
+});

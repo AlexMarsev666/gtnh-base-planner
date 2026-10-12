@@ -84,7 +84,7 @@ export function isSingleBlock(def: MultiblockDef): boolean {
  * Block id of a single-block machine's look in the atlas (scripts/build-atlas.mjs): `site.machine.<id>@<tier>`
  * when the machine exists in that tier, `site.machine.transformer@<high tier>:<step>:<amps>` for a transformer
  * (a step-down one shows its input on the front), else the untiered `site.machine.<id>` of earlier versions.
- * A transformer GT has no block for (Hi-Amp below UEV) is drawn with 4 amps.
+ * A transformer GT has no block for (a ULV high side) falls back to the untiered look.
  */
 export function singleMachineLook(
   machine: string,

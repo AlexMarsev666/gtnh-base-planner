@@ -17,7 +17,7 @@ import type { SiteGroup, SiteState, TransformerAmps } from './types';
 export type PowerWarning =
   /** A consumer's tier (`got`) is below the voltage its net carries (`expected`): it would explode in game. */
   | { type: 'powerTier'; resource: string; expected: Tier; got: Tier; group: string }
-  /** GT has no transformer of this high-side tier and amperage (Hi-Amp starts at UEV). */
+  /** GT has no transformer of this high-side tier and amperage (none below an LV high side). */
   | { type: 'transformerInvalid'; group: string; tier: Tier; amps: TransformerAmps }
   /** A net with a transformer on it whose voltage cannot be told (a port has no tier): a note, not an error. */
   | { type: 'powerUnknownTier'; resource: string };

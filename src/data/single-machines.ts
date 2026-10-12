@@ -1,5 +1,5 @@
 import { TIERS, type Tier } from '../model/core/types';
-import type { TransformerAmps } from '../model/site/types';
+import { TRANSFORMER_AMPS, type TransformerAmps } from '../model/site/types';
 import machines from './single-machines.json' with { type: 'json' };
 
 /**
@@ -53,10 +53,12 @@ export function hullTiles(tier: Tier): { side: string; top: string; bottom: stri
   return { side: `MACHINE_${tier}_SIDE`, top: `MACHINE_${tier}_TOP`, bottom: `MACHINE_${tier}_BOTTOM` };
 }
 
-/** Whether GT has a transformer of this high-side tier and low-side amperage: Hi-Amp (16) starts at UEV. */
+/**
+ * Whether GT has a transformer of this high-side tier and low-side amperage. Every family exists from an LV high
+ * side up: the Hi-Amp (16) ones up to UHV come from GT++ (GregtechHiAmpTransformer), the higher ones from GT.
+ */
 export function transformerValid(high: Tier, amps: TransformerAmps): boolean {
-  const i = TIERS.indexOf(high);
-  return i >= TIERS.indexOf('LV') && (amps !== 16 || i >= TIERS.indexOf('UEV'));
+  return TRANSFORMER_AMPS.includes(amps) && TIERS.indexOf(high) >= TIERS.indexOf('LV');
 }
 
 /**

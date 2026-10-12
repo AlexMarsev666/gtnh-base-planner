@@ -1,6 +1,8 @@
 import { getSiteDef } from '../../data/generic';
 import { mirroredDef } from '../mirror';
 import { effectiveSize, sizedDef } from '../resize';
+import { DEFAULT_TIER, hatchTier } from '../tiers';
+import { glassTierProblems, type UnitValidity } from '../validity';
 import type { PlacedGroup, SiteWarning } from './buildTypes';
 import {
   buildGroup,
@@ -16,6 +18,7 @@ import {
   type WithGroup,
 } from './group';
 import { GROUP_STRIDE } from './ids';
+import { groupHatchKeys } from './siteScene';
 import type { SiteGroup, SiteState } from './types';
 
 /**
@@ -126,6 +129,16 @@ export function placeGroups(
     for (const m of b.missing) missingBy.set(m.resource, (missingBy.get(m.resource) ?? 0) + 1);
     for (const [resource, n] of missingBy)
       warnings.push({ type: 'missing', group: g.id, resource, units: n });
+    // Tiers are not part of the build's cache key (they re-tier hatches, not re-pack), so this is checked here.
+    const keys = groupHatchKeys(
+      hatches,
+      units.map((u) => u.id),
+    );
+    const glass = glassTierProblems(b.def, hatches, {
+      glassTier: g.glassTier,
+      hatchTierOf: (i) => hatchTier(hatches[i].kind, keys[i], g.tier ?? DEFAULT_TIER, g.hatchTiers),
+    });
+    const glassValidity: UnitValidity = Object.fromEntries([...glass].sort(([a], [z]) => a - z));
     return {
       group: g,
       index,
@@ -133,6 +146,7 @@ export function placeGroups(
       build: b,
       units,
       hatches,
+      ...(glass.size > 0 ? { glassValidity } : {}),
       min: [g.origin[0], elevation, g.origin[1]],
       max: [g.origin[0] + rs[0], elevation + rs[1], g.origin[1] + rs[2]],
       demand,

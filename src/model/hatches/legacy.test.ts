@@ -7,6 +7,8 @@ import { recordLegacy, recordLegacyOptions } from './legacyCases';
  * summary were added. The snapshots were recorded from the code at cla 59444a2 by `legacy.generate.test.ts`
  * (`WRITE_LEGACY_SNAPSHOT=1 npx vitest run src/model/hatches/legacy.generate.test.ts` on a clean checkout of
  * that commit with `legacy.generate.test.ts` and `legacyCases.ts` copied in). A missing file fails the test.
+ * The assembly-line entries with `below` were re-recorded when `allowFaces` became a face preference (its floor
+ * casings allow `down`, which `below` opens); every other entry is unchanged.
  */
 const read = (name: string) => JSON.parse(readFileSync(new URL(name, import.meta.url), 'utf8'));
 

@@ -66,6 +66,8 @@ export function withMultiblock(p: PlanState, id: string): PlanState {
     enabledHatches: [...def.defaultHatches],
   };
   delete next.size;
+  // The glass tier is a choice for that machine's glass.
+  delete next.glassTier;
   return next;
 }
 
@@ -92,6 +94,15 @@ export function withTier(p: PlanState, tier: Tier | undefined): PlanState {
   const next = { ...p };
   if (tier) next.tier = tier;
   else delete next.tier;
+  return next;
+}
+
+/** Tier of the glass that limits the hatches; undefined clears it (the multiblock's own glass). */
+export function withGlassTier(p: PlanState, tier: Tier | undefined): PlanState {
+  if (p.glassTier === tier) return p;
+  const next = { ...p };
+  if (tier) next.glassTier = tier;
+  else delete next.glassTier;
   return next;
 }
 
@@ -144,6 +155,7 @@ export const setLimit = (axis: keyof PlanLimits, v: number | null) => reshape((p
 export const toggleHatch = (k: HatchKind) => reshape((p) => withHatchToggled(p, k));
 export const setHatchColor = (k: HatchKind, c: string) => plan.update((p) => withHatchColor(p, k, c));
 export const setTier = (tier: Tier | undefined) => plan.update((p) => withTier(p, tier));
+export const setGlassTier = (tier: Tier | undefined) => plan.update((p) => withGlassTier(p, tier));
 export const setHatchTier = (key: string, tier: Tier | undefined) =>
   plan.update((p) => withHatchTier(p, key, tier));
 export const resetHatchTiers = () => plan.update(withDefaultHatchTiers);

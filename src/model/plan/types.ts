@@ -37,6 +37,8 @@ export interface PlanState {
   tier?: Tier;
   /** Tier of single hatches that differ from `tier` (see `HatchTiers`). */
   hatchTiers?: HatchTiers;
+  /** Tier of the glass that limits the energy hatches (`MultiblockDef.glassTierLimits`); absent = the def's glass. */
+  glassTier?: Tier;
   /** Every unit is built mirrored in X. Absent = not mirrored. */
   mirror?: boolean;
   /** Wall sharing mode; absent = `auto`. */

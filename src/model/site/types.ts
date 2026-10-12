@@ -44,8 +44,8 @@ export interface HatchAssign {
 
 export type TransformerStep = 'up' | 'down';
 /**
- * Transformer families by the amperage of the low side: 4 (plain, 1A in), 16 (Hi-Amp, 4A in; high side UEV or
- * higher only) and 64 (Power, 16A in).
+ * Transformer families by the amperage of the low side: 4 (plain, 1A in), 16 (Hi-Amp, 4A in) and 64 (Power, 16A
+ * in); each from an LV high side up.
  */
 export const TRANSFORMER_AMPS = [4, 16, 64] as const;
 export type TransformerAmps = (typeof TRANSFORMER_AMPS)[number];
@@ -89,6 +89,8 @@ export interface SiteGroup {
   tier?: Tier;
   /** Tier of single hatches that differ from `tier` (see `HatchTiers`). */
   hatchTiers?: HatchTiers;
+  /** Tier of the glass that limits the hatches (see `PlanState.glassTier`); absent = the def's glass. */
+  glassTier?: Tier;
   /** Units are built mirrored in X. Absent = not mirrored. */
   mirror?: boolean;
   /** Wall sharing mode inside the group; absent = `auto`. */

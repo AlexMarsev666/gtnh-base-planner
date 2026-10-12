@@ -1,8 +1,22 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { decodePlan } from './codec';
-import { STORAGE_KEY, loadStoredPlan, planFromJson, readStoredPlan, type StorageLike } from './persist';
-import { decodeSite, decodeSiteWithReport, siteFromJson, siteFromJsonWithReport } from './siteCodec';
+import { decodePlan, encodePlan } from './codec';
+import {
+  STORAGE_KEY,
+  loadStoredPlan,
+  planFromJson,
+  planToJson,
+  readStoredPlan,
+  type StorageLike,
+} from './persist';
+import {
+  decodeSite,
+  decodeSiteWithReport,
+  encodeSite,
+  siteFromJson,
+  siteFromJsonWithReport,
+  siteToJson,
+} from './siteCodec';
 import { SITE_STORAGE_KEY, loadStoredSite, readStoredSite } from './sitePersist';
 
 /**
@@ -31,6 +45,20 @@ describe('legacy plan fixture', () => {
     expect(plan.manualUnits?.map((u) => u.id)).toEqual([0, 2, 5]);
     expect(plan.limits).toEqual({ x: 2, y: null, z: 3 });
     expect(plan.colors.energy).toBe('#ff8800');
+  });
+});
+
+describe('legacy fixtures re-encode as before', () => {
+  it('plan: the link and the JSON are unchanged by the glass tier field', async () => {
+    const plan = planFromJson(read('plan.json'));
+    expect(await encodePlan(plan)).toBe(link('plan.link.txt'));
+    expect(JSON.parse(planToJson(plan))).toEqual(json('plan.expected.json'));
+  });
+
+  it.each(['site', 'import', 'oil-processing'])('%s: the link and the JSON are unchanged', async (name) => {
+    const site = siteFromJson(read(`${name}.json`));
+    expect(await encodeSite(site)).toBe(link(`${name}.link.txt`));
+    expect(JSON.parse(siteToJson(site))).toEqual(json(`${name}.expected.json`));
   });
 });
 

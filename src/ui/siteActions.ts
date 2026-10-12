@@ -126,6 +126,8 @@ export interface GroupPatch {
   tier?: Tier | null;
   /** Tier of single hatches (template keys, see `groupKey`); null or an empty map clears them. */
   hatchTiers?: HatchTiers | null;
+  /** Glass tier (see `SiteGroup.glassTier`); null clears it. */
+  glassTier?: Tier | null;
   mirror?: boolean;
   /** Wall sharing preference; `auto` clears it. */
   wallshare?: WallshareMode;
@@ -156,6 +158,7 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
         delete next.size;
         delete next.label;
         delete next.machine;
+        delete next.glassTier;
         // Tier, hatch tiers and assignments stay, whether or not the new machine takes them: the panel shows
         // what no longer fits. Only a transformer's settings go with the transformer.
         dropTransformerSettings(next);
@@ -190,6 +193,8 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
     }
     if (patch.tier === null) delete next.tier;
     else if (patch.tier !== undefined) next.tier = patch.tier;
+    if (patch.glassTier === null) delete next.glassTier;
+    else if (patch.glassTier !== undefined) next.glassTier = patch.glassTier;
     if (patch.hatchTiers !== undefined) {
       if (patch.hatchTiers && Object.keys(patch.hatchTiers).length) next.hatchTiers = { ...patch.hatchTiers };
       else delete next.hatchTiers;

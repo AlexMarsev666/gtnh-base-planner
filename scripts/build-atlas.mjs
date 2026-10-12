@@ -400,7 +400,7 @@ for (const m of SINGLE_MACHINES) {
 // `site.machine.transformer@<high tier>:<step>:<amps>` are resolved by the renderer, see
 // parseMachineLookId in src/data/single-machines.ts). The hull of every tier is above; a transformer shows
 // the energy hatch overlay of its high side on the front and of its low side on the other faces, in the
-// amperage family GT registers (Hi-Amp, 16 amps, from UEV).
+// amperage family (4, 16 Hi-Amp, 64 Power; every family from an LV high side, Hi-Amp below UEV from GT++).
 const TRANSFORMER = SINGLE_MACHINES.find((m) => m.transformer);
 if (TRANSFORMER) {
   const overlay = (dir, multi, tier) => {
@@ -413,7 +413,6 @@ if (TRANSFORMER) {
   const first = Math.max(from, 1);
   for (let i = first; i <= last; i++) {
     for (const amps of [4, 16, 64]) {
-      if (amps === 16 && i < TIER_NAMES.indexOf('UEV')) continue;
       for (const dir of ['IN', 'OUT']) {
         overlay(dir, amps === 4 ? 0 : amps / 4, TIER_NAMES[i]);
         overlay(dir, amps, TIER_NAMES[i - 1]);

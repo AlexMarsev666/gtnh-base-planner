@@ -319,6 +319,7 @@ function place(
           return null;
         }
         const blocked = c.blocked.get(kind);
+        const disfavored = c.disfavored.get(kind);
         const target = toward?.[kind];
         const farOf = (dir: Dir): number => {
           if (!target) return 0;
@@ -331,6 +332,7 @@ function place(
           if ((frontOf(f.front) ?? kind) !== kind || blocked?.has(f.dir)) continue;
           const option: FaceScore = {
             face: fi,
+            hinted: disfavored?.has(f.dir) ? 1 : 0,
             walled: walledIn(f.front, kind) ? 1 : 0,
             open: openRank(f.rank),
             crowded: crowd(f.front, kind),

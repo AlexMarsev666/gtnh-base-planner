@@ -240,6 +240,25 @@ describe('pipeline', () => {
     expect(warn).toHaveBeenCalledWith('resolveRoutedLayout: boom');
   });
 
+  it('reports a hatch above the glass tier, and follows the tier and the glass tier', () => {
+    const run = createPipeline();
+    // The problem types over all units (one each here).
+    const types = (p: ReturnType<typeof defaultPlan>) => [
+      ...new Set(
+        Object.values(run(p, false).validity ?? {})
+          .flat()
+          .map((x) => x.type),
+      ),
+    ];
+    const base = defaultPlan('mega-oil-cracker');
+    expect(types(base)).toEqual([]);
+    // The drawn glass is HV: an EV machine outruns it.
+    expect(types({ ...base, tier: 'EV' })).toEqual(['glassTier']);
+    expect(types({ ...base, tier: 'EV', glassTier: 'EV' })).toEqual([]);
+    expect(types({ ...base, tier: 'HV', hatchTiers: { 'energy:0': 'LuV' } })).toEqual(['glassTier']);
+    expect(types({ ...base, tier: 'HV' })).toEqual([]);
+  });
+
   it('reports an unknown multiblock', () => {
     const r = createPipeline(fakeDeps())({ ...defaultPlan(), multiblockId: 'nope' }, false);
     expect(r.error).toMatch(/nope/);

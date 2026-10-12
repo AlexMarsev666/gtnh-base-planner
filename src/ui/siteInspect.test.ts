@@ -72,12 +72,13 @@ describe('group machine options', () => {
     expect(hasStructure(undefined)).toBe(false);
   });
 
-  it('disables Hi-Amp below UEV only when a tier is set', () => {
+  it('disables the amperages only below an LV high side, when a tier is set', () => {
     expect(ampOptions('HV')).toEqual([
       { amps: 4, disabled: false },
-      { amps: 16, disabled: true },
+      { amps: 16, disabled: false },
       { amps: 64, disabled: false },
     ]);
+    expect(ampOptions('ULV').every((o) => o.disabled)).toBe(true);
     expect(ampOptions('UEV').every((o) => !o.disabled)).toBe(true);
     expect(ampOptions(undefined).every((o) => !o.disabled)).toBe(true);
   });

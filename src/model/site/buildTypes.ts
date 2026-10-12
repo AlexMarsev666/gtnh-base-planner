@@ -3,6 +3,7 @@ import type { MultiblockDef, Unit } from '../multiblock/types';
 import type { SceneModel } from '../render/types';
 import type { Demand, GroupBuild, GroupNote, GroupProblem, SiteHatch, WithGroup } from './group';
 import type { PowerWarning } from './power';
+import type { UnitValidity } from '../validity';
 import type { RouteResult, RouteStats } from './router';
 import type { ResourceKind, SiteGroup, SitePort, SiteRouting, SiteState } from './types';
 
@@ -46,6 +47,8 @@ export interface PlacedGroup {
   min: Vec3;
   max: Vec3;
   demand: Demand;
+  /** Hatches above the glass tier (`glassTier` problems), per unit (global ids); absent when all is well. */
+  glassValidity?: UnitValidity;
 }
 
 export interface PlacedPort {

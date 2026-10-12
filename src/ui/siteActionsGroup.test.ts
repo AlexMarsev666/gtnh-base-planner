@@ -69,6 +69,15 @@ describe('group tiers, mirror, wall sharing, assignments and routing', () => {
     expect(b.groups[0].tier).toBe('ZPM');
   });
 
+  it('drops the glass tier on a multiblock switch, and null clears it', () => {
+    const { s, id } = ebf();
+    const a = withGroupPatched(s, id, { glassTier: 'UV' });
+    expect(a.groups[0].glassTier).toBe('UV');
+    expect('glassTier' in withGroupPatched(a, id, { multiblockId: 'vacuum-freezer' }).groups[0]).toBe(false);
+    expect(withGroupPatched(a, id, { tier: 'HV' }).groups[0].glassTier).toBe('UV');
+    expect('glassTier' in withGroupPatched(a, id, { glassTier: null }).groups[0]).toBe(false);
+  });
+
   it('a transformer that becomes another group loses its direction and amperage', () => {
     let s = withGroupAdded(emptySite(), 'single-block', [3, 3]);
     const id = s.groups[0].id;
@@ -77,7 +86,7 @@ describe('group tiers, mirror, wall sharing, assignments and routing', () => {
     expect(multi.groups[0].step).toBeUndefined();
     expect(multi.groups[0].amps).toBeUndefined();
     expect(multi.groups[0].tier).toBe('HV');
-    // Hi-Amp below UEV after a tier change stays chosen.
+    // The amperage stays chosen after a tier change.
     const low = withGroupPatched(withGroupPatched(s, id, { tier: 'UEV', amps: 16 }), id, { tier: 'HV' });
     expect(low.groups[0].amps).toBe(16);
   });

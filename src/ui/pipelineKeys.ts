@@ -1,5 +1,6 @@
+import type { Tier } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
-import type { WallshareMode } from '../model/plan/types';
+import type { HatchTiers, WallshareMode } from '../model/plan/types';
 import type { RoutedKind } from '../model/routing/kinds';
 
 /**
@@ -54,9 +55,16 @@ export function pipesKey(hatches: string, kinds: readonly RoutedKind[]): string 
   return JSON.stringify(['pipes', hatches, kinds]);
 }
 
-/** Validity (what the game's structure check would object to): the pipes, which turn the hatches. */
-export function validityKey(pipes: string): string {
-  return JSON.stringify(['validity', pipes]);
+/**
+ * Validity (what the game's structure check would object to): the pipes, which turn the hatches, and the
+ * tiers the glass check compares (machine tier, hatch tier overrides, glass tier).
+ */
+export function validityKey(
+  pipes: string,
+  tiers: { tier: Tier | undefined; hatchTiers: HatchTiers | undefined; glassTier: Tier | undefined },
+): string {
+  const overrides = Object.entries(tiers.hatchTiers ?? {}).sort(([a], [b]) => (a < b ? -1 : 1));
+  return JSON.stringify(['validity', pipes, tiers.tier ?? null, overrides, tiers.glassTier ?? null]);
 }
 
 /** The scene: the pipes and the colour of every hatch kind. */

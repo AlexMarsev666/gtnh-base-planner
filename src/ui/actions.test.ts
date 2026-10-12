@@ -38,6 +38,12 @@ describe('plan transforms', () => {
     expect(p.manualUnits).toHaveLength(1);
   });
 
+  it('drops the glass tier when switching multiblock, keeps it otherwise', () => {
+    const p = { ...defaultPlan('mega-oil-cracker'), glassTier: 'UV' as const };
+    expect(withMultiblock(p, p.multiblockId).glassTier).toBe('UV');
+    expect('glassTier' in withMultiblock(p, 'coke-oven')).toBe(false);
+  });
+
   it('returns the same plan when nothing changes', () => {
     const p = defaultPlan();
     expect(withCount(p, p.count)).toBe(p);

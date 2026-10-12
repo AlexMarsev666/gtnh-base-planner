@@ -462,6 +462,29 @@ describe('the per-group pack cache', () => {
     placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache, prune);
   };
 
+  it('checks the glass tier on every placement without keying the pack cache on it', () => {
+    const glassOf = (extra: Partial<SiteGroup>) => {
+      const s = site({
+        groups: [
+          group('a', 'mega-oil-cracker', [3, 3], { enabledHatches: ['energy', 'maintenance'], ...extra }),
+        ],
+      });
+      const d = deriveSiteDemand(s);
+      const cache: GroupCache = new Map();
+      const { groups } = placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache);
+      return { glass: groups[0].glassValidity, size: cache.size };
+    };
+    expect(glassOf({}).glass).toBeUndefined();
+    const high = glassOf({ tier: 'EV' });
+    expect(Object.values(high.glass!).flat()).toEqual([
+      { type: 'glassTier', kind: 'energy', hatchTier: 'EV', glassTier: 'HV', severity: 'error' },
+      { type: 'glassTier', kind: 'energy', hatchTier: 'EV', glassTier: 'HV', severity: 'error' },
+    ]);
+    expect(glassOf({ tier: 'EV', glassTier: 'UV' }).glass).toBeUndefined();
+    // A hatch tier override of an energy hatch counts too (keys as in `groupKey`).
+    expect(glassOf({ tier: 'HV', hatchTiers: { 'energy:0': 'IV' } }).glass).toBeDefined();
+  });
+
   it('drops the packs a site does not use, so editing keeps memory bounded', () => {
     const cache: GroupCache = new Map();
     run(flat, cache);

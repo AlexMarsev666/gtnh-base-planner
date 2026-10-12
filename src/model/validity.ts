@@ -1,8 +1,8 @@
-import { localCells, rotateDir, rotateLocal } from './geometry';
+import { TIERS, type Dir, type Rotation, type Tier, type Vec3 } from './core/types';
+import { hintedAgainstFaces, localCells, rotateDir, rotateLocal } from './geometry';
 import { casingCells } from './hatches/floor';
-import type { Dir, Vec3 } from './core/types';
+import { effectiveGlassTier } from './tiers';
 import type { HatchKind, MultiblockDef, Unit } from './multiblock/types';
-import type { Rotation } from './core/types';
 import type { HatchPlacement } from './plan/types';
 
 /**
@@ -13,7 +13,7 @@ import type { HatchPlacement } from './plan/types';
 
 /**
  * `error`: GT refuses to form the machine. `hint`: it forms, but GT would turn the hatch elsewhere when it
- * places one itself (`LegendEntry.disallowFaces`, later `allowFaces`), so the layout is not recommended.
+ * places one itself (`LegendEntry.disallowFaces` or outside `allowFaces`), so the layout is not recommended.
  */
 export type Severity = 'error' | 'hint';
 
@@ -29,8 +29,10 @@ export type ProblemKind =
   | { type: 'requiredAny'; kinds: HatchKind[]; have: number; min: number }
   /** Fewer cells of `chars` than the minimum: the hatches stand in the casings GT counts. */
   | { type: 'casings'; chars: string[]; have: number; min: number }
-  /** A hatch faces a side its cell's legend entry hints against (`LegendEntry.disallowFaces`). */
-  | { type: 'forbiddenFace'; kind: HatchKind; cell: Vec3; face: Dir };
+  /** A hatch faces a side its cell's legend entry hints against (`LegendEntry.disallowFaces`, or outside its `allowFaces`). */
+  | { type: 'forbiddenFace'; kind: HatchKind; cell: Vec3; face: Dir }
+  /** A hatch of a kind in `glassTierLimits.kinds` has a tier above the glass's: GT refuses to form. */
+  | { type: 'glassTier'; kind: HatchKind; hatchTier: Tier; glassTier: Tier };
 
 /** One thing wrong with a unit. */
 export type ValidityProblem = ProblemKind & { severity: Severity };
@@ -42,6 +44,15 @@ const problem = (p: ProblemKind): ValidityProblem => ({
   ...p,
   severity: HINTS.includes(p.type) ? 'hint' : 'error',
 });
+
+/**
+ * What the glass tier check needs: the glass tier set on the plan or group (absent: the glass the def draws)
+ * and the tier of each hatch by its index in the hatch list.
+ */
+export interface GlassCheck {
+  glassTier?: Tier;
+  hatchTierOf: (index: number) => Tier | undefined;
+}
 
 /** The problems per unit id; units without any are absent. */
 export type UnitValidity = Record<number, ValidityProblem[]>;
@@ -65,10 +76,13 @@ export function checkValidity(
   def: MultiblockDef,
   units: readonly Unit[],
   hatches: readonly HatchPlacement[],
+  glass?: GlassCheck,
 ): UnitValidity {
   const out: UnitValidity = {};
+  const glassProblems = glass ? glassTierProblems(def, hatches, glass) : new Map<number, ValidityProblem[]>();
   const needCells =
-    !!def.minCasings?.length || Object.values(def.legend).some((l) => l.disallowFaces !== undefined);
+    !!def.minCasings?.length ||
+    Object.values(def.legend).some((l) => l.disallowFaces !== undefined || l.allowFaces !== undefined);
   const required = def.requiredHatches ?? {};
   const mins = def.minCasings ?? [];
   // Cells of a unit that count toward each minimum, before hatches replace any: the same for every unit.
@@ -105,7 +119,7 @@ export function checkValidity(
         );
         if (char === undefined) continue;
         mins.forEach((m, i) => m.chars.includes(char) && taken[i]++);
-        const dirs = def.legend[char]?.disallowFaces?.[h.kind];
+        const dirs = hintedAgainstFaces(def.legend[char], h.kind);
         if (dirs?.some((d) => rotateDir(d, unit.rotation) === h.face))
           problems.push(problem({ type: 'forbiddenFace', kind: h.kind, cell: h.cell, face: h.face }));
       }
@@ -116,7 +130,33 @@ export function checkValidity(
           );
       });
     }
+    problems.push(...(glassProblems.get(unit.id) ?? []));
     if (problems.length > 0) out[unit.id] = problems;
   }
+  return out;
+}
+
+/**
+ * Hatches of `glassTierLimits.kinds` above the glass tier, per unit they serve. None when the def has no such
+ * limit or the glass tier is unknown.
+ */
+export function glassTierProblems(
+  def: MultiblockDef,
+  hatches: readonly HatchPlacement[],
+  glass: GlassCheck,
+): Map<number, ValidityProblem[]> {
+  const out = new Map<number, ValidityProblem[]>();
+  const limits = def.glassTierLimits;
+  const limit = effectiveGlassTier(def, glass.glassTier);
+  if (!limits || !limit) return out;
+  hatches.forEach((h, i) => {
+    if (!limits.kinds.includes(h.kind)) return;
+    const tier = glass.hatchTierOf(i);
+    if (!tier || TIERS.indexOf(tier) <= TIERS.indexOf(limit)) return;
+    for (const id of h.unitIds)
+      (out.get(id) ?? out.set(id, []).get(id)!).push(
+        problem({ type: 'glassTier', kind: h.kind, hatchTier: tier, glassTier: limit }),
+      );
+  });
   return out;
 }

@@ -1,5 +1,5 @@
 import type { Dir, HorizontalDir, Rotation, Vec3 } from './core/types';
-import type { MultiblockDef, Unit, UnitCell } from './multiblock/types';
+import type { HatchKind, LegendEntry, MultiblockDef, Unit, UnitCell } from './multiblock/types';
 
 /**
  * Shared geometry helpers. Implemented in the foundation; all model units must use these.
@@ -18,6 +18,24 @@ export class DefinitionError extends Error {
 }
 
 export const DIRS: readonly Dir[] = ['north', 'south', 'east', 'west', 'up', 'down'];
+
+/**
+ * The local sides a hatch of `kind` should not face in a cell of this legend entry: `disallowFaces`, plus
+ * every side outside `allowFaces` when the kind is listed there. Undefined when nothing is hinted.
+ */
+export function hintedAgainstFaces(entry: LegendEntry | undefined, kind: HatchKind): Dir[] | undefined {
+  const no = entry?.disallowFaces?.[kind];
+  const outside = outsideAllowedFaces(entry, kind);
+  if (outside.length === 0) return no;
+  const out = DIRS.filter((d) => outside.includes(d) || no?.includes(d));
+  return out.length > 0 ? out : undefined;
+}
+
+/** The local sides outside `allowFaces` for `kind` (none when the kind is not listed there). */
+export function outsideAllowedFaces(entry: LegendEntry | undefined, kind: HatchKind): Dir[] {
+  const yes = entry?.allowFaces?.[kind];
+  return yes ? DIRS.filter((d) => !yes.includes(d)) : [];
+}
 
 const VEC: Record<Dir, Vec3> = {
   north: [0, 0, -1],

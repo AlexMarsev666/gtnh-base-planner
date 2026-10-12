@@ -24,6 +24,12 @@ export interface Site {
   zones: ReadonlyMap<number, string>;
   /** World-frame sides a hatch of a kind must not face here (`LegendEntry.disallowFaces`, any unit). */
   blocked: ReadonlyMap<HatchKind, ReadonlySet<Dir>>;
+  /**
+   * World-frame sides a hatch of a kind is better not turned to here (outside `LegendEntry.allowFaces`, any
+   * unit). Only a preference: GT's structure check ignores facing, and a cell whose allowed side is closed
+   * (an Assembly Line's floor casing, `down`) still takes the hatch on another one.
+   */
+  disfavored: ReadonlyMap<HatchKind, ReadonlySet<Dir>>;
   /** Per containing unit, the legend char of this cell; only filled for a def with `minCasings`. */
   chars: ReadonlyMap<number, string>;
 }
@@ -38,6 +44,8 @@ export interface Entry {
   waste: number;
   /** Kinds placed later that the site could also take (keep it for them when there is a choice). */
   wanted: number;
+  /** 1 when the face used is one the legend does not allow (see `Site.disfavored`), else 0. */
+  hinted: number;
   /** 1 when the face used would wall in a pipe (see `walledIn`), else 0. */
   walled: number;
   /** 0 when the face used looks into open space, 1 when into a gap or recess. */

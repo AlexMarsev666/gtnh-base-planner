@@ -371,7 +371,6 @@ export const t = {
     staleAssign: (n: number) =>
       `${n} ${n === 1 ? 'choice' : 'choices'} for resources this group no longer takes or gives.`,
     staleAssignClear: 'Clear',
-    hiAmpNote: 'Hi-Amp (16 A) transformers exist from UEV only.',
     flow: 'Flow animation',
     animation: 'Animation',
     animationHint: 'Moving flow arrows on pipes and cables',
@@ -416,7 +415,7 @@ export const t = {
         case 'powerTier':
           return `${name(w.group)}: ${res(w.resource)} carries ${w.expected}, but this machine takes only ${w.got}.`;
         case 'transformerInvalid':
-          return `${name(w.group)}: GT has no ${w.amps} A transformer at ${w.tier}${w.amps === 16 ? ' (Hi-Amp starts at UEV)' : ''}.`;
+          return `${name(w.group)}: GT has no ${w.amps} A transformer at ${w.tier}.`;
         case 'powerUnknownTier':
           return `${res(w.resource)}: its voltage is not known, so the transformers on it are not checked.`;
         case 'assignInactive':

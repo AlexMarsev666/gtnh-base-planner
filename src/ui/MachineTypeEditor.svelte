@@ -22,7 +22,7 @@
     { value: 'up', label: t.site.stepUp },
   ];
   const ampChoices = $derived(ampOptions(group.tier));
-  // A tier change can leave Hi-Amp chosen below UEV: the value stays and the problem is stated here.
+  // A tier change can leave a transformer GT does not make (ULV): the value stays and the problem is stated here.
   const invalid = $derived(!!group.tier && !transformerValid(group.tier, group.amps ?? 4));
   const amps = $derived(
     ampChoices.map((o) => ({
@@ -93,7 +93,7 @@
         value={String(group.amps ?? 4)}
         options={amps}
         testid="transformer-amps"
-        describedby={invalid ? 'amps-error' : ampChoices.some((o) => o.disabled) ? 'amps-note' : undefined}
+        describedby={invalid ? 'amps-error' : undefined}
         onchange={(v) => {
           const a = TRANSFORMER_AMPS.find((x) => String(x) === v);
           if (a) patchGroup(group.id, { amps: a });
@@ -103,7 +103,6 @@
     {#if invalid && group.tier}<p class="hint error" id="amps-error" role="alert" data-testid="amps-error">
         {t.site.ampsInvalid(group.tier, group.amps ?? 4)}
       </p>{/if}
-    {#if ampChoices.some((o) => o.disabled)}<p class="hint" id="amps-note">{t.site.hiAmpNote}</p>{/if}
   {/if}
 </div>
 

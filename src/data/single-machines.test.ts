@@ -139,11 +139,15 @@ describe('single-block machine tiers', () => {
     });
   });
 
-  it('allows Hi-Amp transformers from UEV up only', () => {
+  it('allows every transformer family from an LV high side up', () => {
     expect(transformerValid('LV', 4)).toBe(true);
     expect(transformerValid('MAX', 64)).toBe(true);
-    expect(transformerValid('UHV', 16)).toBe(false);
+    // Hi-Amp below UEV comes from GT++ (GregtechHiAmpTransformer), from UEV from GT.
+    expect(transformerValid('LV', 16)).toBe(true);
+    expect(transformerValid('UHV', 16)).toBe(true);
     expect(transformerValid('UEV', 16)).toBe(true);
+    expect(transformerValid('ULV', 4)).toBe(false);
+    expect(transformerValid('ULV', 16)).toBe(false);
     expect(transformerValid('MAX', 16)).toBe(true);
     expect(hullTiles('LuV').side).toBe('MACHINE_LuV_SIDE');
   });

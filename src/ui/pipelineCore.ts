@@ -13,6 +13,7 @@ import { withPipeFaces } from '../model/routing/attachments';
 import { CABLE_KINDS, PIPE_KINDS, type RoutedKind } from '../model/routing/kinds';
 import { routePipes } from '../model/routing/router';
 import { buildSceneModel } from '../model/scene';
+import { DEFAULT_TIER, hatchTier, planHatchKeys } from '../model/tiers';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
 import type { PackResult, PlanState, WallStats } from '../model/plan/types';
 import type { SceneModel } from '../model/render/types';
@@ -157,12 +158,18 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     });
     const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below);
     const pipesK = pipesKey(hatchK, kinds);
-    const validityK = validityKey(pipesK);
+    const validityK = validityKey(pipesK, {
+      tier: p.tier,
+      hatchTiers: p.hatchTiers,
+      glassTier: p.glassTier,
+    });
     const sceneK = sceneKey(pipesK, colors);
-    if (lastResult && sceneK === lastResultKey) return lastResult;
+    // The whole result is reused only when nothing it carries changed: the scene and the validity.
+    const resultK = `${sceneK}|${validityK}`;
+    if (lastResult && resultK === lastResultKey) return lastResult;
 
     const finish = (r: PipelineResult) => {
-      lastResultKey = sceneK;
+      lastResultKey = resultK;
       lastResult = r;
       return r;
     };
@@ -228,7 +235,13 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
 
     // Hatches turn to whichever side their pipe reaches them from.
     const turned = withPipeFaces(hatchResult.hatches, pipeNets);
-    const validity = validityStage(validityK, () => checkValidity(def, units, turned));
+    const validity = validityStage(validityK, () => {
+      const keys = planHatchKeys(turned);
+      return checkValidity(def, units, turned, {
+        glassTier: p.glassTier,
+        hatchTierOf: (i) => hatchTier(turned[i].kind, keys[i], p.tier ?? DEFAULT_TIER, p.hatchTiers),
+      });
+    });
     // Width and depth of the whole build are measured beside it.
     const scene = sceneStage(sceneK, () =>
       withBuildDimensions(deps.buildSceneModel(def, units, turned, stats.value, pipeNets, colors)),

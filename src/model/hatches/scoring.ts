@@ -3,17 +3,21 @@ import type { Entry } from './types';
 /** Ranking candidate hatch cells and faces. */
 
 /** How good one open face of a candidate cell is for the kind being placed (see `Entry`). */
-export type FaceScore = Pick<Entry, 'face' | 'walled' | 'open' | 'crowded' | 'aligned' | 'reach' | 'far'>;
+export type FaceScore = Pick<
+  Entry,
+  'face' | 'hinted' | 'walled' | 'open' | 'crowded' | 'aligned' | 'reach' | 'far'
+>;
 
 /**
  * Negative when face `a` is the better one: one whose pipe keeps a way out (and leaves one to its
- * neighbours), then one facing open space, then the one with the fewest hatches of other kinds around,
+ * neighbours), then one the legend allows (`LegendEntry.allowFaces`), then one facing open space, then the one with the fewest hatches of other kinds around,
  * then one in line with hatches of this kind already placed (one straight pipe serves them), then the one
  * more units could line up with, then the one nearest where the pipes go. Ties keep the earlier face.
  */
 export function compareFaces(a: FaceScore, b: FaceScore): number {
   return (
     a.walled - b.walled ||
+    a.hinted - b.hinted ||
     a.open - b.open ||
     a.crowded - b.crowded ||
     b.aligned - a.aligned ||
@@ -29,6 +33,7 @@ export function compareEntries(a: Entry, b: Entry): number {
     a.waste - b.waste ||
     a.wanted - b.wanted ||
     a.walled - b.walled ||
+    a.hinted - b.hinted ||
     a.open - b.open ||
     a.crowded - b.crowded ||
     b.aligned - a.aligned ||

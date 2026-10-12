@@ -1357,18 +1357,18 @@
   },
   "assembly-line/1/below/default": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "down", "unitIds": [0] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "down", "unitIds": [0] },
       { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] }
     ],
     "unplaced": []
   },
   "assembly-line/1/below/all": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "down", "unitIds": [0] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
-      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "north", "unitIds": [0] },
+      { "kind": "fluidIn", "cell": [3, 0, 0], "face": "down", "unitIds": [0] },
       { "kind": "itemOut", "cell": [0, 0, 2], "face": "south", "unitIds": [0] }
     ],
     "unplaced": []
@@ -1407,33 +1407,33 @@
   },
   "assembly-line/3/below/default": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "maintenance", "cell": [0, 0, 4], "face": "south", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "down", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "down", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "down", "unitIds": [2] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [0, 3, 3], "face": "up", "unitIds": [2] },
-      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
-      { "kind": "fluidIn", "cell": [8, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "down", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "down", "unitIds": [1] },
       { "kind": "itemOut", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
-      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] },
-      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] }
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 0], "face": "north", "unitIds": [1] }
     ],
     "unplaced": []
   },
   "assembly-line/3/below/all": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "maintenance", "cell": [0, 0, 4], "face": "south", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "down", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "down", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "down", "unitIds": [2] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [0, 3, 3], "face": "up", "unitIds": [2] },
-      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 2] },
-      { "kind": "fluidIn", "cell": [8, 0, 0], "face": "north", "unitIds": [1] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "down", "unitIds": [0, 2] },
+      { "kind": "fluidIn", "cell": [6, 0, 2], "face": "down", "unitIds": [1] },
       { "kind": "itemOut", "cell": [4, 0, 4], "face": "east", "unitIds": [2] },
-      { "kind": "itemOut", "cell": [5, 0, 2], "face": "south", "unitIds": [1] },
-      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] }
+      { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
+      { "kind": "itemOut", "cell": [5, 0, 0], "face": "north", "unitIds": [1] }
     ],
     "unplaced": []
   },
@@ -1493,21 +1493,21 @@
   },
   "assembly-line/6/below/default": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "maintenance", "cell": [11, 0, 0], "face": "north", "unitIds": [2] },
-      { "kind": "maintenance", "cell": [0, 0, 4], "face": "south", "unitIds": [3] },
-      { "kind": "maintenance", "cell": [5, 0, 4], "face": "south", "unitIds": [4] },
-      { "kind": "maintenance", "cell": [10, 0, 4], "face": "south", "unitIds": [5] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "down", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "down", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [11, 0, 0], "face": "down", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "down", "unitIds": [3] },
+      { "kind": "maintenance", "cell": [5, 0, 4], "face": "down", "unitIds": [4] },
+      { "kind": "maintenance", "cell": [10, 0, 4], "face": "down", "unitIds": [5] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [10, 3, 1], "face": "north", "unitIds": [2] },
       { "kind": "energy", "cell": [0, 3, 3], "face": "south", "unitIds": [3] },
       { "kind": "energy", "cell": [5, 3, 3], "face": "south", "unitIds": [4] },
       { "kind": "energy", "cell": [10, 3, 3], "face": "south", "unitIds": [5] },
-      { "kind": "fluidIn", "cell": [14, 0, 2], "face": "east", "unitIds": [2, 5] },
-      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 3] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "down", "unitIds": [0, 3] },
       { "kind": "fluidIn", "cell": [5, 0, 2], "face": "down", "unitIds": [1, 4] },
+      { "kind": "fluidIn", "cell": [10, 0, 2], "face": "down", "unitIds": [2, 5] },
       { "kind": "itemOut", "cell": [14, 0, 4], "face": "south", "unitIds": [5] },
       { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
       { "kind": "itemOut", "cell": [4, 0, 4], "face": "south", "unitIds": [3] },
@@ -1519,21 +1519,21 @@
   },
   "assembly-line/6/below/all": {
     "hatches": [
-      { "kind": "maintenance", "cell": [1, 0, 0], "face": "north", "unitIds": [0] },
-      { "kind": "maintenance", "cell": [6, 0, 0], "face": "north", "unitIds": [1] },
-      { "kind": "maintenance", "cell": [11, 0, 0], "face": "north", "unitIds": [2] },
-      { "kind": "maintenance", "cell": [0, 0, 4], "face": "south", "unitIds": [3] },
-      { "kind": "maintenance", "cell": [5, 0, 4], "face": "south", "unitIds": [4] },
-      { "kind": "maintenance", "cell": [10, 0, 4], "face": "south", "unitIds": [5] },
+      { "kind": "maintenance", "cell": [1, 0, 0], "face": "down", "unitIds": [0] },
+      { "kind": "maintenance", "cell": [6, 0, 0], "face": "down", "unitIds": [1] },
+      { "kind": "maintenance", "cell": [11, 0, 0], "face": "down", "unitIds": [2] },
+      { "kind": "maintenance", "cell": [0, 0, 4], "face": "down", "unitIds": [3] },
+      { "kind": "maintenance", "cell": [5, 0, 4], "face": "down", "unitIds": [4] },
+      { "kind": "maintenance", "cell": [10, 0, 4], "face": "down", "unitIds": [5] },
       { "kind": "energy", "cell": [0, 3, 1], "face": "north", "unitIds": [0] },
       { "kind": "energy", "cell": [5, 3, 1], "face": "north", "unitIds": [1] },
       { "kind": "energy", "cell": [10, 3, 1], "face": "north", "unitIds": [2] },
       { "kind": "energy", "cell": [0, 3, 3], "face": "south", "unitIds": [3] },
       { "kind": "energy", "cell": [5, 3, 3], "face": "south", "unitIds": [4] },
       { "kind": "energy", "cell": [10, 3, 3], "face": "south", "unitIds": [5] },
-      { "kind": "fluidIn", "cell": [14, 0, 2], "face": "east", "unitIds": [2, 5] },
-      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "west", "unitIds": [0, 3] },
+      { "kind": "fluidIn", "cell": [0, 0, 2], "face": "down", "unitIds": [0, 3] },
       { "kind": "fluidIn", "cell": [5, 0, 2], "face": "down", "unitIds": [1, 4] },
+      { "kind": "fluidIn", "cell": [10, 0, 2], "face": "down", "unitIds": [2, 5] },
       { "kind": "itemOut", "cell": [14, 0, 4], "face": "south", "unitIds": [5] },
       { "kind": "itemOut", "cell": [0, 0, 0], "face": "west", "unitIds": [0] },
       { "kind": "itemOut", "cell": [4, 0, 4], "face": "south", "unitIds": [3] },

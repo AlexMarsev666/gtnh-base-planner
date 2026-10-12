@@ -69,7 +69,7 @@ export function matchMachines(
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Choices for a transformer's low-side amperage; Hi-Amp (16) does not exist below a UEV high side. */
+/** Choices for a transformer's low-side amperage; none exists below an LV high side. */
 export function ampOptions(high: Tier | undefined): { amps: TransformerAmps; disabled: boolean }[] {
   return TRANSFORMER_AMPS.map((amps) => ({ amps, disabled: !!high && !transformerValid(high, amps) }));
 }

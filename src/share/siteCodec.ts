@@ -244,6 +244,9 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
   if (tier !== undefined && tier !== null) group.tier = expectTier(tier, `${what} tier`);
   const hatchTiers = validateHatchTiers(field(obj, 'hatchTiers'), `${what} hatch tiers`, isGroupHatchTierKey);
   if (hatchTiers) group.hatchTiers = hatchTiers;
+  const glassTier = field(obj, 'glassTier');
+  if (glassTier !== undefined && glassTier !== null)
+    group.glassTier = expectTier(glassTier, `${what} glass tier`);
   if (expectFlag(field(obj, 'mirror'), `${what} mirror`)) group.mirror = true;
   const wallshare = field(obj, 'wallshare');
   if (wallshare !== undefined && wallshare !== null) {
