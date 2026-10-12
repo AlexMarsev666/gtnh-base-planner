@@ -213,6 +213,7 @@ export const HAND_TILES = {
   OVERLAY_ENERGY_OUT_LV: {},
   OVERLAY_MAINTENANCE: {},
   OVERLAY_MUFFLER: {},
+  OVERLAY_DATA_ACCESS: {},
   // Industrial Centrifuge (GT:NH 2.9): GT++ Centrifuge Casing (blockCasingsMisc meta 0), Large Sieve Grate
   // (blockCasings2Misc meta 6) and Eglin Steel frame boxes (frame icon tinted with the Eglin Steel colour).
   MACHINE_CASING_CENTRIFUGE: {
@@ -342,6 +343,7 @@ export const HAND_BLOCK_MAP = {
   'gt.hatch.dynamo': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.maintenance': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.muffler': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
+  'gt.hatch.dataAccess': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   // Site stand-in for any GT single-block machine: an LV machine hull.
   'site.singleblock': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   // Site placeholder for a multiblock that is not transcribed yet: hazard-striped casing.
@@ -444,6 +446,7 @@ export const HATCH_OVERLAYS = {
   maintenance: ['OVERLAY_MAINTENANCE'],
   muffler: ['OVERLAY_MUFFLER'],
   steamIn: ['OVERLAY_PIPE_IN', 'FLUID_IN_SIGN'],
+  dataAccess: ['OVERLAY_DATA_ACCESS'],
 };
 
 export function tileSourcePath(name) {

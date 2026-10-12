@@ -24,6 +24,8 @@ export interface Site {
   zones: ReadonlyMap<number, string>;
   /** World-frame sides a hatch of a kind must not face here (`LegendEntry.disallowFaces`, any unit). */
   blocked: ReadonlyMap<HatchKind, ReadonlySet<Dir>>;
+  /** Per containing unit, the legend char of this cell; only filled for a def with `minCasings`. */
+  chars: ReadonlyMap<number, string>;
 }
 
 /** A candidate site's rank for the hatch kind being placed. */
@@ -107,9 +109,10 @@ export interface UnplacedHatch {
    * `CapacityEntry`), it is at the kind's maximum (`max`), or no cell fits the request (`noCell`: no
    * allowed kind, zone, side or free cell); the def has no hatch block for the kind (`unsupported`); the unit
    * id is not placed (`noUnit`); or the requests give a unit fewer hatches than `requiredHatches` asks of
-   * it, or none in a required `region` (`required`: nothing was added for it, it is only reported).
+   * it, or none in a required `region` (`required`: nothing was added for it, it is only reported); or cells
+   * are left but a hatch on any of them would take a unit below a `minCasings` minimum (`casings`).
    */
-  reason?: 'capacity' | 'max' | 'noCell' | 'unsupported' | 'noUnit' | 'required';
+  reason?: 'capacity' | 'max' | 'noCell' | 'unsupported' | 'noUnit' | 'required' | 'casings';
   /** The `requiredHatches` region still without a hatch (reason `required`). */
   region?: string;
 }

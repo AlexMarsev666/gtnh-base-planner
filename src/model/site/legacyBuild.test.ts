@@ -12,11 +12,13 @@ const opts = { pipes: true, cables: true, below: true };
 describe('legacy oil-processing template', () => {
   const build = createSiteBuilder()(site, opts);
 
-  it('connects every terminal without warnings or notes', () => {
+  it('connects every terminal; only the Oil Cracking Unit g9 draws warnings', () => {
     expect(site.groups).toHaveLength(27);
-    expect(build.stats.connected).toBe(101);
-    expect(build.stats.terminals).toBe(101);
-    expect(build.warnings).toEqual([]);
+    expect(build.stats.connected).toBe(96);
+    expect(build.stats.terminals).toBe(96);
+    // g9 asks for 12 hatches, but 45 cells less its 18 counted casings (`minCasings`) leave room for 7.
+    expect(build.warnings.filter((w) => !('group' in w) || w.group !== 'g9')).toEqual([]);
+    expect(build.warnings.some((w) => w.type === 'capacity' && w.group === 'g9')).toBe(true);
     expect(build.notes).toEqual([]);
   });
 

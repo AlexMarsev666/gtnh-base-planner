@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_HATCH_COLORS } from '../model/colors';
 import type { PlanLimits, Unit } from '../model/multiblock/types';
-import { hatchKey, layoutKey, pipesKey, sceneKey } from './pipelineKeys';
+import { hatchKey, layoutKey, pipesKey, sceneKey, validityKey } from './pipelineKeys';
 
 type LayoutInput = Parameters<typeof layoutKey>[0];
 const layoutInput: LayoutInput = {
@@ -47,6 +47,9 @@ describe('pipeline keys', () => {
     const p = pipesKey(h, []);
     expect(pipesKey(h, ['itemIn'])).not.toBe(p);
     expect(pipesKey(hatchKey(l2, ['energy'], null, false), [])).not.toBe(p);
+    const v = validityKey(p);
+    expect(validityKey(pipesKey(h, ['itemIn']))).not.toBe(v);
+    expect(validityKey(pipesKey(hatchKey(l2, ['energy'], null, false), []))).not.toBe(v);
     const s = sceneKey(p, DEFAULT_HATCH_COLORS);
     expect(sceneKey(p, { ...DEFAULT_HATCH_COLORS, itemIn: '#000000' })).not.toBe(s);
     expect(sceneKey(pipesKey(h, ['itemIn']), DEFAULT_HATCH_COLORS)).not.toBe(s);

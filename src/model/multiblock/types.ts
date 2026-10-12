@@ -5,9 +5,19 @@ import type { CellRole, Dir, HorizontalDir, Rotation, Vec3 } from '../core/types
 /**
  * Kinds of hatches/buses a multiblock can take. Coke Oven uses one hatch block in 3 modes. `steamIn` is the
  * steam input hatch of steam multiblocks, kept apart from `fluidIn` because both can be on one machine.
+ * `dataAccess` is the Data Access Hatch of the Assembly Lines.
  */
 export type HatchKind =
-  'itemIn' | 'itemOut' | 'fluidIn' | 'fluidOut' | 'energy' | 'dynamo' | 'maintenance' | 'muffler' | 'steamIn';
+  | 'itemIn'
+  | 'itemOut'
+  | 'fluidIn'
+  | 'fluidOut'
+  | 'energy'
+  | 'dynamo'
+  | 'maintenance'
+  | 'muffler'
+  | 'steamIn'
+  | 'dataAccess';
 
 /** One character of a structure drawing. */
 export interface LegendEntry {
@@ -16,10 +26,22 @@ export interface LegendEntry {
   /** Hatch kinds that may replace this block. Omitted = no hatches here. */
   hatches?: HatchKind[];
   /**
-   * Sides (local frame) a hatch of the given kind must not face here, e.g. GT's `disallowOnly(UP, DOWN)`
-   * for Distillation Tower layer outputs.
+   * Sides (local frame) GT's auto-placement never turns a hatch of the given kind to here, e.g.
+   * `disallowOnly(UP, DOWN)` for Distillation Tower layer outputs. A hint of the survival hologram: the structure
+   * check does not enforce it (a hatch facing any side still forms the machine); the planner uses it as the sides
+   * a hatch may be given.
    */
   disallowFaces?: Partial<Record<HatchKind, Dir[]>>;
+  /**
+   * The only sides (local frame) GT's auto-placement turns a hatch of the given kind to here, e.g.
+   * `allowOnly(DOWN)` for the Assembly Line's input hatches or `allowOnly(NORTH)` for its data access hatch (north =
+   * the controller's front in a def whose controller faces north). Like `disallowFaces` it is a hint of the survival
+   * hologram, not a structure-check rule; the planner uses it as the preferred/allowed sides. A kind that is not
+   * listed has no such limit; a side is open when it is in `allowFaces` (if the kind is listed) and not in
+   * `disallowFaces`. Never empty. Read from the structure
+   * definitions by tools/gt-source/hatch-faces.mjs; where `disallowFaces` already says the same it is not repeated.
+   */
+  allowFaces?: Partial<Record<HatchKind, Dir[]>>;
   /** Region this cell belongs to, for `HatchRequirement.regions` (e.g. one per Distillation Tower layer). */
   region?: string;
 }
@@ -52,6 +74,18 @@ export interface CasingMinimum {
   min: number;
   /** Added to `min` for each repeating slab of a resizable def (a positive whole number). */
   perSlab?: number;
+}
+
+/**
+ * The tiered glass limits the hatches of a unit (GT `chainAllGlasses` with the check `glassTier <
+ * hatch.getTierForStructure()`): the energy (or dynamo) hatches may not be of a higher voltage tier than the glass
+ * of the build. The glass tier is the one of the block the player puts in `chars`.
+ */
+export interface GlassTierLimit {
+  /** Legend keys of the tiered glass. */
+  chars: string[];
+  /** Hatch kinds whose tier must not exceed the glass tier. */
+  kinds: HatchKind[];
 }
 
 /**
@@ -126,6 +160,8 @@ export interface MultiblockDef {
   requiredAny?: HatchGroupRequirement[];
   /** Casing minimums the game's structure check demands (see `CasingMinimum`), one per counted casing. */
   minCasings?: CasingMinimum[];
+  /** Hatch kinds the tier of the tiered glass limits (see `GlassTierLimit`). */
+  glassTierLimits?: GlassTierLimit;
   /** Hatch kinds enabled by default in a new plan. */
   defaultHatches: HatchKind[];
   /**

@@ -13,10 +13,24 @@
     "A": {
       "blockId": "gregtech:gt.blockcasings2@0",
       "hatches": ["fluidIn", "maintenance"],
+      "allowFaces": {
+        "fluidIn": ["north", "south", "up", "down"],
+        "maintenance": ["north", "south", "up", "down"]
+      },
       "region": "dot1"
     },
-    "B": { "blockId": "gregtech:gt.blockcasings2@0", "hatches": ["itemOut"], "region": "dot2" },
-    "C": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"], "region": "dot3" },
+    "B": {
+      "blockId": "gregtech:gt.blockcasings2@0",
+      "hatches": ["itemOut"],
+      "allowFaces": { "itemOut": ["north", "south", "up", "down"] },
+      "region": "dot2"
+    },
+    "C": {
+      "blockId": "gt.hatch.inputBus",
+      "hatches": ["itemIn"],
+      "allowFaces": { "itemIn": ["down"] },
+      "region": "dot3"
+    },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "gregtech:gt.blockcasings2@5" },
     "F": { "blockId": "gregtech:gt.blockcasings3@10", "hatches": ["energy"], "region": "dot3" },

@@ -41,6 +41,7 @@
   },
   "requiredAny": [{ "kinds": ["itemIn", "fluidIn"], "min": 1 }],
   "minCasings": [{ "chars": ["A"], "min": 70 }],
+  "glassTierLimits": { "chars": ["E"], "kinds": ["energy"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "zones": {
     "dot1": {

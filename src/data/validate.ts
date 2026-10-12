@@ -12,6 +12,7 @@ export const HATCH_KINDS: readonly HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'dataAccess',
 ];
 
 const HORIZONTAL: readonly HorizontalDir[] = ['north', 'south', 'east', 'west'];
@@ -128,6 +129,17 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
       if (!Array.isArray(dirs) || dirs.some((d) => !DIRS.includes(d)))
         err(`legend "${ch}" disallowFaces.${k} must list directions`);
     }
+    for (const [k, dirs] of Object.entries(entry.allowFaces ?? {})) {
+      if (!isHatchKind(k) || !entry.hatches?.includes(k))
+        err(`legend "${ch}" allowFaces.${k} but the cell does not allow "${k}"`);
+      if (!Array.isArray(dirs) || dirs.length === 0 || dirs.some((d) => !DIRS.includes(d)))
+        err(`legend "${ch}" allowFaces.${k} must list directions`);
+      else {
+        const blocked = (entry.disallowFaces as Record<string, Dir[]> | undefined)?.[k];
+        if (Array.isArray(blocked) && dirs.every((d) => blocked.includes(d)))
+          err(`legend "${ch}" allowFaces.${k} and disallowFaces.${k} leave no side`);
+      }
+    }
     if (entry.region !== undefined) {
       if (typeof entry.region !== 'string' || entry.region === '')
         err(`legend "${ch}" region must be a name`);
@@ -222,6 +234,23 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
         if (typeof row === 'string') for (const ch of row) if (chars.has(ch)) cells++;
     if (isInt(m?.min) && cells < m.min)
       err(`${at}.min ${m.min} but the structure has only ${cells} such cells`);
+  }
+
+  // tiered glass
+  const glass = def.glassTierLimits;
+  if (glass !== undefined) {
+    const chars = Array.isArray(glass?.chars) ? glass.chars : [];
+    if (chars.length === 0) err('glassTierLimits.chars must be a non-empty array');
+    if (new Set(chars).size !== chars.length) err('glassTierLimits.chars lists a character twice');
+    for (const ch of chars)
+      if (!(ch in legend)) err(`glassTierLimits.chars lists "${ch}" which is not a legend key`);
+    const kinds = Array.isArray(glass?.kinds) ? glass.kinds : [];
+    if (kinds.length === 0) err('glassTierLimits.kinds must be a non-empty array');
+    if (new Set(kinds).size !== kinds.length) err('glassTierLimits.kinds lists a kind twice');
+    for (const k of kinds) {
+      if (!isHatchKind(k)) err(`glassTierLimits has invalid hatch kind "${k}"`);
+      else if (!allowed.has(k)) err(`glassTierLimits lists "${k}" but no legend cell allows it`);
+    }
   }
 
   // zones

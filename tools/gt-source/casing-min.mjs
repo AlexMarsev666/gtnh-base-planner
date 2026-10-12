@@ -1114,7 +1114,8 @@ export function withConstraints(def, { minCasings, requiredAny }) {
 }
 
 /**
- * Readers over a checkout: `of(def)` is `constraintsOf` for a catalog def, whose class comes from its `source`.
+ * Readers over a checkout: `of(def)` is `constraintsOf` for a catalog def, whose class comes from its `source`;
+ * `blocks` and `names` are the block readers (also used by hatch-extras.mjs).
  * Block names come from `tools/game-dump/static-textures.mjs` (registry name of every block field).
  */
 export async function createConstraints(checkout, rules = new HatchRules(checkout)) {
@@ -1127,6 +1128,8 @@ export async function createConstraints(checkout, rules = new HatchRules(checkou
       const cls = sourceClassOf(def);
       return cls ? constraintsOf(def, cls, rules, blocks, names) : null;
     },
+    blocks,
+    names,
   };
 }
 

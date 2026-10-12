@@ -15,6 +15,7 @@ const HATCH_KIND_NAMES: Record<HatchKind, string> = {
   maintenance: 'Maintenance',
   muffler: 'Muffler',
   steamIn: 'Steam in',
+  dataAccess: 'Data access',
 };
 const WALLSHARE_NAMES: Record<WallshareMode, string> = {
   auto: 'Auto',
@@ -433,7 +434,9 @@ export const t = {
               ? `${name(w.group)}: the ${what} hatches are at their maximum; one more${for_} found no room on ${where}.`
               : w.reason === 'unsupported'
                 ? `${name(w.group)} cannot take a ${what} hatch${for_}.`
-                : `${name(w.group)}: no place for a ${what} hatch${for_}${region} on ${where}.`;
+                : w.reason === 'casings'
+                  ? `${name(w.group)}: a ${what} hatch${for_} would leave too few casings on ${where}.`
+                  : `${name(w.group)}: no place for a ${what} hatch${for_}${region} on ${where}.`;
         }
       }
     },

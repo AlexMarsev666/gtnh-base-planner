@@ -84,12 +84,20 @@ function mirror(def: MultiblockDef): MultiblockDef {
   return out;
 }
 
+function mirrorFaces(faces: Partial<Record<HatchKind, Dir[]>>): Partial<Record<HatchKind, Dir[]>> {
+  const out: Partial<Record<HatchKind, Dir[]>> = {};
+  for (const [kind, dirs] of Object.entries(faces) as [HatchKind, Dir[]][])
+    out[kind] = dirs.map((d) => FLIP[d]);
+  return out;
+}
+
 function mirrorEntry(entry: LegendEntry): LegendEntry {
-  if (!entry.disallowFaces) return entry;
-  const disallowFaces: Partial<Record<HatchKind, Dir[]>> = {};
-  for (const [kind, dirs] of Object.entries(entry.disallowFaces) as [HatchKind, Dir[]][])
-    disallowFaces[kind] = dirs.map((d) => FLIP[d]);
-  return { ...entry, disallowFaces };
+  if (!entry.disallowFaces && !entry.allowFaces) return entry;
+  return {
+    ...entry,
+    ...(entry.disallowFaces ? { disallowFaces: mirrorFaces(entry.disallowFaces) } : {}),
+    ...(entry.allowFaces ? { allowFaces: mirrorFaces(entry.allowFaces) } : {}),
+  };
 }
 
 /** The slab `[from, to)` seen from the other end of the smallest form (size `min` along the axis). */

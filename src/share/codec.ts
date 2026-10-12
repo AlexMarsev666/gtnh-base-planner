@@ -66,6 +66,7 @@ export const HATCH_KINDS: readonly HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'dataAccess',
 ];
 
 export const ID_RE = /^[a-z0-9_-]+$/;
@@ -375,7 +376,7 @@ function fromCompact(input: unknown): PlanState {
   if (c !== undefined) {
     const cObj = expectObject(c, 'Colours');
     for (const key of Object.keys(cObj)) {
-      const kind = /^[0-9]$/.test(key) ? HATCH_KINDS[Number(key)] : undefined;
+      const kind = /^(?:[0-9]|[1-9][0-9])$/.test(key) ? HATCH_KINDS[Number(key)] : undefined;
       if (!kind) throw new PlanFormatError('Colour key is not a known hatch kind.');
       const value = field(cObj, key);
       if (typeof value !== 'string' || !/^[0-9a-f]{6}$/i.test(value)) {

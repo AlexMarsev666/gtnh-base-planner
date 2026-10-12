@@ -18,9 +18,20 @@
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.5@4",
       "hatches": ["itemIn", "fluidIn", "energy", "maintenance"],
+      "allowFaces": {
+        "itemIn": ["north", "south", "east", "west", "down"],
+        "fluidIn": ["north", "south", "east", "west", "down"],
+        "energy": ["north", "south", "east", "west", "down"],
+        "maintenance": ["north", "south", "east", "west", "down"]
+      },
       "region": "dot1"
     },
-    "B": { "blockId": "miscutils:gtplusplus.blockcasings.5@4", "hatches": ["fluidOut"], "region": "dot2" },
+    "B": {
+      "blockId": "miscutils:gtplusplus.blockcasings.5@4",
+      "hatches": ["fluidOut"],
+      "allowFaces": { "fluidOut": ["north", "south", "east", "west"] },
+      "region": "dot2"
+    },
     "C": { "blockId": "gt.hatch.special" }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31035" },

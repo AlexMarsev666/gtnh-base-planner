@@ -1,7 +1,7 @@
 import { getMultiblock } from '../../data/catalog';
 import type { Vec3 } from '../core/types';
 import { packUnits } from '../layout/packer';
-import type { HatchKind, PlanLimits } from '../multiblock/types';
+import type { HatchKind, MultiblockDef, PlanLimits } from '../multiblock/types';
 import { sizedDef } from '../resize';
 import { placeHatches } from './placement';
 
@@ -34,13 +34,17 @@ const TOWARD: Partial<Record<HatchKind, Vec3>> = {
   steamIn: [-20, 0, 30],
 };
 
+/** Every kind the def takes that the code at the snapshot's commit knew (not the Data Access Hatch, added later). */
+const recordedKinds = (def: MultiblockDef) =>
+  (Object.keys(def.hatchBlocks) as HatchKind[]).filter((k) => (k as string) !== 'dataAccess');
+
 /** Plain calls: default and all kinds, 1/3/6 units, with and without connections from below. */
 export function recordLegacy(): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const { id, size } of CASES) {
     const base = getMultiblock(id)!;
     const def = size ? sizedDef(base, size) : base;
-    const all = Object.keys(def.hatchBlocks) as HatchKind[];
+    const all = recordedKinds(def);
     for (const count of [1, 3, 6])
       for (const below of [false, true])
         for (const [name, enabled] of [
@@ -67,7 +71,7 @@ export function recordLegacyOptions(): Record<string, unknown> {
   for (const { id, size } of CASES) {
     const base = getMultiblock(id)!;
     const def = size ? sizedDef(base, size) : base;
-    const all = Object.keys(def.hatchBlocks) as HatchKind[];
+    const all = recordedKinds(def);
     for (const count of [1, 3])
       for (const below of [false, true]) {
         const units = packUnits(def, count, unlimited).units;

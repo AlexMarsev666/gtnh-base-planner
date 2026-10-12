@@ -5,8 +5,18 @@ import type { HatchKind, MultiblockDef, Unit } from '../multiblock/types';
 import { HATCH_PRIORITY } from './constants';
 import { capacityOf } from './capacity';
 import { lineKeys, openRank } from './geometry';
-import { allUnplaced, kindsToPlace, quota, sortedIds } from './quota';
-import { FLUID_KINDS, type Stage, shortOfMin, stagesOf, wantedOfKinds, wantedOfStages } from './requests';
+import { casingFloor, casingRooms, floorsOf } from './floor';
+import { allUnplaced, anyMins, kindsToPlace, quota, sortedIds } from './quota';
+import {
+  FLUID_KINDS,
+  minOf,
+  type Stage,
+  shortOfAny,
+  shortOfMin,
+  stagesOf,
+  wantedOfKinds,
+  wantedOfStages,
+} from './requests';
 import { compareEntries, compareFaces, EntryHeap, type FaceScore } from './scoring';
 import { findSites } from './sites';
 import { inZone, resolveZone, withHatchZones } from './zones';
@@ -58,6 +68,13 @@ import type {
  *   not asked for; `unplaced` says what is missing and why (`UnplacedHatch.reason`): hatches that found no
  *   cell, kinds or unit ids that do not exist, and requirements (`requiredHatches` min or region) the
  *   requests leave open. A hatch in a wall shared by units serves all of them, as in GT.
+ * - `minCasings`: a hatch never goes where it would leave a unit with fewer counted casing cells than the
+ *   minimum asks (a hatch on a cell shared by units takes one from each). Hatches placed first win the room:
+ *   with requests the mandatory ones go first anyway; without, the usual order is tried and, only if the floor
+ *   turned a hatch away, redone with the mandatory kinds (`requiredHatches` min, `requiredAny`) first. A hatch
+ *   that found a cell but no room under a floor is `unplaced` with reason `casings` (with requests).
+ * - `requiredAny` groups: without requests the group's `min` is placed of its first enabled kind, as a
+ *   `requiredHatches` min is; a group with no enabled kind is left unmet (see `checkValidity`).
  * - `capacity` lists the units that want more hatches than they have cells for (see `CapacityEntry`); it is
  *   absent when nothing is overfull, and never changes what is placed.
  * - Unit ids are expected to be unique. The result is independent of the order of `units` and
@@ -120,7 +137,12 @@ function placeRequested(
     placed.unplaced.filter((u) => u.reason === 'required' && u.unitId === unitId && u.kind === kind).length;
   const out: PlaceResult = {
     hatches: placed.hatches,
-    unplaced: [...rejected, ...placed.unplaced, ...shortOfMin(def, ids, stages, regionMisses)],
+    unplaced: [
+      ...rejected,
+      ...placed.unplaced,
+      ...shortOfMin(def, ids, stages, regionMisses),
+      ...shortOfAny(def, ids, stages),
+    ],
   };
   if (placed.capacity) out.capacity = placed.capacity;
   return out;
@@ -134,9 +156,20 @@ function place(
   below = false,
   toward?: PlaceOptions['toward'],
   stages?: readonly Stage[],
+  mandatoryFirst = false,
 ): PlaceResult {
   const { sites, openAround, openToward, nearby, volume } = findSites(def, units, below);
   const unitIds = sortedIds(units);
+  const floor = def.minCasings?.length ? casingFloor(def, unitIds) : null;
+  const any = anyMins(def, kinds);
+  // With a casing floor the first hatches placed win the room. Kinds go by `HATCH_PRIORITY` until the floor
+  // leaves a unit short of a hatch; the layout is then placed again with the mandatory kinds first, and
+  // that result kept when it is no worse.
+  const flooredKinds = new Set<string>();
+  const must = (k: HatchKind) => Math.max(minOf(def, k), any.get(k) ?? 0) > 0;
+  if (floor && !stages && mandatoryFirst) {
+    kinds = [...kinds.filter(must), ...kinds.filter((k) => !must(k))];
+  }
   const shareable = new Set(def.shareableHatches ?? []);
   const used = new Set<CellKey>();
   /** Empty cell in front of a hatch -> kind of that hatch. */
@@ -196,6 +229,7 @@ function place(
     sites,
     new Map(unitIds.map((id) => [id, wantedByUnit ? (wantedByUnit.get(id) ?? []) : wantedAll])),
     canShareKind,
+    floor ? { rooms: casingRooms(def), of: (s, id) => floorsOf(def, s.chars.get(id)) } : undefined,
   );
 
   /** Per kind, the hatches placed per unit and per line (see `lineKeys`): shared by all requests of a kind. */
@@ -213,6 +247,8 @@ function place(
     accept: (s: Site) => boolean,
     key?: string,
   ) => {
+    /** Units that asked for a hatch of this kind and found a cell only a casing floor kept them from. */
+    const floored = new Set<number>();
     const canShare = canShareKind(kind);
     const avoided = avoid?.get(kind);
     const candidates = sites.filter(
@@ -274,6 +310,14 @@ function place(
           if (needs(c, id)) score++;
         }
         if (score === 0) return null;
+        if (floor && !floor.allows(c)) {
+          for (const id of c.unitIds)
+            if (needs(c, id)) {
+              floored.add(id);
+              flooredKinds.add(`${kind}|${id}`);
+            }
+          return null;
+        }
         const blocked = c.blocked.get(kind);
         const target = toward?.[kind];
         const farOf = (dir: Dir): number => {
@@ -328,6 +372,7 @@ function place(
         const best = candidates[now.i];
         const bestFace = best.faces[now.face];
         used.add(best.key);
+        floor?.take(best);
         if (frontIndex) frontIndex[bestFace.front as number] = HATCH_PRIORITY.indexOf(kind);
         else frontMap.set(bestFace.front, kind);
         for (const id of best.unitIds) count.set(id, (count.get(id) ?? 0) + 1);
@@ -349,12 +394,12 @@ function place(
       }
     };
 
-    return { count, pass };
+    return { count, pass, floored };
   };
 
   const legacy = (kind: HatchKind, ki: number): void => {
     const later = kinds.slice(ki + 1);
-    const { target, max } = quota(def, kind);
+    const { target, max } = quota(def, kind, any.get(kind));
     if (target <= 0) return;
     const { count, pass } = setup(kind, later, max, () => true);
     // Regions that each need one hatch of this kind come first (e.g. every Distillation Tower layer),
@@ -404,7 +449,7 @@ function place(
     // A cell may hold a fluid hatch when every unit on it takes that fluid (some stage of the same kind and
     // key names it). A hatch an earlier stage of the same kind and key placed, on a cell in this stage's zone,
     // that serves a unit of this stage (and no earlier stage of the unit used it) counts for that unit.
-    const { count, pass } = setup(
+    const { count, pass, floored } = setup(
       st.kind,
       later,
       max,
@@ -442,14 +487,13 @@ function place(
       if (done.has(id)) continue;
       const entry: UnplacedHatch = { unitId: id, kind: st.kind };
       if (st.key !== undefined) entry.key = st.key;
-      entry.reason = (count.get(id) ?? 0) >= max ? 'max' : 'noCell';
+      entry.reason = (count.get(id) ?? 0) >= max ? 'max' : floored.has(id) ? 'casings' : 'noCell';
       unplaced.push(entry);
     }
   };
 
   if (stages) stages.forEach(requested);
   else kinds.forEach(legacy);
-
   const result: PlaceResult = { hatches, unplaced };
   if (capacity.length > 0) {
     result.capacity = capacity;
@@ -479,6 +523,12 @@ function place(
           );
           if (!ok) unplaced.push({ unitId: id, kind, reason: 'required', region });
         }
+  }
+  if (!stages && !mandatoryFirst && unplaced.some((u) => flooredKinds.has(`${u.kind}|${u.unitId}`))) {
+    const again = place(def, units, kinds, avoid, below, toward, stages, true);
+    const cost = (r: PlaceResult) => [r.unplaced.filter((u) => must(u.kind)).length, r.unplaced.length];
+    const [a, b] = [cost(again), cost(result)];
+    if (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) return again;
   }
   return result;
 }

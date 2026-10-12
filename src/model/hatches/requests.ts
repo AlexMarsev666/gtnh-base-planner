@@ -1,6 +1,6 @@
 import type { HatchKind, MultiblockDef } from '../multiblock/types';
 import { HATCH_PRIORITY } from './constants';
-import { quota } from './quota';
+import { anyMins, quota } from './quota';
 import type { HatchRequest, UnplacedHatch } from './types';
 import type { Wanted } from './capacity';
 
@@ -45,6 +45,8 @@ export function stagesOf(
     rejected.push({ unitId, kind: r.kind, ...(r.key !== undefined ? { key: r.key } : {}), reason });
   /** Requests of a kind seen so far per unit. */
   const seen = new Map<HatchKind, Map<number, number>>();
+  /** Requests of each `requiredAny` group seen so far per unit. */
+  const anySeen = new Map<number, Map<number, number>>();
   const stages: Stage[] = [];
   for (const r of requests) {
     const named = r.units === 'each' ? unitIds : [...new Set(r.units)].sort((a, b) => a - b);
@@ -61,6 +63,14 @@ export function stagesOf(
       const n = perUnit.get(id) ?? 0;
       perUnit.set(id, n + 1);
       if (n < minOf(def, r.kind)) mandatoryFor.add(id);
+      // The first `min` requests of a `requiredAny` group count as required too.
+      (def.requiredAny ?? []).forEach((g, gi) => {
+        if (!g.kinds.includes(r.kind)) return;
+        const per = anySeen.get(gi) ?? anySeen.set(gi, new Map()).get(gi)!;
+        const m = per.get(id) ?? 0;
+        per.set(id, m + 1);
+        if (m < g.min) mandatoryFor.add(id);
+      });
     }
     const stage: Stage = { kind: r.kind, units, mandatoryFor, mandatory: mandatoryFor.size > 0 };
     if (r.zone !== undefined) stage.zone = r.zone;
@@ -102,6 +112,27 @@ export function shortOfMin(
   return out;
 }
 
+/**
+ * `requiredAny` groups the requests leave short: per unit and group, one `required` entry (of the group's
+ * first kind the def has a hatch block for) for each hatch short of `min`. Only reports.
+ */
+export function shortOfAny(
+  def: MultiblockDef,
+  unitIds: readonly number[],
+  stages: readonly Stage[],
+): UnplacedHatch[] {
+  const out: UnplacedHatch[] = [];
+  for (const group of def.requiredAny ?? []) {
+    const kind = group.kinds.find((k) => def.hatchBlocks?.[k] !== undefined);
+    if (kind === undefined) continue;
+    for (const unitId of unitIds) {
+      const have = stages.filter((s) => group.kinds.includes(s.kind) && s.units.has(unitId)).length;
+      for (let n = have; n < group.min; n++) out.push({ unitId, kind, reason: 'required' });
+    }
+  }
+  return out;
+}
+
 /** Per unit, the hatches the stages want of it, in stage order (mandatory first). */
 export function wantedOfStages(stages: readonly Stage[]): Map<number, Wanted[]> {
   const out = new Map<number, Wanted[]>();
@@ -118,9 +149,10 @@ export function wantedOfStages(stages: readonly Stage[]): Map<number, Wanted[]> 
 export function wantedOfKinds(def: MultiblockDef, kinds: readonly HatchKind[]): Wanted[] {
   const mandatory: Wanted[] = [];
   const optional: Wanted[] = [];
+  const any = anyMins(def, kinds);
   for (const kind of kinds) {
-    const { target } = quota(def, kind);
-    const must = Math.min(minOf(def, kind), target);
+    const { target } = quota(def, kind, any.get(kind));
+    const must = Math.min(Math.max(minOf(def, kind), any.get(kind) ?? 0), target);
     for (let n = 0; n < target; n++) (n < must ? mandatory : optional).push({ kind, mandatory: n < must });
   }
   return [...mandatory, ...optional];

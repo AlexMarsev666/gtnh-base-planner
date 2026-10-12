@@ -146,13 +146,14 @@ describe('encodePlan / decodePlan', () => {
       { l: [2001, 0, 0] },
       { l: [-1, 0, 0] },
       { l: [1, 2] },
-      { h: 512 },
+      { h: 1024 },
       { s: 0 },
       { s: 2.5 },
       { h: -1 },
       { c: { '0': 'red' } },
       { c: { '0': '"><script>' } },
-      { c: { '9': 'ffffff' } },
+      { c: { '10': 'ffffff' } },
+      { c: { '09': 'ffffff' } },
       { u: [0, 0, 0] },
       { u: [0, 0, 4097, 0] },
       { u: [0, 0, 0, 4] },
@@ -265,6 +266,47 @@ describe('validatePlanState', () => {
 
   it('knows every hatch kind exactly once', () => {
     expect(new Set(HATCH_KINDS).size).toBe(HATCH_KINDS.length);
+  });
+
+  it('only ever appends hatch kinds, so a link keeps its bits', () => {
+    // Links made before the Data Access Hatch have the nine older kinds in bits 0 to 8.
+    expect(HATCH_KINDS.slice(0, 9)).toEqual([
+      'itemIn',
+      'itemOut',
+      'fluidIn',
+      'fluidOut',
+      'energy',
+      'dynamo',
+      'maintenance',
+      'muffler',
+      'steamIn',
+    ]);
+    expect(HATCH_KINDS[9]).toBe('dataAccess');
+  });
+
+  it('decodes a link whose hatch mask has no Data Access bit (at most 511)', async () => {
+    const all = await decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 511, c: { '8': 'c9b99a' } }));
+    expect(all.enabledHatches).toEqual(HATCH_KINDS.slice(0, 9));
+    expect(all.colors).toEqual({ steamIn: '#c9b99a' });
+    const some = await decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 3 }));
+    expect(some.enabledHatches).toEqual(['itemIn', 'itemOut']);
+  });
+
+  it('round-trips the Data Access Hatch and its colour', async () => {
+    const plan: PlanState = {
+      ...defaultPlan('assembly-line'),
+      enabledHatches: ['itemOut', 'dataAccess'],
+      colors: { dataAccess: '#3fc9b0' },
+    };
+    const link = await encodePlan(plan);
+    const decoded = await decodePlan(link);
+    expect(decoded.enabledHatches).toEqual(['itemOut', 'dataAccess']);
+    expect(decoded.colors).toEqual({ dataAccess: '#3fc9b0' });
+    expect(plansEqual(decoded, plan)).toBe(true);
+    // The bit and the colour key sit right after the older kinds.
+    const raw = JSON.parse(new TextDecoder().decode(await inflateRaw(fromBase64Url(link))));
+    expect(raw.h).toBe((1 << 1) | (1 << 9));
+    expect(raw.c).toEqual({ '9': '3fc9b0' });
   });
 });
 

@@ -16,6 +16,13 @@
     "A": {
       "blockId": "gregtech:gt.blockcasings4@2",
       "hatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+      "allowFaces": {
+        "itemIn": ["north"],
+        "itemOut": ["north"],
+        "energy": ["north"],
+        "maintenance": ["north"],
+        "muffler": ["north"]
+      },
       "region": "dot1"
     }
   },

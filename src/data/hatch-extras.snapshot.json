@@ -1,0 +1,74 @@
+{
+  "allowFaces": {
+    "advanced-assembly-line": {
+      "A": { "fluidIn": ["down"], "maintenance": ["down"] },
+      "B": { "itemIn": ["down"] },
+      "E": { "dataAccess": ["north"] },
+      "G": { "energy": ["north", "south", "up"] }
+    },
+    "assembly-line": {
+      "d": { "dataAccess": ["north"] },
+      "b": { "fluidIn": ["down"], "maintenance": ["down"] },
+      "B": { "fluidIn": ["down"], "maintenance": ["down"] }
+    },
+    "circuit-assembly-line": {
+      "A": { "fluidIn": ["north", "south", "up", "down"], "maintenance": ["north", "south", "up", "down"] },
+      "B": { "itemOut": ["north", "south", "up", "down"] },
+      "C": { "itemIn": ["down"] }
+    },
+    "dangote-distillus": {
+      "A": {
+        "itemIn": ["north", "south", "east", "west", "down"],
+        "itemOut": ["north", "south", "east", "west", "down"],
+        "fluidIn": ["north", "south", "east", "west", "down"],
+        "energy": ["north", "south", "east", "west", "down"],
+        "maintenance": ["north", "south", "east", "west", "down"]
+      },
+      "B": {
+        "fluidOut": ["north", "south", "east", "west"],
+        "energy": ["north", "south", "east", "west"],
+        "maintenance": ["north", "south", "east", "west"]
+      },
+      "D": { "fluidOut": ["north", "south", "east", "west", "up"] }
+    },
+    "industrial-maceration-stack": {
+      "A": {
+        "itemIn": ["north"],
+        "itemOut": ["north"],
+        "energy": ["north"],
+        "maintenance": ["north"],
+        "muffler": ["north"]
+      }
+    },
+    "large-essentia-smeltery": {
+      "A": { "itemIn": ["north"], "fluidIn": ["north"], "energy": ["north"], "maintenance": ["north"] },
+      "B": { "muffler": ["up"] }
+    },
+    "large-neutralization-engine": {
+      "B": { "itemIn": ["north"], "fluidIn": ["north"], "dynamo": ["north"], "maintenance": ["north"] }
+    },
+    "ph-neutralization-purification-unit": { "F": { "fluidIn": ["up"] }, "G": { "itemIn": ["up"] } },
+    "sparge-tower-controller": {
+      "A": {
+        "itemIn": ["north", "south", "east", "west", "down"],
+        "fluidIn": ["north", "south", "east", "west", "down"],
+        "energy": ["north", "south", "east", "west", "down"],
+        "maintenance": ["north", "south", "east", "west", "down"]
+      },
+      "B": { "fluidOut": ["north", "south", "east", "west"] }
+    }
+  },
+  "glassTierLimits": [
+    "algae-farm",
+    "exothermic-hearth",
+    "extreme-entity-crusher",
+    "extreme-industrial-greenhouse",
+    "fluid-shaper",
+    "large-fluid-extractor",
+    "mass-solidifier",
+    "mega-chemical-reactor",
+    "mega-oil-cracker",
+    "miniature-wormhole-generator"
+  ],
+  "dataAccess": ["advanced-assembly-line", "assembly-line"]
+}

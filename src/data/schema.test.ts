@@ -145,6 +145,39 @@ describe('validateMultiblockDef', () => {
     expect(validateMultiblockDef(r).join()).toMatch(/regions lists "nowhere"/);
   });
 
+  it('checks allowFaces', () => {
+    const d = clone(base);
+    d.legend.b = { ...d.legend.b, allowFaces: { muffler: ['up'] } };
+    expect(validateMultiblockDef(d).join()).toMatch(/allowFaces.muffler but the cell does not allow/);
+    const empty = clone(getMultiblock('assembly-line')!);
+    empty.legend.b = { ...empty.legend.b, allowFaces: { fluidIn: [] } };
+    expect(validateMultiblockDef(empty).join()).toMatch(/allowFaces.fluidIn must list directions/);
+    const bad = clone(getMultiblock('assembly-line')!);
+    bad.legend.b = { ...bad.legend.b, allowFaces: { fluidIn: ['down', 'sideways' as never] } };
+    expect(validateMultiblockDef(bad).join()).toMatch(/allowFaces.fluidIn must list directions/);
+    // The sides GT allows and the ones the entry forbids must leave one.
+    const none = clone(getMultiblock('assembly-line')!);
+    none.legend.e = { ...none.legend.e, allowFaces: { energy: ['east', 'down'] } };
+    expect(validateMultiblockDef(none).join()).toMatch(
+      /allowFaces.energy and disallowFaces.energy leave no side/,
+    );
+    const ok = clone(getMultiblock('assembly-line')!);
+    ok.legend.e = { ...ok.legend.e, allowFaces: { energy: ['up', 'down'] } };
+    expect(validateMultiblockDef(ok)).toEqual([]);
+  });
+
+  it('checks glassTierLimits', () => {
+    const cracker = getMultiblock('mega-oil-cracker')!;
+    expect(validateMultiblockDef(cracker)).toEqual([]);
+    const bad = (limit: unknown) =>
+      validateMultiblockDef({ ...clone(cracker), glassTierLimits: limit } as MultiblockDef).join();
+    expect(bad({ chars: ['Z'], kinds: ['energy'] })).toMatch(/lists "Z" which is not a legend key/);
+    expect(bad({ chars: [], kinds: ['energy'] })).toMatch(/chars must be a non-empty array/);
+    expect(bad({ chars: ['C'], kinds: [] })).toMatch(/kinds must be a non-empty array/);
+    expect(bad({ chars: ['C'], kinds: ['laser'] })).toMatch(/invalid hatch kind "laser"/);
+    expect(bad({ chars: ['C'], kinds: ['dynamo'] })).toMatch(/lists "dynamo" but no legend cell allows it/);
+  });
+
   it('checks zones against the regions of the legend', () => {
     const cracker = getMultiblock('mega-oil-cracker')!;
     expect(Object.keys(cracker.zones ?? {})).toEqual(['dot1', 'dot2', 'dot3', 'dot4']);

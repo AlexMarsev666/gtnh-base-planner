@@ -23,7 +23,9 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Hatch zones and counts**: hatch placement follows GT5-Unofficial 5.09.54.205. Generated entries carry the
   hatch zones the controller's tooltip names (hint dots) and its hatch counts, and a zone limits which hatch kinds
   may go there. A machine whose hatches do not all fit says so ("hatches don't fit, N wanted and M fit") and how
-  many to remove.
+  many to remove. Hatches also keep the casing minimum of the controller's structure check: no hatch replaces a
+  casing the game still needs to count. Existing plans and templates may now warn when a machine asks for
+  more hatches than its casing minimum allows.
 - **Machine tier and hatch tiers**: Settings → Tier sets the voltage tier of the energy and dynamo hatches, and
   Hatch tiers sets the tier of each hatch separately (only the tiers the game allows; they reset when the layout
   changes). Clicking a hatch block in the 3D view picks that hatch: it is outlined, and a notice offers to open
@@ -137,13 +139,14 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 | `source`             | Link to the GT5-Unofficial source the structure was transcribed from.                          |
 | `size`               | `[x, y, z]` in blocks.                                                                         |
 | `layers`             | `layers[y][z]` is a string of length `x`. `~` controller, `-` must be air, space = not part.   |
-| `legend`             | Every other character: `{ blockId, hatches? }`. `hatches` lists kinds that may replace it.     |
+| `legend`             | Every char: `{ blockId, hatches?, allowFaces? }`; `hatches` lists kinds that may replace it.   |
 | `controller`         | `{ pos, facing, blockId }`; `pos` is the `~` cell, `facing` the front face (local frame).      |
 | `hatchBlocks`        | Block id placed for each hatch kind.                                                           |
 | `shareableHatches`   | Hatch kinds whose single block may serve several controllers.                                  |
 | `requiredHatches`    | Optional `{ min, max }` per hatch kind and unit.                                               |
 | `requiredAny`        | Optional `{ kinds, min }[]`: at least `min` hatches of any of `kinds` (GT's any input/output). |
 | `minCasings`         | Optional `{ chars, min, perSlab? }[]`: at least `min` cells of those legend keys stay casing.  |
+| `glassTierLimits`    | Optional `{ chars, kinds }`: hatches of `kinds` stay at or below the tier of the glass.        |
 | `defaultHatches`     | Hatch kinds enabled in a new plan.                                                             |
 | `wallshare`          | Whether casings of two units may overlap when the blocks match.                                |
 | `resize`             | Optional variable size: `{ axis, from, to, min, max, default, label }`, see below.             |
@@ -169,8 +172,29 @@ states two of its checks (read from the controller classes by [`tools/gt-source/
 hatches may replace only the rest; for a resizable def `min` is the smallest form's and `perSlab` what each added slab
 raises it by (`sizedDef` returns the minimum of its size). `requiredAny` is `checkHasAnyInput` / `checkHasAnyOutput`:
 at least one hatch of any of `kinds` (`itemIn` or `fluidIn`, `itemOut` or `fluidOut`), stated only when no kind of the
-group is already in `requiredHatches`. Both are validated (keys in the legend, the structure holds `min` cells) and
-not yet used by hatch placement.
+group is already in `requiredHatches`. Both are validated (keys in the legend, the structure holds `min` cells).
+Hatch placement honours them: a hatch never goes where it would leave a unit below a casing minimum (a hatch in a
+wall shared by units takes a casing from each of them; the mandatory hatches are placed first, and one that finds
+cells but no room is reported with the reason `casings`), the room counts in the "hatches don't fit" summary, and
+the `requiredAny` hatch is placed of the first enabled kind of its group. `checkValidity` (`src/model/validity.ts`)
+then lists per unit what the game's structure check would still object to (missing energy or maintenance,
+`requiredHatches` or `requiredAny` unmet, casings under the minimum) as `error`s, plus `hint`s for what GT still forms but would not recommend (a hatch on a
+side its legend hints against: GT does not check hatch facing); nothing shows it yet.
+
+**Hatch sides, glass tier and the data access hatch.** Three more things GT's structure definitions and checks say
+about hatches, read by [`tools/gt-source/hatch-extras.mjs`](tools/gt-source/README.md) for every controller class (also for
+hand-made entries) and validated like the rest; none is used by hatch placement yet. A legend entry's `allowFaces` is
+`{ kind: sides[] }`, the only sides (local frame, so `north` is the front of a controller facing north) GT's
+auto-placement turns a hatch of that kind to there, from `.allowOnly(...)` / `.disallowOnly(...)`: the Assembly Line's
+input and maintenance hatches `down`, its data access hatch `north`. These are hints of GT's survival hologram, not rules
+of the structure check (a hatch facing any side still forms the machine); the planner uses them as the sides a hatch may
+be given. A kind that is not listed has no limit, a side is open when it is in `allowFaces` and not in `disallowFaces`
+(which already says the same for older entries, and is not repeated).
+`glassTierLimits` is a multiblock's `chainAllGlasses` check, `glassTier < hatch.getTierForStructure()`: the `kinds`
+(`energy`) may not be of a higher voltage tier than the glass in `chars`. `dataAccess` is the Data Access Hatch of the
+Assembly Lines (GT's `DataHatchElement.DataAccess`), a hatch kind like the others: on the grate casings of the later slices,
+none required and at most one (`requiredHatches`, from `al_too_many_data_access_hatch`). It is the last of the hatch kinds
+(bit 9 of a link's hatch mask), so links made before it decode as they did.
 
 **Adding a multiblock**
 

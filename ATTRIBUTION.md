@@ -120,6 +120,7 @@ the machine-metal colour in the atlas.
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_ENERGY_OUT_LV.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_MAINTENANCE.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_MUFFLER.png`
+- `src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_DATA_ACCESS.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/HV_SIDE_CYCLOTRON_SOLENOID.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/HV_TOP_CYCLOTRON_SOLENOID.png`
 - `src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_CASING_STRIPES_A.png`

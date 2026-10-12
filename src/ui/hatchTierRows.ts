@@ -13,7 +13,7 @@ export interface HatchTierRow {
 }
 
 /** Hatches that have no voltage tier. */
-const UNTIERED: readonly HatchKind[] = ['maintenance', 'steamIn'];
+export const UNTIERED: readonly HatchKind[] = ['maintenance', 'steamIn', 'dataAccess'];
 
 /**
  * The hatches that can be given a tier, in the order the bill of materials keys them. With `selected` unit

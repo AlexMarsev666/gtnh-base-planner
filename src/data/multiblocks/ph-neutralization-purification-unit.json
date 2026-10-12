@@ -18,8 +18,18 @@
     "C": { "blockId": "gregtech:gt.blockcasings9@7" },
     "D": { "blockId": "gregtech:gt.blockglass1@0" },
     "E": { "blockId": "gregtech:gt.blockcasings9@7", "hatches": ["fluidIn", "fluidOut"], "region": "dot1" },
-    "F": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"], "region": "dot4" },
-    "G": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"], "region": "dot3" }
+    "F": {
+      "blockId": "gt.hatch.inputHatch",
+      "hatches": ["fluidIn"],
+      "allowFaces": { "fluidIn": ["up"] },
+      "region": "dot4"
+    },
+    "G": {
+      "blockId": "gt.hatch.inputBus",
+      "hatches": ["itemIn"],
+      "allowFaces": { "itemIn": ["up"] },
+      "region": "dot3"
+    }
   },
   "controller": { "pos": [7, 1, 1], "facing": "north", "blockId": "gregtech:gt.blockmachines@9406" },
   "hatchBlocks": {

@@ -28,6 +28,6 @@ exports[`legacy oil-processing template > has stable hatch counts per group 1`] 
   "g6": 27,
   "g7": 1,
   "g8": 2,
-  "g9": 12,
+  "g9": 7,
 }
 `;

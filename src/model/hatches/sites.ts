@@ -84,6 +84,8 @@ const NO_REGIONS: ReadonlyMap<number, string> = new Map();
 
 const NO_ZONES: ReadonlyMap<number, string> = new Map();
 
+const NO_CHARS: ReadonlyMap<number, string> = new Map();
+
 const NO_BLOCKED: ReadonlyMap<HatchKind, Set<Dir>> = new Map();
 
 /** Per def: the rotated local offset of every structure cell, per rotation. */
@@ -144,6 +146,7 @@ export function findSites(
     regions: ReadonlyMap<number, string>;
     zones: ReadonlyMap<number, string>;
     blocked: ReadonlyMap<HatchKind, Set<Dir>>;
+    chars: ReadonlyMap<number, string>;
   }
   const cells = localCells(def);
   const offsets = rotatedOffsets(def);
@@ -211,6 +214,7 @@ export function findSites(
           regions: NO_REGIONS,
           zones: NO_ZONES,
           blocked: NO_BLOCKED,
+          chars: NO_CHARS,
         };
         byKey.set(k, entry);
       } else {
@@ -218,6 +222,10 @@ export function findSites(
         if (cell.blockId !== entry.blockId) entry.ok = false;
         if ([...entry.kinds].some((kind) => !allowed.includes(kind)))
           entry.kinds = new Set([...entry.kinds].filter((kind) => allowed.includes(kind)));
+      }
+      if (def.minCasings?.length) {
+        if (entry.chars === NO_CHARS) entry.chars = new Map();
+        (entry.chars as Map<number, string>).set(unit.id, cell.char);
       }
       const legend = def.legend[cell.char];
       if (legend?.region !== undefined) {
@@ -368,6 +376,7 @@ export function findSites(
       regions: e.regions,
       zones: e.zones,
       blocked: e.blocked,
+      chars: e.chars,
     });
   }
   return {

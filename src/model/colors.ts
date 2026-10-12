@@ -11,4 +11,5 @@ export const DEFAULT_HATCH_COLORS: Record<HatchKind, string> = {
   maintenance: '#6fbf73',
   muffler: '#8a8f96',
   steamIn: '#c9b99a',
+  dataAccess: '#3fc9b0',
 };

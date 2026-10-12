@@ -21,7 +21,7 @@ type Cat =
 
 const casing = (block: string, ...hatches: HatchKind[]): Cat => ({ t: 'casing', block, hatches });
 const hatchOnly = (kind: HatchKind): Cat => ({ t: 'hatchOnly', kind });
-const [IB, OB, IH, OH, MA, EN, MU, DY, SI]: HatchKind[] = [
+const [IB, OB, IH, OH, MA, EN, MU, DY, SI, DA]: HatchKind[] = [
   'itemIn',
   'itemOut',
   'fluidIn',
@@ -31,6 +31,7 @@ const [IB, OB, IH, OH, MA, EN, MU, DY, SI]: HatchKind[] = [
   'muffler',
   'dynamo',
   'steamIn',
+  'dataAccess',
 ];
 
 /** Assembly Line slices, [layer from top][z]: first (controller), later, and the last one (output bus). */
@@ -525,7 +526,7 @@ const GT: Record<string, { transposed: boolean; shape: Shape; el: Record<string,
       ),
     el: {
       G: casing('gt.casing.grate'),
-      d: casing('gt.casing.grate'),
+      d: casing('gt.casing.grate', DA),
       l: casing('gt.casing.assembler'),
       m: casing('gt.casing.assemblyLine'),
       g: casing('glass'),

@@ -41,6 +41,7 @@
     "fluidOut": { "min": 1 }
   },
   "minCasings": [{ "chars": ["c"], "min": 41 }],
+  "glassTierLimits": { "chars": ["g"], "kinds": ["energy"] },
   "defaultHatches": ["itemIn", "itemOut", "fluidOut", "energy", "maintenance"],
   "wallshare": true,
   "notes": "5x9x5 (the top four layers are a narrower 3x3 cap). Robust Tungstensteel Machine Casings take input and output buses, output hatches, energy and maintenance. Glass (tier limits energy), heating coils (tier sets speed) and a column of Solenoid Superconductor Coils (tier sets parallels) fill the middle; Black Steel frame boxes stand at the corners and on the cap."

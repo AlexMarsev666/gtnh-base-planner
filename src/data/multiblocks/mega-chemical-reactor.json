@@ -36,6 +36,7 @@
     { "kinds": ["itemIn", "fluidIn"], "min": 1 },
     { "kinds": ["itemOut", "fluidOut"], "min": 1 }
   ],
+  "glassTierLimits": { "chars": ["C"], "kinds": ["energy"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "zones": {
     "dot1": {

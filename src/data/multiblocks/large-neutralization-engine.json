@@ -18,6 +18,12 @@
     "B": {
       "blockId": "gregtech:gt.blockcasings12@5",
       "hatches": ["itemIn", "fluidIn", "dynamo", "maintenance"],
+      "allowFaces": {
+        "itemIn": ["north"],
+        "fluidIn": ["north"],
+        "dynamo": ["north"],
+        "maintenance": ["north"]
+      },
       "region": "dot1"
     },
     "C": { "blockId": "gregtech:gt.blockcasings8@1" },

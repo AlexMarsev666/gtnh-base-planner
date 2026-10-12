@@ -23,11 +23,14 @@ export interface Wanted {
  *
  * `wanted` lists each unit's hatches, mandatory ones first; `shares(kind)` says whether a cell of several
  * units may take that kind. `lacking` says, per unit and kind, how many wanted hatches got no cell.
+ * `floor` limits the cells a unit gives to hatches per casing minimum (see `casingRooms`): at most `rooms[i]`
+ * of the cells `of(site, id)` names `i` for (a cell counts against each of its entries, as in placement).
  */
 export function capacityOf(
   sites: readonly Site[],
   wanted: ReadonlyMap<number, readonly Wanted[]>,
   shares: (kind: HatchKind) => boolean,
+  floor?: { rooms: readonly number[]; of: (site: Site, unitId: number) => number[] },
 ): { entries: CapacityEntry[]; lacking: Map<number, Map<HatchKind, number>> } {
   const lacking = new Map<number, Map<HatchKind, number>>();
   const byUnit = new Map<number, Site[]>();
@@ -44,13 +47,21 @@ export function capacityOf(
     const list = all.filter((w) => cells.some((s) => takes(w, s)));
     if (list.length === 0) continue;
     const owner: number[] = new Array(cells.length).fill(-1);
+    const group = cells.map((s) => floor?.of(s, id) ?? []);
+    /** Cells given to hatches per casing minimum. */
+    const given = (floor?.rooms ?? []).map(() => 0);
     const matched: boolean[] = [];
     // Augmenting paths never unmatch a hatch, so the earlier (mandatory) ones keep their cells.
     const assign = (h: number, seen: boolean[]): boolean => {
       for (let c = 0; c < cells.length; c++) {
         if (seen[c] || !takes(list[h], cells[c])) continue;
         seen[c] = true;
-        if (owner[c] < 0 || assign(owner[c], seen)) {
+        const g = group[c];
+        // A free cell that is counted casing needs room left under each of its minimums.
+        if (owner[c] < 0 && g.some((i) => given[i] >= floor!.rooms[i])) continue;
+        const free = owner[c] < 0;
+        if (free || assign(owner[c], seen)) {
+          if (free) for (const i of g) given[i]++;
           owner[c] = h;
           return true;
         }

@@ -25,6 +25,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encodePng, TILE } from '../../scripts/build-atlas.mjs';
 import { createConstraints, withConstraints } from '../gt-source/casing-min.mjs';
 import { elementKinds, kindsForCell } from '../gt-source/hatch-elements.mjs';
+import { createExtras, withExtras } from '../gt-source/hatch-extras.mjs';
 import { dotOfHint, HatchRules, parseCount, ruleLine } from '../gt-source/hatch-rules.mjs';
 import { Composer, meanColor, pixelHash } from './compose.mjs';
 import { listJars, TextureJars } from './jars.mjs';
@@ -75,6 +76,7 @@ const HATCH_ORDER = [
   'maintenance',
   'muffler',
   'steamIn',
+  'dataAccess',
 ];
 const HATCH_BLOCKS = {
   itemIn: 'gt.hatch.inputBus',
@@ -86,6 +88,7 @@ const HATCH_BLOCKS = {
   maintenance: 'gt.hatch.maintenance',
   muffler: 'gt.hatch.muffler',
   steamIn: 'gt.hatch.steamInput',
+  dataAccess: 'gt.hatch.dataAccess',
 };
 /**
  * Legend characters in assignment order. Single UTF-16 units only (the layers are indexed per unit), and never
@@ -995,6 +998,7 @@ export async function build(opts) {
     maintenance: /^Maintenance Hatch$/,
     muffler: /^Muffler Hatch \(LV\)$/,
     steamIn: /^Input Hatch \(LV\)$/,
+    dataAccess: /^Data Access Hatch$/,
   };
   const hatchOverlays = {};
   for (const [kind, re] of Object.entries(HATCH_MTE)) {
@@ -1106,6 +1110,22 @@ export async function build(opts) {
     for (const d of defs) d.def = apply(d.def);
     retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
     if (problems.length) throw new Error(['casing minimums could not be read:', ...problems].join('\n  '));
+  }
+
+  // Hatch sides, tiered-glass limits and the Data Access Hatch (`allowFaces`, `glassTierLimits`, `dataAccess`)
+  // for the entries written here; hand-made entries keep theirs (tools/gt-source/hatch-extras.mjs patches those).
+  if (hatchRules && opts.gt5u) {
+    const extras = await createExtras(opts.gt5u, hatchRules);
+    const problems = [];
+    const apply = (def) => {
+      const r = extras.of(def);
+      if (!r) return def;
+      problems.push(...r.problems);
+      return withExtras(def, r);
+    };
+    for (const d of defs) d.def = apply(d.def);
+    retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
+    if (problems.length) throw new Error(['hatch extras could not be read:', ...problems].join('\n  '));
   }
 
   // Tooltip lines naming a hatch kind no cell of the dump accepts (a part built only in survival, a hatch the

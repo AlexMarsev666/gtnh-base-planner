@@ -125,6 +125,7 @@
     "maintenance": { "min": 1, "max": 1 }
   },
   "minCasings": [{ "chars": ["B", "F", "G", "I"], "min": 145 }],
+  "glassTierLimits": { "chars": ["C"], "kinds": ["energy"] },
   "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "maintenance"],
   "zones": {
     "dot1": {

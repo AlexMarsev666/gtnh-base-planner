@@ -12,8 +12,17 @@
     ["  A  ", " ABA ", " ABA ", " ABA ", "  A  "]
   ],
   "legend": {
-    "A": { "blockId": "gt5u.magicCasing.0", "hatches": ["itemIn", "fluidIn", "energy", "maintenance"] },
-    "B": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"] },
+    "A": {
+      "blockId": "gt5u.magicCasing.0",
+      "hatches": ["itemIn", "fluidIn", "energy", "maintenance"],
+      "allowFaces": {
+        "itemIn": ["north"],
+        "fluidIn": ["north"],
+        "energy": ["north"],
+        "maintenance": ["north"]
+      }
+    },
+    "B": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"], "allowFaces": { "muffler": ["up"] } },
     "E": { "blockId": "gt5u.essentiaCell.0" },
     "C": { "blockId": "gt5u.essentiaFilterCasing.0" },
     "D": { "blockId": "ext.blockCosmeticOpaque" },

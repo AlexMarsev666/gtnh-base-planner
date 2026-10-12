@@ -33,6 +33,7 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 }
   },
+  "glassTierLimits": { "chars": ["D"], "kinds": ["energy"] },
   "defaultHatches": ["itemIn", "energy", "maintenance"],
   "zones": {
     "dot1": {

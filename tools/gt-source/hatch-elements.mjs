@@ -44,6 +44,8 @@ export const ELEMENT_KIND = {
   Muffler: 'muffler',
   InputBus_Steam: 'itemIn',
   OutputBus_Steam: 'itemOut',
+  // The Assembly Lines' own `DataHatchElement.DataAccess` (`MTEHatchDataAccess`).
+  DataAccess: 'dataAccess',
 };
 
 /** Hatch classes named in `.hatchClass(X.class)` → kinds. */
@@ -58,6 +60,7 @@ export const CLASS_KIND = {
   MTEHatchMuffler: 'muffler',
   MTEHatchSteamBusInput: 'itemIn',
   MTEHatchSteamBusOutput: 'itemOut',
+  MTEHatchDataAccess: 'dataAccess',
 };
 
 const EVERY_HATCH = [
@@ -90,6 +93,7 @@ export const ADDER_KIND = {
   addMufflerToMachineList: ['muffler'],
   addSteamBusInput: ['itemIn'],
   addSteamBusOutput: ['itemOut'],
+  addDataAccessToMachineList: ['dataAccess'],
 };
 
 /** Calls whose argument at index `at` is a hint dot. */
@@ -118,7 +122,7 @@ function dotOf(arg, ints) {
 }
 
 /** `{ dot, kinds }` of a single (non-chain) element expression; `dot` is null without one. */
-function leaf(text, ctx) {
+export function leaf(text, ctx) {
   const { ints } = ctx;
   let dot = null;
   const found = (n) => {
@@ -129,7 +133,11 @@ function leaf(text, ctx) {
   for (const [name, at] of Object.entries(DOT_ARG))
     for (const c of findCalls(text, name)) found(dotOf(splitArgs(c.args)[at], ints));
   const kinds = new Set();
-  for (const w of words(text.replace(/\.class\b/g, ''))) if (ELEMENT_KIND[w]) kinds.add(ELEMENT_KIND[w]);
+  for (const w of words(text.replace(/\.class\b/g, ''))) {
+    if (ELEMENT_KIND[w]) kinds.add(ELEMENT_KIND[w]);
+    // A local `IHatchElement` (the Distillation Tower's layered output hatch) is read through its initialiser.
+    else for (const v of words(ctx.elementOf?.(w) ?? '')) if (ELEMENT_KIND[v]) kinds.add(ELEMENT_KIND[v]);
+  }
   for (const c of findCalls(text, 'hatchClass')) {
     const cls = c.args.replace(/\.class\s*$/, '').trim();
     if (CLASS_KIND[cls]) kinds.add(CLASS_KIND[cls]);
@@ -142,8 +150,11 @@ function leaf(text, ctx) {
   return { dot, kinds };
 }
 
-/** `{ dot, kinds }` of an element expression; chains are one cell (see the file comment). */
-export function readElement(expr, ctx = { ints: new Map(), bodyOf: () => null }) {
+/**
+ * The members of a chain (`ofChain(a, b, ...)`, `x.buildAndChain(a, b, ...)`), or null for a single element. The
+ * receiver of `buildAndChain` is the first member (it keeps its own `.allowOnly(...)`).
+ */
+export function chainMembers(expr) {
   const t = expr.trim();
   const members = [];
   const chain = /^(?:[\w.]*\.)?ofChain\s*\(/.exec(t);
@@ -156,7 +167,13 @@ export function readElement(expr, ctx = { ints: new Map(), bodyOf: () => null })
     const open = t.indexOf('(', build.index);
     members.push(...splitArgs(t.slice(open + 1, matchClose(t, open))));
   }
-  if (!members.length) return leaf(t, ctx);
+  return members.length ? members : null;
+}
+
+/** `{ dot, kinds }` of an element expression; chains are one cell (see the file comment). */
+export function readElement(expr, ctx = { ints: new Map(), bodyOf: () => null }) {
+  const members = chainMembers(expr);
+  if (!members) return leaf(expr.trim(), ctx);
   const parts = members.map((m) => readElement(m, ctx));
   return {
     dot: parts.find((p) => p.dot !== null)?.dot ?? null,
@@ -165,31 +182,48 @@ export function readElement(expr, ctx = { ints: new Map(), bodyOf: () => null })
 }
 
 /**
+ * The `.addElement('c', expr)` calls of the nearest class of the chain that has any: `{ from, calls, ctx }`, with
+ * `calls` as `{ char, expr }` and `ctx` (`{ ints, bodyOf, elementOf }`) for `readElement` / `leaf`.
+ */
+export function elementCalls(rules, sourceClass) {
+  const chain = rules.chain(sourceClass);
+  for (const c of chain) {
+    const calls = findCalls(c.body, 'addElement').filter((x) => c.body[x.start - 1] === '.');
+    if (!calls.length) continue;
+    const ctx = {
+      ints: new Map(chain.flatMap((x) => [...intFields(rules.src(x.file))])),
+      bodyOf: (name) => chain.map((x) => methodBody(x.body, name)).find((b) => b !== null) ?? null,
+      elementOf: (name) => {
+        const re = new RegExp(`\\bIHatchElement\\s*(?:<[^>]*>)?\\s+${name}\\s*=\\s*([^;]+);`);
+        return chain.map((x) => re.exec(x.body)?.[1]).find((e) => e !== undefined) ?? null;
+      },
+    };
+    const found = [];
+    for (const call of calls) {
+      const args = splitArgs(call.args);
+      if (args.length < 2) continue;
+      found.push({ char: /^'(.)'$/.exec(args[0])?.[1] ?? null, expr: args.slice(1).join(',') });
+    }
+    return { from: c.name, calls: found, ctx };
+  }
+  return { from: null, calls: [], ctx: null };
+}
+
+/**
  * Dot → the hatch elements that carry it (`Map<number, Set<string>[]>`, one kind set per distinct element; tooltip
  * dot numbering), plus `from`, the class the elements were read in.
  */
 export function elementKinds(rules, sourceClass) {
   const out = new Map();
-  for (const c of rules.chain(sourceClass)) {
-    const calls = findCalls(c.body, 'addElement').filter((x) => c.body[x.start - 1] === '.');
-    if (!calls.length) continue;
-    const chain = rules.chain(sourceClass);
-    const ctx = {
-      ints: new Map(chain.flatMap((x) => [...intFields(rules.src(x.file))])),
-      bodyOf: (name) => chain.map((x) => methodBody(x.body, name)).find((b) => b !== null) ?? null,
-    };
-    for (const call of calls) {
-      const args = splitArgs(call.args);
-      if (args.length < 2) continue;
-      const { dot, kinds } = readElement(args.slice(1).join(','), ctx);
-      if (dot === null || !kinds.size) continue;
-      const sets = out.get(dot) ?? [];
-      if (!sets.some((x) => x.size === kinds.size && [...kinds].every((k) => x.has(k)))) sets.push(kinds);
-      out.set(dot, sets);
-    }
-    return { dots: out, from: c.name };
+  const { from, calls, ctx } = elementCalls(rules, sourceClass);
+  for (const { expr } of calls) {
+    const { dot, kinds } = readElement(expr, ctx);
+    if (dot === null || !kinds.size) continue;
+    const sets = out.get(dot) ?? [];
+    if (!sets.some((x) => x.size === kinds.size && [...kinds].every((k) => x.has(k)))) sets.push(kinds);
+    out.set(dot, sets);
   }
-  return { dots: out, from: null };
+  return { dots: out, from };
 }
 
 /**

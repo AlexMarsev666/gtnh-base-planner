@@ -7,21 +7,37 @@
   "layers": [
     ["AAAAA", "BBBBB", "AAAAA"],
     ["CCCCC", "DDDDD", "CCCCC"],
-    ["EEEE~", "FFFFF", "EEEEE"],
+    ["EEEE~", "FFFFF", "EEEEH"],
     ["     ", "GGGGG", "     "]
   ],
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings2@0",
       "hatches": ["itemOut", "fluidIn", "maintenance"],
+      "allowFaces": { "fluidIn": ["down"], "maintenance": ["down"] },
       "region": "dot1"
     },
-    "B": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"], "region": "dot2" },
+    "B": {
+      "blockId": "gt.hatch.inputBus",
+      "hatches": ["itemIn"],
+      "allowFaces": { "itemIn": ["down"] },
+      "region": "dot2"
+    },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "gregtech:gt.blockcasings2@5" },
-    "E": { "blockId": "gregtech:gt.blockcasings3@10" },
+    "E": {
+      "blockId": "gregtech:gt.blockcasings3@10",
+      "hatches": ["dataAccess"],
+      "allowFaces": { "dataAccess": ["north"] }
+    },
+    "H": { "blockId": "gregtech:gt.blockcasings3@10" },
     "F": { "blockId": "gregtech:gt.blockcasings2@9" },
-    "G": { "blockId": "gregtech:gt.blockcasings2@0", "hatches": ["energy"], "region": "dot4" }
+    "G": {
+      "blockId": "gregtech:gt.blockcasings2@0",
+      "hatches": ["energy"],
+      "allowFaces": { "energy": ["north", "south", "up"] },
+      "region": "dot4"
+    }
   },
   "controller": { "pos": [4, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@13532" },
   "hatchBlocks": {
@@ -29,7 +45,8 @@
     "itemOut": "gt.hatch.outputBus",
     "fluidIn": "gt.hatch.inputHatch",
     "energy": "gt.hatch.energy",
-    "maintenance": "gt.hatch.maintenance"
+    "maintenance": "gt.hatch.maintenance",
+    "dataAccess": "gt.hatch.dataAccess"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": {
@@ -37,7 +54,8 @@
     "itemOut": { "min": 1, "max": 1 },
     "fluidIn": { "min": 1, "max": 4 },
     "energy": { "min": 1 },
-    "maintenance": { "min": 1, "max": 1 }
+    "maintenance": { "min": 1, "max": 1 },
+    "dataAccess": { "min": 0, "max": 1 }
   },
   "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
   "zones": {

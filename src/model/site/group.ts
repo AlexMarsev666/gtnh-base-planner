@@ -9,6 +9,7 @@ import type { HatchAvoid, HatchRequest, PlaceOptions, PlaceResult, UnplacedHatch
 import type { Dir, Rotation, Vec3 } from '../core/types';
 import type { HatchKind, MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
 import type { HatchPlacement, PackResult, WallshareMode, WallStats } from '../plan/types';
+import { checkValidity, type UnitValidity } from '../validity';
 import { computeWallStats } from '../walls';
 import { reachOf, type Reach, type Terminals } from './terminals';
 import {
@@ -96,6 +97,8 @@ export interface GroupBuild {
   notes: GroupNote[];
   /** Choices and requirements it could not meet (see `GroupProblem`). */
   problems: GroupProblem[];
+  /** What the game's structure check would object to, per unit (see `checkValidity`); absent when all is well. */
+  validity?: UnitValidity;
   /** Where each resource's hatches may go (see `Terminals`); absent for single blocks. */
   ends?: Terminals;
 }
@@ -279,6 +282,7 @@ export function buildGroup(
         missing.push({ kind: r.kind, resource: r.key, unitId: id });
   }
   problems.push(...problemsOf(resolved.hatches));
+  const validity = checkValidity(def, units, hatches);
   return {
     def,
     units,
@@ -291,6 +295,7 @@ export function buildGroup(
     missing,
     notes,
     problems,
+    ...(Object.keys(validity).length > 0 ? { validity } : {}),
     ends: candidateEnds(def, resolved.pack.units, requests, below, shift),
   };
 }

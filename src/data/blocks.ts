@@ -52,6 +52,7 @@ const list: BlockInfo[] = [
   { id: 'gt.hatch.dynamo', name: 'Dynamo Hatch', color: '#5b6168' },
   { id: 'gt.hatch.maintenance', name: 'Maintenance Hatch', color: '#5b6168' },
   { id: 'gt.hatch.muffler', name: 'Muffler Hatch', color: '#5b6168' },
+  { id: 'gt.hatch.dataAccess', name: 'Data Access Hatch', color: '#5b6168' },
 
   // Added by the multiblock catalog (unit 9)
   { id: 'gt.casing.firebricks', name: 'Firebricks', color: '#8e5a3c' },

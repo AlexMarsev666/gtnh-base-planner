@@ -41,6 +41,33 @@ describe('readElement', () => {
     expect(kindsForCell([energy.kinds], [])).toEqual(['energy']);
   });
 
+  it("Assembly Line's data access hatch is the dataAccess kind", () => {
+    expect(
+      kinds(`buildHatchAdder(MTEAssemblyLine.class).atLeast(DataHatchElement.DataAccess).hint(3).casingIndex(42)
+        .allowOnly(ForgeDirection.NORTH).buildAndChain(GregTechAPI.sBlockCasings3, 10)`),
+    ).toEqual({ dot: 3, kinds: ['dataAccess'] });
+    expect(kinds('ofHatchAdder(MTEAssemblyLine::addDataAccessToMachineList, 42, 3)')).toEqual({
+      dot: 3,
+      kinds: ['dataAccess'],
+    });
+  });
+
+  it("reads a local IHatchElement through its initialiser (Distillation Tower's layered output)", () => {
+    const ctx = {
+      ints: new Map<string, number>(),
+      bodyOf: () => null,
+      elementOf: (name: string) =>
+        name === 'layeredOutputHatch'
+          ? 'OutputHatch.withCount(MTEDistillationTower::getCurrentLayerOutputHatchCount)'
+          : null,
+    };
+    const { dot, kinds } = readElement(
+      'buildHatchAdder(MTEDistillationTower.class).atLeast(layeredOutputHatch).casingIndex(CASING_INDEX).hint(2).build()',
+      ctx,
+    );
+    expect({ dot, kinds: [...kinds] }).toEqual({ dot: 2, kinds: ['fluidOut'] });
+  });
+
   it('a cell takes the smallest element that holds its kinds, and none that does not', () => {
     const sets = [new Set(['fluidOut', 'muffler']), new Set(['fluidOut', 'energy', 'maintenance'])];
     expect(kindsForCell(sets, ['fluidOut', 'muffler'])).toEqual(['fluidOut', 'muffler']);

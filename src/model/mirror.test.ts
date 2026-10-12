@@ -14,7 +14,12 @@ describe('mirroredDef', () => {
       size: [3, 1, 1],
       layers: [['A~B']],
       legend: {
-        A: { blockId: 'a', hatches: ['itemIn'], disallowFaces: { itemIn: ['east', 'up'] } },
+        A: {
+          blockId: 'a',
+          hatches: ['itemIn'],
+          disallowFaces: { itemIn: ['east', 'up'] },
+          allowFaces: { itemIn: ['east', 'north'] },
+        },
         B: { blockId: 'b' },
       },
       controller: { pos: [1, 0, 0], facing: 'east', blockId: 'c' },
@@ -25,6 +30,7 @@ describe('mirroredDef', () => {
     expect(m.controller.pos).toEqual([1, 0, 0]);
     expect(m.controller.facing).toBe('west');
     expect(m.legend.A.disallowFaces).toEqual({ itemIn: ['west', 'up'] });
+    expect(m.legend.A.allowFaces).toEqual({ itemIn: ['west', 'north'] });
     expect(m.size).toEqual([3, 1, 1]);
     expect(def.layers).toEqual([['A~B']]);
     const off = mirroredDef({ ...def, layers: [['~AB']], controller: { ...def.controller, pos: [0, 0, 0] } });

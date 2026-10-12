@@ -65,6 +65,45 @@ the check only runs for another tier). It also lists tooltip disagreements and a
 by the tier of the entry's casing, then the tooltip, then the largest the structure meets), and `--write` refreshes
 `src/data/constraints.snapshot.json`. `tools/game-dump/build.mjs` applies the same code to the entries it writes.
 
+## Hatch sides, glass tier limits and the data access hatch
+
+`hatch-extras.mjs` reads three more things from the structure definitions and checks and patches them into
+`src/data/multiblocks/*.json` (the text is edited in place, so nothing else in a file changes; the class comes from
+the entry's `source`):
+
+```sh
+node tools/gt-source/hatch-extras.mjs ../gt5u           # report
+node tools/gt-source/hatch-extras.mjs ../gt5u --write   # patch the files and src/data/hatch-extras.snapshot.json
+```
+
+- `hatch-faces.mjs`: `LegendEntry.allowFaces` from `.allowOnly(ForgeDirection...)`, `.disallowOnly(...)` (the complement) and
+  `X.newAny(casingIndex, dot, ForgeDirection...)`. The directions are in the structure's frame, where the controller
+  faces NORTH and UP is up, so a def turns them with its `controller.facing` (GT only names EAST and WEST together, so
+  the planner's X mirror does not matter). GT only uses them to pick the side its survival auto-placement turns a hatch to (a hint, not a
+  structure-check rule: a hatch facing any side still forms the machine), but they say where the slices of the
+  structure leave room for one; the planner uses them as the allowed sides. An entry of a zone `dot<N>` takes the elements with that hint dot,
+  a hand-made entry the elements of the class; where elements share a dot (the Dangote Distillus's rings and top) an entry keeps the elements whose kinds hold all its
+  kinds; per kind the sides are the union of the members that accept it, and one
+  unrestricted element leaves the kind unrestricted. What `disallowFaces` already says (its complement) is not repeated; a
+  disagreement is listed.
+- `glass-tier.mjs`: `MultiblockDef.glassTierLimits`. A `for (T h : <list>)` loop of the class chain that compares the glass
+  tier field (the one `chainAllGlasses(-1, (te, t) -> te.glassTier = t, ...)` sets) with `h.getTierForStructure()` /
+  `h.mTier` limits the kind of the list (`Energy` in its name: `energy`, `Dynamo`: `dynamo`), and so does
+  `glassTier < inputTier` with `inputTier` from `getInputVoltageTier()`. The glass is the legend keys with a block of
+  `GlassTier.RegisterGlassTiers` (`addCustomGlass`) or the planner's `gt.glass.reinforced` stand-in; another element placing
+  such a block makes the keys ambiguous and fails the run. Other comparisons with the glass tier (a fixed minimum, a
+  recipe's voltage, the laser source) are listed as "not modelled".
+- `data-access.mjs`: the `dataAccess` hatch kind (`hatch-elements.mjs` knows `DataAccess` / `MTEHatchDataAccess`). The cells
+  are the legend keys that already take it, else those of the element's zone, else the key of the casing block the element
+  places when that is one key; an entry that cannot be told apart (a hand-made one with a plain grate beside the data one)
+  names the cells itself. A key found by its block that also holds plain cells of that block (the first slice's grate
+  casing, GT `G`) is split: `shape-fit.mjs` fits the controller's shape into the def (the eight turns and mirrors, anchored
+  at the controller) and draws the cells GT covers with an element that takes no hatches with a new legend key. `requiredHatches.dataAccess` is `{ min: 0, max }` with `max` from the `<list>.size() > N` check on
+  the list the element's adder fills; `hatchBlocks.dataAccess` is `gt.hatch.dataAccess`.
+
+`tools/game-dump/build.mjs` applies the same code (`withExtras`) to the entries it writes. A local `IHatchElement`
+(`IHatchElement<T> layeredOutputHatch = OutputHatch...`) is read through its initialiser by `hatch-elements.mjs`.
+
 ## Hatch elements per hint dot
 
 `hatch-elements.mjs` reads the `.addElement('x', ...)` calls of a controller's structure definition (the nearest class
@@ -82,6 +121,7 @@ the dump's kinds of every hint cell (the dump's probe misses custom elements). S
 | `Dynamo`                                                                                                                                         | dynamo                                                                                                                                           |
 | `ExoticEnergy`, `MultiAmpEnergy`, TecTech `EnergyMulti`, GT++ `TTEnergy`, `ExoticDynamo`, `DynamoMulti`, `TTDynamo`                              | none (multi-amp and laser hatches are not plain Energy / Dynamo Hatches: `addEnergyInputToMachineList`, `addDynamoToMachineList` turn them away) |
 | `Maintenance`, `Muffler`                                                                                                                         | maintenance, muffler                                                                                                                             |
+| `DataAccess` (the Assembly Lines' `DataHatchElement`), `MTEHatchDataAccess`, `addDataAccessToMachineList`                                        | dataAccess                                                                                                                                       |
 | `.hatchClass(MTEHatchInput/InputBus/Output/OutputBus/Energy/Dynamo/Maintenance/Muffler/SteamBusInput/SteamBusOutput.class)`                      | the matching kind                                                                                                                                |
 | adder `add{Input,InputBus,InputHatch,Output,OutputBus,OutputHatch,Energy,Dynamo,Maintenance,Muffler}...ToMachineList`, `addSteamBusInput/Output` | the matching kinds                                                                                                                               |
 | adder `addToMachineList`, TecTech `addClassicToMachineList` (their bodies switch over every plain hatch class)                                   | itemIn, itemOut, fluidIn, fluidOut, energy, dynamo, maintenance, muffler                                                                         |

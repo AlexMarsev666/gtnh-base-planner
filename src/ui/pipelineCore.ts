@@ -17,10 +17,11 @@ import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
 import type { PackResult, PlanState, WallStats } from '../model/plan/types';
 import type { SceneModel } from '../model/render/types';
 import type { RouteNet } from '../model/routing/routeNet';
+import { checkValidity, type UnitValidity } from '../model/validity';
 import { computeWallStats } from '../model/walls';
 import { withBuildDimensions } from './dimensions';
 import { warnOnce } from './warn';
-import { hatchKey, layoutKey, pipesKey, sceneKey } from './pipelineKeys';
+import { hatchKey, layoutKey, pipesKey, sceneKey, validityKey } from './pipelineKeys';
 
 /** The model functions the pipeline calls (injectable for tests). */
 export interface PipelineDeps {
@@ -62,6 +63,8 @@ export interface PipelineResult {
   pipes: RouteNet[] | null;
   /** True when the routing work budget left hatches unconnected that more search might have connected. */
   routingTruncated?: boolean;
+  /** What the game's structure check would object to, per unit (see `checkValidity`); absent when all is well. */
+  validity?: UnitValidity;
   scene: SceneModel | null;
   /** First error thrown by a stage (the stages after it are skipped). */
   error: string | null;
@@ -107,6 +110,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
   }>('placeHatches');
   const statsStage = stage<WallStats>('computeWallStats');
   const pipesStage = stage<RouteNet[] | null>('routePipes');
+  const validityStage = stage<UnitValidity>('checkValidity');
   const sceneStage = stage<SceneModel>('buildSceneModel');
   let lastResultKey: string | undefined;
   let lastResult: PipelineResult | undefined;
@@ -153,6 +157,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     });
     const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below);
     const pipesK = pipesKey(hatchK, kinds);
+    const validityK = validityKey(pipesK);
     const sceneK = sceneKey(pipesK, colors);
     if (lastResult && sceneK === lastResultKey) return lastResult;
 
@@ -222,18 +227,11 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     const routingTruncated = routed ? placed.value.truncated === true : undefined;
 
     // Hatches turn to whichever side their pipe reaches them from.
+    const turned = withPipeFaces(hatchResult.hatches, pipeNets);
+    const validity = validityStage(validityK, () => checkValidity(def, units, turned));
     // Width and depth of the whole build are measured beside it.
     const scene = sceneStage(sceneK, () =>
-      withBuildDimensions(
-        deps.buildSceneModel(
-          def,
-          units,
-          withPipeFaces(hatchResult.hatches, pipeNets),
-          stats.value,
-          pipeNets,
-          colors,
-        ),
-      ),
+      withBuildDimensions(deps.buildSceneModel(def, units, turned, stats.value, pipeNets, colors)),
     );
     return finish({
       def,
@@ -244,6 +242,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       ...(packed.fallback ? { wallshareFallback: packed.fallback } : {}),
       stats: stats.value,
       pipes: pipeNets,
+      ...(validity.ok && Object.keys(validity.value).length > 0 ? { validity: validity.value } : {}),
       ...(routingTruncated ? { routingTruncated } : {}),
       scene: scene.ok ? scene.value : null,
       error: scene.ok ? (pipes.ok ? null : pipes.error) : scene.error,

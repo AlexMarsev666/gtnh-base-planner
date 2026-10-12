@@ -54,6 +54,11 @@ export function pipesKey(hatches: string, kinds: readonly RoutedKind[]): string 
   return JSON.stringify(['pipes', hatches, kinds]);
 }
 
+/** Validity (what the game's structure check would object to): the pipes, which turn the hatches. */
+export function validityKey(pipes: string): string {
+  return JSON.stringify(['validity', pipes]);
+}
+
 /** The scene: the pipes and the colour of every hatch kind. */
 export function sceneKey(pipes: string, colors: Readonly<Record<HatchKind, string>>): string {
   const byKind = Object.keys(colors)

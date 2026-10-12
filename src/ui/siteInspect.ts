@@ -23,6 +23,7 @@ import {
 import { groupHatchKeys } from '../model/site/siteScene';
 import { allowedTiers, hasNoResource } from '../model/tiers';
 import { effectiveRouting } from '../share/siteCodec';
+import { UNTIERED } from './hatchTierRows';
 
 /* Pure helpers behind the template panel's routing block and the group editor. */
 
@@ -155,7 +156,7 @@ export function groupHatchRows(
   const keys = groupHatchKeys(hatches, unitIds);
   const rows = new Map<string, GroupHatchRow>();
   hatches.forEach((h, i) => {
-    if (h.kind === 'maintenance' || h.kind === 'steamIn' || rows.has(keys[i])) return;
+    if (UNTIERED.includes(h.kind) || rows.has(keys[i])) return;
     const shared = h.unitIds.length > 1 || unitIds.indexOf(h.unitIds[0]) < 0;
     rows.set(keys[i], {
       key: keys[i],
@@ -231,7 +232,7 @@ export function groupHatchInfo(
     units: h.unitIds.flatMap((id) => (unitIds.includes(id) ? [unitIds.indexOf(id) + 1] : [])),
     cells: placed.hatches.flatMap((x, j) => (keys[j] === key ? [x.cell] : [])),
     ...(name !== undefined ? { zone: { name, text: def?.zones?.[name]?.text } } : {}),
-    tiered: h.kind !== 'maintenance' && h.kind !== 'steamIn',
+    tiered: !UNTIERED.includes(h.kind),
   };
 }
 
