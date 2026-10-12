@@ -404,7 +404,8 @@ describe('resolveRoutedLayout on normal machines', () => {
         { kinds: ROUTED_KINDS },
         counting,
       );
-      expect(calls).toBe(2);
+      // The deeper layout (smaller, no taller) routes at once; the plain one took a second run before.
+      expect(calls).toBe(1);
       expect(unconnected(r.pipes)).toBe(0);
     },
     120_000,

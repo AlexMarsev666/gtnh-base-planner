@@ -47,7 +47,7 @@ export function* layoutCandidates(
   // reached after a few tries instead of after every compact lattice shape.
   const groups = new Map<string, Candidate[]>();
   for (const c of candidates(def, modesFor(def, cache), n, lim, true)) {
-    const g = `${c.mode.parity}|${c.mode.spacing.map((s) => `${s.inner}/${s.outer}`).join(',')}`;
+    const g = `${c.mode.parity}|${c.mode.spacing.map((s) => `${s.inner}/${s.outer}`).join(',')}|${c.mode.variants.alt.join('')}`;
     const list = groups.get(g);
     if (list) list.push(c);
     else groups.set(g, [c]);
@@ -70,7 +70,7 @@ export function* layoutCandidates(
   for (const c of ordered) {
     const units = realize(def, cache, n, c);
     if (!units) continue;
-    const k = units.map((u) => `${key(u.origin)}/${u.rotation}`).join(';');
+    const k = units.map((u) => `${key(u.origin)}/${u.rotation}/${u.variant ?? 0}`).join(';');
     if (seen.has(k)) continue;
     seen.add(k);
     yield units;

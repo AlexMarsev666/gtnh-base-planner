@@ -65,6 +65,18 @@ function shapesOf(def: MultiblockDef, cache: DefCache, variant: Variant): Shape[
   return (cache.variantShapes[variant] ??= buildShapes(orientedDef(def, variant), cache.blocks));
 }
 
+/** Do two variants of `def` have the same four rotated shapes (a symmetric structure)? */
+export function sameShapes(def: MultiblockDef, cache: DefCache, va: Variant, vb: Variant): boolean {
+  const a = shapesOf(def, cache, va);
+  const b = shapesOf(def, cache, vb);
+  return a.every(
+    (sa, i) =>
+      sa.grid.length === b[i].grid.length &&
+      sa.grid.every((c, j) => c === b[i].grid[j]) &&
+      sa.front?.join() === b[i].front?.join(),
+  );
+}
+
 /**
  * Can unit B (rotation rb, origin at offset d from unit A's origin) coexist with unit A (rotation ra)?
  * `va` and `vb` are the units' variants (relative to `def`, see `Unit.variant`), 0 for the packer's units.

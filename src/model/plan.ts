@@ -1,4 +1,5 @@
 import { step } from './geometry';
+import { plainOf } from './layout/cache';
 import type { HatchAvoid, HatchRequest, PlaceOptions, PlaceResult } from './hatches/types';
 import { DEFAULT_TURN_COST, MAX_ROUNDS, RESOLVE_POP_BUDGET, ROUTE_POP_CAP } from './routing/constants';
 import type { RouteOptions, WorkBudget } from './routing/types';
@@ -65,6 +66,12 @@ export function resolveLayout(
   if (first.unplaced.length === 0 || base.units.length === 0) {
     return { pack: base, hatches: first, loosened: false };
   }
+  // A deep or turned layout that cannot hold its hatches gives way to the plain layout it replaced, which is
+  // then resolved as if it had been the base all along.
+  const plain = plainOf.get(base.units);
+  if (plain) {
+    return resolveLayout(def, { ...base, units: plain }, enabled, limits, deps, maxTries, requests);
+  }
 
   let best = { units: base.units, hatches: first, layers: layers(base.units) };
   // No layout within the limits has fewer layers than this.
@@ -91,6 +98,8 @@ export function resolveLayout(
   return { pack: loosened ? { ...base, units: best.units } : base, hatches: best.hatches, loosened };
 }
 
+const terminalsOf = (nets: readonly RouteNet[]) => nets.reduce((n, r) => n + r.total, 0);
+
 /** Number of distinct unit heights (stacked layers). */
 function layers(units: Unit[]): number {
   return new Set(units.map((u) => u.origin[1])).size;
@@ -101,6 +110,7 @@ function sameLayout(a: Unit[], b: Unit[]): boolean {
   return a.every(
     (u, i) =>
       u.rotation === b[i].rotation &&
+      (u.variant ?? 0) === (b[i].variant ?? 0) &&
       u.origin[0] === b[i].origin[0] &&
       u.origin[1] === b[i].origin[1] &&
       u.origin[2] === b[i].origin[2],
@@ -223,7 +233,9 @@ export function resolveRoutedLayout(
     best.pipes,
     (h) => route(best.units, h),
     requests ? (d, u, e, a) => placeWith(deps, d, u, e, requests, a) : deps.placeHatches,
-    undefined,
+    // Tightly packed layouts with turned units have long branches everywhere, so moves would go on and on:
+    // two passes are what plain layouts need.
+    best.units.some((u) => u.variant) ? Math.min(2, hatchMoves(terminalsOf(best.pipes))) : undefined,
     () => {
       // Asked only while moves remain, so a refusal means the budget cut the moves short.
       const ok = !budget.capped && budget.used + routeCost <= budget.limit;

@@ -138,7 +138,8 @@ export function classifyWallshare(
 
 /**
  * Ranked candidate layouts. The compact family (used by `packUnits`) has no gaps and uses walkways only
- * along axes with a limit; `spaced` adds gap and walkway layouts everywhere (see `layoutCandidates`).
+ * along axes with a limit; `spaced` adds gap and walkway layouts everywhere (see `layoutCandidates`). Layouts
+ * whose bounding volume is `below` or more are left out.
  */
 export function candidates(
   def: MultiblockDef,
@@ -147,6 +148,7 @@ export function candidates(
   limits: PlanLimits,
   spaced: boolean | 'wide' = false,
   wallshare?: WallshareMode,
+  below = Infinity,
 ): Candidate[] {
   const out: Candidate[] = [];
   const countsByCaps = new Map<string, Vec3[]>();
@@ -177,15 +179,15 @@ export function candidates(
         if (order === 'zxy' && (counts[0] === 1 || counts[2] === 1)) continue;
         const { pairs, odd, used } = fillStats(n, counts, order);
         const ext = [0, 1, 2].map((a) => coord(spacing[a], used[a] - 1) + size[a]);
+        if (ext[0] * ext[1] * ext[2] >= below) continue;
         let faces = 0;
         const shared = [0, 0, 0];
         const touching = [0, 0, 0];
         for (let a = 0; a < 3; a++) {
-          if (def.wallshare) {
-            if (spacing[a].inner === size[a] - 1) shared[a] += odd[a];
-            if (spacing[a].outer === size[a] - 1) shared[a] += pairs[a] - odd[a];
-            faces += shared[a];
-          }
+          // Units overlap where the spacing is below their size: by one block (a shared wall) or deeper.
+          if (spacing[a].inner < size[a]) shared[a] += odd[a];
+          if (spacing[a].outer < size[a]) shared[a] += pairs[a] - odd[a];
+          faces += shared[a];
           if (spacing[a].inner === size[a]) touching[a] += odd[a];
           if (spacing[a].outer === size[a]) touching[a] += pairs[a] - odd[a];
         }

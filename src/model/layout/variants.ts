@@ -1,9 +1,9 @@
 import { key } from '../geometry';
 import type { MultiblockDef, Unit } from '../multiblock/types';
-import { defCache, sourceOf } from './cache';
+import { defCache, plainOf, sourceOf } from './cache';
 import { coord, modesFor } from './modes';
 import { realize } from './realize';
-import type { Candidate, Spacing } from './types';
+import type { Candidate, Mode, Spacing } from './types';
 
 /** Looser versions of a packed layout: room between units for hatches, pipes and cables. */
 
@@ -31,22 +31,48 @@ export function* loosenings(def: MultiblockDef, units: readonly Unit[]): Generat
   const base = sourceOf.get(units);
   if (!base) return;
   const n = units.length;
+  // A deep or turned layout packs tighter than the plain one but leaves less room for pipes: if it does not
+  // route, the plain layout and its loosenings (the sequence of old, whose loosest layout the caller keeps for
+  // last) stand in for its own.
+  const plain = plainOf.get(units);
+  const seen = new Set<string>();
+  const layoutKey = (us: readonly Unit[]) =>
+    us.map((u) => `${key(u.origin)}/${u.rotation}/${u.variant ?? 0}`).join(';');
+  seen.add(layoutKey(units));
+  if (plain) {
+    for (const us of [plain, ...loosenings(def, plain)]) {
+      const k = layoutKey(us);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      yield us;
+    }
+    return;
+  }
   const cache = defCache(def);
-  const { parity, spacing, size } = base.mode;
+  const { parity, spacing, size, variants } = base.mode;
   const list: { c: Candidate; volume: number }[] = [];
-  for (const mode of modesFor(def, cache)) {
-    const sp = mode.spacing;
-    if (mode.parity !== parity || sp[1].inner !== spacing[1].inner || sp[1].outer !== spacing[1].outer)
-      continue;
+  const plainModes = modesFor(def, cache);
+  // A layout with deep overlaps or turned units keeps its spacing along Y and its variants: looser spacing
+  // along X and Z needs no turn to be valid, so the plain modes lend theirs, and `realize` checks the rest.
+  const plainBase = plainModes.includes(base.mode);
+  const done = new Set<string>();
+  for (const plain of plainModes) {
+    const sp = plain.spacing;
+    if (plain.parity !== parity) continue;
+    if (plainBase && (sp[1].inner !== spacing[1].inner || sp[1].outer !== spacing[1].outer)) continue;
     if ([0, 2].some((a) => looseness(sp[a], size[a]) < looseness(spacing[a], size[a]))) continue;
     if ([0, 2].every((a) => sp[a].inner === spacing[a].inner && sp[a].outer === spacing[a].outer)) continue;
-    if ([0, 1, 2].some((a) => base.used[a] > mode.pairCaps[a])) continue;
+    if (plainBase && [0, 1, 2].some((a) => base.used[a] > plain.pairCaps[a])) continue;
+    const id = `${sp[0].inner}/${sp[0].outer},${sp[2].inner}/${sp[2].outer}`;
+    if (done.has(id)) continue;
+    done.add(id);
+    const mode: Mode = plainBase
+      ? plain
+      : { ...plain, spacing: [sp[0], spacing[1], sp[2]], variants, pairCaps: base.mode.pairCaps };
     const c: Candidate = { ...base, mode };
     list.push({ c, volume: volumeOf(c) });
   }
   list.sort((a, b) => a.volume - b.volume || a.c.mode.seq - b.c.mode.seq);
-  const layoutKey = (us: readonly Unit[]) => us.map((u) => `${key(u.origin)}/${u.rotation}`).join(';');
-  const seen = new Set([layoutKey(units)]);
   for (const { c } of list) {
     const out = realize(def, cache, n, c);
     if (!out) continue;

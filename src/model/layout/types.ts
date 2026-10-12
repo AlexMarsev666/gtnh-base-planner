@@ -19,16 +19,30 @@ export interface Spacing {
   outer: number;
 }
 
-/** A rotation parity plus a spacing per axis, with what the axis-aligned neighbour checks allow. */
+export type Variant = 0 | 1 | 2 | 3;
+
+/**
+ * Orientation variants (relative to the def handed to the packer) over the lattice: the unit at lattice
+ * index p has `base`, turned further by `alt[a]` for every axis a along which p is odd.
+ */
+export interface VariantPattern {
+  base: Variant;
+  alt: [Variant, Variant, Variant];
+}
+
+/** A rotation parity plus a spacing and a variant pattern, with what the axis-aligned neighbour checks allow. */
 export interface Mode {
   parity: 0 | 1;
   size: Vec3;
   spacing: [Spacing, Spacing, Spacing];
+  variants: VariantPattern;
   /** Most units per axis under the best rotation pattern (Infinity = unbounded). */
   pairCaps: Vec3;
   /** Uses a two-block gap or walkway somewhere: only for routed layouts (see `loosenings`). */
   wide: boolean;
   seq: number;
+  /** A deep or turned mode (see `extraModesFor`): only taken when it packs tighter than the plain ones. */
+  extra?: true;
 }
 
 export interface DefCache {
@@ -38,8 +52,12 @@ export interface DefCache {
   blocks: Map<string, number>;
   /** `shapes` of the other variants (index 1..3), built when a pair asks for one. */
   variantShapes: (Shape[] | undefined)[];
+  /** Variants (relative to the def) whose absolute orientation the machine allows (`MultiblockDef.variants`). */
+  allowed: Variant[];
   pairs: Map<string, boolean>;
+  /** The plain modes (see `modesFor`), and the deep and turned ones (see `extraModesFor`). */
   modes: Mode[] | null;
+  extraModes: Mode[] | null;
   results: Map<string, LayoutResult>;
 }
 
@@ -57,7 +75,7 @@ export interface Candidate {
   area: number;
   squareness: number;
   seq: number;
-  /** Neighbour pairs per axis that share a wall (spacing size - 1). */
+  /** Neighbour pairs per axis that overlap (spacing below the unit size: a shared wall or deeper). */
   shared: Vec3;
   /** Neighbour pairs per axis that touch without sharing (spacing === size). */
   touching: Vec3;

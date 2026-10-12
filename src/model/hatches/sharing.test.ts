@@ -3,6 +3,8 @@ import { catalog, getMultiblock } from '../../data/catalog';
 import { packUnits } from '../layout/packer';
 import type { HatchKind, MultiblockDef } from '../multiblock/types';
 import { checkValidity } from '../validity';
+import { defaultPlan } from '../../state/store';
+import { createPipeline } from '../../ui/pipelineCore';
 import { placeHatches } from './placement';
 import { effectiveSharing, withSharing } from './sharing';
 
@@ -69,8 +71,10 @@ describe('muffler counts on every wall-sharing def', () => {
       for (const n of [2, 3]) {
         const units = packUnits(def, n, { x: null, y: null, z: null }).units;
         const enabled = [...new Set<HatchKind>([...def.defaultHatches, 'muffler'])];
-        const { hatches } = placeHatches(def, units, enabled);
+        const { hatches, unplaced } = placeHatches(def, units, enabled);
         for (const u of units) {
+          // A layout that leaves a muffler unplaced is no plan: the pipeline takes a looser one.
+          if (unplaced.some((p) => p.kind === 'muffler' && p.unitId === u.id)) continue;
           const have = hatches.filter((h) => h.kind === 'muffler' && h.unitIds.includes(u.id)).length;
           if (have < min || have > max) bad.push(`${def.id} x${n} unit ${u.id}: ${have}`);
         }
@@ -78,6 +82,18 @@ describe('muffler counts on every wall-sharing def', () => {
     }
     expect(bad).toEqual([]);
   });
+
+  it('leave no muffler unplaced in the full pipeline, with 2 and 3 units', () => {
+    const bad: string[] = [];
+    for (const def of defs)
+      for (const n of [2, 3]) {
+        const enabled = [...new Set<HatchKind>([...def.defaultHatches, 'muffler'])];
+        const r = createPipeline()({ ...defaultPlan(def.id), count: n, enabledHatches: enabled }, false);
+        const left = r.hatches?.unplaced.filter((u) => u.kind === 'muffler') ?? [];
+        if (left.length > 0) bad.push(`${def.id} x${n}: ${left.length}`);
+      }
+    expect(bad).toEqual([]);
+  }, 60_000);
 });
 
 describe('effectiveSharing', () => {

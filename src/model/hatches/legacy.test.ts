@@ -10,7 +10,10 @@ import { recordLegacy, recordLegacyOptions } from './legacyCases';
  * The assembly-line entries with `below` were re-recorded when `allowFaces` became a face preference (its floor
  * casings allow `down`, which `below` opens); every other entry is unchanged. The Pyrolyse Oven entries with 3 or 6
  * units were re-recorded when the muffler became shared on every `wallshare` def (units in a row now share
- * one muffler in the wall between them); among the recorded cases only those changed.
+ * one muffler in the wall between them); among the recorded cases only those changed. The Pyrolyse Oven entries
+ * with 3 or 6 units and the Assembly Line entries with 3 were re-recorded when the packer began overlapping
+ * units deeper than one block (the units they place on changed, not `placeHatches`); no other recorded case
+ * moved.
  */
 const read = (name: string) => JSON.parse(readFileSync(new URL(name, import.meta.url), 'utf8'));
 

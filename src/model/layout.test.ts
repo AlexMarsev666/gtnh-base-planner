@@ -195,10 +195,10 @@ describe('packUnits', () => {
     const rows = new Map<number, Unit[]>();
     for (const u of r.units) rows.set(u.origin[2], [...(rows.get(u.origin[2]) ?? []), u]);
     expect([...rows.values()].map((row) => row.length)).toEqual([5, 5, 5]);
-    // Rows 1 and 2 share their back wall; rows 2 and 3 face each other across a walkway.
+    // The rows overlap deeper than one wall now (Pyrolyse Oven shapes allow it), so they all face the same way.
     expect([...rows.values()].map((row) => controllerFacing(def, row[0]))).toEqual([
       'north',
-      'south',
+      'north',
       'north',
     ]);
   });
