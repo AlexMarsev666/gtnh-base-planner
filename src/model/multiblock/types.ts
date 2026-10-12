@@ -170,6 +170,15 @@ export interface MultiblockDef {
    * Informational; it only constrains a plan where a user assigns a zone to a hatch.
    */
   zones?: Record<string, { kinds: HatchKind[]; text?: string }>;
+  /**
+   * The orientations GT lets a unit stand in, when not all four (tools/gt-source/orientation.mjs, from the
+   * controller's alignment limits): 0 as in the catalog, 1 mirrored left-right (along local X), 2 upside down (a
+   * roll of 180 degrees about the controller's facing axis, which is mirrored along X and Y), 3 mirrored top-bottom
+   * (along Y). Sorted, always contains 0. Absent: all four (GT's default `!f.isVerticallyFliped()` reaches them
+   * through the roll). A list rather than two flags because GT has sets that are no product: the large turbines
+   * keep their flip but may roll, which allows 0 and 2 only. The controller keeps facing horizontally.
+   */
+  variants?: (0 | 1 | 2 | 3)[];
   /** Whether casings of two units may overlap (shared walls) when the blocks match. */
   wallshare: boolean;
   /** Present when the structure has a variable size (see `ResizeRule`). */

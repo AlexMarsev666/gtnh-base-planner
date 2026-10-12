@@ -158,6 +158,7 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 | `minCasings`         | Optional `{ chars, min, perSlab? }[]`: at least `min` cells of those legend keys stay casing.  |
 | `glassTierLimits`    | Optional `{ chars, kinds }`: hatches of `kinds` stay at or below the tier of the glass.        |
 | `defaultHatches`     | Hatch kinds enabled in a new plan.                                                             |
+| `variants`           | Optional `(0                                                                                   | 1   | 2   | 3)[]`: the orientations GT allows, when not all four, see below. |
 | `wallshare`          | Whether casings of two units may overlap when the blocks match.                                |
 | `resize`             | Optional variable size: `{ axis, from, to, min, max, default, label }`, see below.             |
 | `zones`              | Optional hatch zones by legend `region` (`dot<N>`): the kinds meant for it and its tooltip.    |
@@ -203,6 +204,14 @@ repeated). Placement turns a hatch to an open side when it can (`disallowFaces` 
 preference: an Assembly Line's floor casings only allow `down`, which is the ground unless connections from below are
 on, so the hatch faces another side and the validity check gives a hint). Pipe routing turns a hatch to the side its
 pipe reaches it from (never one `disallowFaces` forbids), so it may end up outside `allowFaces`; the hint then says so.
+`variants` lists the orientations the controller's alignment limits allow (`getInitialAlignmentLimits` / `getAlignmentLimits`
+of the class and its superclasses, `tools/gt-source/orientation.mjs`): 0 as in the catalog, 1 mirrored left-right, 2 upside down
+(a roll of 180 degrees about the facing axis, which is a mirror along X and along Y), 3 mirrored top-bottom; the controller keeps
+facing horizontally. A player sets them with the wrench (roll, horizontal flip; never a vertical flip directly), so a machine that
+allows no roll reaches only 0 and 1. An absent field allows all four (GT's default `!f.isVerticallyFliped()` reaches them through the roll). It
+is a list because GT has sets that are no product of two flags: the large turbines (`f.isNotFlipped()`, roll allowed) are `[0, 2]`.
+Upright-only machines (Coke Oven, drilling rigs, distillation towers, air filters, fishing port) are `[0, 1]`; machines that allow
+neither roll nor flip (Bricked Blast Furnace, Windmill, Extreme Industrial Greenhouse, the two reactors) are `[0]`. Nothing in the planner reads it yet.
 `glassTierLimits` is a multiblock's `chainAllGlasses` check, `glassTier < hatch.getTierForStructure()`: the `kinds`
 (`energy`) may not be of a higher voltage tier than the glass in `chars`. The planner compares the hatch's tier (the
 machine tier, or the hatch's own entry in Hatch tiers) with the glass tier: the `glassTier` of the plan or template group

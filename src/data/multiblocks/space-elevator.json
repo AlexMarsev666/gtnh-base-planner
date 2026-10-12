@@ -1626,6 +1626,7 @@
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1 } },
   "defaultHatches": ["itemIn", "itemOut", "energy"],
+  "variants": [0, 1],
   "wallshare": true,
   "notes": "Generated from TileEntitySpaceElevator (GT5-Unofficial 5.09.54.205) by tools/gt-source: the structure is copied cell by cell; hatch counts follow the controller's tooltip and structure check. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
 }

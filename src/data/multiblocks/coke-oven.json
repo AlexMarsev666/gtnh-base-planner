@@ -27,6 +27,7 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidOut"],
   "defaultHatches": ["itemIn", "itemOut", "fluidOut"],
+  "variants": [0, 1],
   "wallshare": true,
   "notes": "GT:NH 2.9+ Coke Oven. One Coke Oven Hatch type with three screwdriver modes (Input, Output Items, Output Fluids); a hatch keeps a list of controllers, so one hatch can serve several ovens. Hatches may replace any brick."
 }

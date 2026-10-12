@@ -43,6 +43,7 @@
     },
     "dot2": { "kinds": ["muffler"], "text": "1-8 Muffler Hatch: Any center side casing" }
   },
+  "variants": [0, 1],
   "wallshare": true,
   "notes": "Built by the game itself: MTEAirFilter2 (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

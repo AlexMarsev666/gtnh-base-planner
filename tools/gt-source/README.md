@@ -133,3 +133,48 @@ elements share a dot (Circuit Assembly Line: energy hatch and first input bus ar
 kind set contains all the kinds the dump gave it (the smallest set; the union of those tied; none fits: the dump's kinds stay), and a kind-less cell on such a dot gets nothing. Machine-specific elements (data,
 laser, beamline, ...) are in no table and give no kind. Not resolved: element lists held in local variables
 (`layeredOutputHatch` in the Sparge Tower).
+
+## Orientations
+
+`orientation.mjs` reads the alignment limits of every controller class and patches `variants` (the orientations GT allows,
+see the README's data model) into `src/data/multiblocks/*.json` (also hand-made entries; the class comes from the entry's
+`source`):
+
+```sh
+node tools/gt-source/orientation.mjs ../gt5u           # report
+node tools/gt-source/orientation.mjs ../gt5u --write   # patch the files and src/data/orientation.snapshot.json
+```
+
+`MTEEnhancedMultiBlockBase.getInitialAlignmentLimits()` is `(d, r, f) -> !f.isVerticallyFliped()`; the nearest
+`getAlignmentLimits()` override in the class chain (not `return mLimits`) wins over any `getInitialAlignmentLimits()`.
+The expression is read as a lambda over `d` (direction), `r` (rotation, the roll about the facing axis) and `f` (flip):
+`d.offsetY == 0`, `d != / == ForgeDirection.X`, `(d.flag & (ForgeDirection.UP.flag | ...)) == 0`, `r.isNotRotated()` /
+`isUpsideDown()` / `isClockwise()` / `isCounterClockwise()`, `f.isNotFlipped()` / `isVerticallyFliped()` /
+`isHorizontallyFlipped()` / `isBothFlipped()`, with `!`, `&&`, `||`, parentheses; as an `IAlignmentLimits` constant
+(`UNLIMITED`, `UPRIGHT`, `NOT_UPSIDE_DOWN`, `FACING_UP`, read from StructureLib 1.4.45's byte code); or as an
+`IAlignmentLimits.Builder.allowAll()/denyAll()` chain of `.allow/.deny(ForgeDirection.X | Rotation.X | Flip.X)`. Anything
+else fails the run with the class list (`--partial` writes the rest). A literal `return true/false;` in
+`isRotationChangeAllowed()` / `isFlipChangeAllowed()` replaces StructureLib's default (some other roll / flip is valid at
+the current state); a body that depends on the run time (Forge of the Gods while formed) keeps the default, which is the
+right reading for an orientation set before the machine forms, and is listed. The chain walk continues past superclasses written with
+nested type parameters (`<T extends Base<T>>`), which `HatchRules.chain` stops at; a container class (`MTEVoidMiners`) is
+read through its nested controllers, which must agree.
+
+With the controller facing horizontally, a state (rotation 0 or 180, flip) is the mirror along X (flip horizontal XOR roll 180) and along Y (flip vertical XOR roll 180); that is variant 0 (as built), 1 (X), 2 (both: upside down) or 3 (Y). The
+tool replays what a player can set from placement (roll NORMAL, flip NONE): a wrench click on the front is `toolSetRotation(null)`
+(when `isRotationChangeAllowed()`: the first state the limits allow for flip offsets 0..3 and roll offsets 1..3, so it can
+pass through flipped states), a sneaking click toggles the horizontal flip (when `isFlipChangeAllowed()`), a vertical flip is
+never set directly (`MTEEnhancedMultiBlockBase.onWrenchRightClick`, StructureLib 1.4.45 `IAlignment`). It writes the variants
+reached; all four reached writes nothing. A controller that can only face up (`d == UP`, the Solar Tower) keeps the vertical
+axis: 0 and, when a flip is allowed, 1. Mapping in 5.09.54.205:
+
+| Limits                                                                                                                   | Variants                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| default `!f.isVerticallyFliped()`, `(d, r, f) -> true`, no override                                                      | all                                                                      |
+| `d.offsetY == 0 && r.isNotRotated()` (no flip rule), the Exo Foundry and Space Elevator builders, `d != UP && d != DOWN` | 0, 1 (no roll, so no upside down; the wrench never sets a vertical flip) |
+| `... && r.isNotRotated() && !f.isVerticallyFliped()` (towers, drills, ...)                                               | 0, 1                                                                     |
+| `!r.isUpsideDown() && !f.isVerticallyFliped()` (heat exchangers)                                                         | 0, 1                                                                     |
+| `IAlignmentLimits.UPRIGHT` (Coke Oven)                                                                                   | 0, 1                                                                     |
+| `d == ForgeDirection.UP` (Solar Tower)                                                                                   | 0, 1                                                                     |
+| `f.isNotFlipped()` with the roll allowed (large turbines)                                                                | 0, 2                                                                     |
+| `... && r.isNotRotated() && f.isNotFlipped()` (reactors, greenhouse, ...)                                                | 0                                                                        |

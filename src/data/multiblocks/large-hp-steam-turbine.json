@@ -35,6 +35,7 @@
     "fluidOut": { "min": 1 }
   },
   "defaultHatches": ["fluidIn", "dynamo", "maintenance", "fluidOut"],
+  "variants": [0, 2],
   "wallshare": true,
-  "notes": "3x3x6 plus the 3x3 of air in front of the controller where the rotor spins (kept free here). Built from Titanium Turbine Casings, Titanium frame boxes and Titanium Pipe Casings. The front face is plain turbine casing; the hatch casings are the edge blocks of the two layers before the back, which takes the dynamo hatch in its centre. Exactly one maintenance hatch; at least one input and one output hatch. GT does not allow the turbine to be rotated or flipped. Sharing: side walls are identical, so turbines can share them; input and output hatches in a shared wall serve every turbine around them."
+  "notes": "3x3x6 plus the 3x3 of air in front of the controller where the rotor spins (kept free here). Built from Titanium Turbine Casings, Titanium frame boxes and Titanium Pipe Casings. The front face is plain turbine casing; the hatch casings are the edge blocks of the two layers before the back, which takes the dynamo hatch in its centre. Exactly one maintenance hatch; at least one input and one output hatch. GT lets the turbine roll 180 degrees (upside down) but not flip (mirror). Sharing: side walls are identical, so turbines can share them; input and output hatches in a shared wall serve every turbine around them."
 }

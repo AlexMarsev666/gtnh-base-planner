@@ -63,6 +63,7 @@
       "text": "2+ Output Hatch: Any top center casing (cool fluid), any bottom edge casing (steam)"
     }
   },
+  "variants": [0, 1],
   "wallshare": true,
   "notes": "Built by the game itself: MTEAdvHeatExchanger (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

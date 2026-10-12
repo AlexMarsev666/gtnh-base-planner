@@ -30,6 +30,7 @@
   "requiredHatches": { "fluidIn": { "min": 2 }, "fluidOut": { "min": 2 }, "maintenance": { "min": 1 } },
   "minCasings": [{ "chars": ["c"], "min": 20 }],
   "defaultHatches": ["fluidIn", "fluidOut", "maintenance"],
+  "variants": [0, 1],
   "wallshare": true,
   "notes": "3x4x3 of Stable Titanium Machine Casings (at least 20) around two Titanium Pipe Casings. The bottom centre must be the hot fluid input hatch (H) and the top centre the cold fluid output hatch (O); these two belong to one exchanger each. Distilled water input and steam output hatches may go on any casing (so at least 2 input and 2 output hatches in total). No energy hatch. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so a water input or steam output hatch in a shared side wall serves both exchangers. The hot input and cold output sit in the top and bottom centres and never lie in a shared side wall. Maintenance is not shared unless the Share maintenance option is on, because a manual repair fixes only the first controller that reads the hatch."
 }

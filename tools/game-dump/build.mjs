@@ -23,10 +23,11 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encodePng, TILE } from '../../scripts/build-atlas.mjs';
-import { createConstraints, withConstraints } from '../gt-source/casing-min.mjs';
+import { createConstraints, sourceClassOf, withConstraints } from '../gt-source/casing-min.mjs';
 import { elementKinds, kindsForCell } from '../gt-source/hatch-elements.mjs';
 import { createExtras, withExtras } from '../gt-source/hatch-extras.mjs';
 import { dotOfHint, HatchRules, parseCount, ruleLine } from '../gt-source/hatch-rules.mjs';
+import { orientationOf, withVariants } from '../gt-source/orientation.mjs';
 import { Composer, meanColor, pixelHash } from './compose.mjs';
 import { listJars, TextureJars } from './jars.mjs';
 import { StaticTextures, staticManifest } from './static-textures.mjs';
@@ -1126,6 +1127,22 @@ export async function build(opts) {
     for (const d of defs) d.def = apply(d.def);
     retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
     if (problems.length) throw new Error(['hatch extras could not be read:', ...problems].join('\n  '));
+  }
+
+  // The orientations GT allows (`variants`), from the controller's alignment limits, for the entries written here;
+  // hand-made entries keep theirs (tools/gt-source/orientation.mjs patches those).
+  if (hatchRules && opts.gt5u) {
+    const problems = [];
+    const apply = (def) => {
+      const cls = sourceClassOf(def);
+      if (!cls) return def;
+      const r = orientationOf(hatchRules, cls);
+      problems.push(...r.problems);
+      return withVariants(def, r.variants);
+    };
+    for (const d of defs) d.def = apply(d.def);
+    retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
+    if (problems.length) throw new Error(['orientations could not be read:', ...problems].join('\n  '));
   }
 
   // Tooltip lines naming a hatch kind no cell of the dump accepts (a part built only in survival, a hatch the

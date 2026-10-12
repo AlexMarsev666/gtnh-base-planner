@@ -253,6 +253,21 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
     }
   }
 
+  // orientations
+  if (def.variants !== undefined) {
+    const v = def.variants;
+    if (!Array.isArray(v) || v.length === 0) err('variants must be a non-empty array');
+    else {
+      if (v.some((n) => !isInt(n) || n < 0 || n > 3)) err('variants must list 0, 1, 2 or 3');
+      else {
+        if (new Set(v).size !== v.length) err('variants lists a variant twice');
+        if (v.some((n, i) => i > 0 && n < v[i - 1])) err('variants must be sorted');
+        if (!v.includes(0)) err('variants must include 0, the structure as built');
+        if (v.length === 4) err('variants lists all four variants, which is what an absent field means');
+      }
+    }
+  }
+
   // zones
   for (const [region, zone] of Object.entries(def.zones ?? {})) {
     const cellKinds = regions.get(region);
