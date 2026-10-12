@@ -43,6 +43,8 @@ export { LinkTooLargeError, MAX_PAYLOAD_BYTES, PlanFormatError } from './binary'
  *   g  glass tier index         index into `TIERS`; omitted = the multiblock's own glass
  *   f  1                        mirrored; omitted = not mirrored
  *   w  wallshare index          index into `WALLSHARE_MODES`; omitted = auto
+ *   a  1                        one maintenance hatch may serve several units; omitted = not shared
+ *   e  1                        one energy hatch may serve two units; omitted = not shared
  */
 
 export const PLAN_VERSION = 1;
@@ -282,6 +284,8 @@ export function validatePlanState(input: unknown): PlanState {
     const wallshare = expectWallshare(wallshareRaw, 'Wall sharing');
     if (wallshare !== 'auto') plan.wallshare = wallshare;
   }
+  if (expectFlag(field(obj, 'shareMaintenance'), 'Share maintenance')) plan.shareMaintenance = true;
+  if (expectFlag(field(obj, 'shareEnergy'), 'Share energy')) plan.shareEnergy = true;
   return plan;
 }
 
@@ -304,9 +308,28 @@ interface CompactPlan {
   g?: number;
   f?: 1;
   w?: number;
+  a?: 1;
+  e?: 1;
 }
 
-const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's', 't', 'k', 'g', 'f', 'w']);
+const COMPACT_KEYS = new Set([
+  'v',
+  'm',
+  'n',
+  'l',
+  'h',
+  'c',
+  'u',
+  'i',
+  's',
+  't',
+  'k',
+  'g',
+  'f',
+  'w',
+  'a',
+  'e',
+]);
 
 function hatchMask(kinds: readonly HatchKind[]): number {
   let mask = 0;
@@ -347,6 +370,8 @@ function toCompact(plan: PlanState): CompactPlan {
   if (plan.mirror) out.f = 1;
   if (plan.wallshare !== undefined && plan.wallshare !== 'auto')
     out.w = WALLSHARE_MODES.indexOf(plan.wallshare);
+  if (plan.shareMaintenance) out.a = 1;
+  if (plan.shareEnergy) out.e = 1;
   return out;
 }
 
@@ -445,6 +470,16 @@ function fromCompact(input: unknown): PlanState {
   const w = field(obj, 'w');
   if (w !== undefined)
     plan.wallshare = WALLSHARE_MODES[expectInt(w, 'Wall sharing', 0, WALLSHARE_MODES.length - 1)];
+  const a = field(obj, 'a');
+  if (a !== undefined) {
+    if (a !== 1) throw new PlanFormatError('Share maintenance flag is damaged.');
+    plan.shareMaintenance = true;
+  }
+  const e = field(obj, 'e');
+  if (e !== undefined) {
+    if (e !== 1) throw new PlanFormatError('Share energy flag is damaged.');
+    plan.shareEnergy = true;
+  }
   return validatePlanState(plan);
 }
 

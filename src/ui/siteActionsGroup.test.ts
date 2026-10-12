@@ -17,6 +17,41 @@ describe('group tiers, mirror, wall sharing, assignments and routing', () => {
     expect(withGroupPatched(a, id, { tier: 'HV' })).toBe(a);
   });
 
+  it('sets and clears sharing of maintenance and energy hatches', () => {
+    const { s, id } = ebf();
+    const a = withGroupPatched(s, id, { shareMaintenance: true, shareEnergy: true });
+    expect(a.groups[0]).toMatchObject({ shareMaintenance: true, shareEnergy: true });
+    const b = withGroupPatched(a, id, { shareMaintenance: false, shareEnergy: false });
+    expect(b.groups[0]).toEqual(s.groups[0]);
+  });
+
+  it('drops hatch tiers when mirror, wall sharing or shared hatches really change, not otherwise', () => {
+    const { s, id } = ebf();
+    const tiered = withGroupPatched(s, id, { hatchTiers: { 'energy:0': 'EV' } });
+    for (const patch of [
+      { mirror: true },
+      { wallshare: 'stack' },
+      { shareEnergy: true },
+      { shareMaintenance: true },
+    ] as const)
+      expect(withGroupPatched(tiered, id, patch).groups[0].hatchTiers, JSON.stringify(patch)).toBeUndefined();
+    for (const patch of [{ mirror: false }, { wallshare: 'auto' }, { shareEnergy: false }] as const)
+      expect(withGroupPatched(tiered, id, patch).groups[0].hatchTiers, JSON.stringify(patch)).toBeDefined();
+    // A patch that sets tiers keeps its own.
+    const both = withGroupPatched(tiered, id, { mirror: true, hatchTiers: { 'energy:1': 'IV' } });
+    expect(both.groups[0].hatchTiers).toEqual({ 'energy:1': 'IV' });
+  });
+
+  it('clears the sharing options when the machine cannot share walls', () => {
+    const { s, id } = ebf();
+    const a = withGroupPatched(s, id, { shareEnergy: true, shareMaintenance: true });
+    const solo = withGroupPatched(a, id, { multiblockId: 'placeholder' });
+    expect(solo.groups[0].multiblockId).toBe('placeholder');
+    expect('shareEnergy' in solo.groups[0] || 'shareMaintenance' in solo.groups[0]).toBe(false);
+    const other = withGroupPatched(a, id, { multiblockId: 'vacuum-freezer' });
+    expect(other.groups[0]).toMatchObject({ shareEnergy: true, shareMaintenance: true });
+  });
+
   it('stores hatch tiers and clears the map when it is empty', () => {
     const { s, id } = ebf();
     const a = withGroupPatched(s, id, { hatchTiers: { 'energy:0': 'EV' } });

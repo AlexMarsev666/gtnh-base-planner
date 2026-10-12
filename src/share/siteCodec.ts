@@ -253,6 +253,8 @@ function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[])
     const mode = expectWallshare(wallshare, `${what} wall sharing`);
     if (mode !== 'auto') group.wallshare = mode;
   }
+  if (expectFlag(field(obj, 'shareMaintenance'), `${what} share maintenance`)) group.shareMaintenance = true;
+  if (expectFlag(field(obj, 'shareEnergy'), `${what} share energy`)) group.shareEnergy = true;
   const assign = validateAssign(field(obj, 'assign'), what);
   if (assign) group.assign = assign;
   // Transformer settings only mean something on a single-block machine; elsewhere the build ignores them.

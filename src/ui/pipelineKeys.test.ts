@@ -14,6 +14,7 @@ const layoutInput: LayoutInput = {
   manualUnits: undefined,
 };
 const noTiers = { tier: undefined, hatchTiers: undefined, glassTier: undefined };
+const noSharing = { maintenance: false, energy: false };
 const oneUnit: Unit[] = [{ id: 0, origin: [0, 0, 0], rotation: 0 }];
 
 describe('pipeline keys', () => {
@@ -40,24 +41,26 @@ describe('pipeline keys', () => {
   it('carry every upstream key along', () => {
     const l = layoutKey(layoutInput);
     const l2 = layoutKey({ ...layoutInput, count: 5 });
-    const h = hatchKey(l, ['energy'], null, false);
-    expect(hatchKey(l2, ['energy'], null, false)).not.toBe(h);
-    expect(hatchKey(l, ['energy', 'muffler'], null, false)).not.toBe(h);
-    expect(hatchKey(l, ['energy'], ['itemIn'], false)).not.toBe(h);
-    expect(hatchKey(l, ['energy'], null, true)).not.toBe(h);
+    const h = hatchKey(l, ['energy'], null, false, noSharing);
+    expect(hatchKey(l2, ['energy'], null, false, noSharing)).not.toBe(h);
+    expect(hatchKey(l, ['energy', 'muffler'], null, false, noSharing)).not.toBe(h);
+    expect(hatchKey(l, ['energy'], ['itemIn'], false, noSharing)).not.toBe(h);
+    expect(hatchKey(l, ['energy'], null, true, noSharing)).not.toBe(h);
+    expect(hatchKey(l, ['energy'], null, false, { maintenance: true, energy: false })).not.toBe(h);
+    expect(hatchKey(l, ['energy'], null, false, { maintenance: false, energy: true })).not.toBe(h);
     const p = pipesKey(h, []);
     expect(pipesKey(h, ['itemIn'])).not.toBe(p);
-    expect(pipesKey(hatchKey(l2, ['energy'], null, false), [])).not.toBe(p);
+    expect(pipesKey(hatchKey(l2, ['energy'], null, false, noSharing), [])).not.toBe(p);
     const v = validityKey(p, noTiers);
     expect(validityKey(pipesKey(h, ['itemIn']), noTiers)).not.toBe(v);
-    expect(validityKey(pipesKey(hatchKey(l2, ['energy'], null, false), []), noTiers)).not.toBe(v);
+    expect(validityKey(pipesKey(hatchKey(l2, ['energy'], null, false, noSharing), []), noTiers)).not.toBe(v);
     const s = sceneKey(p, DEFAULT_HATCH_COLORS);
     expect(sceneKey(p, { ...DEFAULT_HATCH_COLORS, itemIn: '#000000' })).not.toBe(s);
     expect(sceneKey(pipesKey(h, ['itemIn']), DEFAULT_HATCH_COLORS)).not.toBe(s);
   });
 
   it('change the validity key with every tier input', () => {
-    const p = pipesKey(hatchKey(layoutKey(layoutInput), ['energy'], null, false), []);
+    const p = pipesKey(hatchKey(layoutKey(layoutInput), ['energy'], null, false, noSharing), []);
     const v = validityKey(p, noTiers);
     const changed = [
       { ...noTiers, tier: 'HV' as const },

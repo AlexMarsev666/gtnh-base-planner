@@ -131,6 +131,9 @@ export interface GroupPatch {
   mirror?: boolean;
   /** Wall sharing preference; `auto` clears it. */
   wallshare?: WallshareMode;
+  /** Share maintenance / energy hatches between units (see `SiteGroup.shareMaintenance`); false clears it. */
+  shareMaintenance?: boolean;
+  shareEnergy?: boolean;
   /** Where each resource's hatch goes; null or an empty map clears every choice. */
   assign?: Record<string, HatchAssign> | null;
   /** Transformers: direction and low-side amperage (4 clears it). */
@@ -159,6 +162,11 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
         delete next.label;
         delete next.machine;
         delete next.glassTier;
+        // The sharing options are hidden on a machine that cannot share walls, so they could not be cleared.
+        if (!def.wallshare) {
+          delete next.shareMaintenance;
+          delete next.shareEnergy;
+        }
         // Tier, hatch tiers and assignments stay, whether or not the new machine takes them: the panel shows
         // what no longer fits. Only a transformer's settings go with the transformer.
         dropTransformerSettings(next);
@@ -199,10 +207,23 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
       if (patch.hatchTiers && Object.keys(patch.hatchTiers).length) next.hatchTiers = { ...patch.hatchTiers };
       else delete next.hatchTiers;
     }
+    // Mirror, wall sharing and shared hatches reshape the build, which moves the hatch tier keys (as in the
+    // machine view): they drop the tiers unless the patch sets new ones.
+    let reshaped = false;
+    if (patch.mirror !== undefined && !!patch.mirror !== !!g.mirror) reshaped = true;
     if (patch.mirror === false) delete next.mirror;
     else if (patch.mirror) next.mirror = true;
+    if (patch.wallshare !== undefined && patch.wallshare !== (g.wallshare ?? 'auto')) reshaped = true;
     if (patch.wallshare === 'auto') delete next.wallshare;
     else if (patch.wallshare) next.wallshare = patch.wallshare;
+    if (patch.shareMaintenance !== undefined && !!patch.shareMaintenance !== !!g.shareMaintenance)
+      reshaped = true;
+    if (patch.shareMaintenance === false) delete next.shareMaintenance;
+    else if (patch.shareMaintenance) next.shareMaintenance = true;
+    if (patch.shareEnergy !== undefined && !!patch.shareEnergy !== !!g.shareEnergy) reshaped = true;
+    if (patch.shareEnergy === false) delete next.shareEnergy;
+    else if (patch.shareEnergy) next.shareEnergy = true;
+    if (reshaped && patch.hatchTiers === undefined) delete next.hatchTiers;
     if (patch.assign !== undefined) {
       const kept = Object.entries(patch.assign ?? {}).filter(
         ([, a]) => a.unit !== undefined || (a.zone !== undefined && a.zone !== ''),

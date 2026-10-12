@@ -462,6 +462,40 @@ describe('the per-group pack cache', () => {
     placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache, prune);
   };
 
+  it('shares maintenance and energy hatches only when the group asks, with its own cache entry', () => {
+    const cache: GroupCache = new Map();
+    const hatchesOf = (extra: Partial<SiteGroup>) => {
+      const s = site({
+        groups: [
+          group('a', 'pyrolyse-oven', [3, 3], {
+            limits: { x: 2, y: 1, z: 1 },
+            enabledHatches: ['energy', 'maintenance'],
+            ...extra,
+          }),
+        ],
+      });
+      const d = deriveSiteDemand(s);
+      const { groups } = placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache, false);
+      const of = (kind: string) =>
+        groups[0].hatches.filter((h) => h.kind === kind).map((h) => h.unitIds.length);
+      const hints = Object.values(groups[0].build?.validity ?? {})
+        .flat()
+        .map((p) => p.type)
+        .filter((type) => type === 'sharedEnergy' || type === 'sharedMaintenance')
+        .sort();
+      return { energy: of('energy'), maintenance: of('maintenance'), hints };
+    };
+    const off = hatchesOf({});
+    expect(off).toMatchObject({ energy: [1, 1], maintenance: [1, 1] });
+    expect(off.hints).toEqual([]);
+    const on = hatchesOf({ shareEnergy: true, shareMaintenance: true });
+    expect(on).toMatchObject({ energy: [2], maintenance: [2] });
+    expect(on.hints).toEqual(['sharedEnergy', 'sharedEnergy', 'sharedMaintenance', 'sharedMaintenance']);
+    expect(cache.size).toBe(2);
+    expect(hatchesOf({})).toEqual(off);
+    expect(cache.size).toBe(2);
+  });
+
   it('checks the glass tier on every placement without keying the pack cache on it', () => {
     const glassOf = (extra: Partial<SiteGroup>) => {
       const s = site({

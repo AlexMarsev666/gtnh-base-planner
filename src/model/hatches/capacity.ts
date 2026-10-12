@@ -21,15 +21,15 @@ export interface Wanted {
  * one entry, ordered by first unit id. An upper bound: it ignores what placement adds (one cell per hatch
  * across units, fluids that must not share). Deterministic.
  *
- * `wanted` lists each unit's hatches, mandatory ones first; `shares(kind)` says whether a cell of several
- * units may take that kind. `lacking` says, per unit and kind, how many wanted hatches got no cell.
+ * `wanted` lists each unit's hatches, mandatory ones first; `shares(kind, units)` says whether a cell of
+ * that many units may take that kind. `lacking` says, per unit and kind, how many wanted hatches got no cell.
  * `floor` limits the cells a unit gives to hatches per casing minimum (see `casingRooms`): at most `rooms[i]`
  * of the cells `of(site, id)` names `i` for (a cell counts against each of its entries, as in placement).
  */
 export function capacityOf(
   sites: readonly Site[],
   wanted: ReadonlyMap<number, readonly Wanted[]>,
-  shares: (kind: HatchKind) => boolean,
+  shares: (kind: HatchKind, units: number) => boolean,
   floor?: { rooms: readonly number[]; of: (site: Site, unitId: number) => number[] },
 ): { entries: CapacityEntry[]; lacking: Map<number, Map<HatchKind, number>> } {
   const lacking = new Map<number, Map<HatchKind, number>>();
@@ -40,7 +40,7 @@ export function capacityOf(
     const cells = byUnit.get(id) ?? [];
     const takes = (w: Wanted, s: Site): boolean =>
       s.kinds.has(w.kind) &&
-      (s.unitIds.length === 1 || shares(w.kind)) &&
+      (s.unitIds.length === 1 || shares(w.kind, s.unitIds.length)) &&
       (w.zone === undefined || inZone(s, id, w.zone)) &&
       s.faces.some((f) => !s.blocked.get(w.kind)?.has(f.dir));
     // A hatch no cell could ever take (wrong kind or zone) is not about room: placement reports it itself.

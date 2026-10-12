@@ -220,6 +220,22 @@
             if (mode) patch({ wallshare: mode });
           }}
         />
+        {#if def?.wallshare}
+          <ToggleRow
+            on={!!group.shareMaintenance}
+            label={t.shareMaintenance}
+            title={t.shareMaintenanceHint}
+            testid="site-group-share-maintenance"
+            ontoggle={() => patch({ shareMaintenance: !group.shareMaintenance })}
+          />
+          <ToggleRow
+            on={!!group.shareEnergy}
+            label={t.shareEnergy}
+            title={t.shareEnergyHint}
+            testid="site-group-share-energy"
+            ontoggle={() => patch({ shareEnergy: !group.shareEnergy })}
+          />
+        {/if}
       {/if}
     </ul>
   </div>

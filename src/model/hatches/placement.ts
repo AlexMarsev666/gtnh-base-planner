@@ -6,6 +6,7 @@ import { HATCH_PRIORITY } from './constants';
 import { capacityOf } from './capacity';
 import { lineKeys, openRank } from './geometry';
 import { casingFloor, casingRooms, floorsOf } from './floor';
+import { SHARE_LIMIT, SHARED_ALWAYS } from './sharing';
 import { allUnplaced, anyMins, kindsToPlace, quota, sortedIds } from './quota';
 import {
   FLUID_KINDS,
@@ -37,8 +38,8 @@ import type {
  * Place one hatch of every enabled kind for every unit (respecting `def.requiredHatches` min/max where set):
  * - Only on casing cells whose legend allows that kind, with an exposed outward face
  *   (the neighbouring cell in that direction is not part of any unit).
- * - Prefer cells shared by as many units as possible for kinds in `def.shareableHatches`
- *   (one hatch serves all of them); ties broken deterministically.
+ * - Prefer cells shared by as many units as possible for kinds in `def.shareableHatches` and the muffler
+ *   (one hatch serves all of them, at most `SHARE_LIMIT` units); ties broken deterministically.
  * - One hatch per cell; never on controllers; never on a cell another kind already uses.
  * - Never throws: hatches that cannot be placed go to `unplaced`.
  * Pure and deterministic: same input -> same output, no mutation of arguments.
@@ -50,7 +51,7 @@ import type {
  *   cell in front of a controller. Two hatches of different kinds never face the
  *   same empty cell, so each can get its own pipe.
  * - A cell inside several units is only usable if every one of them has a casing there that allows the
- *   kind (same block id). Such a cell hosts a hatch only for shareable kinds of a `wallshare` def, and
+ *   kind (same block id). Such a cell hosts a hatch only for shareable kinds of a `wallshare` def (see `sharing.ts`), and
  *   the hatch serves all of those units; otherwise only cells of exactly one unit are used.
  * - A hatch is never placed where it would push a unit above `requiredHatches[kind].max`.
  * - Greedy: repeatedly take the cell serving the most units still below their target; ties prefer fewer
@@ -170,7 +171,7 @@ function place(
   if (floor && !stages && mandatoryFirst) {
     kinds = [...kinds.filter(must), ...kinds.filter((k) => !must(k))];
   }
-  const shareable = new Set(def.shareableHatches ?? []);
+  const shareable = new Set([...(def.shareableHatches ?? []), ...(def.wallshare ? SHARED_ALWAYS : [])]);
   const used = new Set<CellKey>();
   /** Empty cell in front of a hatch -> kind of that hatch. */
   const frontMap = new Map<CellKey, HatchKind>();
@@ -222,7 +223,8 @@ function place(
   };
   const hatches: KeyedHatch[] = [];
   const unplaced: UnplacedHatch[] = [];
-  const canShareKind = (kind: HatchKind): boolean => !!def.wallshare && shareable.has(kind);
+  const canShareKind = (kind: HatchKind, units = 2): boolean =>
+    !!def.wallshare && shareable.has(kind) && units <= (SHARE_LIMIT[kind] ?? Infinity);
   const wantedByUnit = stages ? wantedOfStages(stages) : null;
   const wantedAll = wantedByUnit ? [] : wantedOfKinds(def, kinds);
   const { entries: capacity, lacking } = capacityOf(
@@ -249,13 +251,12 @@ function place(
   ) => {
     /** Units that asked for a hatch of this kind and found a cell only a casing floor kept them from. */
     const floored = new Set<number>();
-    const canShare = canShareKind(kind);
     const avoided = avoid?.get(kind);
     const candidates = sites.filter(
       (s) =>
         s.kinds.has(kind) &&
         !used.has(s.key) &&
-        (canShare || s.unitIds.length === 1) &&
+        (s.unitIds.length === 1 || canShareKind(kind, s.unitIds.length)) &&
         !avoided?.has(s.pos.join()) &&
         accept(s),
     );

@@ -24,6 +24,8 @@
     setHatchTier,
     setLimit,
     setMirror,
+    setShareEnergy,
+    setShareMaintenance,
     setGlassTier,
     setSize,
     setTier,
@@ -186,6 +188,22 @@
           if (mode) setWallshare(mode);
         }}
       />
+      {#if def?.wallshare}
+        <ToggleRow
+          on={!!$plan.shareMaintenance}
+          label={t.shareMaintenance}
+          title={t.shareMaintenanceHint}
+          testid="toggle-share-maintenance"
+          ontoggle={() => setShareMaintenance(!$plan.shareMaintenance)}
+        />
+        <ToggleRow
+          on={!!$plan.shareEnergy}
+          label={t.shareEnergy}
+          title={t.shareEnergyHint}
+          testid="toggle-share-energy"
+          ontoggle={() => setShareEnergy(!$plan.shareEnergy)}
+        />
+      {/if}
     </ul>
     {#if fallback}
       <p class="hint" data-testid="wallshare-fallback">

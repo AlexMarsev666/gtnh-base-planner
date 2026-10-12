@@ -47,7 +47,8 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).
 - **Auto-packing** of N units with optional limits counted in multiblocks (at most N along X, N layers, N along Z); controllers always face outward, and rows that cannot share a back wall get a one-block walkway. Example: 15 Pyrolyse Ovens with X 5, Layers 1, Z 3 give three rows of five.
 - **Shared walls**: blocks that coincide in the same cell are counted once; incompatible overlaps are highlighted.
-- **Hatches**: enable hatch kinds per plan; shareable hatches serve several controllers from one block. A hatch faces open space rather than a gap between units, and never the ground: the build stands on its lowest layer. Hatches of different kinds are spread apart, and none faces a cell its pipe could not leave.
+- **Hatches**: enable hatch kinds per plan; shareable hatches serve several controllers from one block. A hatch faces open space rather than a gap between units, and never the ground: the build stands on its lowest layer. Hatches of different kinds are spread apart, and none faces a cell its pipe could not leave. In a shared wall, item, fluid and steam hatches and the muffler (which needs air in front) serve every machine around them; maintenance and energy hatches do so only when asked (next item).
+- **Share maintenance / Share energy** (Settings, and in a template group's settings; off by default): a maintenance or energy hatch in a shared wall serves both machines instead of each having its own. GT forms such machines, so these are not errors, but Buildability shows a hint: a manual repair of a shared maintenance hatch fixes only one machine at a time (an auto-maintenance hatch avoids that), and a shared energy hatch gives each machine 1 A of its 2 A, so recipes must stay within 1 A. A shared energy hatch serves at most two machines.
 - **Pipe routing** per hatch kind (items, fluids, steam), with length estimates. The kinds are negotiated rather than laid one after another (a cell two networks want gets dearer each round until one gives way), so no network walls in another kind's hatch. With pipes or cables on, a layout whose walkways cannot hold a line per kind is spaced out step by step (walkways and gaps of one or two blocks, same rows and layers) until every hatch is connected; a warning remains only for hatches that still cannot be reached (e.g. in a manual layout). Packing and routing run in the background, so the page stays responsive while a large build is laid out (the stats line says when it is still working, and pipes appear after an unrouted preview). Routing has a fixed work budget, so it never runs for minutes: on a very large build (such as several Nanochip Assembly Complexes) it can stop early and leave a few hatches unconnected, and the warning says so. Bends are priced in, so pipes run in straight trunks with fewer bends than plain shortest paths. A pipe may reach a hatch from any open side (the hatch is turned to face it, as with a wrench in game). With Connect from below (or a template's routing depth) hatches may face down and pipes run in trenches under the build.
 - **Cable routing**: the Cables toggle connects energy hatches (and dynamo hatches of generators) with thinner cables, like pipes.
 - **Textured view**: real GregTech textures, layered and tinted the way the game draws them (glass is
@@ -71,7 +72,7 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 1. Choose a multiblock in the catalog.
 2. Set the count and, if needed, the maximum footprint.
 3. Set the height or length of a resizable multiblock; toggle hatch kinds, pipes and cables. Settings also holds
-   the tier, Mirror, Shared walls and Hatch tiers, and Connect from below (hatches facing down, pipes in a trench
+   the tier, Mirror, Shared walls, Share maintenance and Share energy, and Hatch tiers, and Connect from below (hatches facing down, pipes in a trench
    under the build).
 4. Drag to orbit, scroll or pinch to zoom, right-drag to pan, double-click to reset. Click a block to select its unit.
 5. Copy a share link, or download the plan as JSON.
@@ -114,7 +115,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    blocks per underground level and, on the ground, trunk lines against stubs at hatches. X-ray sees through the
    ground. A template saved before the Routing block existed keeps its old routing (classic, following the machine
    view's Connect from below) and offers Use neat routing; old files and links load unchanged. The selected group also
-   has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, a Resources list
+   has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, Share maintenance and Share energy, a Resources list
    (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them)
    and the tier of each of its hatches. A single-block machine picks its machine type from a searchable list and
    its tier; a transformer also has a direction and a low-side amperage (4 A, 16 A Hi-Amp or 64 A Power, from an LV high side up). A link
@@ -151,7 +152,7 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 | `legend`             | Every char: `{ blockId, hatches?, allowFaces? }`; `hatches` lists kinds that may replace it.   |
 | `controller`         | `{ pos, facing, blockId }`; `pos` is the `~` cell, `facing` the front face (local frame).      |
 | `hatchBlocks`        | Block id placed for each hatch kind.                                                           |
-| `shareableHatches`   | Hatch kinds whose single block may serve several controllers.                                  |
+| `shareableHatches`   | Hatch kinds whose single block may serve several controllers (the muffler always may).         |
 | `requiredHatches`    | Optional `{ min, max }` per hatch kind and unit.                                               |
 | `requiredAny`        | Optional `{ kinds, min }[]`: at least `min` hatches of any of `kinds` (GT's any input/output). |
 | `minCasings`         | Optional `{ chars, min, perSlab? }[]`: at least `min` cells of those legend keys stay casing.  |
@@ -164,7 +165,7 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 
 Coordinates follow Minecraft: X = east, Y = up, Z = south.
 
-**Saved plans and links.** A plan or template may also carry a tier, mirror, a shared-walls preference, hatch
+**Saved plans and links.** A plan or template may also carry a tier, mirror, a shared-walls preference, shared maintenance and energy hatches, hatch
 tiers, per-resource hatch assignments (unit, all units or zone), a routing style and depth, and an optimize seed.
 Each is optional: files and links saved before they existed decode exactly as before and are never rearranged on
 opening.
@@ -188,7 +189,7 @@ cells but no room is reported with the reason `casings`), the room counts in the
 the `requiredAny` hatch is placed of the first enabled kind of its group. `checkValidity` (`src/model/validity.ts`)
 then lists per unit what the game's structure check would still object to (missing energy or maintenance,
 `requiredHatches` or `requiredAny` unmet, casings under the minimum, a hatch above the glass tier) as `error`s, plus `hint`s for what GT still forms but would not recommend (a hatch on a
-side its legend hints against, or outside its `allowFaces`: GT does not check hatch facing); nothing shows it yet.
+side its legend hints against, or outside its `allowFaces`: GT does not check hatch facing; a maintenance or energy hatch shared by units); Buildability lists them.
 
 **Hatch sides, glass tier and the data access hatch.** Three more things GT's structure definitions and checks say
 about hatches, read by [`tools/gt-source/hatch-extras.mjs`](tools/gt-source/README.md) for every controller class (also for

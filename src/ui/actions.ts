@@ -68,6 +68,11 @@ export function withMultiblock(p: PlanState, id: string): PlanState {
   delete next.size;
   // The glass tier is a choice for that machine's glass.
   delete next.glassTier;
+  // The sharing options are hidden on a machine that cannot share walls, so they could not be cleared there.
+  if (!def.wallshare) {
+    delete next.shareMaintenance;
+    delete next.shareEnergy;
+  }
   return next;
 }
 
@@ -138,6 +143,24 @@ export function withWallshare(p: PlanState, mode: WallshareMode): PlanState {
   return next;
 }
 
+/** One maintenance hatch may serve several units. Hatches change (tier keys with them), the layout stays. */
+export function withShareMaintenance(p: PlanState, on: boolean): PlanState {
+  if (!!p.shareMaintenance === on) return p;
+  const next = { ...withoutHatchTiers(p) };
+  if (on) next.shareMaintenance = true;
+  else delete next.shareMaintenance;
+  return next;
+}
+
+/** One energy hatch may serve two units. Hatches change (tier keys with them), the layout stays. */
+export function withShareEnergy(p: PlanState, on: boolean): PlanState {
+  if (!!p.shareEnergy === on) return p;
+  const next = { ...withoutHatchTiers(p) };
+  if (on) next.shareEnergy = true;
+  else delete next.shareEnergy;
+  return next;
+}
+
 // Store wrappers
 
 /** Applies a transform that may drop the hatch tiers, and says so when it did. */
@@ -160,6 +183,8 @@ export const setHatchTier = (key: string, tier: Tier | undefined) =>
   plan.update((p) => withHatchTier(p, key, tier));
 export const resetHatchTiers = () => plan.update(withDefaultHatchTiers);
 export const setMirror = (on: boolean) => reshape((p) => withMirror(p, on));
+export const setShareMaintenance = (on: boolean) => reshape((p) => withShareMaintenance(p, on));
+export const setShareEnergy = (on: boolean) => reshape((p) => withShareEnergy(p, on));
 export const setWallshare = (mode: WallshareMode) => reshape((p) => withWallshare(p, mode));
 export const resetColors = () => plan.update(withDefaultColors);
 

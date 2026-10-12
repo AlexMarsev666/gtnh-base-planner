@@ -95,6 +95,10 @@ export interface SiteGroup {
   mirror?: boolean;
   /** Wall sharing mode inside the group; absent = `auto`. */
   wallshare?: WallshareMode;
+  /** One maintenance hatch in a shared wall may serve several units (see `PlanState.shareMaintenance`). */
+  shareMaintenance?: boolean;
+  /** One energy hatch in a shared wall may serve two units (see `PlanState.shareEnergy`). */
+  shareEnergy?: boolean;
   /**
    * Where each resource's hatch goes, by resource key: onto one unit (its index in the group, or `all`) and/or
    * into a hatch zone of the multiblock (a region name such as `dot2`). Absent = automatic.

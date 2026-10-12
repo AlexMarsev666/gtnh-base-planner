@@ -43,6 +43,10 @@ export interface PlanState {
   mirror?: boolean;
   /** Wall sharing mode; absent = `auto`. */
   wallshare?: WallshareMode;
+  /** One maintenance hatch in a shared wall may serve several units. Absent = each unit has its own. */
+  shareMaintenance?: boolean;
+  /** One energy hatch in a shared wall may serve two units (2 A, 1 A each). Absent = each unit has its own. */
+  shareEnergy?: boolean;
 }
 
 export interface PackResult {

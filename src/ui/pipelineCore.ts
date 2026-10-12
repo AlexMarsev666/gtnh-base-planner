@@ -6,6 +6,7 @@ import type { CapacityEntry, PlaceResult } from '../model/hatches/types';
 import { loosenings } from '../model/layout/variants';
 import { alongX } from '../model/orient';
 import { resolveLayout, resolveRoutedLayout, type ResolvedLayout } from '../model/plan';
+import { effectiveSharing, withSharing } from '../model/hatches/sharing';
 import { mirroredDef } from '../model/mirror';
 import { effectiveSize, sizedDef } from '../model/resize';
 import { placeHatches } from '../model/hatches/placement';
@@ -130,7 +131,12 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
     const size = raw ? effectiveSize(raw, p.size) : undefined;
     // A resizable multiblock is built at the plan's height / length, and mirrored in X when asked.
     const sized = raw ? sizedDef(raw, size) : undefined;
-    const def = sized && p.mirror ? mirroredDef(sized) : sized;
+    const mirrored = sized && p.mirror ? mirroredDef(sized) : sized;
+    // Only the options that change this multiblock count (see `effectiveSharing`).
+    const sharing = mirrored
+      ? effectiveSharing(mirrored, { maintenance: p.shareMaintenance, energy: p.shareEnergy })
+      : { maintenance: false, energy: false };
+    const def = mirrored && withSharing(mirrored, sharing);
     const empty: PipelineResult = {
       def,
       pack: null,
@@ -156,7 +162,7 @@ export function createPipeline(deps: PipelineDeps = defaultDeps) {
       wallshare: p.wallshare,
       manualUnits: p.manualUnits,
     });
-    const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below);
+    const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below, sharing);
     const pipesK = pipesKey(hatchK, kinds);
     const validityK = validityKey(pipesK, {
       tier: p.tier,

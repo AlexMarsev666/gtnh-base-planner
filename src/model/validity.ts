@@ -32,13 +32,17 @@ export type ProblemKind =
   /** A hatch faces a side its cell's legend entry hints against (`LegendEntry.disallowFaces`, or outside its `allowFaces`). */
   | { type: 'forbiddenFace'; kind: HatchKind; cell: Vec3; face: Dir }
   /** A hatch of a kind in `glassTierLimits.kinds` has a tier above the glass's: GT refuses to form. */
-  | { type: 'glassTier'; kind: HatchKind; hatchTier: Tier; glassTier: Tier };
+  | { type: 'glassTier'; kind: HatchKind; hatchTier: Tier; glassTier: Tier }
+  /** A maintenance hatch serves several units: a manual repair fixes one machine at a time. */
+  | { type: 'sharedMaintenance'; cell: Vec3 }
+  /** An energy hatch serves several units: its 2 A are split, so each recipe must stay within 1 A. */
+  | { type: 'sharedEnergy'; cell: Vec3 };
 
 /** One thing wrong with a unit. */
 export type ValidityProblem = ProblemKind & { severity: Severity };
 
 /** Problem kinds that are hints (GT forms the machine anyway); every other kind is an error. */
-const HINTS: readonly ProblemKind['type'][] = ['forbiddenFace'];
+const HINTS: readonly ProblemKind['type'][] = ['forbiddenFace', 'sharedMaintenance', 'sharedEnergy'];
 
 const problem = (p: ProblemKind): ValidityProblem => ({
   ...p,
@@ -129,6 +133,11 @@ export function checkValidity(
             problem({ type: 'casings', chars: [...m.chars], have: counted[i] - taken[i], min: m.min }),
           );
       });
+    }
+    for (const h of mine) {
+      if (h.unitIds.length < 2) continue;
+      if (h.kind === 'maintenance') problems.push(problem({ type: 'sharedMaintenance', cell: h.cell }));
+      else if (h.kind === 'energy') problems.push(problem({ type: 'sharedEnergy', cell: h.cell }));
     }
     problems.push(...(glassProblems.get(unit.id) ?? []));
     if (problems.length > 0) out[unit.id] = problems;

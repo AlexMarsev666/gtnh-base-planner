@@ -1,4 +1,5 @@
 import { getSiteDef } from '../../data/generic';
+import { effectiveSharing, withSharing } from '../hatches/sharing';
 import { mirroredDef } from '../mirror';
 import { effectiveSize, sizedDef } from '../resize';
 import { DEFAULT_TIER, hatchTier } from '../tiers';
@@ -23,7 +24,8 @@ import type { SiteGroup, SiteState } from './types';
 
 /**
  * Built groups by everything their build depends on (multiblock, size, count, limits, hatches, demand,
- * connections from below, pipe directions). Holds the build or its error; the builds are never mutated.
+ * connections from below, pipe directions, shared hatches). Holds the build or its error; the builds are
+ * never mutated.
  */
 export type GroupCache = Map<string, GroupBuild | { error: string }>;
 
@@ -66,7 +68,9 @@ export function placeGroups(
       return { ...empty, error: 'unknown' };
     }
     const sized = sizedDef(raw, effectiveSize(raw, g.size));
-    const def = g.mirror ? mirroredDef(sized) : sized;
+    const shaped = g.mirror ? mirroredDef(sized) : sized;
+    const sharing = effectiveSharing(shaped, { maintenance: g.shareMaintenance, energy: g.shareEnergy });
+    const def = withSharing(shaped, sharing);
     // Only the choices that name a resource this group has can matter (a stale entry must not rebuild it).
     const assign = Object.fromEntries(
       Object.entries(g.assign ?? {})
@@ -86,6 +90,8 @@ export function placeGroups(
       toward,
       g.mirror ?? false,
       g.wallshare ?? 'auto',
+      sharing.maintenance,
+      sharing.energy,
       assign,
     ]);
     used.add(ck);

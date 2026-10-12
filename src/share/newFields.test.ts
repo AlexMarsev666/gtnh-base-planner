@@ -426,3 +426,53 @@ describe('glass tier', () => {
       expect(() => validateSiteState(siteWith({ glassTier }))).toThrow(PlanFormatError);
   });
 });
+
+describe('shared maintenance and energy hatches', () => {
+  const shared = { ...defaultPlan('pyrolyse-oven'), shareMaintenance: true, shareEnergy: true } as PlanState;
+
+  it('plan: round-trips through JSON, a link and localStorage', async () => {
+    expect(planFromJson(planToJson(shared))).toEqual(shared);
+    expect(await decodePlan(await encodePlan(shared))).toEqual(shared);
+    const st = memory();
+    expect(saveStoredPlan(shared, st)).toBe(true);
+    expect(loadStoredPlan(st)).toEqual(shared);
+    for (const one of [{ shareMaintenance: true }, { shareEnergy: true }]) {
+      const plan = { ...defaultPlan('pyrolyse-oven'), ...one };
+      expect(await decodePlan(await encodePlan(plan))).toEqual(plan);
+    }
+  });
+
+  it('plan: writes nothing when off, and uses the link keys a and e', async () => {
+    const plain = defaultPlan('pyrolyse-oven');
+    const off = validatePlanState({ ...plain, shareMaintenance: false, shareEnergy: false });
+    expect(off).toEqual(plain);
+    expect(Object.keys(off)).toEqual(Object.keys(plain));
+    expect(await encodePlan({ ...plain, shareEnergy: false })).toBe(await encodePlan(plain));
+    expect(await encodePlan(shared)).not.toBe(await encodePlan(plain));
+    const link = await rawLink({ v: 1, m: 'pyrolyse-oven', h: 0, a: 1, e: 1 });
+    expect(await decodePlan(link)).toMatchObject({ shareMaintenance: true, shareEnergy: true });
+    expect(plansEqual(shared, plain)).toBe(false);
+  });
+
+  it('plan: rejects bad values', async () => {
+    const base = defaultPlan('pyrolyse-oven');
+    for (const extra of [{ shareMaintenance: 'yes' }, { shareEnergy: 1 }])
+      expect(() => validatePlanState({ ...base, ...extra }), JSON.stringify(extra)).toThrow(PlanFormatError);
+    for (const extra of [{ a: 0 }, { a: true }, { e: 2 }, { e: 'x' }])
+      await expect(
+        decodePlan(await rawLink({ v: 1, m: 'pyrolyse-oven', h: 0, ...extra })),
+        JSON.stringify(extra),
+      ).rejects.toThrow(PlanFormatError);
+  });
+
+  it('site group: keeps them, drops defaults, and round-trips through JSON and a link', async () => {
+    const site = validateSiteState(siteWith({ shareMaintenance: true, shareEnergy: true }));
+    expect(site.groups[0]).toMatchObject({ shareMaintenance: true, shareEnergy: true });
+    expect(siteFromJson(siteToJson(site))).toEqual(site);
+    expect(await decodeSite(await encodeSite(site))).toEqual(site);
+    const plain = validateSiteState(siteWith({ shareMaintenance: false, shareEnergy: false })).groups[0];
+    expect('shareMaintenance' in plain).toBe(false);
+    expect('shareEnergy' in plain).toBe(false);
+    expect(() => validateSiteState(siteWith({ shareEnergy: 'true' }))).toThrow(PlanFormatError);
+  });
+});

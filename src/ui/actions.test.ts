@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { catalog } from '../data/catalog';
 import { defaultPlan } from '../state/store';
 import {
   withCount,
@@ -10,6 +11,8 @@ import {
   withLimit,
   withMirror,
   withMultiblock,
+  withShareEnergy,
+  withShareMaintenance,
   withSize,
   withTier,
   withWallshare,
@@ -17,6 +20,28 @@ import {
 import { samePlan } from './session';
 
 describe('plan transforms', () => {
+  it('shares maintenance and energy hatches without dropping a manual layout; off clears them', () => {
+    const manual = { id: 0, origin: [0, 0, 0] as const, rotation: 0 as const };
+    const p = { ...defaultPlan(), manualUnits: [manual] };
+    const a = withShareMaintenance(withShareEnergy(p, true), true);
+    expect(a).toMatchObject({ shareEnergy: true, shareMaintenance: true, manualUnits: [manual] });
+    expect(withShareEnergy(a, true)).toBe(a);
+    const off = withShareMaintenance(withShareEnergy(a, false), false);
+    expect('shareEnergy' in off).toBe(false);
+    expect('shareMaintenance' in off).toBe(false);
+    expect(withShareEnergy(defaultPlan(), false)).toEqual(defaultPlan());
+  });
+
+  it('sharing drops the hatch tiers (their keys move), and a machine that shares walls keeps the options', () => {
+    const tiered = { ...defaultPlan('electric-blast-furnace'), hatchTiers: { 'energy:0': 'HV' as const } };
+    expect(withShareEnergy(tiered, true).hatchTiers).toBeUndefined();
+    expect(withShareMaintenance(tiered, true).hatchTiers).toBeUndefined();
+    expect(withShareEnergy(tiered, false)).toBe(tiered);
+    const shared = { ...defaultPlan('electric-blast-furnace'), shareEnergy: true, shareMaintenance: true };
+    const wallDef = catalog.find((d) => d.wallshare && d.id !== 'electric-blast-furnace')!;
+    expect(withMultiblock(shared, wallDef.id)).toMatchObject({ shareEnergy: true, shareMaintenance: true });
+  });
+
   it('sets a size only on resizable multiblocks, snapped, and drops it when switching', () => {
     const dt = defaultPlan('distillation-tower');
     expect(withSize(dt, 5)).toBe(dt); // the default

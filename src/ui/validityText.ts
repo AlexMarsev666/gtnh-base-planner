@@ -44,7 +44,7 @@ export function validityLines(
         unitId: id,
         severity: p.severity,
         text: `${t.validity.unit(i + 1)}: ${t.validity.text(p, casings)}`,
-        ...(p.type === 'forbiddenFace' ? { cell: p.cell } : {}),
+        ...('cell' in p ? { cell: p.cell } : {}),
       });
     }
   });

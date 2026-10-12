@@ -93,6 +93,12 @@ export const t = {
   defaultTier: 'Default',
   mirror: 'Mirror',
   mirrorHint: 'Build every machine mirrored left to right.',
+  shareMaintenance: 'Share maintenance',
+  shareMaintenanceHint:
+    'One maintenance hatch in a shared wall serves both machines. A manual repair then fixes only one of them at a time; an auto-maintenance hatch avoids that.',
+  shareEnergy: 'Share energy hatches',
+  shareEnergyHint:
+    'One energy hatch in a shared wall serves two machines (2 A, 1 A each), so their recipes must stay within 1 A.',
   wallshare: 'Shared walls',
   wallshareHint: 'How machines may touch. A preference: if it cannot be met, another layout is used.',
   wallshareModes: WALLSHARE_NAMES,
@@ -559,6 +565,10 @@ export const t = {
           return `${HATCH_KIND_NAMES[p.kind]} hatch faces ${FACE_NAMES[p.face]}, a side GT's auto-placement doesn't use (hint only; the machine still forms)`;
         case 'glassTier':
           return `${kind(p.kind)} hatch ${p.hatchTier} is above the glass (${p.glassTier})`;
+        case 'sharedMaintenance':
+          return 'shared maintenance hatch: a manual repair fixes one machine at a time; use an auto-maintenance hatch (hint only; the machine still forms)';
+        case 'sharedEnergy':
+          return 'shared energy hatch: 2 A for both machines, so each recipe must stay within 1 A (hint only; the machine still forms)';
       }
     },
   },

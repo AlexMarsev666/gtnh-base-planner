@@ -39,15 +39,25 @@ export function layoutKey(input: {
 
 /**
  * Hatches (and the layout they may loosen): the layout, enabled hatches in order, the routed kinds when an
- * auto layout is chosen for its pipes (null otherwise), and whether hatches may face down.
+ * auto layout is chosen for its pipes (null otherwise), whether hatches may face down, and whether maintenance
+ * and energy hatches may serve several units.
  */
 export function hatchKey(
   layout: string,
   enabledHatches: readonly HatchKind[],
   routedLayoutKinds: readonly RoutedKind[] | null,
   below: boolean,
+  sharing: { maintenance: boolean; energy: boolean },
 ): string {
-  return JSON.stringify(['hatches', layout, enabledHatches, routedLayoutKinds, below]);
+  return JSON.stringify([
+    'hatches',
+    layout,
+    enabledHatches,
+    routedLayoutKinds,
+    below,
+    sharing.maintenance,
+    sharing.energy,
+  ]);
 }
 
 /** Pipes and cables: the hatches and the kinds switched on. */
