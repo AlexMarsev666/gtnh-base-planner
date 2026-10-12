@@ -74,7 +74,9 @@ export function getSiteDef(id: string): MultiblockDef | undefined {
 }
 
 /** Everything a site group can be: catalog entries (by name), then the generic stand-ins. */
-export const siteDefs: readonly MultiblockDef[] = [...catalog, ...GENERIC];
+export function siteDefs(): readonly MultiblockDef[] {
+  return [...catalog, ...GENERIC];
+}
 
 export function isSingleBlock(def: MultiblockDef): boolean {
   return def.id === SINGLE_BLOCK_ID;

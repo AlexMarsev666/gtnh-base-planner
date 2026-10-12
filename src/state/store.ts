@@ -1,10 +1,12 @@
 import { writable } from 'svelte/store';
-import { DEFAULT_MULTIBLOCK_ID, getMultiblock } from '../data/catalog';
+import { catalog, DEFAULT_MULTIBLOCK_ID, getMultiblock } from '../data/catalog';
 import type { Vec3, ViewMode } from '../model/core/types';
 import type { PlanState } from '../model/plan/types';
 
 export function defaultPlan(multiblockId = DEFAULT_MULTIBLOCK_ID): PlanState {
-  const def = getMultiblock(multiblockId);
+  // Without the catalog (the store is created before it has loaded) the hatch list is empty;
+  // `main.ts` sets the real default right after the load.
+  const def = catalog.length > 0 ? getMultiblock(multiblockId) : undefined;
   return {
     v: 1,
     multiblockId,

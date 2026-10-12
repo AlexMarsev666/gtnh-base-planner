@@ -46,7 +46,7 @@ Other areas:
 
 ## Multiblock data
 
-Each multiblock is `src/data/multiblocks/<id>.json` (type `MultiblockDef` in `src/model/multiblock/types.ts`), picked up by `import.meta.glob` in `src/data/catalog.ts` — no registry to edit. The README's "Data model" section documents every field (`layers[y][z]` strings, `~` controller, `-` must-be-air, legend, hatches, `resize`).
+Each multiblock is `src/data/multiblocks/<id>.json` (type `MultiblockDef` in `src/model/multiblock/types.ts`), picked up by `import.meta.glob` in `src/data/catalogData.ts` — no registry to edit. `catalog.ts` loads that module as its own chunk (`loadCatalog()`, preloaded from `index.html`): `main.ts` awaits it before mounting, the worker before its first message, and Vitest via `src/data/catalogSetup.ts`; `catalog` and `getMultiblock` are only valid after the load. Never read catalog data at module init. The README's "Data model" section documents every field (`layers[y][z]` strings, `~` controller, `-` must-be-air, legend, hatches, `resize`).
 
 - Entries with `"generated": true` come from the game dump (`tools/game-dump/`) — don't edit by hand. To take one over, remove `generated`; the dump never overwrites a class covered by a hand-made entry.
 - New block ids: register in `src/data/blocks.ts` (flat colour) and map textures in `src/render/textures.json`.

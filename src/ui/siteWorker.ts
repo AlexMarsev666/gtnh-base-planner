@@ -6,6 +6,7 @@ import {
   type ImportReport,
   type MachineChoice,
 } from '../import/gtnhplanner';
+import { loadCatalog } from '../data/catalog';
 import { createSiteBuilder } from '../model/site/build';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
 import type { SiteRouting, SiteState } from '../model/site/types';
@@ -54,15 +55,28 @@ const buildSite = createSiteBuilder();
 /** Machine builds; the pipelines keep their memos warm across requests (see `createMachineHandler`). */
 const handleMachine = createMachineHandler(createPipeline(), createPipeline());
 
+/** The definitions load as a separate chunk; messages that arrive before that wait for it. */
+const catalogReady = loadCatalog();
+
+const post = (out: SiteWorkerResponse | MachineWorkerResponse) =>
+  (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
+const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
 self.onmessage = (e: MessageEvent<SiteWorkerRequest | MachineWorkerRequest>) => {
   const req = e.data;
-  const post = (out: SiteWorkerResponse | MachineWorkerResponse) =>
-    (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
-  if (req.type === 'machine') {
-    handleMachine(req, post);
-    return;
-  }
+  // Every request gets a reply, also when the definitions could not be loaded.
+  catalogReady.then(
+    () => handle(req),
+    (err: unknown) => post({ id: req.id, error: message(err) }),
+  );
+};
+
+function handle(req: SiteWorkerRequest | MachineWorkerRequest): void {
   try {
+    if (req.type === 'machine') {
+      handleMachine(req, post);
+      return;
+    }
     if (req.type === 'import') {
       post({ id: req.id, imported: buildSiteFromGtnh(req.project, req.choices, req.opts, buildSite) });
       return;
@@ -86,6 +100,6 @@ self.onmessage = (e: MessageEvent<SiteWorkerRequest | MachineWorkerRequest>) => 
     }
     post({ id, build: buildSite(site, opts) });
   } catch (err) {
-    post({ id: req.id, error: err instanceof Error ? err.message : String(err) });
+    post({ id: req.id, error: message(err) });
   }
-};
+}

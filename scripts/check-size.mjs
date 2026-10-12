@@ -17,6 +17,10 @@
 //
 // Raised with the template and machine settings UI (group resources, machine types, routing, progress and
 // Cancel; October 2026): main JS 394 KB.
+//
+// Lowered when the catalog became its own chunk (October 2026; `catalogData-*.js`, loaded at startup and
+// preloaded from index.html): main JS 345 KB, site worker 90 KB. Both the main build and the worker build
+// emit a copy of the catalog chunk (they are separate Rolldown builds), so its budget counts two copies.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -26,11 +30,12 @@ const dist = process.argv[2] ?? 'dist';
 
 /** [what, file matcher, measure, budget in bytes] */
 const budgets = [
-  ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 410 * KB],
-  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 165 * KB],
+  ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 345 * KB],
+  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 90 * KB],
+  ['catalog chunks (gzip)', /^assets\/catalogData-.*\.js$/, 'gzip', 215 * KB],
   ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 6 * KB],
   ['texture atlas', /^textures\/atlas\.png$/, 'raw', 170 * KB],
-  ['whole site', /./, 'raw', 4.75 * 1024 * KB],
+  ['whole site', /./, 'raw', 4.6 * 1024 * KB],
 ];
 
 function files(dir, prefix = '') {

@@ -7,7 +7,7 @@
  * `turn=<n>` (with `def`: pipe bends cost n extra blocks instead of the default; 0 = plain BFS),
  * `theta=<rad>&phi=<rad>` (camera angles; `phi` > 1.57 looks from below).
  */
-import { getMultiblock } from '../../data/catalog';
+import { getMultiblock, loadCatalog } from '../../data/catalog';
 import { DEFAULT_HATCH_COLORS } from '../../model/colors';
 import { buildSceneModel } from '../../model/scene';
 import { defaultPlan } from '../../state/store';
@@ -190,4 +190,4 @@ function start(): void {
   void modeReady.then(() => requestAnimationFrame(() => requestAnimationFrame(() => (harness.ready = true))));
 }
 
-start();
+void loadCatalog().then(start);
