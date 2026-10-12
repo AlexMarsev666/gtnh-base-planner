@@ -93,6 +93,9 @@ export const t = {
   defaultTier: 'Default',
   mirror: 'Mirror',
   mirrorHint: 'Build every machine mirrored left to right.',
+  mirrorForbidden: "GT doesn't let this machine be mirrored.",
+  orientation: { 1: 'Mirrored', 2: 'Upside down', 3: 'Mirrored vertically' },
+  flippedUnits: (n: number) => `${n} ${n === 1 ? 'unit' : 'units'} flipped or mirrored`,
   shareMaintenance: 'Share maintenance',
   shareMaintenanceHint:
     'One maintenance hatch in a shared wall serves both machines. A manual repair then fixes only one of them at a time; an auto-maintenance hatch avoids that.',
@@ -156,6 +159,8 @@ export const t = {
   dimension: (axis: string, n: number) => `${axis}  ${n}`,
   cableLength: (n: number) => `${n} cable blocks`,
   /** `nums` are 1-based positions in the unit list. */
+  selectedHow: (nums: number[], how: string) =>
+    `${nums.length === 1 ? `Unit ${nums[0]}` : `Units ${nums.join(', ')}`}, ${how.toLowerCase()}`,
   selected: (nums: number[]) => (nums.length === 1 ? `Unit ${nums[0]}` : `Units ${nums.join(', ')}`),
 
   // Notices

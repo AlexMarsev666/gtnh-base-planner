@@ -42,8 +42,11 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Glass tier**: machines whose hatches are limited by their tiered glass (for example the Mega Oil Cracker) get a Glass
   choice next to Tier, in Settings and in the group editor. It shows the glass the machine draws ("HV (drawn)") and lets you pick
   another tier; an energy hatch above it is a problem under Buildability. Template changes can be undone like other edits.
-- **Mirror and shared walls**: Mirror builds every machine mirrored left to right. Shared walls (Auto, Side walls, Stack,
-  Back walls, Separate) is a preference: when it cannot be met another layout is used and a notice says which.
+- **Mirror and shared walls**: Mirror builds every machine mirrored left to right (unavailable for machines GT doesn't let
+  be mirrored). Shared walls (Auto, Side walls, Stack, Back walls, Separate) is a preference: when it cannot be met another
+  layout is used and a notice says which. Where GT allows it the packer may also flip (upside down) or mirror neighbours so
+  they share more walls; the bottom line then says how many units are flipped or mirrored, and a single selected unit shows its
+  orientation (Mirrored, Upside down, Mirrored vertically).
 - **Adjustable sizes** for multiblocks GT builds in variable size: Distillation Tower height (3 to 12) and Assembly Line length (5 to 16).
 - **Auto-packing** of N units with optional limits counted in multiblocks (at most N along X, N layers, N along Z); controllers always face outward, and rows that cannot share a back wall get a one-block walkway. Example: 15 Pyrolyse Ovens with X 5, Layers 1, Z 3 give three rows of five. Where the structures allow it, units overlap deeper than one wall, and neighbours are mirrored or turned upside down when the machine's alignment limits permit it and the shapes then fit together (two Steam Separators in one 5x5x5 cube, Industrial Extrusion Machines in a 15x7 facade); the packer only tries the most overlapped spacings it finds valid, and a hatch that does not fit makes it fall back to a looser layout as before.
 - **Shared walls**: blocks that coincide in the same cell are counted once; incompatible overlaps are highlighted.

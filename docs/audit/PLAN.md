@@ -170,16 +170,16 @@ Large Essentia Smeltery, Research Completer); выходная шина Advanced
 Источник: «Новый текстовый документ.txt» (6 пунктов). Исследование: `code-explorer` ×2, `gtnh-expert` ×2
 по checkout GT5-Unofficial 5.09.54.205 (`D:\gtnh\123\gt5u`) и вики GTNH (раздел Wallsharing).
 
-| Задача | Суть                                                                                                                | Агенты (разработка → ревью)                                  | Статус                                     |
-| ------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
-| 1A     | `minCasings` (131 из 244 машин, `checkCasingMin`), `anyInput`/`anyOutput`; затем `allowFaces`, стекло, `dataAccess` | `developer` → `gtnh-expert`                                  | готово                                     |
-| 1B     | Повороты в Выровнять/Оптимизировать: стоимость по клеткам люков с поворотом, ходы на 90/180/270°                    | `developer` → `algorithms-reviewer`                          | готово                                     |
-| 2A     | Минимум корпусов при расстановке, `model/validity.ts`: «соберётся ли машина» в духе ошибок GT                       | `developer` → `algorithms-reviewer`                          | готово                                     |
-| 2B     | Интерфейс проверки, выбор тира стекла                                                                               | `developer` → `architecture-reviewer`                        | готово                                     |
-| 3A     | Общий глушитель по умолчанию; техобслуживание и энерговвод — опции (по умолчанию выкл.)                             | `developer` → `algorithms-reviewer`                          | готово                                     |
-| 3E     | Ориентация юнита: крен 180° и зеркало на юнит; поле `orientations` из дампа (`getAlignmentLimits`)                  | `developer` → `gtnh-expert`, `qa-reviewer`                   | данные и модель готовы; UI — следующий шаг |
-| 3D     | Перекрытие по всем смещениям и ориентациям (Steam Separator 5×5×5, IEM 15×7, EOH, DTPF)                             | `developer` → `algorithms-reviewer`                          | готово                                     |
-| 3C     | Wallsharing между группами шаблона                                                                                  | `developer` → `algorithms-reviewer`, `architecture-reviewer` | волна 3, дизайн-заметка                    |
+| Задача | Суть                                                                                                                | Агенты (разработка → ревью)                                  | Статус                  |
+| ------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------- |
+| 1A     | `minCasings` (131 из 244 машин, `checkCasingMin`), `anyInput`/`anyOutput`; затем `allowFaces`, стекло, `dataAccess` | `developer` → `gtnh-expert`                                  | готово                  |
+| 1B     | Повороты в Выровнять/Оптимизировать: стоимость по клеткам люков с поворотом, ходы на 90/180/270°                    | `developer` → `algorithms-reviewer`                          | готово                  |
+| 2A     | Минимум корпусов при расстановке, `model/validity.ts`: «соберётся ли машина» в духе ошибок GT                       | `developer` → `algorithms-reviewer`                          | готово                  |
+| 2B     | Интерфейс проверки, выбор тира стекла                                                                               | `developer` → `architecture-reviewer`                        | готово                  |
+| 3A     | Общий глушитель по умолчанию; техобслуживание и энерговвод — опции (по умолчанию выкл.)                             | `developer` → `algorithms-reviewer`                          | готово                  |
+| 3E     | Ориентация юнита: крен 180° и зеркало на юнит; поле `orientations` из дампа (`getAlignmentLimits`)                  | `developer` → `gtnh-expert`, `qa-reviewer`                   | готово                  |
+| 3D     | Перекрытие по всем смещениям и ориентациям (Steam Separator 5×5×5, IEM 15×7, EOH, DTPF)                             | `developer` → `algorithms-reviewer`                          | готово                  |
+| 3C     | Wallsharing между группами шаблона                                                                                  | `developer` → `algorithms-reviewer`, `architecture-reviewer` | волна 3, дизайн-заметка |
 
 Пункт 3 («старые схемы») закрыт без работы: файл был форматом v2 ветки `codex/fix-update`, которую не
 поддерживаем. Бэклог: экспорт в схему для игры, все 48 ориентаций, `resize` сгенерированных машин, выходная

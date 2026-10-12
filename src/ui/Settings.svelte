@@ -36,6 +36,7 @@
   import { LIMIT_MAX, LIMIT_MIN, formatLimit, parseLimit, parseSize } from './fields';
   import { notify } from './notices';
   import NumberStepper from './NumberStepper.svelte';
+  import { mirrorDisabled } from './orientationText';
   import ToggleRow from './ToggleRow.svelte';
   import { hatchKeyAt, hatchTierOptions, hatchTierRows, unmatchedHatchTiers } from './hatchTierRows';
   import { build, mergeColors } from './pipeline';
@@ -55,6 +56,7 @@
     { axis: 'z', label: t.limitZ },
   ];
 
+  const mirrorLocked = $derived(mirrorDisabled(def, !!$plan.mirror));
   const kinds = $derived(def ? hatchKindsOf(def) : []);
   const resize = $derived(def?.resize);
   const sizeLabel = $derived(resize?.label === 'length' ? t.length : t.height);
@@ -174,6 +176,8 @@
         on={!!$plan.mirror}
         label={t.mirror}
         title={t.mirrorHint}
+        disabled={mirrorLocked}
+        hint={t.mirrorForbidden}
         testid="toggle-mirror"
         ontoggle={() => setMirror(!$plan.mirror)}
       />

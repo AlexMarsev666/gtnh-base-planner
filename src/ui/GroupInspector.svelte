@@ -27,6 +27,7 @@
   import MachineTypeEditor from './MachineTypeEditor.svelte';
   import NudgePad from './NudgePad.svelte';
   import NumberStepper from './NumberStepper.svelte';
+  import { mirrorDisabled } from './orientationText';
   import { groupLimitAxis, type GroupPatch } from './siteActions';
   import {
     duplicateSelected,
@@ -65,6 +66,7 @@
     placed ? ([placed.max[0] - placed.min[0], placed.max[2] - placed.min[2]] as const) : null,
   );
 
+  const mirrorLocked = $derived(mirrorDisabled(def, !!group.mirror));
   const tiers = $derived(groupTiers(group, def));
   const tierOptions = $derived(
     tierChoices(tiers, group.tier, { any: t.site.tierAny, notAllowed: t.notAllowed }),
@@ -206,6 +208,8 @@
           on={!!group.mirror}
           label={t.mirror}
           title={t.mirrorHint}
+          disabled={mirrorLocked}
+          hint={t.mirrorForbidden}
           testid="site-group-mirror"
           ontoggle={() => patch({ mirror: !group.mirror })}
         />
