@@ -3,7 +3,7 @@ import { DEFAULT_HATCH_COLORS } from '../colors';
 import { key } from '../geometry';
 import type { BomTiers } from '../bom';
 import { buildSceneModel } from '../scene';
-import { groupKey, hatchTier } from '../tiers';
+import { followsGroupTier, groupKey, hatchTier } from '../tiers';
 import type { Vec3 } from '../core/types';
 import type { SceneModel, Voxel } from '../render/types';
 import type { RouteNet } from '../routing/routeNet';
@@ -202,7 +202,7 @@ export function siteBomTiers(groups: readonly PlacedGroup[]): BomTiers | undefin
     pg.hatches.forEach((h, i) => {
       const global = `${pg.group.id}|${keys[i]}`;
       hatchKeys.push(global);
-      const tier = hatchTier(h.kind, keys[i], pg.group.tier, pg.group.hatchTiers);
+      const tier = hatchTier(h.kind, keys[i], pg.group.tier, pg.group.hatchTiers, followsGroupTier);
       if (tier) hatchTiers[global] = tier;
     });
   }

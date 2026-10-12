@@ -67,6 +67,8 @@ export interface HatchPlacement {
   face: Dir;
   /** Units served by this hatch (length > 1 = shared). */
   unitIds: number[];
+  /** Block id that replaces the def's block for this kind (a Quadruple Input Hatch). */
+  block?: string;
   /** Site view: id of the net (`RouteNet.id`) this hatch belongs to. */
   net?: number;
 }

@@ -3,7 +3,7 @@ import { withCoil } from '../coil';
 import { effectiveSharing, withSharing } from '../hatches/sharing';
 import { mirroredDef } from '../mirror';
 import { effectiveSize, sizedDef } from '../resize';
-import { DEFAULT_TIER, hatchTier } from '../tiers';
+import { DEFAULT_TIER, followsGroupTier, hatchTier } from '../tiers';
 import { glassTierProblems, type UnitValidity } from '../validity';
 import type { PlacedGroup, SiteWarning } from './buildTypes';
 import {
@@ -20,6 +20,7 @@ import {
   type WithGroup,
 } from './group';
 import { GROUP_STRIDE } from './ids';
+import { MULTI_KINDS } from './requests';
 import { groupHatchKeys } from './siteScene';
 import type { SiteGroup, SiteState } from './types';
 
@@ -81,6 +82,15 @@ export function placeGroups(
     );
     const base = g.enabledHatches.filter((k) => !IO_KINDS.includes(k));
     const toward = towardOf(g);
+    // The tiers that set how many resources a bus or input hatch holds (others do not rebuild the group).
+    const tier = g.tier ?? DEFAULT_TIER;
+    const busTiers = Object.fromEntries(
+      Object.entries(g.hatchTiers ?? {})
+        .filter(([key]) =>
+          MULTI_KINDS.some((kind) => demand[kind]?.some((r) => key.startsWith(`${kind}:${r}:`))),
+        )
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
     const ck = JSON.stringify([
       def.id,
       effectiveSize(raw, g.size) ?? null,
@@ -96,6 +106,8 @@ export function placeGroups(
       sharing.maintenance,
       sharing.energy,
       assign,
+      tier,
+      busTiers,
     ]);
     used.add(ck);
     let built = cache.get(ck);
@@ -104,6 +116,8 @@ export function placeGroups(
         built = buildGroup(def, g.count, g.limits, base, demand, below, toward, {
           assign,
           wallshare: g.wallshare,
+          tier,
+          hatchTiers: busTiers,
         });
       } catch (err) {
         // Shown on the group; a malformed definition must not stop the rest of the site.
@@ -138,14 +152,14 @@ export function placeGroups(
     for (const m of b.missing) missingBy.set(m.resource, (missingBy.get(m.resource) ?? 0) + 1);
     for (const [resource, n] of missingBy)
       warnings.push({ type: 'missing', group: g.id, resource, units: n });
-    // Tiers are not part of the build's cache key (they re-tier hatches, not re-pack), so this is checked here.
+    // Other tiers are not part of the build's cache key (they re-tier hatches, not re-pack), so this is checked here.
     const keys = groupHatchKeys(
       hatches,
       units.map((u) => u.id),
     );
     const glass = glassTierProblems(b.def, hatches, {
       glassTier: g.glassTier,
-      hatchTierOf: (i) => hatchTier(hatches[i].kind, keys[i], g.tier ?? DEFAULT_TIER, g.hatchTiers),
+      hatchTierOf: (i) => hatchTier(hatches[i].kind, keys[i], tier, g.hatchTiers, followsGroupTier),
     });
     const glassValidity: UnitValidity = Object.fromEntries([...glass].sort(([a], [z]) => a - z));
     return {

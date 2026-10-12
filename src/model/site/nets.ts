@@ -41,14 +41,14 @@ export class UnionFind {
 
 /**
  * One net per chain of links carrying the same resource (joined where they share a group side or a port),
- * with its terminals: the placed ports, and the group hatches that carry the resource on that side. Each
- * hatch belongs to one net at most (`hatchNet`).
+ * with its terminals: the placed ports, and the group hatches that carry the resource on that side. A hatch
+ * belongs to one net per resource it carries (`hatchNet`, in net order).
  */
 export function buildSiteNetworks(
   site: SiteState,
   groups: readonly PlacedGroup[],
   ports: readonly PlacedPort[],
-): { nets: SiteNet[]; hatchNet: Map<SiteHatch, number> } {
+): { nets: SiteNet[]; hatchNet: Map<SiteHatch, number[]> } {
   const groupIndex = new Map(site.groups.map((g, i) => [g.id, i]));
   const portById = new Map(site.ports.map((p) => [p.id, p]));
   const placedPort = new Map(ports.map((p) => [p.port.id, p]));
@@ -66,7 +66,7 @@ export function buildSiteNetworks(
     if (l.rate !== undefined) c.rate = (c.rate ?? 0) + l.rate;
   }
   const nets: SiteNet[] = [];
-  const hatchNet = new Map<SiteHatch, number>();
+  const hatchNet = new Map<SiteHatch, number[]>();
   for (const c of comps.values()) {
     const res = siteResource(site, c.resource);
     const terminals: NetTerminalInfo[] = [];
@@ -86,8 +86,9 @@ export function buildSiteNetworks(
       if (!pg) continue;
       const kinds = side === 'out' ? OUT_KINDS : IN_KINDS;
       for (const h of pg.hatches) {
-        if (h.resource !== c.resource || !kinds.includes(h.kind) || hatchNet.has(h)) continue;
-        hatchNet.set(h, nets.length);
+        if (!(h.resources ?? [h.resource]).includes(c.resource) || !kinds.includes(h.kind)) continue;
+        if (hatchNet.get(h)?.includes(nets.length)) continue;
+        hatchNet.set(h, [...(hatchNet.get(h) ?? []), nets.length]);
         terminals.push({ role: side === 'out' ? 'source' : 'sink', group: id, hatch: h, cell: h.cell });
       }
     }
@@ -124,7 +125,7 @@ export function routeSiteNetworks(
   groups: PlacedGroup[],
   ports: readonly PlacedPort[],
   nets: readonly SiteNet[],
-  hatchNet: ReadonlyMap<SiteHatch, number>,
+  hatchNet: ReadonlyMap<SiteHatch, readonly number[]>,
   occupancy: SiteOccupancy,
   opts: {
     pipes: boolean;
@@ -178,6 +179,8 @@ export function routeSiteNetworks(
       ...(front ? [front] : []),
       ...(front && wanted === 0 ? ['down' as Dir] : []),
     ]);
+    // A hatch several nets end at is entered through its own front only, so the nets share one cell.
+    if ((hatchNet.get(h)?.length ?? 0) > 1 && !no.has(h.face)) return [h.face];
     return [h.face, ...ATTACH_ORDER.filter((f) => f !== h.face)].filter((f) => !no.has(f));
   };
 
@@ -204,6 +207,7 @@ export function routeSiteNetworks(
             cell: t.cell,
             faces: termFaces(t),
             role: t.role,
+            ...(t.hatch && (hatchNet.get(t.hatch)?.length ?? 0) > 1 ? { share: t.cell.join() } : {}),
           })),
         })),
         turnCost: opts.turnCost,
@@ -224,7 +228,7 @@ export function routeSiteNetworks(
       const face = finalFace.get(h);
       if (net === undefined && !face) return h;
       const out: SiteHatch = { ...h, face: face ?? h.face };
-      if (net !== undefined) out.net = net;
+      if (net !== undefined) out.net = net[0];
       return out;
     });
   const warnings: SiteWarning[] = [];

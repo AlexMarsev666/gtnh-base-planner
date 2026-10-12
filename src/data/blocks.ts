@@ -58,6 +58,7 @@ const list: BlockInfo[] = [
   { id: 'gt.hatch.inputBus', name: 'Input Bus', color: '#5b6168' },
   { id: 'gt.hatch.outputBus', name: 'Output Bus', color: '#5b6168' },
   { id: 'gt.hatch.inputHatch', name: 'Input Hatch', color: '#5b6168' },
+  { id: 'gt.hatch.quadInput', name: 'Quadruple Input Hatch', color: '#5b6168' },
   { id: 'gt.hatch.outputHatch', name: 'Output Hatch', color: '#5b6168' },
   { id: 'gt.hatch.energy', name: 'Energy Hatch', color: '#5b6168' },
   { id: 'gt.hatch.dynamo', name: 'Dynamo Hatch', color: '#5b6168' },

@@ -6,11 +6,12 @@ import { placeHatches } from '../hatches/placement';
 import { findSites } from '../hatches/sites';
 import { inZone, resolveZone, withHatchZones } from '../hatches/zones';
 import type { HatchAvoid, HatchRequest, PlaceOptions, PlaceResult, UnplacedHatch } from '../hatches/types';
-import type { Dir, Rotation, Vec3 } from '../core/types';
+import type { Dir, Rotation, Tier, Vec3 } from '../core/types';
 import type { HatchKind, MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
 import type { HatchPlacement, PackResult, WallshareMode, WallStats } from '../plan/types';
 import { checkValidity, type UnitValidity } from '../validity';
 import { computeWallStats } from '../walls';
+import { DEFAULT_TIER, followsGroupTier, hatchCapacity, hatchTier, groupHatchKey } from '../tiers';
 import { reachOf, type Reach, type Terminals } from './terminals';
 import {
   distributedRequests,
@@ -18,6 +19,7 @@ import {
   completeRequests,
   groupRequests,
   overloaded,
+  packBuses,
   rebalanced,
   type GroupNote,
   type GroupProblem,
@@ -35,7 +37,10 @@ export const IO_KINDS: readonly HatchKind[] = ['itemIn', 'itemOut', 'fluidIn', '
 
 /** A hatch of a site group, with the resource it carries. */
 export interface SiteHatch extends HatchPlacement {
+  /** The resource it carries; with `resources`, the first of them. */
   resource?: string;
+  /** Every resource of a hatch that holds several (a bus with several items, a Quadruple Input Hatch). */
+  resources?: string[];
   /** Sides it may never face (GT `disallowFaces`, e.g. Distillation Tower layer outputs never face up). */
   blocked?: Dir[];
   /** Net id once the site has been routed. */
@@ -103,6 +108,9 @@ export interface GroupBuild {
   ends?: Terminals;
 }
 
+/** Block of a hatch that holds several fluids. */
+const QUAD_BLOCK = 'gt.hatch.quadInput';
+
 /** Times the spread resources are moved to units with room after a placement (see `rebalanced`). */
 const REBALANCE_PASSES = 3;
 
@@ -111,6 +119,24 @@ export interface GroupOptions {
   /** Where each resource's hatch goes (`SiteGroup.assign`). */
   assign?: Readonly<Record<string, HatchAssign>>;
   wallshare?: WallshareMode;
+  /** The group's tier and `SiteGroup.hatchTiers`: they set how many resources a bus or input hatch holds. */
+  tier?: Tier;
+  hatchTiers?: Readonly<Record<string, Tier>>;
+}
+
+/**
+ * How many resources the hatch of `kind` that starts with `resource` holds on unit number `unitIndex` of the group
+ * (see `hatchCapacity`): its tier is its own entry in `hatchTiers` (a hatch of that unit, else one shared by
+ * several), else the group's tier.
+ */
+function capacityFor(opts: GroupOptions): (kind: HatchKind, resource: string, unitIndex: number) => number {
+  const tier = opts.tier ?? DEFAULT_TIER;
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(opts.hatchTiers ?? {}, key);
+  return (kind, resource, unitIndex) => {
+    const own = groupHatchKey(kind, resource, unitIndex);
+    const key = has(own) ? own : groupHatchKey(kind, resource, 'shared');
+    return hatchCapacity(kind, hatchTier(kind, key, tier, opts.hatchTiers, followsGroupTier) ?? tier);
+  };
 }
 
 /** Blocks from one layer of single-block machines to the next: the machine and two free blocks for pipes. */
@@ -215,23 +241,34 @@ export function buildGroup(
   const problems = [...wanted.problems];
   if (packed.fallback) notes.push({ type: 'wallshare', ...packed.fallback });
   const demandKinds = (Object.keys(demand) as HatchKind[]).filter((k) => demand[k]?.length);
-  const pad = (r: HatchRequest[]) => completeRequests(def, r, unitIds, demandKinds);
+  const capacity = capacityFor(opts);
+  const pad = (r: HatchRequest[]) =>
+    completeRequests(def, packBuses(r, unitIds, capacity), unitIds, demandKinds);
   let requests = pad(fullRequests(wanted));
   let resolved = resolveLayout(def, packed, [], limits, deps, undefined, requests);
-  if (overloaded(wanted, resolved.hatches.capacity, resolved.hatches.unplaced)) {
+  if (overloaded(wanted, resolved.hatches.capacity, resolved.hatches.unplaced, unitIds, capacity)) {
     // The full set does not fit: spread the resources over the units, from the layout just chosen, and move
     // what still finds no cell to units with room for it.
-    let raw = distributedRequests(def, unitIds, wanted, resolved.hatches.capacity);
-    let second = resolveLayout(def, resolved.pack, [], limits, deps, undefined, pad(raw));
+    let raw = distributedRequests(def, unitIds, wanted, resolved.hatches.capacity, capacity);
+    let merged = pad(raw);
+    let second = resolveLayout(def, resolved.pack, [], limits, deps, undefined, merged);
     let best = { raw, second };
     for (let pass = 0; pass <= REBALANCE_PASSES && second.hatches.unplaced.length > 0; pass++) {
       const placed = new Map<string, number>();
       for (const h of second.hatches.hatches)
         for (const id of h.unitIds) placed.set(String(id), (placed.get(String(id)) ?? 0) + 1);
-      const moved = rebalanced(raw, second.hatches.unplaced, placed, unitIds, pass < REBALANCE_PASSES);
+      const moved = rebalanced(
+        raw,
+        second.hatches.unplaced,
+        placed,
+        unitIds,
+        pass < REBALANCE_PASSES,
+        merged,
+      );
       if (!moved) break;
       raw = moved;
-      second = resolveLayout(def, second.pack, [], limits, deps, undefined, pad(raw));
+      merged = pad(raw);
+      second = resolveLayout(def, second.pack, [], limits, deps, undefined, merged);
       if (second.hatches.unplaced.length < best.second.hatches.unplaced.length) best = { raw, second };
     }
     ({ raw, second } = best);
@@ -240,9 +277,9 @@ export function buildGroup(
       requests = pad(raw);
       resolved = second;
       const subset = requests
-        .filter((r) => r.key !== undefined && wanted.auto.some((a) => a.resource === r.key))
         .filter((r) => r.units !== 'each' && r.units.length < unitIds.length)
-        .map((r) => r.key!);
+        .flatMap((r) => r.keys ?? (r.key !== undefined ? [r.key] : []))
+        .filter((key) => wanted.auto.some((a) => a.resource === key));
       if (subset.length > 0) notes.push({ type: 'distributed', resources: [...new Set(subset)] });
     }
   }
@@ -267,9 +304,14 @@ export function buildGroup(
   }
   const shift = (p: Vec3): Vec3 => [p[0] - lo[0], p[1] - lo[1], p[2] - lo[2]];
   const units = resolved.pack.units.map((u) => ({ ...u, origin: shift(u.origin) }));
-  const hatches: SiteHatch[] = resolved.hatches.hatches.map(({ key, ...h }) => {
+  const hatches: SiteHatch[] = resolved.hatches.hatches.map(({ key, keys, ...h }) => {
     const out: SiteHatch = { ...h, cell: shift(h.cell) };
     if (key !== undefined) out.resource = key;
+    if (keys) {
+      out.resources = keys;
+      // A hatch that holds several fluids is a Quadruple Input Hatch.
+      if (h.kind === 'fluidIn') out.block = QUAD_BLOCK;
+    }
     const blocked = blockedFaces(def, resolved.pack.units, h);
     if (blocked?.length) out.blocked = blocked;
     return out;
@@ -279,8 +321,14 @@ export function buildGroup(
   for (const r of requests) {
     if (r.key === undefined) continue;
     for (const id of r.units === 'each' ? unitIds : r.units)
-      if (!hatches.some((h) => h.kind === r.kind && h.resource === r.key && h.unitIds.includes(id)))
-        missing.push({ kind: r.kind, resource: r.key, unitId: id });
+      for (const resource of r.keys ?? [r.key])
+        if (
+          !hatches.some(
+            (h) =>
+              h.kind === r.kind && h.unitIds.includes(id) && (h.resources ?? [h.resource]).includes(resource),
+          )
+        )
+          missing.push({ kind: r.kind, resource, unitId: id });
   }
   problems.push(...problemsOf(resolved.hatches));
   const validity = checkValidity(def, units, hatches);
@@ -328,15 +376,18 @@ function candidateEnds(
   for (const r of keyed) {
     const asked = r.units === 'each' ? ids : r.units;
     const zone = r.zone === undefined ? undefined : resolveZone(zoned, r.zone);
-    const list = cells.get(r.key!) ?? [];
-    for (const site of sites) {
-      if (!site.kinds.has(r.kind) || !site.faces.some((f) => !site.blocked.get(r.kind)?.has(f.dir))) continue;
-      if (!site.unitIds.some((id) => asked.includes(id) && (zone === undefined || inZone(site, id, zone))))
-        continue;
-      const p = shift(site.pos);
-      list.push([p[0], p[2]]);
+    for (const key of r.keys ?? [r.key!]) {
+      const list = cells.get(key) ?? [];
+      for (const site of sites) {
+        if (!site.kinds.has(r.kind) || !site.faces.some((f) => !site.blocked.get(r.kind)?.has(f.dir)))
+          continue;
+        if (!site.unitIds.some((id) => asked.includes(id) && (zone === undefined || inZone(site, id, zone))))
+          continue;
+        const p = shift(site.pos);
+        list.push([p[0], p[2]]);
+      }
+      cells.set(key, list);
     }
-    cells.set(r.key!, list);
   }
   const out: Record<string, Reach> = {};
   for (const [key, list] of cells) {

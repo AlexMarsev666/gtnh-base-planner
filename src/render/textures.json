@@ -2888,6 +2888,11 @@
       "top": "MACHINE_LV_TOP",
       "bottom": "MACHINE_LV_BOTTOM"
     },
+    "gt.hatch.quadInput": {
+      "side": "MACHINE_LV_SIDE",
+      "top": "MACHINE_LV_TOP",
+      "bottom": "MACHINE_LV_BOTTOM"
+    },
     "gt.hatch.special": {
       "side": "DUMP_MACHINE_HV_SIDE_D2DCFF",
       "top": "DUMP_MACHINE_HV_SIDE_D2DCFF",

@@ -65,7 +65,7 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Stats line**: units, unique blocks, shared walls, hatches and how many blocks sharing saves.
 - **Save and share**: autosave in the browser, JSON download/upload, and share links.
 - **Templates** (the TEMPLATE view): several groups of multiblocks on a bounded ground area (30 × 30 by default, up to 256 × 256), joined by
-  links that each carry one item, fluid or EU. Every group gets one hatch per resource it takes or gives, pipes are
+  links that each carry one item, fluid or EU. Every group gets the hatches for the resources it takes or gives (see below), pipes are
   routed between groups and to input/output ports on the template edges, and animated arrows show which way each
   pipe flows. Groups can be arranged automatically along the flow, moved and turned by hand. Pipes are routed
   Classic or Neat, on the ground or up to three layers under it; single-block machines have machine types and
@@ -125,7 +125,14 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    view's Connect from below) and offers Use neat routing; old files and links load unchanged. The selected group also
    has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, Share maintenance and Share energy, a Resources list
    (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them)
-   and the tier of each of its hatches. A single-block machine picks its machine type from a searchable list and
+   and the tier of each of its hatches. A bus holds several items and an input hatch from EV several fluids, so a unit gets
+   as few of them as fit its resources: an item bus has (tier + 1)² slots (LV 4, MV 9, HV 16, ... UHV 100), and the
+   Quadruple Input Hatch (fluid input, EV and up) holds four fluids; below EV one fluid per input hatch, and
+   every output hatch holds one fluid. Item buses and fluid input hatches now take the group's tier unless their
+   own entry in Hatch tiers says otherwise (the bill of materials of older templates shows their tier too, and
+   their hatch layout is recomputed with fewer buses); a bus that holds several items is set by the entry of
+   its first resource. Several pipes may end at one bus: they all enter through its front, sharing only the
+   block in front of it. A single-block machine picks its machine type from a searchable list and
    its tier; a transformer also has a direction and a low-side amperage (4 A, 16 A Hi-Amp or 64 A Power, from an LV high side up). A link
    whose voltage does not match the tier a machine takes, or a transformer GT does not make, is reported under
    PROBLEMS. PROBLEMS lists what could not be met; Notes

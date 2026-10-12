@@ -15,6 +15,7 @@ export interface Stage {
   units: ReadonlySet<number>;
   zone?: string;
   key?: string;
+  keys?: string[];
   /** Units for which it is among the first `requiredHatches[kind].min` requests naming them. */
   mandatoryFor: ReadonlySet<number>;
   /** `mandatoryFor` is not empty: placed before every optional stage. */
@@ -75,6 +76,7 @@ export function stagesOf(
     const stage: Stage = { kind: r.kind, units, mandatoryFor, mandatory: mandatoryFor.size > 0 };
     if (r.zone !== undefined) stage.zone = r.zone;
     if (r.key !== undefined) stage.key = r.key;
+    if (r.keys !== undefined) stage.keys = r.keys;
     stages.push(stage);
   }
   const rank = (s: Stage) => (s.mandatory ? 0 : HATCH_PRIORITY.length) + HATCH_PRIORITY.indexOf(s.kind);

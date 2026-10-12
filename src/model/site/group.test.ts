@@ -17,8 +17,9 @@ const plain: HatchKind[] = ['energy', 'maintenance'];
 
 const items = (n: number) => Array.from({ length: n }, (_, i) => `item:r${i}`);
 
+// ULV buses and hatches hold one resource, so unless a test says otherwise each resource has its own hatch.
 function build(count: number, demand: Demand, opts: GroupOptions = {}, def = ebf, base = plain) {
-  return buildGroup(def, count, none, base, demand, false, {}, opts);
+  return buildGroup(def, count, none, base, demand, false, {}, { tier: 'ULV', ...opts });
 }
 
 /** Resources a unit gets (itemIn hatches serving it). */
@@ -289,7 +290,7 @@ describe('template groups', () => {
   it('adds the group to its notes and problems', () => {
     const r = run(group({ assign: { 'item:r0': { unit: 9 } } }), { itemIn: items(2) });
     expect(r.problems).toContainEqual({ type: 'assignInactive', resource: 'item:r0', unit: 9, group: 'g' });
-    const d = run(group({ count: 3 }), { itemIn: items(8) });
+    const d = run(group({ count: 3, tier: 'ULV' }), { itemIn: items(8) });
     expect(d.notes).toContainEqual(expect.objectContaining({ type: 'distributed', group: 'g' }));
   });
 

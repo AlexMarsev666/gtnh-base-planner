@@ -23,7 +23,10 @@
     void tick().then(() => root?.scrollIntoView({ block: 'nearest' }));
   });
 
-  const resourceName = $derived(info.resource ? ($site.resources[info.resource]?.name ?? info.resource) : '');
+  const nameOf = (r: string) => $site.resources[r]?.name ?? r;
+  const resourceName = $derived(
+    info.resources ? info.resources.map(nameOf).join(', ') : info.resource ? nameOf(info.resource) : '',
+  );
   const choices = $derived([
     { value: '', label: t.defaultTier },
     ...hatchTierOptions(info.kind).map((x) => ({ value: x, label: x })),

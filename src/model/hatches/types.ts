@@ -99,11 +99,18 @@ export interface HatchRequest {
    * wall shared by two units serves both, as in GT, where it joins every adjacent controller's list.)
    */
   key?: string;
+  /**
+   * With `key` (its first): every key a hatch serving several items or fluids holds (a bus, a Quadruple Input
+   * Hatch). The placer still places one hatch; requests with other `keys` never share a fluid hatch's cell.
+   */
+  keys?: string[];
 }
 
 /** A hatch placement that remembers the `HatchRequest.key` it was placed for (absent without requests). */
 export interface KeyedHatch extends HatchPlacement {
   key?: string;
+  /** `HatchRequest.keys` of the request it was placed for. */
+  keys?: string[];
 }
 
 /** A hatch that was asked for and could not be placed. */

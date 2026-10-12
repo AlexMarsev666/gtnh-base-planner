@@ -240,7 +240,7 @@ function place(
 
   /**
    * Sets up placing hatches of `kind` on the sites `accept` allows (at most `max` per unit across calls);
-   * `key` is copied to each hatch. Returns `count` (hatches of the kind per unit so far) and `pass`.
+   * `key` and `keys` are copied to each hatch. Returns `count` (hatches of the kind per unit so far) and `pass`.
    */
   const setup = (
     kind: HatchKind,
@@ -248,6 +248,7 @@ function place(
     max: number,
     accept: (s: Site) => boolean,
     key?: string,
+    keys?: string[],
   ) => {
     /** Units that asked for a hatch of this kind and found a cell only a casing floor kept them from. */
     const floored = new Set<number>();
@@ -386,6 +387,7 @@ function place(
           face: bestFace.dir,
           unitIds: [...best.unitIds],
           ...(key !== undefined ? { key } : {}),
+          ...(keys !== undefined ? { keys } : {}),
         });
         for (const k of faceKeys[now.i][now.face]) {
           lines.set(k, (lines.get(k) ?? 0) + 1);
@@ -434,7 +436,7 @@ function place(
    * Per kind and key: the units any of its stages names (a fluid hatch is one fluid's), and the hatches placed
    * for it, with the units that already counted one of them toward a stage.
    */
-  const groupOf = (st: Stage): string => `${st.kind}|${st.key ?? ''}`;
+  const groupOf = (st: Stage): string => `${st.kind}|${JSON.stringify(st.keys ?? st.key ?? '')}`;
   const union = new Map<string, Set<number>>();
   const made = new Map<string, { cell: string; units: number[]; used: Set<number> }[]>();
   for (const st of stages ?? []) {
@@ -460,6 +462,7 @@ function place(
         (st.zone === undefined || s.unitIds.every((id) => inZone(s, id, st.zone!))) &&
         (!fluid || s.unitIds.every((id) => union.get(g)!.has(id))),
       st.key,
+      st.keys,
     );
     const earlier = made.get(g) ?? made.set(g, []).get(g)!;
     const done = new Set<number>();

@@ -30,6 +30,11 @@ export interface RouteTerminal {
   /** Faces a pipe may attach to, preferred first. */
   faces: Dir[];
   role: 'source' | 'sink';
+  /**
+   * Names the hatch several nets end at (the same value on each of their terminals). Their `faces` should be
+   * the same single face: the cell in front of it is then shared, every one of these nets may reach it.
+   */
+  share?: string;
 }
 
 export interface RouteNetSpec {
@@ -148,6 +153,8 @@ interface Grid {
   occ: Uint16Array;
   /** Net index + 1 that owns the cell in front of a terminal's preferred face; 0 = nobody. */
   claim: Int32Array;
+  /** Claimed cells that the nets of a shared hatch (see `RouteTerminal.share`) all use: the hatch, and those nets. */
+  shared: Map<number, { hatch: string; nets: Set<number> }>;
   /** Free cells reachable from the open air (not sealed pockets). */
   open: Uint8Array;
   offsets: Int32Array;
@@ -175,7 +182,19 @@ function makeGrid(box: RouterInput['box']): Grid | null {
       return v[0] + dx * (v[1] + dy * v[2]);
     }),
   );
-  return { ox, oy, oz, dx, dy, dz, occ, claim: new Int32Array(n), open: new Uint8Array(n), offsets };
+  return {
+    ox,
+    oy,
+    oz,
+    dx,
+    dy,
+    dz,
+    occ,
+    claim: new Int32Array(n),
+    shared: new Map(),
+    open: new Uint8Array(n),
+    offsets,
+  };
 }
 
 function inside(g: Grid, p: Vec3): boolean {
@@ -421,12 +440,12 @@ function search(
       const n = cell + offsets[d];
       const o = occ[n];
       let step = 1;
-      if (o !== FREE && o !== own) {
+      if (o !== FREE && o !== own && !(o >= PIPE && sharedWith(g, n, net))) {
         if (!soft || o < PIPE) continue;
         step += SOFT_PENALTY;
       }
       const c = claim[n];
-      if (c !== 0 && c !== net + 1) continue;
+      if (c !== 0 && c !== net + 1 && !sharedWith(g, n, net)) continue;
       if (s.neat && o === FREE) {
         let beside = false;
         for (let a = 0; a < 4; a++) if (occ[n + offsets[a]] >= PIPE) beside = true;
@@ -448,6 +467,11 @@ function search(
   return null;
 }
 
+/** Whether `c` is in front of a hatch the net ends at together with other nets: they all may hold it. */
+function sharedWith(g: Grid, c: number, net: number): boolean {
+  return g.shared.get(c)?.nets.has(net) === true;
+}
+
 /**
  * Whether a terminal may attach at cell `c` right now: open to the air, not claimed by another net, and
  * free or already this net's pipe (with `soft`, another net's pipe too).
@@ -456,8 +480,11 @@ function usable(g: Grid, net: number, c: number, soft = false): boolean {
   if (c < 0) return false;
   const o = g.occ[c];
   const cl = g.claim[c];
+  const shared = sharedWith(g, c, net);
   return (
-    g.open[c] === 1 && (o === FREE || o === PIPE + net || (soft && o >= PIPE)) && (cl === 0 || cl === net + 1)
+    g.open[c] === 1 &&
+    (o === FREE || o === PIPE + net || (soft && o >= PIPE) || (o >= PIPE && shared)) &&
+    (cl === 0 || cl === net + 1 || shared)
   );
 }
 
@@ -533,7 +560,7 @@ function routeNet(g: Grid, s: Search, net: number, st: NetState, soft: boolean):
     // A seed that later became part of a longer path is not worth a separate single-cell path.
     st.paths = paths.length > 1 ? paths.slice(1) : paths;
     st.via = via;
-    for (const c of tree) g.occ[c] = PIPE + net;
+    for (const c of tree) if (g.occ[c] < PIPE || !sharedWith(g, c, net)) g.occ[c] = PIPE + net;
   }
   return tree;
 }
@@ -684,18 +711,26 @@ export function routeNets(input: RouterInput): RouteResult[] {
   // Claim one cell in front of each terminal for its net: its preferred free side, or the next one when
   // another terminal took it. Terminals with the fewest free sides choose first, so a hatch with a single
   // way in never loses it to one that had other options.
+  // The nets that end at one hatch (`share`) take the same cell in front of it together.
   const claimers = states.flatMap((st, net) =>
     st.terms.map((t) => ({
       net,
+      share: t.spec.share,
       cells: [...t.cells].filter((c) => c >= 0 && g.open[c] === 1 && g.occ[c] === FREE),
     })),
   );
   claimers
     .map((c, i) => ({ ...c, i }))
     .sort((a, b) => a.cells.length - b.cells.length || a.i - b.i)
-    .forEach(({ net, cells: options }) => {
-      const c = options.find((cell) => g.claim[cell] === 0 || g.claim[cell] === net + 1);
-      if (c !== undefined) g.claim[c] = net + 1;
+    .forEach(({ net, share, cells: options }) => {
+      const joins = (cell: number) => share !== undefined && g.shared.get(cell)?.hatch === share;
+      const c = options.find((cell) => g.claim[cell] === 0 || g.claim[cell] === net + 1 || joins(cell));
+      if (c === undefined) return;
+      if (g.claim[c] === 0) g.claim[c] = net + 1;
+      if (share === undefined) return;
+      const entry = g.shared.get(c) ?? { hatch: share, nets: new Set<number>() };
+      entry.nets.add(net);
+      g.shared.set(c, entry);
     });
 
   const neat = input.style === 'neat';
@@ -803,7 +838,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
       const blockers = new Set<number>();
       for (const c of softCells) {
         const o = g.occ[c];
-        if (o >= PIPE && o !== PIPE + f) {
+        if (o >= PIPE && o !== PIPE + f && !sharedWith(g, c, f)) {
           blockers.add(o - PIPE);
           s.hist[c] += HIST_STEP;
         }

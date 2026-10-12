@@ -200,7 +200,9 @@ export function groupPickHolds(
 export interface GroupHatchInfo {
   key: string;
   kind: HatchKind;
+  /** The first resource it carries, and all of them when it holds several. */
   resource?: string;
+  resources?: string[];
   /** Unit numbers (from 1) the hatch serves. */
   units: number[];
   /** Cells of the hatch (a resource split over hatches of one unit shares the key). */
@@ -229,6 +231,7 @@ export function groupHatchInfo(
     key,
     kind: h.kind,
     ...(h.resource !== undefined && !hasNoResource(h.kind) ? { resource: h.resource } : {}),
+    ...(h.resources ? { resources: h.resources } : {}),
     units: h.unitIds.flatMap((id) => (unitIds.includes(id) ? [unitIds.indexOf(id) + 1] : [])),
     cells: placed.hatches.flatMap((x, j) => (keys[j] === key ? [x.cell] : [])),
     ...(name !== undefined ? { zone: { name, text: def?.zones?.[name]?.text } } : {}),

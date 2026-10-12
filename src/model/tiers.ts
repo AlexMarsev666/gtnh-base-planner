@@ -24,6 +24,28 @@ export function followsMachineTier(kind: HatchKind): boolean {
   return kind === 'energy' || kind === 'dynamo';
 }
 
+/**
+ * Hatch kinds of a template group whose tier is the group's tier unless overridden: the energy and dynamo hatches,
+ * and the buses and input hatches that hold several items or fluids (their tier sets how many).
+ */
+export function followsGroupTier(kind: HatchKind): boolean {
+  return followsMachineTier(kind) || kind === 'itemIn' || kind === 'itemOut' || kind === 'fluidIn';
+}
+
+/** The tier from which an input hatch is a Quadruple Input Hatch (four fluids). */
+export const QUAD_TIER: Tier = 'EV';
+
+/**
+ * How many items or fluids one hatch of `kind` at `tier` serves: a bus has (tier + 1)^2 slots (ULV 1 ... UHV 100,
+ * the highest bus GT has), a Quadruple Input Hatch (fluidIn from EV) four fluids, any other hatch one.
+ */
+export function hatchCapacity(kind: HatchKind, tier: Tier): number {
+  const at = TIERS.indexOf(tier);
+  if (kind === 'itemIn' || kind === 'itemOut') return (Math.min(at, TIERS.indexOf('UHV')) + 1) ** 2;
+  if (kind === 'fluidIn') return at >= TIERS.indexOf(QUAD_TIER) ? 4 : 1;
+  return 1;
+}
+
 /** Hatch kinds a template key identifies by ordinal only (no resource). */
 export function hasNoResource(kind: HatchKind): boolean {
   return kind === 'energy' || kind === 'dynamo' || kind === 'maintenance' || kind === 'muffler';
@@ -108,11 +130,12 @@ export function hatchTier(
   key: string,
   machineTier?: Tier,
   hatchTiers?: Record<string, Tier>,
+  follows: (kind: HatchKind) => boolean = followsMachineTier,
 ): Tier | undefined {
   // Own-property check: keys come from share links.
   const own =
     hatchTiers && Object.prototype.hasOwnProperty.call(hatchTiers, key) ? hatchTiers[key] : undefined;
-  const tier = own ?? (followsMachineTier(kind) ? machineTier : undefined);
+  const tier = own ?? (follows(kind) ? machineTier : undefined);
   // GT has no MAX energy or dynamo hatch; a MAX machine (a single block) uses the highest one there is.
   return tier && followsMachineTier(kind) && TIERS.indexOf(tier) > TIERS.indexOf(HIGHEST_TIER)
     ? HIGHEST_TIER

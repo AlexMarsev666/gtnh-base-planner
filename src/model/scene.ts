@@ -70,7 +70,7 @@ export function buildSceneModel(
     voxel.kind = 'hatch';
     voxel.hatchKind = h.kind;
     voxel.facing = h.face;
-    voxel.blockId = def.hatchBlocks[h.kind] ?? (voxel.blockId || 'gt.hatch.inputBus');
+    voxel.blockId = h.block ?? def.hatchBlocks[h.kind] ?? (voxel.blockId || 'gt.hatch.inputBus');
     if (base) voxel.baseBlockId = base;
   }
 

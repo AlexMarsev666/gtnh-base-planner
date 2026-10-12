@@ -85,7 +85,16 @@ describe('group transform', () => {
 
 describe('hatch demand', () => {
   it('places one hatch per resource on every unit and tags it', () => {
-    const b = buildGroup(ebf, 2, noLimits, [], { itemIn: ['item:dust', 'item:x'], itemOut: ['item:hot'] });
+    const b = buildGroup(
+      ebf,
+      2,
+      noLimits,
+      [],
+      { itemIn: ['item:dust', 'item:x'], itemOut: ['item:hot'] },
+      false,
+      {},
+      { tier: 'ULV' },
+    );
     expect(b.missing).toEqual([]);
     for (const u of b.units)
       for (const r of ['item:dust', 'item:x'])
