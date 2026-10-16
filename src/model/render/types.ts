@@ -23,6 +23,21 @@ export interface Voxel {
   conflict?: boolean;
 }
 
+/** Where the pipes of several nets merge in front of the hatch they all feed. */
+export interface PipeJunction {
+  /** The pipe cell in front of the hatch. */
+  cell: Vec3;
+  kind: HatchKind;
+  /** The meeting nets (`RouteNet.id`) and their colours, in net order. */
+  nets: number[];
+  colors: string[];
+  /** The hatch it feeds and the face the pipe takes. */
+  hatch: Vec3;
+  face: Dir;
+  /** Faded: every net meeting here is. */
+  dim?: boolean;
+}
+
 /** Everything the renderer needs, derived purely from a plan. */
 export interface SceneModel {
   voxels: Voxel[];
@@ -33,6 +48,11 @@ export interface SceneModel {
   colors: Record<HatchKind, string>;
   /** Site view: discs on hatch and port faces; replaces the discs derived from hatch voxels. */
   markers?: { pos: Vec3; face: Dir; color: string }[];
+  /**
+   * Site view: the shared cell in front of a hatch several nets end at (a bus holding several items takes
+   * them through its front only), drawn as one pipe block where the nets merge.
+   */
+  junctions?: PipeJunction[];
   /** Site view: text above groups and ports (`pos` in world units, not cells; `color` draws a swatch). */
   labels?: { pos: [number, number, number]; text: string; color?: string; small?: boolean }[];
   /** Site view: the ground area, drawn as a grid from (0, 0) to `size` on y = 0. */

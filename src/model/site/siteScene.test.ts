@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { requiredBlocks } from '../bom';
 import { createSiteBuilder } from './build';
-import { groupHatchKeys, siteBomTiers } from './siteScene';
+import { JUNCTION_COLOR } from '../colors';
+import { dirVec } from '../geometry';
+import type { SiteNet } from './buildTypes';
+import { buildSiteScene, groupHatchKeys, siteBomTiers } from './siteScene';
 import type { SiteGroup, SiteState } from './types';
 
 function group(id: string, extra: Partial<SiteGroup> = {}): SiteGroup {
@@ -76,5 +79,93 @@ describe('site bill of materials with tiers', () => {
     const rows = rowsOf(b, siteBomTiers(b.groups));
     expect(rows.some(([label]) => String(label).includes('(EV)'))).toBe(true);
     expect(rows.some(([label]) => String(label).includes('(HV)'))).toBe(true);
+  });
+});
+
+describe('pipe junctions in front of a hatch several nets end at', () => {
+  const ebf = group('ebf', { count: 1, tier: 'MV', enabledHatches: [], origin: [14, 14] });
+  const names = ['a', 'b', 'c'];
+  const multi = (extra: Partial<SiteState> = {}): SiteState => ({
+    ...site([ebf]),
+    ports: names.map((n) => ({ id: `p${n}`, dir: 'in' as const, resource: `item:${n}` })),
+    links: names.map((n) => ({
+      id: `l${n}`,
+      from: { port: `p${n}` },
+      to: { group: 'ebf' },
+      resource: `item:${n}`,
+    })),
+    resources: {
+      'item:a': { kind: 'item', name: 'A', color: '#ff0000' },
+      'item:b': { kind: 'item', name: 'B', color: '#00ff00' },
+      'item:c': { kind: 'item', name: 'C', color: '#0000ff' },
+    },
+    ...extra,
+  });
+  const run = (s: SiteState, isolate?: string) =>
+    createSiteBuilder()(s, { pipes: true, cables: false, below: true, isolate });
+
+  it('has one junction in the cell in front of the bus, with the colour of every net', () => {
+    const b = run(multi());
+    const bus = b.groups[0].hatches.find((h) => h.kind === 'itemIn')!;
+    const js = b.scene.junctions!;
+    expect(js).toHaveLength(1);
+    const v = dirVec(bus.face);
+    expect(js[0].cell).toEqual(bus.cell.map((x, i) => x + v[i]));
+    expect(js[0].hatch).toEqual(bus.cell);
+    expect(js[0].face).toBe(bus.face);
+    expect(js[0].kind).toBe(b.scene.pipes![0].kind);
+    expect(js[0].colors).toEqual(['#ff0000', '#00ff00', '#0000ff']);
+    expect(js[0].nets).toEqual(b.scene.pipes!.map((n) => n.id));
+    expect(js[0].dim).toBeUndefined();
+  });
+
+  it('shows the bus marker neutral, not in the colour of one resource', () => {
+    const b = run(multi());
+    const bus = b.groups[0].hatches.find((h) => h.kind === 'itemIn')!;
+    const mark = b.scene.markers!.find((m) => m.pos.join() === bus.cell.join())!;
+    expect(mark.color).toBe(JUNCTION_COLOR);
+  });
+
+  it('dims a junction only when all of its nets are dimmed', () => {
+    expect(run(multi(), 'item:a').scene.junctions![0].dim).toBeUndefined();
+    expect(run(multi(), 'fluid:none').scene.junctions![0].dim).toBe(true);
+  });
+
+  it('has no junction for a hatch with one net', () => {
+    const one = multi({ ports: multi().ports.slice(0, 1), links: multi().links.slice(0, 1) });
+    expect(run(one).scene.junctions).toBeUndefined();
+  });
+});
+
+describe('junctions from synthetic nets', () => {
+  const hatchCell: [number, number, number] = [5, 0, 5];
+  const res = {
+    'item:a': { kind: 'item' as const, name: 'A', color: '#ff0000' },
+    'item:b': { kind: 'item' as const, name: 'B', color: '#00ff00' },
+    'power:e': { kind: 'power' as const, name: 'E', color: '#ffff00' },
+  };
+  const net = (id: number, resource: keyof typeof res, face: 'east' | 'west' | null): SiteNet => ({
+    id,
+    resource,
+    kind: res[resource].kind,
+    links: [],
+    terminals: [{ role: 'sink', group: 'g', hatch: {} as never, cell: hatchCell }],
+    route: { attach: [face], paths: [], length: 0, connected: face ? 1 : 0, total: 1 } as never,
+  });
+  const scene = (nets: SiteNet[]) =>
+    buildSiteScene({ ...site([]), resources: res }, [], [], nets, new Set()).junctions;
+
+  it('counts only nets that connected here and reach the hatch through one face', () => {
+    expect(scene([net(0, 'item:a', 'east'), net(1, 'item:b', null)])).toBeUndefined();
+    expect(scene([net(0, 'item:a', 'east'), net(1, 'item:b', 'west')])).toBeUndefined();
+    const js = scene([net(0, 'item:a', 'east'), net(1, 'item:b', 'west'), net(2, 'item:b', 'east')])!;
+    expect(js).toHaveLength(1);
+    expect(js[0].nets).toEqual([0, 2]);
+    expect(js[0].colors).toEqual(['#ff0000', '#00ff00']);
+    expect(js[0].face).toBe('east');
+  });
+
+  it('makes no junction for cables', () => {
+    expect(scene([net(0, 'power:e', 'east'), net(1, 'power:e', 'east')])).toBeUndefined();
   });
 });

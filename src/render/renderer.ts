@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { JUNCTION_COLOR } from '../model/colors';
 import { dirVec, key } from '../model/geometry';
 import { isCable } from '../model/routing/kinds';
 import type { Dir, Vec3, ViewMode } from '../model/core/types';
@@ -72,6 +73,8 @@ const SELECT_TINT = '#3b82f6';
 const SELECT_LINE = '#111111';
 /** Pipe thickness: square like GT pipes, 6/16 of a block (a small pipe). */
 const PIPE_WIDTH = 6 / 16;
+/** A pipe junction block is a little thicker than the pipes that merge into it. */
+const JUNCTION_WIDTH = PIPE_WIDTH * 1.35;
 /** Cable thickness: thinner than pipes (a 2x GT cable), so the two read apart at a glance. */
 const CABLE_WIDTH = 3 / 16;
 /** Flow arrows: wider than a pipe so they show around it, and their speed (blocks per second). */
@@ -767,6 +770,11 @@ export function createRenderer(
     }[] = [];
     const cubes: { p: THREE.Vector3; color: string; w: number; net: number; dim: boolean }[] = [];
     const steps: { a: THREE.Vector3; d: THREE.Vector3; q: THREE.Quaternion; color: string }[] = [];
+    const junctions = m.junctions ?? [];
+    const joinCells = new Set(junctions.map((j) => key(j.cell)));
+    const joinHatches = new Set(junctions.map((j) => key(j.hatch)));
+    /** Beams that end at a junction stop at the face of its cube (a hair inside, so no gap shows). */
+    const junctionReach = (): number => -(JUNCTION_WIDTH / 2) + 0.005;
     m.pipes.forEach((net, ni) => {
       const color = net.color ?? m.colors[net.kind];
       const netId = net.id ?? -1 - ni;
@@ -789,7 +797,8 @@ export function createRenderer(
       for (const path of net.paths) {
         path.forEach((p) => cells.add(key(p)));
         const pts = path.map(center);
-        if (pts.length === 1) cubes.push({ p: pts[0], color, w, net: netId, dim });
+        const joined = (p: Vec3): boolean => joinCells.has(key(p));
+        if (pts.length === 1 && !joined(path[0])) cubes.push({ p: pts[0], color, w, net: netId, dim });
         let start = 0;
         for (let i = 1; i < pts.length; i++) {
           const last = i === pts.length - 1;
@@ -800,7 +809,12 @@ export function createRenderer(
               .normalize()
               .distanceTo(new THREE.Vector3().subVectors(pts[i + 1], pts[i]).normalize()) > 1e-6;
           if (last || bend) {
-            beam(pts[start], pts[i], half, half);
+            beam(
+              pts[start],
+              pts[i],
+              joined(path[start]) ? junctionReach() : half,
+              joined(path[i]) ? junctionReach() : half,
+            );
             start = i;
           }
         }
@@ -810,7 +824,7 @@ export function createRenderer(
         if (h.net !== undefined && net.id !== undefined ? h.net !== net.id : h.kind !== net.kind) continue;
         const v = dirVec(h.face);
         const front: Vec3 = [h.cell[0] + v[0], h.cell[1] + v[1], h.cell[2] + v[2]];
-        if (!cells.has(key(front))) continue;
+        if (!cells.has(key(front)) || (joinCells.has(key(front)) && joinHatches.has(key(h.cell)))) continue;
         beam(center(h.cell).addScaledVector(dirVector(h.face), 0.5), center(front), 0, half);
       }
       if (!dim)
@@ -825,6 +839,19 @@ export function createRenderer(
           });
         }
     });
+    // One neutral block where the nets of a multi-item hatch merge, and one stub from it to the hatch face.
+    for (const j of junctions) {
+      const p = center(j.cell);
+      cubes.push({ p, color: JUNCTION_COLOR, w: JUNCTION_WIDTH / PIPE_WIDTH, net: -1, dim: !!j.dim });
+      segments.push({
+        a: center(j.hatch).addScaledVector(dirVector(j.face), 0.5),
+        b: p.clone().addScaledVector(dirVector(j.face), JUNCTION_WIDTH / 2 - 0.005),
+        color: JUNCTION_COLOR,
+        w: 1,
+        net: -1,
+        dim: !!j.dim,
+      });
+    }
     const matrix = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const scale = new THREE.Vector3();

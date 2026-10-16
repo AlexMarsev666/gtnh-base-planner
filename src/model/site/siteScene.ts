@@ -1,16 +1,17 @@
 import { isSingleBlock, singleMachineLook } from '../../data/generic';
-import { DEFAULT_HATCH_COLORS } from '../colors';
-import { key } from '../geometry';
+import { DEFAULT_HATCH_COLORS, JUNCTION_COLOR } from '../colors';
+import { key, step } from '../geometry';
 import type { BomTiers } from '../bom';
 import { buildSceneModel } from '../scene';
 import { followsGroupTier, groupKey, hatchTier } from '../tiers';
-import type { Vec3 } from '../core/types';
-import type { SceneModel, Voxel } from '../render/types';
+import type { Dir, Vec3 } from '../core/types';
+import type { PipeJunction, SceneModel, Voxel } from '../render/types';
 import type { RouteNet } from '../routing/routeNet';
 import type { PlacedGroup, PlacedPort, SiteNet } from './buildTypes';
 import { siteResource } from './demand';
 import { groupPoint, type SiteHatch } from './group';
 import { portUnitId } from './ids';
+import { isCable } from '../routing/kinds';
 import { netKind } from './nets';
 import type { SiteState } from './types';
 
@@ -94,7 +95,13 @@ export function buildSiteScene(
       markers.push({
         pos: h.cell,
         face: h.face,
-        color: h.resource ? resourceOf(h.resource).color : colors[h.kind],
+        // A hatch holding several resources has no colour of its own to show: all of them meet at its front.
+        color:
+          (h.resources?.length ?? 0) > 1
+            ? JUNCTION_COLOR
+            : h.resource
+              ? resourceOf(h.resource).color
+              : colors[h.kind],
       });
     }
   for (const n of routed)
@@ -125,6 +132,7 @@ export function buildSiteScene(
       dim: !!isolate && isolate !== n.resource,
     };
   });
+  const junctions = pipeJunctions(routed, pipes);
   // Port blocks take a stub like hatches.
   const portStubs = routed.flatMap((n) =>
     n.terminals.flatMap((t, ti) => {
@@ -166,9 +174,46 @@ export function buildSiteScene(
     bounds: { min: lo, max: hi },
     colors,
     markers,
+    ...(junctions.length ? { junctions } : {}),
     labels,
     site: { size: [w, d] },
   };
+}
+
+/**
+ * The cell in front of each hatch two or more routed nets end at (they all end in that one cell), with the
+ * nets and their colours. `pipes` are the nets' scene counterparts, in the order of `routed`.
+ */
+function pipeJunctions(routed: readonly SiteNet[], pipes: readonly RouteNet[]): PipeJunction[] {
+  const byHatch = new Map<string, { net: number; face?: Dir | null; cell: Vec3 }[]>();
+  routed.forEach((n, ni) =>
+    n.terminals.forEach((t, ti) => {
+      if (!t.hatch) return;
+      const k = key(t.cell);
+      const list = byHatch.get(k) ?? [];
+      byHatch.set(k, [...list, { net: ni, face: n.route?.attach[ti], cell: t.cell }]);
+    }),
+  );
+  const out: PipeJunction[] = [];
+  for (const all of byHatch.values()) {
+    // Only nets that connected here count, and only those that reach the hatch through one common face.
+    const face = all.find((e) => e.face)?.face;
+    if (!face) continue;
+    const list = all.filter((e) => e.face === face);
+    const nets = [...new Set(list.map((e) => e.net))].filter((i) => !isCable(pipes[i].kind));
+    if (nets.length < 2) continue;
+    const hatch = list[0].cell;
+    out.push({
+      cell: step(hatch, face),
+      kind: pipes[nets[0]].kind,
+      nets: nets.map((i) => pipes[i].id!),
+      colors: nets.map((i) => pipes[i].color!),
+      hatch,
+      face,
+      ...(nets.every((i) => pipes[i].dim) ? { dim: true } : {}),
+    });
+  }
+  return out;
 }
 
 /**
