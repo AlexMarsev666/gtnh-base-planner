@@ -329,44 +329,73 @@ export function layoutGroup(
   return { def, below, resolved, requests, wanted, notes, problems };
 }
 
-/** Finish a group laid out by `layoutGroup`: hatches lean to the sides their pipes leave by (`toward`). */
-export function leanGroup(layout: GroupLayout, toward: Toward = {}): GroupBuild {
-  if (layout.single) return layout.single;
-  const { def, below, requests, wanted } = layout;
-  let resolved = layout.resolved;
-  const notes = [...layout.notes];
-  const problems = [...layout.problems];
-  const unitIds = resolved.pack.units.map((u) => u.id).sort((a, b) => a - b);
-  // The layout stands as it is; the leaned placement is kept only when it places at least as many hatches.
-  const targets = towardPoints(def, resolved.pack.units, toward);
-  if (Object.keys(targets).length > 0) {
-    const leaned = placerFor(below, targets)(def, resolved.pack.units, [], undefined, { requests });
-    // Compared per reason: a missing required hatch is never traded for a placed one.
-    const required = (r: PlaceResult) => r.unplaced.filter((u) => u.reason === 'required').length;
-    if (
-      leaned.unplaced.length <= resolved.hatches.unplaced.length &&
-      required(leaned) <= required(resolved.hatches)
-    )
-      resolved = { ...resolved, hatches: leaned };
-  }
-  // An `all` resource the engine could not share among the units.
-  for (const r of wanted.fixed) {
-    if (r.key === undefined || r.units === 'each' || r.units.length < 2) continue;
-    const n = resolved.hatches.hatches.filter((h) => h.kind === r.kind && h.key === r.key).length;
-    if (n > 1) notes.push({ type: 'split', resource: r.key, hatches: n });
-  }
+/** Bounding box of packed units (an empty pack gives zeros). */
+function packBox(
+  def: MultiblockDef,
+  units: readonly Unit[],
+): { lo: [number, number, number]; hi: [number, number, number] } {
   const lo: [number, number, number] = [Infinity, Infinity, Infinity];
   const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
-  for (const u of resolved.pack.units) {
+  for (const u of units) {
     const s = rotatedSize(def, u.rotation);
     for (let i = 0; i < 3; i++) {
       lo[i] = Math.min(lo[i], u.origin[i]);
       hi[i] = Math.max(hi[i], u.origin[i] + s[i]);
     }
   }
-  if (resolved.pack.units.length === 0) {
+  if (units.length === 0) {
     lo.fill(0);
     hi.fill(0);
+  }
+  return { lo, hi };
+}
+
+/** The local size of the group a layout gives, the same whatever `leanGroup` does with the hatches. */
+export function layoutSize(layout: GroupLayout): Vec3 {
+  if (layout.single) return layout.single.size;
+  const { lo, hi } = packBox(layout.def, layout.resolved.pack.units);
+  return [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]];
+}
+
+/**
+ * Finish a group laid out by `layoutGroup`: hatches lean to the sides their pipes leave by (`toward`) and keep
+ * off `avoid`, cells in the group's local frame (the planes it shares with another group). The layout and
+ * footprint never change.
+ */
+export function leanGroup(layout: GroupLayout, toward: Toward = {}, avoid: readonly Vec3[] = []): GroupBuild {
+  if (layout.single) return layout.single;
+  const { def, below, requests, wanted } = layout;
+  let resolved = layout.resolved;
+  const notes = [...layout.notes];
+  const problems = [...layout.problems];
+  const unitIds = resolved.pack.units.map((u) => u.id).sort((a, b) => a - b);
+  const { lo, hi } = packBox(def, resolved.pack.units);
+  // The layout stands as it is; a leaned or avoiding placement is kept only when it places at least as many
+  // hatches as the plain one. Compared per reason: a missing required hatch is never traded for a placed one.
+  const targets = towardPoints(def, resolved.pack.units, toward);
+  const required = (r: PlaceResult) => r.unplaced.filter((u) => u.reason === 'required').length;
+  const plain = resolved.hatches;
+  const attempts: { toward?: typeof targets; avoid?: HatchAvoid }[] = [];
+  const leans = Object.keys(targets).length > 0;
+  if (avoid.length > 0) {
+    // Local cells back to the frame of the packed units, which is where the placement looks.
+    const cells = new Set(avoid.map((c) => [c[0] + lo[0], c[1] + lo[1], c[2] + lo[2]].join()));
+    const all: HatchAvoid = new Map([...new Set(requests.map((r) => r.kind))].map((k) => [k, cells]));
+    if (leans) attempts.push({ toward: targets, avoid: all });
+    attempts.push({ avoid: all });
+  } else if (leans) attempts.push({ toward: targets });
+  for (const a of attempts) {
+    const tried = placerFor(below, a.toward)(def, resolved.pack.units, [], a.avoid, { requests });
+    if (tried.unplaced.length <= plain.unplaced.length && required(tried) <= required(plain)) {
+      resolved = { ...resolved, hatches: tried };
+      break;
+    }
+  }
+  // An `all` resource the engine could not share among the units.
+  for (const r of wanted.fixed) {
+    if (r.key === undefined || r.units === 'each' || r.units.length < 2) continue;
+    const n = resolved.hatches.hatches.filter((h) => h.kind === r.kind && h.key === r.key).length;
+    if (n > 1) notes.push({ type: 'split', resource: r.key, hatches: n });
   }
   const shift = (p: Vec3): Vec3 => [p[0] - lo[0], p[1] - lo[1], p[2] - lo[2]];
   const units = resolved.pack.units.map((u) => ({ ...u, origin: shift(u.origin) }));

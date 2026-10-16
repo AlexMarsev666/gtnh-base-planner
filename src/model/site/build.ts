@@ -1,6 +1,7 @@
 import type { PlacedGroup, PlacedPort, SiteBuild, SiteBuilder, SiteNet } from './buildTypes';
 import { deriveSiteDemand } from './demand';
 import { placeGroups, type GroupCache } from './groups';
+import { lazyFaces, type LazyFaces } from './groupFaces';
 import { buildSiteNetworks, routeSiteNetworks, routingOf } from './nets';
 import { analyzeOccupancy } from './occupancy';
 import { analysePower } from './power';
@@ -124,5 +125,13 @@ export function localFootprints(build: SiteBuild): Map<string, [number, number]>
 export function localTerminals(build: SiteBuild): Map<string, Terminals> {
   const out = new Map<string, Terminals>();
   for (const g of build.groups) if (g.build?.ends) out.set(g.group.id, g.build.ends);
+  return out;
+}
+
+/** The side faces of each built group (see `groupFaces`), for `annealGroups`. */
+export function localFaces(build: SiteBuild): Map<string, LazyFaces> {
+  const out = new Map<string, LazyFaces>();
+  // Tests build with stubs that carry no units.
+  for (const g of build.groups) if (g.build?.units) out.set(g.group.id, lazyFaces(g.build));
   return out;
 }

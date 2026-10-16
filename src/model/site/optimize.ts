@@ -1,7 +1,7 @@
 import { getSiteDef, isSingleBlock } from '../../data/generic';
 import { FLOOR_CLEARANCE } from './arrange';
 import { annealGroups, defaultIterations, type AnnealOptions } from './anneal';
-import { localFootprints, localHeights, localTerminals } from './build';
+import { localFaces, localFootprints, localHeights, localTerminals } from './build';
 import type { SiteBuild, SiteBuildOptions, SiteBuilder } from './buildTypes';
 import { AbortedError, throttledProgress, throwIfAborted } from './progress';
 import { groupShapes } from './shapes';
@@ -29,7 +29,7 @@ export { AbortedError };
  * widens the spread of results more than it moves the median, and the best layout wins either way.
  *
  * Ranking, in order: build problems (overlaps, groups outside, ...), terminals left unconnected, pipe and
- * cable blocks, then the width + depth of the layout. The start wins ties, so the result is never worse than
+ * cable blocks less the structure blocks that shared walls save, then the width + depth of the layout. The start wins ties, so the result is never worse than
  * the arrangement it was given; when nothing beats it, it is returned as it is (`improved: false`). With a
  * `baseline` (the user's own layout) the result must also beat that, else the baseline is returned.
  */
@@ -115,6 +115,8 @@ export interface LayoutScore {
   problems: number;
   unconnected: number;
   blocks: number;
+  /** Structure blocks that walls shared between groups save (`SiteStats.sharedBlocks`). */
+  shared?: number;
   span: number;
 }
 
@@ -149,15 +151,20 @@ export function scoreBuild(build: SiteBuild): LayoutScore {
     problems: build.warnings.filter((w) => w.type !== 'unrouted').length,
     unconnected: build.stats.terminals - build.stats.connected,
     blocks: build.stats.pipeBlocks + build.stats.cableBlocks,
+    shared: build.stats.sharedBlocks,
     span: x1 > x0 ? x1 - x0 + (z1 - z0) : 0,
   };
 }
 
+/** Pipe and cable blocks less the structure blocks shared walls save: what the ranking counts. */
+const netBlocks = (s: LayoutScore) => s.blocks - (s.shared ?? 0);
+
 /** Whether `a` is strictly better than `b`. */
 export function better(a: LayoutScore, b: LayoutScore): boolean {
-  for (const k of ['problems', 'unconnected', 'blocks', 'span'] as const)
-    if (a[k] !== b[k]) return a[k] < b[k];
-  return false;
+  if (a.problems !== b.problems) return a.problems < b.problems;
+  if (a.unconnected !== b.unconnected) return a.unconnected < b.unconnected;
+  if (netBlocks(a) !== netBlocks(b)) return netBlocks(a) < netBlocks(b);
+  return a.span !== b.span && a.span < b.span;
 }
 
 /** Radixes of `scoreValue`: no layout of the site has more unconnected terminals, blocks or span than these. */
@@ -180,16 +187,18 @@ export function scoreBounds(site: SiteState, heightOf: (id: string) => number): 
 }
 
 /**
- * One number for the annealer, ordered exactly like `better` (problems, unconnected, blocks, span) within
+ * One number for the annealer, ordered like `better` (problems, unconnected, blocks less shared, span) within
  * `bounds`. Every digit stays an exact integer: should the packed value pass `Number.MAX_SAFE_INTEGER`
  * (hundreds of problems on the largest sites), the problems are capped, which only blurs the order between
- * layouts that are all hopeless. The annealer needs a scalar, so no tuple compare is possible there.
+ * layouts that are all hopeless. The annealer needs a scalar, so no tuple compare is possible there. The blocks digit
+ * is cut at zero (a layout whose walls save more than its pipes take is not ranked above one that saves exactly that).
  */
 export function scoreValue(s: LayoutScore, bounds: ScoreBounds): number {
   const rest = (bounds.unconnected + 1) * (bounds.blocks + 1) * (bounds.span + 1);
   const problems = Math.min(s.problems, Math.floor(Number.MAX_SAFE_INTEGER / rest) - 1);
   return (
-    ((problems * (bounds.unconnected + 1) + s.unconnected) * (bounds.blocks + 1) + s.blocks) *
+    ((problems * (bounds.unconnected + 1) + s.unconnected) * (bounds.blocks + 1) +
+      Math.max(0, netBlocks(s))) *
       (bounds.span + 1) +
     s.span
   );
@@ -239,6 +248,7 @@ export function optimizeSite(
     const footprints = localFootprints(measured);
     const heights = localHeights(measured);
     const ends = localTerminals(measured);
+    const faces = localFaces(measured);
     const sizeOf = (id: string) => footprints.get(id);
     const heightOf = (id: string) => heights.get(id) ?? 1;
     const bounds = scoreBounds(site, heightOf);
@@ -293,6 +303,7 @@ export function optimizeSite(
         seed: mixSeed(seed, 1, k),
         heightOf,
         ends,
+        faces,
         shapes: k % 2 === 1 ? shapes : undefined,
         iterations: exploreSteps,
         budgetMs: Math.max(0, limit - used()),
@@ -326,6 +337,7 @@ export function optimizeSite(
           seed: mixSeed(seed, 2, run),
           heightOf,
           ends,
+          faces,
           shapes: run % 2 === 1 ? shapes : undefined,
           iterations: steps,
           budgetMs: Math.max(0, limit - used()),

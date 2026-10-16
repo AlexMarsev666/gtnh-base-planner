@@ -87,12 +87,30 @@ describe('walls shared between groups', () => {
     expect(ba.scene.voxels.length).toBe(ab.scene.voxels.length);
   });
 
-  it('is a conflict when a hatch sits in the shared wall', () => {
+  it('keeps the hatches off the shared wall, so it stays no conflict', () => {
     const extra = { enabledHatches: ['energy', 'maintenance', 'muffler'] as SiteGroup['enabledHatches'] };
-    // The energy hatch of the first group is on its east wall, the one the second group shares.
+    // Alone, the energy hatch of the first group is on its east wall, the one the second group shares.
+    const alone = build(site([group('a', EBF, [3, 3], extra)]));
+    expect(alone.groups[0].hatches.some((h) => h.cell[0] === 5)).toBe(true);
     const b = build(site([group('a', EBF, [3, 3], extra), group('b', EBF, [5, 3])]));
-    expect(overlaps(b)).toEqual([{ type: 'overlap', groups: ['a', 'b'] }]);
-    expect(conflicts(b)).toBeGreaterThan(0);
+    expect(overlaps(b)).toEqual([]);
+    expect(b.groups[0].hatches.every((h) => h.cell[0] !== 5)).toBe(true);
+  });
+
+  it('is a conflict when a hatch does sit in the shared wall', () => {
+    const b = build(site([group('a', EBF, [3, 3]), group('b', EBF, [5, 3])]));
+    const hatch = {
+      kind: 'energy',
+      cell: [5, 1, 4],
+      face: 'east',
+      unitIds: [0],
+    } as PlacedGroup['hatches'][number];
+    const o = analyzeOccupancy(site([group('a', EBF, [3, 3]), group('b', EBF, [5, 3])]), [
+      { ...b.groups[0], hatches: [hatch] },
+      b.groups[1],
+    ]);
+    expect(o.warnings).toEqual([{ type: 'overlap', groups: ['a', 'b'] }]);
+    expect(o.conflictCells.has('5,1,4')).toBe(true);
   });
 
   it('is no conflict when a shared wall covers the cell in front of another controller', () => {

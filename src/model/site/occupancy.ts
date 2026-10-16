@@ -1,8 +1,8 @@
-import { PLACEHOLDER_DEF } from '../../data/generic';
 import { controllerFacing, key, step, unitCells } from '../geometry';
 
 import type { Vec3 } from '../core/types';
 import type { PlacedGroup, SiteWarning } from './buildTypes';
+import { AIR, markOf, NEVER, sharable } from './groupFaces';
 import type { SiteState } from './types';
 
 /** Which cells the placed groups take, and where they collide with each other or leave the site. */
@@ -25,8 +25,6 @@ export interface SiteOccupancy {
   warnings: SiteWarning[];
 }
 
-const PLACEHOLDER_BLOCK = PLACEHOLDER_DEF.legend.c.blockId;
-
 /** What one group needs at a cell. A hatch is never the same block as that of another group. */
 interface Need {
   gi: number;
@@ -34,14 +32,17 @@ interface Need {
   controller: boolean;
   hatch: boolean;
   blockId?: string;
+  /** The group never shares a wall (`wallshare: 'separate'`). */
+  separate: boolean;
 }
 
-/** Whether two different groups may both have a cell: both air, or the same casing block on both sides. */
+/** Whether two different groups may both have a cell: both air, or the same casing block on both sides (see `sharable`). */
 function compatible(a: Need, b: Need): boolean {
+  // Air needs the same on both sides whatever the groups' settings; a block is shared only by groups that may.
   if (a.air && b.air) return true;
-  if (a.air || b.air || a.controller || b.controller || a.hatch || b.hatch) return false;
-  // The placeholder stands for a machine not transcribed yet: it shares no wall.
-  return a.blockId !== undefined && a.blockId !== PLACEHOLDER_BLOCK && a.blockId === b.blockId;
+  if (a.separate || b.separate) return false;
+  const mark = (n: Need) => (n.air ? AIR : n.hatch || n.controller ? NEVER : markOf('casing', n.blockId));
+  return sharable(mark(a), mark(b));
 }
 
 export function analyzeOccupancy(site: SiteState, groups: readonly PlacedGroup[]): SiteOccupancy {
@@ -80,6 +81,7 @@ export function analyzeOccupancy(site: SiteState, groups: readonly PlacedGroup[]
             controller: c.role === 'controller',
             hatch: hatchCells.has(k),
             blockId: c.blockId,
+            separate: site.groups[pg.index].wallshare === 'separate',
           };
           mine.set(k, { pos: c.pos, need });
         } else if (!air) {

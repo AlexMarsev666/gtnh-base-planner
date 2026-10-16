@@ -98,7 +98,9 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    one layer under the ground, as one undo step (the layout and the routing come back together). OPTIMIZE arranges,
    then searches for a tighter layout with shorter pipes in the background: simulated annealing on a cheap length
    estimate finds candidates, then a second pass judges every step by the real router. It may also pack a group of
-   several units another way (rows or layers, which sets the group's limits), and says how many it changed. A
+   several units another way (rows or layers, which sets the group's limits), and says how many it changed. It can also stand
+   two groups flush, sharing one wall, when their facing walls are the same casing (no hatch is placed in such a wall, and a
+   group set to Separate never shares); ARRANGE keeps the corridor between groups. A
    result is kept only if it beats the current layout (fewer problems, then more connected, then fewer pipe
    blocks, then a smaller footprint); when nothing does, nothing changes and the notice says so. The search is repeatable: its work is counted in
    iterations that grow with the size of the template, not in time, and its random numbers come from the
