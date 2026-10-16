@@ -1,4 +1,5 @@
 import { coilById } from '../data/coils';
+import { isFloorBlock } from '../data/floor';
 import { PLACEHOLDER_ID, getSiteDef, isSingleBlock } from '../data/generic';
 import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { getSingleMachine } from '../data/single-machines';
@@ -452,6 +453,9 @@ export function validateSiteStateWithReport(input: unknown): SiteLoad {
       depth: expectInt(field(r, 'depth'), 'Routing depth', 0, 3) as RoutingDepth,
     };
   }
+  // A block this version does not know (a newer list) is left out rather than refusing the template.
+  const floor = field(obj, 'floor');
+  if (isFloorBlock(floor)) site.floor = floor;
   const seed = field(obj, 'seed');
   if (seed !== undefined && seed !== null) site.seed = expectInt(seed, 'Seed', 0, MAX_SEED);
   return { site, replaced };

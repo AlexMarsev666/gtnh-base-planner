@@ -257,3 +257,54 @@ describe('routeNets underground levels and neat style', () => {
     expect(routeNets(input({ style: 'neat' }))).toEqual(routeNets(input({ style: 'neat' })));
   });
 });
+
+describe('routeNets with a floor layer', () => {
+  const down: RouteNetSpec = {
+    terminals: [
+      { cell: [2, 0, 5], faces: ['down'], role: 'source' },
+      { cell: [12, 0, 5], faces: ['down'], role: 'sink' },
+    ],
+  };
+  const floorInput = (floorY?: number) => ({
+    box: { min: [0, -3, 0] as Vec3, max: [16, 4, 12] as Vec3 },
+    solids: [down.terminals[0].cell, down.terminals[1].cell],
+    keepFree: [],
+    nets: [down],
+    trenchBelow: 0,
+    floorY,
+  });
+
+  it('crosses the floor straight down and runs below it, ending in the floor layer at a hatch', () => {
+    const [r] = routeNets({ ...floorInput(-1), style: 'neat' });
+    expect(r.connected).toBe(2);
+    expect(r.attach).toEqual(['down', 'down']);
+    for (const p of r.paths)
+      p.forEach((c, i) => {
+        if (c[1] !== -1) return;
+        for (const n of [p[i - 1], p[i + 1]])
+          if (n) expect([n[0], n[2], Math.abs(n[1] - c[1])]).toEqual([c[0], c[2], 1]);
+      });
+    const cells = r.paths.flat();
+    expect(cells.filter((c) => c[1] === -1).map((c) => c.join())).toEqual(['2,-1,5', '12,-1,5']);
+    expect(cells.some((c) => c[1] === -2)).toBe(true);
+    expect(cells.filter((c) => c[1] === -2).length).toBeGreaterThanOrEqual(9);
+  });
+
+  it('is unchanged without a floor', () => {
+    const [r] = routeNets(floorInput());
+    const [plain] = routeNets({ ...floorInput(), floorY: undefined });
+    expect(r).toEqual(plain);
+    // Without the floor the neat run is right under the ground.
+    const [neat] = routeNets({ ...floorInput(), style: 'neat' });
+    expect(neat.paths.flat().filter((c) => c[1] === -1).length).toBeGreaterThan(10);
+  });
+
+  it('cannot reach a net that would have to turn in the floor layer', () => {
+    // A wall everywhere but on the floor layer leaves only a run along it for the way across.
+    const wall: Vec3[] = [];
+    for (let z = 0; z < 12; z++) for (const y of [-3, -2, 0, 1, 2, 3]) wall.push([7, y, z]);
+    const input = { ...floorInput(-1), solids: [...floorInput(-1).solids, ...wall] };
+    expect(routeNets({ ...input, floorY: undefined })[0].connected).toBe(2);
+    expect(routeNets(input)[0].connected).toBeLessThan(2);
+  });
+});

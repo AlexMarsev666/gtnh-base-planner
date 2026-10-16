@@ -350,6 +350,10 @@ export const t = {
     routingLegacy: (depth: number) =>
       `This template has no routing of its own yet: it uses classic routing, ${depth === 0 ? 'on the ground' : `${depth} layer${depth === 1 ? '' : 's'} under the ground`}, following the Connect from below switch of the machine view. Choosing a style or depth here gives it its own routing.`,
     useNeat: 'Use neat routing',
+    floor: 'Floor',
+    floorNone: 'None',
+    floorHint:
+      'A layer of blocks the machines stand on, under the ground level. Pipes and cables that go under the ground pass it straight down, leaving a hole; the trench starts below it. With depth 0 nothing goes under the floor.',
     undergroundView: 'X-ray',
     undergroundViewHint: 'See through the ground and the machines to the pipes under them.',
     routeStats: (blocks: number, bends: number, underground: number) =>

@@ -1,4 +1,5 @@
 import { coilById } from '../data/coils';
+import { isFloorBlock } from '../data/floor';
 import { getSiteDef, isSingleBlock } from '../data/generic';
 import { getSingleMachine } from '../data/single-machines';
 import { hatchKindsOf } from './catalogView';
@@ -472,6 +473,16 @@ export function withRouting(s: SiteState, routing: SiteRouting | undefined): Sit
   const next = { ...s };
   if (routing) next.routing = { style: routing.style, depth: routing.depth };
   else delete next.routing;
+  return next;
+}
+
+/** The floor of the template: one of `FLOOR_BLOCKS`, or undefined for none. */
+export function withFloor(s: SiteState, floor: string | undefined): SiteState {
+  const id = isFloorBlock(floor) ? floor : undefined;
+  if (s.floor === id) return s;
+  const next = { ...s };
+  if (id) next.floor = id;
+  else delete next.floor;
   return next;
 }
 

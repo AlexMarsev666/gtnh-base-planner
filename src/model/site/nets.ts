@@ -191,14 +191,18 @@ export function routeSiteNetworks(
     for (const h of pg.hatches) if (!routedHatches.has(h)) keepFree.push(step(h.cell, h.face));
   }
   const height = Math.max(4, ...groups.map((g) => g.max[1] + 3));
+  // A floor takes the layer at y = -1 (pipes only cross it), so the trench starts one layer lower; without
+  // depth nothing goes under the ground and the floor stays whole.
+  const floor = site.floor !== undefined && wanted > 0 ? 1 : 0;
   // Deep trenches enlarge the search grid; use the deepest that still fits (but never less than 1).
   let depth = wanted;
-  while (depth > 1 && (w + 2) * (d + 2) * (height + depth + 2) > MAX_ROUTER_CELLS) depth--;
+  while (depth > 1 && (w + 2) * (d + 2) * (height + depth + floor + 2) > MAX_ROUTER_CELLS) depth--;
   const results = routed.length
     ? routeNets({
-        // Up to `depth` layers under the ground for pipes that come from below.
-        box: { min: [0, -depth, 0], max: [w, height, d] },
+        // Up to `depth` layers under the ground (and under the floor) for pipes that come from below.
+        box: { min: [0, -depth - floor, 0], max: [w, height, d] },
         trenchBelow: depth > 0 ? 0 : undefined,
+        floorY: floor ? -1 : undefined,
         style,
         solids,
         keepFree,

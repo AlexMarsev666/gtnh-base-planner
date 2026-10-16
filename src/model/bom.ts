@@ -183,6 +183,14 @@ export function requiredBlocks(
         hatchKind: v.hatchKind,
       });
   }
+  // The floor of a site: a block per cell but the holes pipes and cables make.
+  if (scene.floor) {
+    const [fw, fd] = scene.floor.size;
+    const count = fw * fd - scene.floor.holes.length;
+    const g = groups.get(scene.floor.blockId);
+    if (g) g.count += count;
+    else groups.set(scene.floor.blockId, { blockId: scene.floor.blockId, kind: 'casing', count });
+  }
 
   // Ids sorted first so rows that merge (same name) keep the smallest id's key.
   const merged = new Map<string, BomRow & { kind: Group['kind'] }>();

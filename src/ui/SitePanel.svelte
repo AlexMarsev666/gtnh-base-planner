@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { blockInfo } from '../data/blocks';
+  import { FLOOR_BLOCKS } from '../data/floor';
   import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
   import { t } from '../i18n/en';
   import type { Endpoint, ResourceKind } from '../model/site/types';
@@ -14,6 +16,7 @@
     resetSite,
     updateSite,
     withCorridor,
+    withFloor,
     withLinkAdded,
     withLinkRemoved,
     withName,
@@ -86,6 +89,10 @@
     const depth = ROUTING_DEPTHS.find((x) => String(x) === v);
     if (depth !== undefined) updateSite((s) => withRouting(s, { ...routing, depth }));
   }
+  const floorOptions = [
+    { value: '', label: t.site.floorNone },
+    ...FLOOR_BLOCKS.map((id) => ({ value: id, label: blockInfo(id).name })),
+  ];
   const routeStats = $derived($siteRouteInfo?.routeStats);
 
   // The inspector is at the top: bring it into view when a group gets selected (from the scene too).
@@ -432,6 +439,13 @@
         testid="site-routing-depth"
         onchange={setDepth}
       />
+      <SelectRow
+        label={t.site.floor}
+        value={$site.floor ?? ''}
+        options={floorOptions}
+        testid="site-floor"
+        onchange={(v) => updateSite((s) => withFloor(s, v || undefined))}
+      />
       <ToggleRow
         on={$xray}
         label={t.site.undergroundView}
@@ -441,6 +455,7 @@
       />
     </ul>
     <p class="hint">{t.site.routingDepthHint}</p>
+    {#if $site.floor}<p class="hint">{t.site.floorHint}</p>{/if}
     {#if $siteRouteInfo && depthReduced($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
       <p class="hint warn" data-testid="site-depth-reduced">
         {t.site.routingDepthUsed($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}

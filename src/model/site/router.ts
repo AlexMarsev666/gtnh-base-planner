@@ -75,6 +75,11 @@ export interface RouterInput {
    * it, so pipes go underground only where that saves pipe, and deeper only where that saves more.
    */
   trenchBelow?: number;
+  /**
+   * Height of a floor layer pipes may only cross vertically: no cell of it is entered or left sideways, and a
+   * run through it goes straight on (no bend there). Nets may still end in it (a hatch facing down).
+   */
+  floorY?: number;
   /** `neat` prices surface blocks, bends and lone runs (see `NEAT_*`). Default `classic`. */
   style?: 'classic' | 'neat';
 }
@@ -311,6 +316,8 @@ interface Search {
   neat: boolean;
   /** Neat style with an underground: least extra cost of a step into a cell that is not a stub. */
   extra: number;
+  /** Grid y index of the floor layer (vertical passes only), or -1 without one. */
+  floorLayer: number;
   /** Per cell, 1 on or above the ground (neat style with an underground). */
   surface: Uint8Array | null;
   /** Cells of the net being routed that are its stubs are marked with `stubId` in `stubMark`. */
@@ -436,7 +443,10 @@ function search(
       return path.reverse();
     }
     const dir = st - cell * STATES;
+    const inFloor = s.floorLayer >= 0 && Math.floor(cell / g.dx) % g.dy === s.floorLayer;
     for (let d = 0; d < 6; d++) {
+      // Through the floor only straight up or down (from a tree cell in it: either way).
+      if (inFloor && (dir === NO_DIR ? d < 4 : d !== dir)) continue;
       const n = cell + offsets[d];
       const o = occ[n];
       let step = 1;
@@ -654,8 +664,16 @@ function flowsOf(g: Grid, st: NetState): [Vec3, Vec3][] {
 }
 
 /** Totals of one routed net: where its blocks are, and how often its paths turn. */
-function statsOf(g: Grid, st: NetState, trench: number | undefined, depth: number): RouteStats {
+function statsOf(
+  g: Grid,
+  st: NetState,
+  trench: number | undefined,
+  depth: number,
+  floorY: number | undefined,
+): RouteStats {
   const ground = trench ?? 0;
+  // The floor layer is no level of its own: its cells count with the first level below it.
+  const below = floorY === undefined ? 0 : 1;
   const out: RouteStats = {
     length: st.cells.length,
     bends: 0,
@@ -667,7 +685,7 @@ function statsOf(g: Grid, st: NetState, trench: number | undefined, depth: numbe
   for (const c of st.cells) {
     const y = pos(g, c)[1];
     if (y >= ground) out[stubs.has(c) ? 'surfaceStub' : 'surfaceTrunk']++;
-    else out.underground[ground - y - 1]++;
+    else out.underground[Math.max(0, ground - y - 1 - below)]++;
   }
   for (const p of st.paths)
     for (let i = 2; i < p.length; i++) if (p[i] - p[i - 1] !== p[i - 1] - p[i - 2]) out.bends++;
@@ -744,6 +762,7 @@ export function routeNets(input: RouterInput): RouteResult[] {
     turnCost: Math.max(0, input.turnCost ?? 2) + (neat ? NEAT_TURN_EXTRA : 0),
     verticalTurnCost: Math.max(0, input.turnCost ?? 2) + NEAT_VERTICAL_TURN_EXTRA,
     neat,
+    floorLayer: input.floorY === undefined ? -1 : input.floorY - g.oy,
     extra: neat && input.trenchBelow !== undefined ? Math.min(TRENCH_COST, SURFACE_PENALTY) : 0,
     surface: neat && input.trenchBelow !== undefined ? new Uint8Array(cells) : null,
     stubMark: new Uint32Array(cells),
@@ -759,7 +778,11 @@ export function routeNets(input: RouterInput): RouteResult[] {
     // other cell. Neat: surface cells are marked, and pay `SURFACE_PENALTY` unless they are stubs.
     for (let z = 0; z < g.dz; z++)
       for (let y = 0; y < g.dy; y++) {
-        const k = trench - (y + g.oy);
+        // Below a floor the first real level costs what level -1 does without one (so does the floor layer).
+        const k =
+          input.floorY !== undefined && y + g.oy <= input.floorY
+            ? Math.max(1, trench - (y + g.oy) - 1)
+            : trench - (y + g.oy);
         const base = g.dx * (z * g.dy + y);
         if (k > 0) s.hist.fill(TRENCH_COST * k, base, base + g.dx);
         else s.surface?.fill(1, base, base + g.dx);
@@ -861,9 +884,9 @@ export function routeNets(input: RouterInput): RouteResult[] {
     if (!beats(score(states), roundStart)) break;
   }
 
-  const depth = Math.max(0, (trench ?? 0) - g.oy - 1);
+  const depth = Math.max(0, (trench ?? 0) - g.oy - 1 - (input.floorY === undefined ? 0 : 1));
   return states.map((st) => ({
-    stats: statsOf(g, st, trench, depth),
+    stats: statsOf(g, st, trench, depth, input.floorY),
     paths: st.paths.map((p) => p.map((i) => pos(g, i))),
     length: st.cells.length,
     connected: connectedCount(st),

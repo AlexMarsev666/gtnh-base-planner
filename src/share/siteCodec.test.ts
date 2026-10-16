@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FLOOR_BLOCKS } from '../data/floor';
 import type { SiteState } from '../model/site/types';
 import { deflateRaw, PlanFormatError, toBase64Url } from './binary';
 import {
@@ -151,6 +152,16 @@ describe('validateSiteState', () => {
     expect((await decodeSite(await encodeSite(s))).groups[0].limitsLocked).toBe(true);
     data.groups[0].limitsLocked = 'yes';
     expect(validateSiteState(data).groups[0].limitsLocked).toBeUndefined();
+  });
+
+  it('keeps the floor through JSON and links, and drops a block it does not know', async () => {
+    const floored = { ...sample(), floor: FLOOR_BLOCKS[1] };
+    expect(siteFromJson(siteToJson(floored)).floor).toBe(FLOOR_BLOCKS[1]);
+    expect((await decodeSite(await encodeSite(floored))).floor).toBe(FLOOR_BLOCKS[1]);
+    // No floor by default: nothing is written, so old templates and links encode as before.
+    expect(siteToJson(sample())).not.toContain('floor');
+    for (const bad of ['mc.nope', 7, null, {}])
+      expect('floor' in validateSiteState({ ...sample(), floor: bad })).toBe(false);
   });
 
   it('round-trips through JSON and links', async () => {

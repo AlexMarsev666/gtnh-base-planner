@@ -168,6 +168,8 @@ export interface SiteState {
   colors: Partial<Record<HatchKind, string>>;
   /** Routing style and depth; absent = classic, depth from the old "connect below" switch. */
   routing?: SiteRouting;
+  /** A layer of this block (one of `FLOOR_BLOCKS`) under the site at y = -1; absent = no floor. */
+  floor?: string;
   /** Seed for the randomised steps (Optimize), a non-negative integer; absent = the built-in one. */
   seed?: number;
 }

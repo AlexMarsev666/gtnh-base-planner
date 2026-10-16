@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { FLOOR_BLOCKS } from '../data/floor';
 import { emptySite, validateSiteState } from '../share/siteCodec';
-import { withGroupAdded, withGroupPatched, withRouting } from './siteActions';
+import { withFloor, withGroupAdded, withGroupPatched, withRouting } from './siteActions';
 
 describe('group tiers, mirror, wall sharing, assignments and routing', () => {
   const ebf = () => {
@@ -149,5 +150,16 @@ describe('group tiers, mirror, wall sharing, assignments and routing', () => {
     expect(withRouting(neat, { style: 'neat', depth: 2 })).toBe(neat);
     expect('routing' in withRouting(neat, undefined)).toBe(false);
     expect(withRouting(s, undefined)).toBe(s);
+  });
+});
+
+describe('withFloor', () => {
+  it('sets a known floor block, clears it, and ignores unknown ids', () => {
+    const s = emptySite();
+    const floored = withFloor(s, FLOOR_BLOCKS[0]);
+    expect(floored.floor).toBe(FLOOR_BLOCKS[0]);
+    expect(withFloor(floored, FLOOR_BLOCKS[0])).toBe(floored);
+    expect('floor' in withFloor(floored, undefined)).toBe(false);
+    expect(withFloor(s, 'mc.nope')).toBe(s);
   });
 });

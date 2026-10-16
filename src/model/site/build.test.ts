@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getMultiblock } from '../../data/catalog';
+import { requiredBlocks } from '../bom';
 import { PLACEHOLDER_DEF, SINGLE_BLOCK_DEF } from '../../data/generic';
 import { validateMultiblockDef } from '../../data/validate';
 import { key, toWorld, localCells } from '../geometry';
@@ -11,7 +12,7 @@ import { placeGroups, type GroupCache } from './groups';
 import { groupIndexOfUnit, portIndexOfUnit, portUnitId } from './ids';
 import { groupToward } from './toward';
 import { buildGroup, groupPoint, placeUnit, singleBlockLimits } from './group';
-import type { SiteGroup, SiteState } from './types';
+import type { SiteGroup, SiteRouting, SiteState } from './types';
 
 const ebf = getMultiblock('electric-blast-furnace')!;
 const vf = getMultiblock('vacuum-freezer')!;
@@ -437,6 +438,65 @@ describe('buildSite', () => {
       expect(deep.routing.depth).toBe(3);
       expect(deep.routing.depthUsed).toBeLessThan(3);
       expect(deep.routing.depthUsed).toBeGreaterThanOrEqual(1);
+    });
+
+    describe('with a floor', () => {
+      const FLOOR = 'gt.casing.solidSteel';
+      const floored = (routing: SiteRouting) =>
+        createSiteBuilder()({ ...chain, floor: FLOOR }, { pipes: true, cables: true, routing });
+      const cellsOf = (b: ReturnType<typeof build>) =>
+        (b.scene.pipes ?? []).flatMap((n) => n.paths.map((p) => p.map((c) => c.join())));
+
+      it('is absent without one, and a floor does not change a route that stays on the ground', () => {
+        expect(build({ routing: { style: 'neat', depth: 2 } }).scene.floor).toBeUndefined();
+        const ground = { style: 'classic', depth: 0 } as const;
+        const f = floored(ground);
+        same(f.scene.pipes ?? [], build({ routing: ground }).scene.pipes ?? []);
+        expect(f.scene.floor).toEqual({ y: -1, blockId: FLOOR, size: [30, 30], holes: [] });
+      });
+
+      it('lets pipes cross it only straight down or up, and runs the trench below it', () => {
+        const b = floored({ style: 'neat', depth: 2 });
+        expect(b.stats.connected).toBe(b.stats.terminals);
+        const paths = (b.scene.pipes ?? []).flatMap((n) => n.paths);
+        const cells = paths.flat();
+        expect(cells.some((c) => c[1] <= -2)).toBe(true);
+        for (const p of paths)
+          p.forEach((c, i) => {
+            expect(c[1]).toBeGreaterThanOrEqual(-3);
+            if (c[1] !== -1) return;
+            // Both neighbours on the path are straight above or below it.
+            for (const n of [p[i - 1], p[i + 1]])
+              if (n) expect([n[0], n[2], Math.abs(n[1] - c[1])]).toEqual([c[0], c[2], 1]);
+          });
+        // The floor layer is no level of its own: the depth asked for is what is reported.
+        const r = b.stats.routeStats;
+        expect(r.underground).toHaveLength(2);
+        expect(r.length).toBe(r.surfaceTrunk + r.surfaceStub + r.underground.reduce((x, y) => x + y, 0));
+      });
+
+      it('has a hole at every floor cell a pipe occupies, and no other', () => {
+        const b = floored({ style: 'neat', depth: 2 });
+        const inFloor = new Set(
+          (b.scene.pipes ?? [])
+            .flatMap((n) => n.paths.flat())
+            .filter((c) => c[1] === -1)
+            .map((c) => `${c[0]},${c[2]}`),
+        );
+        const holes = b.scene.floor!.holes;
+        expect(holes.length).toBeGreaterThan(0);
+        expect(new Set(holes.map((h) => h.join())).size).toBe(holes.length);
+        expect(new Set(holes.map((h) => h.join()))).toEqual(inFloor);
+        expect(cellsOf(b).length).toBeGreaterThan(0);
+      });
+
+      it('counts the floor blocks less the holes in the bill of materials', () => {
+        const b = floored({ style: 'neat', depth: 2 });
+        const row = requiredBlocks(b.scene).blocks.find((r) => r.blockId === FLOOR)!;
+        expect(row.count).toBe(30 * 30 - b.scene.floor!.holes.length);
+        const bare = requiredBlocks(build({ routing: { style: 'neat', depth: 2 } }).scene);
+        expect(bare.blocks.some((r) => r.blockId === FLOOR && r.count > 800)).toBe(false);
+      });
     });
 
     it('neat keeps the trunks off the surface, and is deterministic', () => {

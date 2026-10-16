@@ -68,6 +68,8 @@ export interface RendererDebug {
 }
 
 const CASING_XRAY_OPACITY = 0.1;
+/** A floor with pipes under it is drawn this see-through, like the plain ground then. */
+const FLOOR_SEE_THROUGH_OPACITY = 0.55;
 const CONFLICT_COLOR = '#e5484d';
 const SELECT_TINT = '#3b82f6';
 const SELECT_LINE = '#111111';
@@ -409,6 +411,13 @@ export function createRenderer(
   /** Pipe meshes and the net id of each instance, for picking. */
   let pipeBatches: { mesh: THREE.InstancedMesh; netIds: number[]; dim: boolean }[] = [];
   /** Flow arrows: one instance per directed step, moved every frame while animating. */
+  /** The floor's meshes, kept across rebuilds (see `buildFloor`). */
+  let floorCache: {
+    key: string;
+    group: THREE.Group;
+    geometries: THREE.BufferGeometry[];
+    materials: THREE.Material[];
+  } | null = null;
   let flows: {
     mesh: THREE.InstancedMesh;
     steps: { a: THREE.Vector3; d: THREE.Vector3; q: THREE.Quaternion }[];
@@ -909,16 +918,28 @@ export function createRenderer(
     }
   }
 
-  /** The site's ground: a light floor, a faint block grid and a darker outline. */
+  /** Whether any pipe or cable runs below the ground (y < 0). */
+  function hasTrench(m: SceneModel): boolean {
+    return (m.pipes ?? []).some((n) => n.paths.some((path) => path.some((c) => c[1] < 0)));
+  }
+
+  /**
+   * The site's ground: a light floor (a plane; a floor of blocks replaces it, see `buildFloor`), a faint block
+   * grid and a darker outline (above the floor blocks, on y = 0).
+   */
   function buildSite(m: SceneModel): void {
     if (!m.site) return;
     const [w, d] = m.site.size;
-    // Pipes in a trench under the ground show through a see-through floor.
-    const trench = (m.pipes ?? []).some((n) => n.paths.some((path) => path.some((c) => c[1] < 0)));
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), trench ? floorSeeThroughMat : floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(w / 2, 0, d / 2);
-    content.add(floor);
+    if (!m.floor) {
+      // Pipes in a trench under the ground show through a see-through floor.
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, d),
+        hasTrench(m) ? floorSeeThroughMat : floorMat,
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(w / 2, 0, d / 2);
+      content.add(floor);
+    }
     const y = 0.003;
     const grid: number[] = [];
     for (let x = 1; x < w; x++) grid.push(x, y, 0, x, y, d);
@@ -930,6 +951,100 @@ export function createRenderer(
     const edgeGeo = new THREE.BufferGeometry();
     edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
     content.add(new THREE.LineSegments(edgeGeo, edgeMat));
+  }
+
+  /**
+   * The floor layer of a site: the top face of every block and the four outer sides of the slab, none at the
+   * holes pipes and cables make (the faces inside are never seen). It is not pickable (it is not in `batches`),
+   * turns see-through when something runs under it, and is kept between rebuilds while its inputs stay the same.
+   */
+  function buildFloor(m: SceneModel): void {
+    const f = m.floor;
+    if (!f) return;
+    const [w, d] = f.size;
+    const see = hasTrench(m);
+    const k = `${f.blockId}|${w}|${d}|${see ? 1 : 0}|${provider.mode}|${f.holes.join(';')}`;
+    if (floorCache?.key !== k) {
+      disposeFloor();
+      floorCache = { key: k, ...makeFloor(m, f, see) };
+    }
+    content.add(floorCache.group);
+  }
+
+  function makeFloor(
+    m: SceneModel,
+    f: NonNullable<SceneModel['floor']>,
+    see: boolean,
+  ): { group: THREE.Group; geometries: THREE.BufferGeometry[]; materials: THREE.Material[] } {
+    const [w, d] = f.size;
+    const hole = new Set<number>();
+    for (const [x, z] of f.holes) if (x >= 0 && x < w && z >= 0 && z < d) hole.add(x + w * z);
+    const faces = provider.materials({ blockId: f.blockId, kind: 'casing' }, m.colors);
+    // Own copies: the floor sits just behind the grid lines, and may be see-through, unlike the voxels.
+    const own = (face: THREE.Material): THREE.Material => {
+      const c = face.clone();
+      c.polygonOffset = true;
+      c.polygonOffsetFactor = 2;
+      c.polygonOffsetUnits = 2;
+      if (see) {
+        c.transparent = true;
+        c.opacity = FLOOR_SEE_THROUGH_OPACITY;
+        c.depthWrite = false;
+      }
+      return c;
+    };
+    // BoxGeometry face order: +x, -x, +y, -y, +z, -z.
+    const topMat = own(faces[2] ?? faces[0]);
+    const sideMat = own(faces[4] ?? faces[0]);
+    const top = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+    const side = new THREE.PlaneGeometry(1, 1);
+    const tops = new THREE.InstancedMesh(top, topMat, w * d - hole.size);
+    const matrix = new THREE.Matrix4();
+    let n = 0;
+    for (let z = 0; z < d; z++)
+      for (let x = 0; x < w; x++)
+        if (!hole.has(x + w * z) && n < tops.instanceMatrix.count)
+          tops.setMatrixAt(n++, matrix.makeTranslation(x + 0.5, f.y + 1, z + 0.5));
+    tops.count = n;
+    tops.instanceMatrix.needsUpdate = true;
+    tops.computeBoundingSphere();
+    // Sides of the edge blocks facing outwards: the plane faces +z, turned about Y to the side it is on.
+    const edges: { x: number; z: number; turn: number; at: [number, number] }[] = [];
+    for (let x = 0; x < w; x++) {
+      edges.push({ x, z: 0, turn: Math.PI, at: [x + 0.5, 0] });
+      edges.push({ x, z: d - 1, turn: 0, at: [x + 0.5, d] });
+    }
+    for (let z = 0; z < d; z++) {
+      edges.push({ x: 0, z, turn: -Math.PI / 2, at: [0, z + 0.5] });
+      edges.push({ x: w - 1, z, turn: Math.PI / 2, at: [w, z + 0.5] });
+    }
+    const shown = edges.filter((e) => !hole.has(e.x + w * e.z));
+    const sides = new THREE.InstancedMesh(side, sideMat, shown.length);
+    const q = new THREE.Quaternion();
+    const one = new THREE.Vector3(1, 1, 1);
+    shown.forEach((e, i) =>
+      sides.setMatrixAt(
+        i,
+        matrix.compose(
+          new THREE.Vector3(e.at[0], f.y + 0.5, e.at[1]),
+          q.setFromAxisAngle(Y_AXIS, e.turn),
+          one,
+        ),
+      ),
+    );
+    sides.instanceMatrix.needsUpdate = true;
+    sides.computeBoundingSphere();
+    const group = new THREE.Group();
+    group.add(tops, sides);
+    return { group, geometries: [top, side], materials: [topMat, sideMat] };
+  }
+
+  function disposeFloor(): void {
+    if (!floorCache) return;
+    for (const mesh of floorCache.group.children) if (mesh instanceof THREE.InstancedMesh) mesh.dispose();
+    for (const g of floorCache.geometries) g.dispose();
+    for (const mat of floorCache.materials) mat.dispose();
+    floorCache = null;
   }
 
   /**
@@ -985,8 +1100,10 @@ export function createRenderer(
   function rebuild(): void {
     labelView = '';
     clearContent();
+    if (!model?.floor) disposeFloor();
     if (model) {
       buildSite(model);
+      buildFloor(model);
       buildDimensions(model);
       buildVoxels(model);
       buildHatchMarkers(model);
@@ -1355,6 +1472,7 @@ export function createRenderer(
       clearContent();
       disposeSelection();
       disposeGroup(marks);
+      disposeFloor();
       for (const g of sharedGeometries) g.dispose();
       for (const m of ownedMaterials) m.dispose();
       disposeObjectTree(gizmo);

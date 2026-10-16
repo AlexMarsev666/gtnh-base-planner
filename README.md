@@ -124,7 +124,13 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    The panel's Routing block sets the router (Classic or Neat) and how deep pipes may go under the ground (0 to 3;
    a very big template may be routed shallower, and the panel says so), and shows the route: blocks routed, bends,
    blocks per underground level and, on the ground, trunk lines against stubs at hatches. X-ray sees through the
-   ground. A template saved before the Routing block existed keeps its old routing (classic, following the machine
+   ground. The Floor setting (None by default; Light Concrete, a few machine casings or iron) lays one layer of that
+   block under the whole template at y = -1 for the machines to stand on (groups raised off the ground are
+   unaffected). With a floor, pipes and cables that go under the ground cross it only straight down or up, each
+   crossing a hole where the pipe block replaces the floor block, and the trench starts below it (a hatch facing down
+   reaches the floor layer; the levels reported are those below the floor, so depth 2 shows 2; depth 0 keeps everything above, so the floor has no holes). The floor shows see-through
+   while something runs under it, and the Blocks panel lists its blocks (width x depth less the holes). A template without a floor
+   is unchanged. A template saved before the Routing block existed keeps its old routing (classic, following the machine
    view's Connect from below) and offers Use neat routing; old files and links load unchanged. The selected group also
    has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, Share maintenance and Share energy, Quadruple input hatches (on by default; off gives every fluid its own regular input hatch, shown only for machines with fluid inputs; stored in the template only when off), a Resources list
    (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them;
@@ -187,7 +193,7 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 Coordinates follow Minecraft: X = east, Y = up, Z = south.
 
 **Saved plans and links.** A plan or template may also carry a tier, mirror, a shared-walls preference, shared maintenance and energy hatches, hatch
-tiers, per-resource hatch assignments (unit, all units or zone), a routing style and depth, and an optimize seed.
+tiers, per-resource hatch assignments (unit, all units or zone), a routing style and depth, a floor block, and an optimize seed.
 Each is optional: files and links saved before they existed decode exactly as before and are never rearranged on
 opening.
 

@@ -58,6 +58,11 @@ export interface SceneModel {
   /** Site view: the ground area, drawn as a grid from (0, 0) to `size` on y = 0. */
   site?: { size: [number, number] };
   /**
+   * Site view: a floor of one block layer at height `y` (the layer below the ground), `size` blocks from (0, 0),
+   * made of `blockId`, with no block at the `holes` ([x, z] cells where a pipe or cable passes through).
+   */
+  floor?: { y: number; blockId: string; size: [number, number]; holes: [number, number][] };
+  /**
    * Grey dimension lines on the ground plane `y` beside the area from `min` to `max` (x, z): along X
    * (`labels[0]`, width) by its south edge and along Z (`labels[1]`, depth) by its east edge.
    */

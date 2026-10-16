@@ -177,7 +177,23 @@ export function buildSiteScene(
     ...(junctions.length ? { junctions } : {}),
     labels,
     site: { size: [w, d] },
+    ...(site.floor
+      ? { floor: { y: FLOOR_Y, blockId: site.floor, size: [w, d], holes: floorHoles(pipes, w, d) } }
+      : {}),
   };
+}
+
+/** Height of the floor layer: the one block layer just below the ground. */
+export const FLOOR_Y = -1;
+
+/** The [x, z] cells of the floor a pipe or cable passes through (in z, then x order). */
+function floorHoles(pipes: readonly RouteNet[], w: number, d: number): [number, number][] {
+  const cells = new Set<number>();
+  for (const n of pipes)
+    for (const path of n.paths)
+      for (const c of path)
+        if (c[1] === FLOOR_Y && c[0] >= 0 && c[0] < w && c[2] >= 0 && c[2] < d) cells.add(c[0] + w * c[2]);
+  return [...cells].sort((a, b) => a - b).map((i): [number, number] => [i % w, Math.floor(i / w)]);
 }
 
 /**
