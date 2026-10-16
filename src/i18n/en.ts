@@ -408,6 +408,7 @@ export const t = {
     addedToSite: 'Added to the template.',
     sharedPrompt: 'Open shared template? It replaces your current one.',
     groupCount: (n: number) => `${n} ${n === 1 ? 'group' : 'groups'}`,
+    sharedWalls: (n: number) => `${n} saved by shared walls`,
     connected: (c: number, total: number) => `${c}/${total} connected`,
     ports: 'Ports',
     portIn: 'In',

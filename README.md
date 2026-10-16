@@ -100,9 +100,10 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    estimate finds candidates, then a second pass judges every step by the real router. It may also pack a group of
    several units another way (rows or layers, which sets the group's limits), and says how many it changed. It can also stand
    two groups flush, sharing one wall, when their facing walls are the same casing (no hatch is placed in such a wall, and a
-   group set to Separate never shares); ARRANGE keeps the corridor between groups. A
+   group set to Separate never shares; the shared block is built once, and the stats line says how many blocks shared
+   walls save); ARRANGE keeps the corridor between groups. A
    result is kept only if it beats the current layout (fewer problems, then more connected, then fewer pipe
-   blocks, then a smaller footprint); when nothing does, nothing changes and the notice says so. The search is repeatable: its work is counted in
+   blocks less the blocks shared walls save, then a smaller footprint); when nothing does, nothing changes and the notice says so. The search is repeatable: its work is counted in
    iterations that grow with the size of the template, not in time, and its random numbers come from the
    template's seed, so the same template and seed give the same result. Only a safety limit of a minute can cut it
    short ("stopped at the time limit"). While Arrange, Neat or Optimize runs a progress bar names the phase and

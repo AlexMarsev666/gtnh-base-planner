@@ -16,6 +16,7 @@
     if (!build) return $siteBusy ? [t.site.building] : [];
     const s = build.stats;
     const out = [t.site.groupCount(s.groups), t.units(s.units), t.blocks(s.blocks)];
+    if (s.sharedBlocks) out.push(t.site.sharedWalls(s.sharedBlocks));
     if ($siteBusy) out.unshift(t.site.building);
     // While editing, the pipes wait (and their counts would read 0).
     if ($siteBuild.pending) {
