@@ -26,6 +26,7 @@ export function buildSiteScene(
   routed: readonly SiteNet[],
   conflictCells: ReadonlySet<string>,
   isolate?: string | null,
+  sharedCells?: ReadonlyMap<string, readonly number[]>,
 ): SceneModel {
   const [w, d] = site.size;
   const colors = { ...DEFAULT_HATCH_COLORS, ...site.colors };
@@ -60,8 +61,11 @@ export function buildSiteScene(
       const k = key(v.pos);
       if (conflictCells.has(k)) v.conflict = true;
       const prev = voxelMap.get(k);
+      // A wall two groups share is drawn once, for the first group (lowest index), and counted once; it
+      // answers for the units of both, and keeps a conflict its own group had.
+      const share = prev && !conflictCells.has(k) && sharedCells?.has(k);
       if (prev) {
-        prev.conflict = true;
+        if (!share || v.conflict) prev.conflict = true;
         prev.unitIds = [...new Set([...prev.unitIds, ...v.unitIds])].sort((a, b) => a - b);
       } else voxelMap.set(k, v);
     }

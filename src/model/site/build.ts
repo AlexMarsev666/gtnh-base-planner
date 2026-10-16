@@ -37,7 +37,15 @@ export function createSiteBuilder(): SiteBuilder {
       ports,
       nets,
       routing: { ...routingOf(opts), depthUsed: routing.depthUsed },
-      scene: buildSiteScene(site, groups, ports, routing.routed, occupancy.conflictCells, opts.isolate),
+      scene: buildSiteScene(
+        site,
+        groups,
+        ports,
+        routing.routed,
+        occupancy.conflictCells,
+        opts.isolate,
+        occupancy.sharedCells,
+      ),
       warnings: [
         ...demand.warnings,
         ...placed.warnings,
@@ -48,7 +56,7 @@ export function createSiteBuilder(): SiteBuilder {
         ...analysePower(site),
       ],
       notes: placed.notes,
-      stats: siteStats(groups, ports, routing.routed),
+      stats: siteStats(groups, ports, routing.routed, occupancy.sharedBlocks),
     };
   };
 }
@@ -58,8 +66,9 @@ function siteStats(
   groups: readonly PlacedGroup[],
   ports: readonly PlacedPort[],
   routed: readonly SiteNet[],
+  sharedBlocks: number,
 ): SiteBuild['stats'] {
-  let blocks = ports.length;
+  let blocks = ports.length - sharedBlocks;
   let hatches = 0;
   for (const pg of groups) {
     blocks += pg.build?.stats.totalBlocks ?? 0;
@@ -81,6 +90,7 @@ function siteStats(
     groups: groups.length,
     units: groups.reduce((s, g) => s + g.units.length, 0),
     blocks,
+    sharedBlocks,
     hatches,
     pipeBlocks: sum(
       routed.filter((n) => n.kind !== 'power'),

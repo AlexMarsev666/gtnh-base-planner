@@ -105,7 +105,10 @@ export interface SiteBuild {
   stats: {
     groups: number;
     units: number;
+    /** Structure blocks, ports included; a wall two groups share counts once. */
     blocks: number;
+    /** Blocks saved by walls groups share (already taken off `blocks`). */
+    sharedBlocks: number;
     hatches: number;
     pipeBlocks: number;
     cableBlocks: number;
