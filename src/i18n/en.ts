@@ -446,6 +446,8 @@ export const t = {
           return `${res(w.resource)}: its voltage is not known, so the transformers on it are not checked.`;
         case 'assignInactive':
           return `${name(w.group)}: ${res(w.resource)} is set to unit ${w.unit + 1}, but the group has no such unit.`;
+        case 'zoneKind':
+          return `${name(w.group)}: zone ${w.zone} has no place for ${HATCH_KIND_NAMES[w.kind].toLowerCase()} hatches, so ${res(w.resource)} is placed without it.`;
         case 'capacity':
           return `${name(w.group)}: hatches don't fit, ${w.needed} wanted and ${w.fits} fit. Remove ${w.remove}.${w.mandatory ? ' Even the required hatches do not all fit.' : ''}${w.units > 1 ? ` (${w.units} units)` : ''}`;
         case 'hatch': {

@@ -1,5 +1,6 @@
 import { HATCH_PRIORITY } from '../hatches/constants';
 import { quota } from '../hatches/quota';
+import { zoneTakesKind } from '../hatches/zones';
 import type { CapacityEntry, HatchRequest, UnplacedHatch } from '../hatches/types';
 import type { HatchKind, MultiblockDef } from '../multiblock/types';
 import type { WallshareMode } from '../plan/types';
@@ -25,6 +26,8 @@ export type HatchProblemReason = Exclude<NonNullable<UnplacedHatch['reason']>, '
 export type GroupProblem =
   /** `assign[resource].unit` names a unit the group does not have (its count is lower); no hatch is placed. */
   | { type: 'assignInactive'; resource: string; unit: number }
+  /** `assign[resource].zone` names a zone with no cell for the resource's hatch kind; the zone is ignored. */
+  | { type: 'zoneKind'; resource: string; kind: HatchKind; zone: string }
   /** Units want more hatches than they have cells for: the worst overload (most to remove) of the group. */
   | { type: 'capacity'; needed: number; fits: number; remove: number; units: number; mandatory?: true }
   /** Hatches that found no place, or requirements left open; one per kind, reason and region. */
@@ -82,7 +85,12 @@ export function groupRequests(
   for (const [kind, list] of Object.entries(demand) as [HatchKind, string[]][]) {
     for (const resource of list ?? []) {
       const a = assign?.[resource];
-      const inZone = a?.zone ? { zone: a.zone } : {};
+      let inZone = a?.zone ? { zone: a.zone } : {};
+      // A zone with no place for the kind would leave the hatch unplaced; it is reported and left out instead.
+      if (a?.zone && !zoneTakesKind(def, a.zone, kind)) {
+        problems.push({ type: 'zoneKind', resource, kind, zone: a.zone });
+        inZone = {};
+      }
       if (a?.unit === 'all') fixed.push({ kind, units: [...unitIds], key: resource, ...inZone });
       else if (typeof a?.unit === 'number') {
         if (active.has(a.unit)) fixed.push({ kind, units: [a.unit], key: resource, ...inZone });

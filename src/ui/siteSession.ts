@@ -16,6 +16,7 @@ import {
   siteHashUrl,
 } from '../share/sitePersist';
 import { appMode, site } from '../state/site';
+import { beginHashLink, isLatestHashLink } from './hashLink';
 import { LONG_LINK_CHARS, linkCopiedNotice, notify, warnOnce } from './notices';
 import { holdUnreadable, isHeld, releaseIfBackedUp } from './recovery';
 import { replaceSite } from './siteActions';
@@ -64,16 +65,36 @@ export async function initSiteSession(): Promise<void> {
     warnOnce('readStoredSite', err);
   }
   if (stored) site.set(stored);
+  await openHashSite(stored);
+}
+
+/**
+ * Open the `#s=` link in the address bar, if there is one, against `stored` (the template to keep unless the
+ * link is the same template or it is empty: then the user is asked). At startup and when the hash changes.
+ */
+export async function openHashSite(stored: SiteState | null): Promise<void> {
   if (hashSiteParam(location.hash) === null) return;
+  // A newer link supersedes this one, and the prompt for an older one.
+  const link = beginHashLink();
+  pendingSite.set(null);
+  pendingReplaced = 0;
   let shared: SiteState | null = null;
   let sharedReplaced = 0;
+  let failure: unknown;
   try {
     const loaded = await readHashSite();
     shared = loaded?.site ?? null;
     sharedReplaced = loaded?.replaced.length ?? 0;
   } catch (err) {
-    warnOnce('readHashSite', err);
-    notify(err instanceof Error && err.name === 'PlanFormatError' ? err.message : t.sharedInvalid, 8000);
+    failure = err;
+  }
+  if (!isLatestHashLink(link)) return;
+  if (failure !== undefined) {
+    warnOnce('readHashSite', failure);
+    notify(
+      failure instanceof Error && failure.name === 'PlanFormatError' ? failure.message : t.sharedInvalid,
+      8000,
+    );
   }
   if (!shared) {
     clearSiteHash();

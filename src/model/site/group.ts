@@ -1,7 +1,7 @@
 import { isSingleBlock } from '../../data/generic';
 import { DefinitionError, defOfUnit, rotateDir, rotatedSize, step, unitCells } from '../geometry';
 import { layoutCandidates, packUnits } from '../layout/packer';
-import { resolveLayout } from '../plan';
+import { resolveLayout, type ResolvedLayout } from '../plan';
 import { placeHatches } from '../hatches/placement';
 import { findSites } from '../hatches/sites';
 import { inZone, resolveZone, withHatchZones } from '../hatches/zones';
@@ -204,6 +204,42 @@ function blockedFaces(def: MultiblockDef, units: Unit[], h: HatchPlacement): Dir
 }
 
 /**
+ * A group's layout and hatches chosen without `toward` (see `layoutGroup`): everything that fixes its
+ * footprint. `leanGroup` finishes it for one `toward`; the stage is reusable across them.
+ */
+export type GroupLayout =
+  /** A single-block group has no layout to resolve and no `toward`: `leanGroup` returns it as it is. */
+  | { single: GroupBuild }
+  | {
+      single?: undefined;
+      def: MultiblockDef;
+      below: boolean;
+      resolved: ResolvedLayout;
+      requests: HatchRequest[];
+      wanted: ReturnType<typeof groupRequests>;
+      notes: GroupNote[];
+      problems: GroupProblem[];
+    };
+
+/**
+ * `placeHatches` as the layout search and `leanGroup` use it. With `below`, hatches may face down from the
+ * lowest layer (see `PlaceOptions`); with `toward`, each kind's hatches lean to the side its pipes leave by.
+ * Requirements of kinds the group did not ask for (not enabled, no resources) are not its business: the
+ * engine reports them, legacy builds neither placed nor reported them.
+ */
+function placerFor(below: boolean, toward?: PlaceOptions['toward']) {
+  return (d: MultiblockDef, u: Unit[], e: HatchKind[], a?: HatchAvoid, o?: PlaceOptions) => {
+    const r = placeHatches(d, u, e, a, { below, toward, ...o });
+    const asked = o?.requests;
+    if (!asked) return r;
+    return {
+      ...r,
+      unplaced: r.unplaced.filter((x) => x.reason !== 'required' || asked.some((q) => q.kind === x.kind)),
+    };
+  };
+}
+
+/**
  * Pack one group and place its hatches, in group-local coordinates. `demand` lists the resources per hatch
  * kind; `base` the other hatch kinds to place (energy, maintenance, muffler, ...).
  */
@@ -217,24 +253,28 @@ export function buildGroup(
   toward: Toward = {},
   opts: GroupOptions = {},
 ): GroupBuild {
-  if (isSingleBlock(def)) return buildSingleBlocks(def, count, limits, demand, opts.assign);
+  return leanGroup(layoutGroup(def, count, limits, base, demand, below, opts), toward);
+}
+
+/**
+ * Choose a group's layout and place its hatches on it, without `toward`: the result (and so the footprint)
+ * depends on the group's own inputs only, never on where its neighbours or ports are.
+ */
+export function layoutGroup(
+  def: MultiblockDef,
+  count: number,
+  limits: PlanLimits,
+  base: readonly HatchKind[],
+  demand: Demand,
+  below = false,
+  opts: GroupOptions = {},
+): GroupLayout {
+  if (isSingleBlock(def)) {
+    return { single: buildSingleBlocks(def, count, limits, demand, opts.assign) };
+  }
   const packed = packUnits(def, count, limits, opts.wallshare);
-  const targets = towardPoints(def, packed.units, toward);
-  // With `below`, hatches may face down from the lowest layer (see `PlaceOptions`); with `toward`, each
-  // kind's hatches lean to the side its pipes leave by.
-  // Requirements of kinds the group did not ask for (not enabled, no resources) are not its business: the
-  // engine reports them, legacy builds neither placed nor reported them.
-  const place = (d: MultiblockDef, u: Unit[], e: HatchKind[], a?: HatchAvoid, o?: PlaceOptions) => {
-    const r = placeHatches(d, u, e, a, { below, toward: targets, ...o });
-    const asked = o?.requests;
-    if (!asked) return r;
-    return {
-      ...r,
-      unplaced: r.unplaced.filter((x) => x.reason !== 'required' || asked.some((q) => q.kind === x.kind)),
-    };
-  };
   const deps = {
-    placeHatches: place,
+    placeHatches: placerFor(below),
     layoutCandidates: (d: MultiblockDef, n: number, l: PlanLimits) =>
       layoutCandidates(d, n, l, opts.wallshare),
   };
@@ -285,6 +325,29 @@ export function buildGroup(
         .filter((key) => wanted.auto.some((a) => a.resource === key));
       if (subset.length > 0) notes.push({ type: 'distributed', resources: [...new Set(subset)] });
     }
+  }
+  return { def, below, resolved, requests, wanted, notes, problems };
+}
+
+/** Finish a group laid out by `layoutGroup`: hatches lean to the sides their pipes leave by (`toward`). */
+export function leanGroup(layout: GroupLayout, toward: Toward = {}): GroupBuild {
+  if (layout.single) return layout.single;
+  const { def, below, requests, wanted } = layout;
+  let resolved = layout.resolved;
+  const notes = [...layout.notes];
+  const problems = [...layout.problems];
+  const unitIds = resolved.pack.units.map((u) => u.id).sort((a, b) => a - b);
+  // The layout stands as it is; the leaned placement is kept only when it places at least as many hatches.
+  const targets = towardPoints(def, resolved.pack.units, toward);
+  if (Object.keys(targets).length > 0) {
+    const leaned = placerFor(below, targets)(def, resolved.pack.units, [], undefined, { requests });
+    // Compared per reason: a missing required hatch is never traded for a placed one.
+    const required = (r: PlaceResult) => r.unplaced.filter((u) => u.reason === 'required').length;
+    if (
+      leaned.unplaced.length <= resolved.hatches.unplaced.length &&
+      required(leaned) <= required(resolved.hatches)
+    )
+      resolved = { ...resolved, hatches: leaned };
   }
   // An `all` resource the engine could not share among the units.
   for (const r of wanted.fixed) {

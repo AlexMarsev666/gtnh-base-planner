@@ -102,6 +102,21 @@ describe('resource hatches as requests', () => {
     for (const u of b.units) expect(resourcesOf(b, u.id)).toEqual(['item:r1']);
   });
 
+  it('reports a zone with no place for the kind, and places the hatch without it', () => {
+    const demand: Demand = { fluidOut: ['fluid:out'] };
+    const b = build(1, demand, { assign: { 'fluid:out': { zone: 'side' } } }, oil, ['energy']);
+    expect(b.problems).toContainEqual({
+      type: 'zoneKind',
+      resource: 'fluid:out',
+      kind: 'fluidOut',
+      zone: 'side',
+    });
+    expect(b.problems.some((p) => p.type === 'hatch' && p.reason === 'noCell')).toBe(false);
+    expect(b.hatches.some((h) => h.resource === 'fluid:out')).toBe(true);
+    const ok = build(1, demand, { assign: { 'fluid:out': { zone: 'dot3' } } }, oil, ['energy']);
+    expect(ok.problems.some((p) => p.type === 'zoneKind')).toBe(false);
+  });
+
   it('keeps hatches in the zone they were assigned to', () => {
     const demand: Demand = { fluidIn: ['fluid:h2', 'fluid:steam', 'fluid:oil'], fluidOut: ['fluid:out'] };
     const zones: Record<string, string> = {

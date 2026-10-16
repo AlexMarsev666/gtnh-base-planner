@@ -9,7 +9,8 @@ import { t } from '../i18n/en';
 import type { SiteState } from '../model/site/types';
 import { appMode, site } from '../state/site';
 import { defaultPlan, plan } from '../state/store';
-import { initSession, openJsonFile, startAutosave } from './session';
+import { openHashLinks, startSessions } from './appSession';
+import { initSession, openJsonFile, pendingShared, startAutosave } from './session';
 import { downloadUnreadable, recovery, retryUnreadable, startNew } from './recovery';
 import { notices } from './notices';
 import {
@@ -86,6 +87,59 @@ describe('share links pick the view', () => {
       expect(get(appMode)).toBe(mode);
     });
   }
+});
+
+describe('a link followed while the app is open', () => {
+  beforeEach(() => {
+    appMode.set('machine');
+    plan.set(defaultPlan());
+    site.set(emptySite());
+    pendingShared.set(null);
+    pendingSite.set(null);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('a #p= link replaces an unedited plan, switches the view and clears the hash', async () => {
+    stubBrowser('', 'site');
+    await start();
+    const shared = { ...defaultPlan(), count: 9 };
+    location.hash = `#p=${await encodePlan(shared)}`;
+    await openHashLinks();
+    expect(get(plan).count).toBe(9);
+    expect(get(appMode)).toBe('machine');
+    expect(location.hash).toBe('');
+  });
+
+  it('a #p= link over a different plan asks first', async () => {
+    stubBrowser('', 'machine');
+    await start();
+    plan.set({ ...defaultPlan(), count: 3 });
+    location.hash = `#p=${await encodePlan({ ...defaultPlan(), count: 9 })}`;
+    await openHashLinks();
+    expect(get(plan).count).toBe(3);
+    expect(get(pendingShared)?.count).toBe(9);
+  });
+
+  it('a #s= link opens the template view with the template', async () => {
+    stubBrowser('', 'machine');
+    await start();
+    location.hash = `#s=${await encodeSite({ ...emptySite(), name: 'Later' })}`;
+    await openHashLinks();
+    expect(get(site).name).toBe('Later');
+    expect(get(appMode)).toBe('site');
+    expect(location.hash).toBe('');
+  });
+
+  it('does nothing for a hash that holds no link', async () => {
+    stubBrowser('', 'site');
+    await start();
+    plan.set({ ...defaultPlan(), count: 3 });
+    location.hash = '#other';
+    await openHashLinks();
+    expect(get(plan).count).toBe(3);
+    expect(get(appMode)).toBe('site');
+    expect(location.hash).toBe('#other');
+  });
 });
 
 describe('a shared #s= template is saved at once', () => {
@@ -417,5 +471,104 @@ describe('templates with machines that no longer exist', () => {
     notices.set([]);
     await openSiteFile(new File([JSON.stringify(gone())], 'x.json'));
     expect(get(notices).map((n) => n.text)).toContain(t.recovery.replaced(2, false));
+  });
+});
+
+describe('the hashchange listener of startSessions', () => {
+  const listeners = new Map<string, Set<() => void>>();
+  const fire = () => listeners.get('hashchange')?.forEach((fn) => fn());
+  const planLink = async (count: number) => `#p=${await encodePlan({ ...defaultPlan(), count })}`;
+
+  beforeEach(() => {
+    listeners.clear();
+    appMode.set('machine');
+    plan.set(defaultPlan());
+    site.set(emptySite());
+    pendingShared.set(null);
+    pendingSite.set(null);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  function stubWindow() {
+    vi.stubGlobal('window', {
+      addEventListener: (type: string, fn: () => void) => {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type)!.add(fn);
+      },
+      removeEventListener: (type: string, fn: () => void) => void listeners.get(type)?.delete(fn),
+    });
+  }
+  const settled = () => new Promise((r) => setTimeout(r, 50));
+
+  it('opens the startup link once, then follows later links, and stops with the sessions', async () => {
+    stubBrowser(await planLink(5), 'machine');
+    stubWindow();
+    const stop = startSessions();
+    await settled();
+    expect(get(plan).count).toBe(5);
+    expect(location.hash).toBe('');
+    // A change with no link in it is not a load.
+    location.hash = '#other';
+    fire();
+    await settled();
+    expect(get(plan).count).toBe(5);
+    location.hash = await planLink(6);
+    fire();
+    await settled();
+    // The plan was changed by the first link, so the second asks first.
+    expect(get(pendingShared)?.count).toBe(6);
+    stop();
+    expect(listeners.get('hashchange')?.size).toBe(0);
+  });
+
+  it('opens a link followed while the app is still starting, once it has started', async () => {
+    stubBrowser('', 'machine');
+    stubWindow();
+    const stop = startSessions();
+    location.hash = await planLink(8);
+    fire();
+    await settled();
+    expect(get(plan).count).toBe(8);
+    stop();
+  });
+
+  it('lets a second link supersede the prompt of the first', async () => {
+    stubBrowser('', 'machine');
+    stubWindow();
+    const stop = startSessions();
+    await settled();
+    plan.set({ ...defaultPlan(), count: 3 });
+    location.hash = await planLink(7);
+    fire();
+    await settled();
+    expect(get(pendingShared)?.count).toBe(7);
+    location.hash = await planLink(9);
+    fire();
+    await settled();
+    expect(get(pendingShared)?.count).toBe(9);
+    // A site link voids the plan prompt as well.
+    location.hash = `#s=${await encodeSite({ ...emptySite(), name: 'B' })}`;
+    fire();
+    await settled();
+    expect(get(pendingShared)).toBeNull();
+    expect(get(site).name).toBe('B');
+    stop();
+  });
+
+  it('drops a link whose decoding finishes after a newer one began', async () => {
+    stubBrowser('', 'machine');
+    stubWindow();
+    const stop = startSessions();
+    await settled();
+    plan.set({ ...defaultPlan(), count: 3 });
+    const first = await planLink(7);
+    const second = await planLink(9);
+    location.hash = first;
+    fire();
+    location.hash = second;
+    fire();
+    await settled();
+    expect(get(pendingShared)?.count).toBe(9);
+    stop();
   });
 });

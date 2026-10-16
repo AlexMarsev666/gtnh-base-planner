@@ -2,7 +2,7 @@ import zonesFile from '../../data/hatch-zones.generated.json';
 import { key } from '../geometry';
 import { flipCells, flipRule } from '../mirror';
 import type { Vec3 } from '../core/types';
-import type { MultiblockDef, ResizeRule } from '../multiblock/types';
+import type { HatchKind, MultiblockDef, ResizeRule } from '../multiblock/types';
 import type { Site, ZonedDef } from './types';
 
 /** Hatch zones of hand-made entries: where GT's hint dots mark which cells take which hatches. */
@@ -85,6 +85,17 @@ const REGION_ZONE = 'region:';
  */
 export function resolveZone(def: MultiblockDef, zone: string): string {
   return def.zones?.[zone] !== undefined ? zone : REGION_ZONE + zone;
+}
+
+/**
+ * Whether the zone `zone` (a key of `def.zones`, else a legend `region`, as `resolveZone` reads it) has any
+ * cell that takes hatches of `kind`: a zone lists its kinds, a region holds the legend chars that carry it.
+ */
+export function zoneTakesKind(def: MultiblockDef, zone: string, kind: HatchKind): boolean {
+  const zoned = withHatchZones(def);
+  const named = zoned.zones?.[zone];
+  if (named) return named.kinds.includes(kind);
+  return Object.values(zoned.legend).some((e) => e.region === zone && e.hatches?.includes(kind));
 }
 
 /** Whether the cell of `site` lies, for unit `id`, in the zone `resolveZone` gave. */

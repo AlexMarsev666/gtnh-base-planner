@@ -1,0 +1,375 @@
+{
+  "v": 1,
+  "kind": "site",
+  "size": [
+    30,
+    30
+  ],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "g1",
+      "multiblockId": "vacuum-freezer",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        16,
+        11
+      ],
+      "rotation": 0,
+      "tier": "HV"
+    },
+    {
+      "id": "g2",
+      "multiblockId": "electric-blast-furnace",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance",
+        "muffler"
+      ],
+      "origin": [
+        11,
+        11
+      ],
+      "rotation": 0,
+      "tier": "HV"
+    },
+    {
+      "id": "g3",
+      "multiblockId": "large-chemical-reactor",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        16,
+        16
+      ],
+      "rotation": 0,
+      "tier": "HV"
+    },
+    {
+      "id": "g4",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        11,
+        16
+      ],
+      "rotation": 0,
+      "label": "Chlorine Electrolyzer",
+      "machine": "electrolyzer",
+      "tier": "HV"
+    },
+    {
+      "id": "g5",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        21,
+        14
+      ],
+      "rotation": 0,
+      "label": "Carbon Electrolyzer",
+      "machine": "electrolyzer",
+      "tier": "HV"
+    },
+    {
+      "id": "g6",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        21,
+        11
+      ],
+      "rotation": 0,
+      "label": "Titan Storage",
+      "machine": "tank"
+    },
+    {
+      "id": "g7",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        8,
+        14
+      ],
+      "rotation": 0,
+      "label": "Rutile Dust Storage",
+      "machine": "tank"
+    },
+    {
+      "id": "g8",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        8,
+        11
+      ],
+      "rotation": 0,
+      "label": "EV-HV 4A",
+      "machine": "transformer",
+      "tier": "EV"
+    }
+  ],
+  "links": [
+    {
+      "id": "l1",
+      "from": {
+        "group": "g7"
+      },
+      "to": {
+        "group": "g3"
+      },
+      "resource": "item:rutile-dust",
+      "rate": 0.075
+    },
+    {
+      "id": "l2",
+      "from": {
+        "group": "g5"
+      },
+      "to": {
+        "group": "g3"
+      },
+      "resource": "item:carbon-dust",
+      "rate": 0.05
+    },
+    {
+      "id": "l3",
+      "from": {
+        "group": "g4"
+      },
+      "to": {
+        "group": "g3"
+      },
+      "resource": "fluid:chlorine",
+      "rate": 100
+    },
+    {
+      "id": "l5",
+      "from": {
+        "group": "g3"
+      },
+      "to": {
+        "group": "g2"
+      },
+      "resource": "fluid:titaniumtetrachlorine",
+      "rate": 25
+    },
+    {
+      "id": "l6",
+      "from": {
+        "group": "g3"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "fluid:carbon-monoxide",
+      "rate": 50
+    },
+    {
+      "id": "l4",
+      "from": {
+        "group": "g3"
+      },
+      "to": {
+        "group": "g2"
+      },
+      "resource": "item:magnesium-dust",
+      "rate": 0.05
+    },
+    {
+      "id": "l7",
+      "from": {
+        "group": "g2"
+      },
+      "to": {
+        "group": "g1"
+      },
+      "resource": "item:hot-titan",
+      "rate": 0.025
+    },
+    {
+      "id": "l8",
+      "from": {
+        "group": "g1"
+      },
+      "to": {
+        "group": "g6"
+      },
+      "resource": "item:titan",
+      "rate": 0.025
+    },
+    {
+      "id": "l9",
+      "from": {
+        "group": "g2"
+      },
+      "to": {
+        "group": "g3"
+      },
+      "resource": "item:magnesiumchlorine-dust",
+      "rate": 0.15
+    },
+    {
+      "id": "l10",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g1"
+      },
+      "resource": "power:eu",
+      "rate": 1
+    },
+    {
+      "id": "l11",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g2"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l12",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g3"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l13",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g4"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l14",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "power:eu"
+    }
+  ],
+  "ports": [],
+  "resources": {
+    "fluid:carbon-monoxide": {
+      "kind": "fluid",
+      "name": "Carbon Monoxide",
+      "color": "#2a7fee"
+    },
+    "fluid:chlorine": {
+      "kind": "fluid",
+      "name": "Chlorine",
+      "color": "#6f2aee"
+    },
+    "fluid:titaniumtetrachlorine": {
+      "kind": "fluid",
+      "name": "Titaniumtetrachlorine",
+      "color": "#2aee8c"
+    },
+    "item:carbon-dust": {
+      "kind": "item",
+      "name": "Carbon Dust",
+      "color": "#2a5eee"
+    },
+    "item:hot-titan": {
+      "kind": "item",
+      "name": "Hot Titan",
+      "color": "#ee2a79"
+    },
+    "item:magnesium-dust": {
+      "kind": "item",
+      "name": "Magnesium Dust",
+      "color": "#2aeeeb"
+    },
+    "item:magnesiumchlorine-dust": {
+      "kind": "item",
+      "name": "Magnesiumchlorine Dust",
+      "color": "#2aee89"
+    },
+    "item:rutile-dust": {
+      "kind": "item",
+      "name": "Rutile Dust",
+      "color": "#ee2aad"
+    },
+    "item:titan": {
+      "kind": "item",
+      "name": "Titan",
+      "color": "#2aee3e"
+    },
+    "power:eu": {
+      "kind": "power",
+      "name": "HV",
+      "color": "#e8c547"
+    }
+  },
+  "colors": {},
+  "routing": {
+    "style": "neat",
+    "depth": 1
+  }
+}

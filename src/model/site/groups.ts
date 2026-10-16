@@ -7,13 +7,15 @@ import { DEFAULT_TIER, followsGroupTier, hatchTier } from '../tiers';
 import { glassTierProblems, type UnitValidity } from '../validity';
 import type { PlacedGroup, SiteWarning } from './buildTypes';
 import {
-  buildGroup,
   IO_KINDS,
+  layoutGroup,
+  leanGroup,
   placeHatch,
   placeUnit,
   rotatedGroupSize,
   type Demand,
   type GroupBuild,
+  type GroupLayout,
   type GroupNote,
   type GroupProblem,
   type Toward,
@@ -30,6 +32,13 @@ import type { SiteGroup, SiteState } from './types';
  * never mutated.
  */
 export type GroupCache = Map<string, GroupBuild | { error: string }>;
+
+/**
+ * Per `GroupCache`, the layouts its builds came from, by the same key without the pipe directions: a group
+ * whose neighbours moved keeps its layout and only re-places its hatches (see `layoutGroup`, `leanGroup`).
+ * Pruned only together with the cache (when `prune` is on).
+ */
+const layoutsOf = new WeakMap<GroupCache, Map<string, GroupLayout | { error: string }>>();
 
 /**
  * Every group of the site packed, given its hatches and placed on the site (turned, moved, with unit ids
@@ -53,6 +62,9 @@ export function placeGroups(
   const notes: WithGroup<GroupNote>[] = [];
   const problems: WithGroup<GroupProblem>[] = [];
   const used = new Set<string>();
+  const usedLayouts = new Set<string>();
+  const layouts = layoutsOf.get(cache) ?? new Map<string, GroupLayout | { error: string }>();
+  layoutsOf.set(cache, layouts);
   const groups: PlacedGroup[] = site.groups.map((g, index) => {
     const raw = getSiteDef(g.multiblockId);
     const demand = demands.get(g.id) ?? {};
@@ -91,7 +103,7 @@ export function placeGroups(
         )
         .sort(([a], [b]) => (a < b ? -1 : 1)),
     );
-    const ck = JSON.stringify([
+    const layoutKey = [
       def.id,
       effectiveSize(raw, g.size) ?? null,
       g.count,
@@ -99,7 +111,6 @@ export function placeGroups(
       base,
       demand,
       below,
-      toward,
       g.mirror ?? false,
       shaped === turned ? null : g.coil,
       g.wallshare ?? 'auto',
@@ -109,20 +120,33 @@ export function placeGroups(
       tier,
       busTiers,
       g.quadFluid ?? true,
-    ]);
+    ];
+    // `toward` moves hatches, never the layout, so it is not part of the layout's key.
+    const lk = JSON.stringify(layoutKey);
+    const ck = JSON.stringify([...layoutKey, toward]);
     used.add(ck);
+    usedLayouts.add(lk);
     let built = cache.get(ck);
     if (!built) {
       try {
-        built = buildGroup(def, g.count, g.limits, base, demand, below, toward, {
-          assign,
-          wallshare: g.wallshare,
-          tier,
-          hatchTiers: busTiers,
-          quadFluid: g.quadFluid,
-        });
+        // Shown on the group when it fails; a malformed definition must not stop the rest of the site.
+        let layout = layouts.get(lk);
+        if (!layout) {
+          try {
+            layout = layoutGroup(def, g.count, g.limits, base, demand, below, {
+              assign,
+              wallshare: g.wallshare,
+              tier,
+              hatchTiers: busTiers,
+              quadFluid: g.quadFluid,
+            });
+          } catch (err) {
+            layout = { error: err instanceof Error ? err.message : String(err) };
+          }
+          layouts.set(lk, layout);
+        }
+        built = 'error' in layout ? layout : leanGroup(layout, toward);
       } catch (err) {
-        // Shown on the group; a malformed definition must not stop the rest of the site.
         built = { error: err instanceof Error ? err.message : String(err) };
       }
       cache.set(ck, built);
@@ -177,6 +201,9 @@ export function placeGroups(
       demand,
     };
   });
-  if (prune) for (const k of [...cache.keys()]) if (!used.has(k)) cache.delete(k);
+  if (prune) {
+    for (const k of [...cache.keys()]) if (!used.has(k)) cache.delete(k);
+    for (const k of [...layouts.keys()]) if (!usedLayouts.has(k)) layouts.delete(k);
+  }
   return { groups, warnings, notes, problems };
 }

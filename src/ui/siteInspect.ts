@@ -7,7 +7,7 @@ import {
 } from '../data/single-machines';
 import { TIERS, type Tier, type Vec3 } from '../model/core/types';
 import { defOfUnit, unitCells } from '../model/geometry';
-import { withHatchZones, zoneOfCell } from '../model/hatches/zones';
+import { withHatchZones, zoneOfCell, zoneTakesKind } from '../model/hatches/zones';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
 import type { PlacedGroup, SiteWarning } from '../model/site/buildTypes';
 import type { Demand, SiteHatch } from '../model/site/group';
@@ -100,7 +100,7 @@ function zoneTitle(text: string | undefined, max = 44): string {
 
 /**
  * Zones a resource's hatch can be put into: the zones of the multiblock that take its kind (with the first
- * line of their tooltip), then the legend regions that are no zone (the required regions, such as a
+ * line of their tooltip), then the legend regions that are no zone and take the kind (such as a
  * Distillation Tower's `layer1`). `current` is kept in the list so a chosen zone never disappears.
  */
 export function zoneChoices(
@@ -111,13 +111,15 @@ export function zoneChoices(
   const zoned = withHatchZones(def);
   const out: { value: string; label: string }[] = [];
   for (const [zone, z] of Object.entries(zoned.zones ?? {})) {
-    if (!z.kinds.includes(kind)) continue;
+    if (!zoneTakesKind(zoned, zone, kind)) continue;
     const title = zoneTitle(z.text);
     out.push({ value: zone, label: title ? `${zone}: ${title}` : zone });
   }
+  // Only the regions with a legend char that takes the kind: a hatch assigned to any other would find no cell.
   const regions = new Set<string>();
   for (const e of Object.values(zoned.legend))
-    if (e.region && zoned.zones?.[e.region] === undefined) regions.add(e.region);
+    if (e.region && zoned.zones?.[e.region] === undefined && zoneTakesKind(zoned, e.region, kind))
+      regions.add(e.region);
   for (const r of [...regions].sort()) out.push({ value: r, label: r });
   if (current && !out.some((o) => o.value === current)) out.push({ value: current, label: current });
   return out;

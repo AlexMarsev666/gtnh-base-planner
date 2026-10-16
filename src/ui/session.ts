@@ -13,6 +13,7 @@ import {
 } from '../share/persist';
 import { appMode } from '../state/site';
 import { plan, selectedUnits } from '../state/store';
+import { beginHashLink, isLatestHashLink } from './hashLink';
 import { LONG_LINK_CHARS, linkCopiedNotice, notify, warnOnce } from './notices';
 import { holdUnreadable, isHeld, releaseIfBackedUp } from './recovery';
 import { shareApi } from './shareApi';
@@ -74,16 +75,31 @@ export async function initSession(): Promise<void> {
     warnOnce('readStoredPlan', err);
   }
   if (stored) applyPlan(stored);
+  await openHashPlan(stored);
+}
 
+/**
+ * Open the `#p=` link in the address bar, if there is one, against `stored` (the plan to keep unless the
+ * link is the same plan or there is none: then the user is asked). At startup and when the hash changes.
+ */
+export async function openHashPlan(stored: PlanState | null): Promise<void> {
   // Any `p=` / legacy `plan=` parameter counts as a link attempt worth reporting and clearing.
   const hasHash = /(^#|&)(p|plan)=/.test(location.hash);
+  // A newer link supersedes this one, and the prompt for an older one.
+  const link = hasHash ? beginHashLink() : 0;
+  if (hasHash) pendingShared.set(null);
   let shared: PlanState | null = null;
+  let failure: unknown;
   try {
     shared = await readHashPlan();
   } catch (err) {
-    warnOnce('readHashPlan', err);
+    failure = err;
+  }
+  if (hasHash && !isLatestHashLink(link)) return;
+  if (failure !== undefined) {
+    warnOnce('readHashPlan', failure);
     // The share unit's PlanFormatError carries a readable message; anything else gets the generic one.
-    const readable = err instanceof Error && err.name === 'PlanFormatError' ? err.message : null;
+    const readable = failure instanceof Error && failure.name === 'PlanFormatError' ? failure.message : null;
     if (hasHash) notify(readable ?? t.sharedInvalid, 8000);
   }
   if (!shared) {

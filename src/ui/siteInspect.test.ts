@@ -122,6 +122,16 @@ describe('resources of a group', () => {
     expect(zoneChoices(def, 'fluidOut', 'gone').at(-1)).toEqual({ value: 'gone', label: 'gone' });
   });
 
+  it('offers a region only for the kinds its casings take', () => {
+    const def = getSiteDef('oil-cracking-unit')!;
+    const values = (kind: Parameters<typeof zoneChoices>[1]) => zoneChoices(def, kind).map((z) => z.value);
+    // The side region (column l) takes fluid inputs; fluid outputs live on a column with no region.
+    expect(values('fluidIn')).toContain('side');
+    expect(values('fluidOut')).not.toContain('side');
+    expect(values('fluidOut')).not.toContain('middle');
+    expect(values('fluidOut')).toContain('dot3');
+  });
+
   it('keys group hatches by ordinal, or by resource and unit', () => {
     const rows = groupHatchRows(
       [

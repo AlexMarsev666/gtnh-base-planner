@@ -14,3 +14,7 @@ Frozen plan and site files, `#p=` / `#s=` link texts and their decoded states (`
   resources) saved before those fields existed. Its `.json` is the user's file, unchanged. The expected state and
   the link were made once and checked to be identical to what the codec at 44bf4cb decodes and encodes. It is
   also built by `../../model/site/legacyBuild.test.ts` (all 101 terminals connected, groups not moved).
+- `user-oil-1cracker.json`, `user-oil-2crackers.json` and `user-titanium.json` are the user's own templates,
+  unchanged (27, 27 and 8 groups). They are not decoded snapshots: `../../model/site/footprint.test.ts` builds them
+  and checks that a group's footprint is the same as saved and after Arrange (the oil crackers' footprint used to
+  change with where the neighbours were, which stopped Optimize).
