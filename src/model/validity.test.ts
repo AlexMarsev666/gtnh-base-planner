@@ -96,14 +96,7 @@ describe('checkValidity', () => {
     ]);
   });
 
-  it('is clean for every def at its default size and hatches, apart from known placement shortfalls', () => {
-    // These cannot fit their required hatches on one unit (no cell with an open face): not casing floors.
-    const short = [
-      'advanced-assembly-line',
-      'nuclear-salt-processing-plant',
-      'source-chamber',
-      'synchrotron',
-    ];
+  it('is clean for every def at its default size and hatches', () => {
     const bad: string[] = [];
     for (const raw of catalog) {
       const def = sizedDef(raw, effectiveSize(raw, undefined));
@@ -116,7 +109,36 @@ describe('checkValidity', () => {
         .filter((p) => p.severity === 'error');
       if (errors.length > 0) bad.push(def.id);
     }
-    expect(bad).toEqual(short);
+    expect(bad).toEqual([]);
+  });
+
+  it('places every required hatch of every def without connections from below', () => {
+    const short: string[] = [];
+    for (const raw of catalog) {
+      const def = sizedDef(raw, effectiveSize(raw, undefined));
+      const units = packUnits(def, 1, free).units;
+      const placed = placeHatches(def, units, def.defaultHatches, undefined, { below: false });
+      for (const [kind, req] of Object.entries(def.requiredHatches ?? {}) as [HatchKind, { min: number }][]) {
+        const have = placed.hatches.filter((h) => h.kind === kind).length;
+        if (have < req.min) short.push(`${def.id} ${kind} ${have}/${req.min}`);
+      }
+    }
+    expect(short).toEqual([]);
+  });
+
+  it('hints that a hatch walled in but for the ground must be fed from below', () => {
+    const def = getMultiblock('advanced-assembly-line')!;
+    const units = packUnits(def, 1, free).units;
+    const placed = placeHatches(def, units, def.defaultHatches);
+    const low = placed.hatches.filter((h) => h.fromBelow);
+    expect(low.length).toBeGreaterThan(0);
+    expect(low.every((h) => h.face === 'down')).toBe(true);
+    const hints = (checkValidity(def, units, placed.hatches)[0] ?? []).filter((p) => p.type === 'groundFace');
+    expect(hints).toHaveLength(low.length);
+    expect(hints.every((p) => p.severity === 'hint')).toBe(true);
+    // With connections from below the cells have an ordinary down face: nothing is marked.
+    const below = placeHatches(def, units, def.defaultHatches, undefined, { below: true });
+    expect(below.hatches.some((h) => h.fromBelow)).toBe(false);
   });
 
   it('turns a hatch to a side its cell allows when it can, and hints when it cannot', () => {

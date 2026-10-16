@@ -32,12 +32,21 @@ export interface Site {
   disfavored: ReadonlyMap<HatchKind, ReadonlySet<Dir>>;
   /** Per containing unit, the legend char of this cell; only filled for a def with `minCasings`. */
   chars: ReadonlyMap<number, string>;
+  /**
+   * Set on a fallback site: a cell of the lowest layer the def itself walls in on every side but `down`, usable
+   * (facing down, into the ground) only by the `kinds` the def requires more of than one unit has free cells for,
+   * only after the normal sites are used up and only up to the minimum. Absent with `PlaceOptions.below` (those
+   * cells have an ordinary down face).
+   */
+  fromBelow?: true;
 }
 
 /** A candidate site's rank for the hatch kind being placed. */
 export interface Entry {
   /** Index into the position-sorted candidate list. */
   i: number;
+  /** 1 for a fallback site (`Site.fromBelow`), which is only used once no normal site is left, else 0. */
+  ground: number;
   /** Units on the site still below their target. */
   score: number;
   /** Units on the site already served. */

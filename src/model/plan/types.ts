@@ -69,6 +69,11 @@ export interface HatchPlacement {
   unitIds: number[];
   /** Block id that replaces the def's block for this kind (a Quadruple Input Hatch). */
   block?: string;
+  /**
+   * Placed on a fallback site (`Site.fromBelow`): a lowest-layer cell walled in on every side but the ground,
+   * so the hatch faces down and is only reachable from below.
+   */
+  fromBelow?: true;
   /** Site view: id of the net (`RouteNet.id`) this hatch belongs to. */
   net?: number;
 }

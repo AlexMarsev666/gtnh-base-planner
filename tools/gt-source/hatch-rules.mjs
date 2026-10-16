@@ -158,8 +158,8 @@ export class HatchRules {
    * `checkMachine` calls (directly or through methods it calls, `super.checkMachine` included); `any` lists the
    * "any input / any output" checks (`{ input: true }`), whose kind is only known per machine; `casing` lists the
    * `checkCasingMin(errors, counter, min)` calls as raw Java text (`{ counter, min }`);
-   * `noMaintenance` is set when `getDefaultHasMaintenanceChecks()` returns false. Only calls that always run count
-   * (a condition that is not a plain true/false method of the chain skips its branch).
+   * `noMaintenance` is set when `getDefaultHasMaintenanceChecks()` returns false and `checkMachine` does not
+   * demand a maintenance hatch itself. Only calls that always run count (a condition that is not a plain true/false method of the chain skips its branch).
    */
   checksOf(sourceClass) {
     const chain = this.chain(sourceClass);
@@ -217,6 +217,9 @@ export class HatchRules {
       !chain.some((c) => /\bhasMaintenanceChecks\s*=\s*true/.test(c.body))
     )
       out.noMaintenance = true;
+    // A maintenance check `checkMachine` always runs holds whatever `hasMaintenanceChecks` says (the Source
+    // Chamber and the LFTR reactor call it with the flag off).
+    if (out.kinds.maintenance) out.noMaintenance = false;
     return out;
   }
 

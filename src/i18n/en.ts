@@ -590,6 +590,8 @@ export const t = {
               : "GT doesn't allow this machine flipped vertically";
         case 'sharedMaintenance':
           return 'shared maintenance hatch: a manual repair fixes one machine at a time; use an auto-maintenance hatch (hint only; the machine still forms)';
+        case 'groundFace':
+          return `${HATCH_KIND_NAMES[p.kind]} hatch faces the ground: feed it from below (Connect from below / template routing depth) (hint only; the machine still forms)`;
         case 'sharedEnergy':
           return 'shared energy hatch: 2 A for both machines, so each recipe must stay within 1 A (hint only; the machine still forms)';
       }

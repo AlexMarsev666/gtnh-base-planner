@@ -230,6 +230,12 @@ repeated). Placement turns a hatch to an open side when it can (`disallowFaces` 
 preference: an Assembly Line's floor casings only allow `down`, which is the ground unless connections from below are
 on, so the hatch faces another side and the validity check gives a hint). Pipe routing turns a hatch to the side its
 pipe reaches it from (never one `disallowFaces` forbids), so it may end up outside `allowFaces`; the hint then says so.
+A lowest-layer cell walled in on every side but the ground (the Advanced Assembly Line's input buses, the Synchrotron's
+output hatches) still takes a hatch of a kind the machine requires (`requiredHatches` min) when a single machine has too
+few other cells for it, facing down: GT does not ask a hatch for a free face. These cells are used only after the normal
+ones and only up to the minimum (a crowded layout is loosened instead), and a hint tells
+the hatch faces the ground and must be fed from below (Connect from below, or a template's routing depth). Without a
+trench such a hatch is simply left unconnected by routing.
 `variants` lists the orientations the controller's alignment limits allow (`getInitialAlignmentLimits` / `getAlignmentLimits`
 of the class and its superclasses, `tools/gt-source/orientation.mjs`): 0 as in the catalog, 1 mirrored left-right, 2 upside down
 (a roll of 180 degrees about the facing axis, which is a mirror along X and along Y), 3 mirrored top-bottom; the controller keeps

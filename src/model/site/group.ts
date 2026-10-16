@@ -474,7 +474,11 @@ function candidateEnds(
     for (const key of r.keys ?? [r.key!]) {
       const list = cells.get(key) ?? [];
       for (const site of sites) {
-        if (!site.kinds.has(r.kind) || !site.faces.some((f) => !site.blocked.get(r.kind)?.has(f.dir)))
+        if (
+          site.fromBelow ||
+          !site.kinds.has(r.kind) ||
+          !site.faces.some((f) => !site.blocked.get(r.kind)?.has(f.dir))
+        )
           continue;
         if (!site.unitIds.some((id) => asked.includes(id) && (zone === undefined || inZone(site, id, zone))))
           continue;

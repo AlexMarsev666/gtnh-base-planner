@@ -61,6 +61,10 @@ import type {
  *   fewer hatches of other kinds around, then the face nearest the point `toward` gives for the kind, then a
  *   side face over top over bottom, then the lowest y, z, x.
  * - `below` opens the layer under the build: hatches of the lowest layer may face down into it.
+ * - Without `below`, a lowest-layer cell the def itself walls in on every side but the ground still takes a hatch
+ *   of a kind whose `requiredHatches` min one unit has too few free cells for (an Advanced Assembly Line's input
+ *   buses), facing down: GT does not ask a hatch for a free face. Such fallback sites (`Site.fromBelow`) are used
+ *   after every normal site and only up to the minimum; their hatches carry `fromBelow`.
  * - `avoid` keeps listed cells free of the listed kinds (they may still take other kinds).
  * - With `opts.requests` the listed hatches are placed instead (see `HatchRequest`; `enabled` is ignored):
  *   mandatory ones (the first `requiredHatches[kind].min` requests of a kind) before the rest, each by kind
@@ -309,6 +313,8 @@ function place(
         let score = 0;
         for (const id of c.unitIds) {
           if ((count.get(id) ?? 0) >= max) return null;
+          // A fallback site only makes up the required minimum.
+          if (c.fromBelow && (count.get(id) ?? 0) >= minOf(def, kind)) return null;
           if (needs(c, id)) score++;
         }
         if (score === 0) return null;
@@ -348,6 +354,7 @@ function place(
         return {
           ...best,
           i,
+          ground: c.fromBelow ? 1 : 0,
           score,
           waste: c.unitIds.length - score,
           wanted: later.reduce((n, k) => n + (c.kinds.has(k) ? 1 : 0), 0),
@@ -386,6 +393,7 @@ function place(
           cell: best.pos,
           face: bestFace.dir,
           unitIds: [...best.unitIds],
+          ...(best.fromBelow ? { fromBelow: true as const } : {}),
           ...(key !== undefined ? { key } : {}),
           ...(keys !== undefined ? { keys } : {}),
         });

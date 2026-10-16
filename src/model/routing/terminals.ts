@@ -10,16 +10,21 @@ import type { Grid, KindState, Router, Terminal } from './types';
 
 /** What routing connects: its terminals, the cells kept free around the build, and cell prices. */
 
-/** Routed hatches per kind, in hatch order, one per cell. */
+/**
+ * Routed hatches per kind, in hatch order, one per cell. Without `below`, a hatch that faces the ground
+ * (`HatchPlacement.fromBelow`) is no terminal: no pipe can reach it, and the layout search must not take it for
+ * a hatch to connect by loosening the layout. Its hint (`groundFace`) says so.
+ */
 export function routedHatchesByKind(
   hatches: readonly HatchPlacement[],
   kinds: readonly RoutedKind[],
+  below = false,
 ): Map<RoutedKind, HatchPlacement[]> {
   const wanted = new Set<HatchKind>(kinds);
   const byKind = new Map<RoutedKind, HatchPlacement[]>();
   const seenCells = new Set<string>();
   for (const h of hatches) {
-    if (!isRoutable(h.kind) || !wanted.has(h.kind)) continue;
+    if (!isRoutable(h.kind) || !wanted.has(h.kind) || (h.fromBelow && !below)) continue;
     const id = `${h.kind}|${h.cell.join()}`;
     if (seenCells.has(id)) continue;
     seenCells.add(id);

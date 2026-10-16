@@ -26,9 +26,10 @@ export function compareFaces(a: FaceScore, b: FaceScore): number {
   );
 }
 
-/** Negative when `a` is the better pick: higher score, then less waste, then a better face, then lower cell. */
+/** Negative when `a` is the better pick: a normal site over a fallback one (`Site.fromBelow`), higher score, then less waste, then a better face, then lower cell. */
 export function compareEntries(a: Entry, b: Entry): number {
   return (
+    a.ground - b.ground ||
     b.score - a.score ||
     a.waste - b.waste ||
     a.wanted - b.wanted ||

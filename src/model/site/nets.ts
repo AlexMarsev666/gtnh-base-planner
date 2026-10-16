@@ -218,6 +218,15 @@ export function routeSiteNetworks(
       })
     : [];
   routed.forEach((n, i) => (n.route = results[i]));
+  // Without depth a hatch facing the ground (`SiteHatch.fromBelow`) cannot connect: it shows through its hint
+  // (`groundFace`), not as an unrouted terminal.
+  if (wanted === 0)
+    routed.forEach((n) => {
+      const r = n.route;
+      if (!r) return;
+      const lost = n.terminals.filter((t, ti) => t.hatch?.fromBelow && !r.attach[ti]).length;
+      if (lost > 0) n.route = { ...r, total: r.total - lost };
+    });
 
   // Hatches turn to the side their pipe reaches them from.
   const finalFace = new Map<SiteHatch, Dir>();
@@ -232,6 +241,7 @@ export function routeSiteNetworks(
       const face = finalFace.get(h);
       if (net === undefined && !face) return h;
       const out: SiteHatch = { ...h, face: face ?? h.face };
+      if (face && face !== h.face) delete out.fromBelow;
       if (net !== undefined) out.net = net[0];
       return out;
     });

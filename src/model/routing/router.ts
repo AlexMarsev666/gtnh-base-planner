@@ -38,7 +38,7 @@ export function routePipes(
   hatches: HatchPlacement[],
   opts: RouteOptions = {},
 ): RouteNet[] {
-  const byKind = routedHatchesByKind(hatches, opts.kinds ?? PIPE_KINDS);
+  const byKind = routedHatchesByKind(hatches, opts.kinds ?? PIPE_KINDS, !!opts.below);
   if (byKind.size === 0) return [];
 
   const cellsOf = units.map((u) => unitCells(def, u));

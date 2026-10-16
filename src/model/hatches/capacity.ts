@@ -40,6 +40,8 @@ export function capacityOf(
     const cells = byUnit.get(id) ?? [];
     const takes = (w: Wanted, s: Site): boolean =>
       s.kinds.has(w.kind) &&
+      // A fallback site only makes up the required minimum (as in placement).
+      (!s.fromBelow || w.mandatory) &&
       (s.unitIds.length === 1 || shares(w.kind, s.unitIds.length)) &&
       (w.zone === undefined || inZone(s, id, w.zone)) &&
       s.faces.some((f) => !s.blocked.get(w.kind)?.has(f.dir));

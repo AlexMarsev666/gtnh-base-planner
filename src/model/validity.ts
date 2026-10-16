@@ -39,13 +39,20 @@ export type ProblemKind =
   /** A maintenance hatch serves several units: a manual repair fixes one machine at a time. */
   | { type: 'sharedMaintenance'; cell: Vec3 }
   /** An energy hatch serves several units: its 2 A are split, so each recipe must stay within 1 A. */
-  | { type: 'sharedEnergy'; cell: Vec3 };
+  | { type: 'sharedEnergy'; cell: Vec3 }
+  /** A hatch stands on a lowest-layer cell walled in but for the ground and faces down (`HatchPlacement.fromBelow`). */
+  | { type: 'groundFace'; kind: HatchKind; cell: Vec3 };
 
 /** One thing wrong with a unit. */
 export type ValidityProblem = ProblemKind & { severity: Severity };
 
 /** Problem kinds that are hints (GT forms the machine anyway); every other kind is an error. */
-const HINTS: readonly ProblemKind['type'][] = ['forbiddenFace', 'sharedMaintenance', 'sharedEnergy'];
+const HINTS: readonly ProblemKind['type'][] = [
+  'forbiddenFace',
+  'sharedMaintenance',
+  'sharedEnergy',
+  'groundFace',
+];
 
 const problem = (p: ProblemKind): ValidityProblem => ({
   ...p,
@@ -142,6 +149,8 @@ export function checkValidity(
       });
     }
     for (const h of mine) {
+      if (h.fromBelow && h.face === 'down')
+        problems.push(problem({ type: 'groundFace', kind: h.kind, cell: h.cell }));
       if (h.unitIds.length < 2) continue;
       if (h.kind === 'maintenance') problems.push(problem({ type: 'sharedMaintenance', cell: h.cell }));
       else if (h.kind === 'energy') problems.push(problem({ type: 'sharedEnergy', cell: h.cell }));
