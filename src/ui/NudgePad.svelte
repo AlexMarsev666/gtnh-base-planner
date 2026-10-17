@@ -131,8 +131,8 @@
     justify-content: center;
     appearance: none;
     background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     padding: 0;
     margin: 0;
     color: var(--muted);
@@ -145,7 +145,11 @@
   }
   .cell:hover {
     color: var(--text);
-    border-color: var(--muted);
+    background: var(--surface);
+  }
+  .cell:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
   }
   .empty {
     border-color: transparent;

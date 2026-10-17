@@ -41,7 +41,7 @@
   <ul class="rows">
     <li class="row">
       <button
-        class="link"
+        class="btn danger"
         data-testid="site-link-remove"
         onclick={() => {
           updateSite((s) => withLinkRemoved(s, link.id));
@@ -57,8 +57,6 @@
     margin-top: 32px;
   }
   h2 {
-    color: var(--text);
-    font: inherit;
     margin: 0 0 12px;
   }
   .head {
@@ -66,18 +64,8 @@
     align-items: center;
     gap: 8px;
   }
-  .name,
-  .route {
-    text-transform: none;
-    letter-spacing: 0.02em;
-  }
   .route {
     margin: 6px 0 0;
-  }
-  .meta {
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   p.meta {
     margin: 4px 0 0;

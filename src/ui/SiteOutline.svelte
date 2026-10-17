@@ -92,7 +92,7 @@
         role="presentation"
       >
         <button
-          class="link"
+          class="btn small"
           bind:this={menuButton}
           data-testid="site-add-menu"
           aria-haspopup="menu"
@@ -157,8 +157,8 @@
     <div class="head">
       <h2>{t.site.linksCount($site.links.length)}</h2>
       <button
-        class="link"
-        class:active={$siteLinkDraft}
+        class="btn small"
+        class:primary={$siteLinkDraft}
         aria-pressed={$siteLinkDraft}
         data-testid="site-link-open"
         onclick={openLinkForm}>{t.site.addLinkOpen}</button
@@ -222,13 +222,11 @@
     margin-top: 32px;
   }
   h2 {
-    color: var(--text);
-    font: inherit;
     margin: 0;
   }
   .head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     margin: 0 0 12px;
@@ -247,7 +245,9 @@
     min-width: 200px;
     padding: 8px 12px;
     background: var(--bg);
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
   }
   .menu .link {
     text-align: left;
@@ -262,12 +262,6 @@
     align-items: center;
     gap: 12px;
     min-height: 26px;
-  }
-  .hint,
-  .meta {
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .meta {
     flex: none;
@@ -299,10 +293,6 @@
     flex-direction: column;
     flex: 1;
     min-width: 0;
-  }
-  .res {
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .x {
     color: var(--muted);

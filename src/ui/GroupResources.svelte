@@ -114,7 +114,6 @@
   .sub {
     margin-top: 20px;
   }
-  .sub-title,
   .value {
     color: var(--text);
   }
@@ -142,12 +141,6 @@
     display: flex;
     justify-content: space-between;
     gap: 12px;
-  }
-  .meta,
-  .hint {
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .hint {
     margin: 8px 0 0;

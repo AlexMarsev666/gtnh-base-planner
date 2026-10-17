@@ -204,8 +204,6 @@
     margin-top: 28px;
   }
   h2 {
-    font: inherit;
-    color: var(--text);
     margin: 0 0 10px;
   }
   .rows {
@@ -241,14 +239,12 @@
   .name {
     min-width: 0;
     overflow-wrap: anywhere;
-    text-transform: none;
-    letter-spacing: 0.02em;
     color: var(--text);
   }
   /* Ticked rows recede so what is left to gather stands out. */
   .row.done .count,
   .row.done .name {
-    color: var(--faint);
+    color: var(--muted);
     text-decoration: line-through;
   }
   .row.done .cube {
@@ -256,9 +252,6 @@
   }
   .hint {
     margin: 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
 
   /* Below the top bar, so its buttons stay reachable while the drawer is open. */

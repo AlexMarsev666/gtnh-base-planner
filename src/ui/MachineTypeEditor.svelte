@@ -43,7 +43,7 @@
   <div class="row">
     <span>{t.site.machineType} <span class="value">{machine?.name ?? t.site.machineTypeAny}</span></span>
     <button
-      class="link"
+      class="btn small"
       aria-expanded={picking}
       data-testid="machine-type-toggle"
       onclick={() => (picking = !picking)}>{t.site.replace}</button
@@ -85,6 +85,7 @@
         label={t.site.step}
         value={group.step ?? 'down'}
         options={steps}
+        segmented
         testid="transformer-step"
         onchange={(v) => patchGroup(group.id, { step: v === 'up' ? 'up' : 'down' })}
       />
@@ -115,7 +116,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    min-height: 26px;
+    min-height: 30px;
   }
   .value {
     color: var(--text);
@@ -123,9 +124,6 @@
   .search {
     width: 100%;
     text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
-    border-bottom: 1px dotted var(--muted);
     margin: 4px 0;
   }
   .list,
@@ -145,8 +143,5 @@
   }
   .hint {
     margin: 8px 0 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
 </style>

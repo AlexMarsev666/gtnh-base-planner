@@ -203,11 +203,11 @@ test('builds a site by hand and switches back to the machine view', async ({ pag
   // Its limits can be kept: Arrange and Optimize leave a kept group's packing alone.
   await panel.getByTestId('site-group-tabs-packing').click();
   const lock = panel.getByTestId('site-lock-limits');
-  await expect(lock).toHaveAttribute('aria-pressed', 'false');
+  await expect(lock).toHaveAttribute('aria-checked', 'false');
   await lock.click();
-  await expect(lock).toHaveAttribute('aria-pressed', 'true');
+  await expect(lock).toHaveAttribute('aria-checked', 'true');
   await lock.click();
-  await expect(lock).toHaveAttribute('aria-pressed', 'false');
+  await expect(lock).toHaveAttribute('aria-checked', 'false');
 
   // A link from a site input to the furnace, with a new resource.
   // The form is in the inspector (the panel), opened from the outline.

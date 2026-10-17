@@ -91,8 +91,8 @@
       /></label
     >
     <div class="row">
-      <button class="link active" data-testid="site-add-link" onclick={addLink}>{t.site.addLink}</button>
-      <button class="link" onclick={() => siteLinkDraft.set(false)}>{t.site.addLinkClose}</button>
+      <button class="btn primary" data-testid="site-add-link" onclick={addLink}>{t.site.addLink}</button>
+      <button class="btn" onclick={() => siteLinkDraft.set(false)}>{t.site.addLinkClose}</button>
     </div>
   </div>
 </section>
@@ -102,19 +102,18 @@
     margin-top: 32px;
   }
   h2 {
-    color: var(--text);
-    font: inherit;
     margin: 0 0 12px;
   }
   .row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-height: 26px;
+    gap: 8px;
+    min-height: 32px;
+    margin-top: 8px;
   }
   .pair {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
   }
   .pair.wide {
@@ -126,29 +125,16 @@
     white-space: nowrap;
   }
   .text {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
     flex: 1;
     min-width: 0;
-    border-bottom: 1px dotted var(--muted);
-    padding-bottom: 2px;
-  }
-  .text:focus {
-    border-bottom: 1px solid var(--text);
-    text-decoration: none;
   }
   .select {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
     max-width: 200px;
-    cursor: pointer;
   }
   .form {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
   }
   @media (max-width: 640px) {
     section {

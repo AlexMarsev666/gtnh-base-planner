@@ -54,8 +54,8 @@
         >{/if}</span
     >
     <span class="acts">
-      <button class="link" onclick={frameSelected}>{t.site.frame}</button>
-      <button class="link" onclick={() => siteGroup.set(null)}>{t.site.deselect}</button>
+      <button class="btn small" onclick={frameSelected}>{t.site.frame}</button>
+      <button class="btn small" onclick={() => siteGroup.set(null)}>{t.site.deselect}</button>
     </span>
   </div>
   {#if group.source}<p class="hint">
@@ -83,10 +83,11 @@
   </div>
 
   <div class="row foot">
-    <button class="link" data-testid="site-group-duplicate" onclick={duplicateSelected}
+    <button class="btn" data-testid="site-group-duplicate" onclick={duplicateSelected}
       >{t.site.duplicate}</button
     >
-    <button class="link" data-testid="site-group-remove" onclick={removeSelected}>{t.site.removeGroup}</button
+    <button class="btn danger" data-testid="site-group-remove" onclick={removeSelected}
+      >{t.site.removeGroup}</button
     >
   </div>
 </div>
@@ -107,7 +108,7 @@
   }
   .head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
@@ -118,7 +119,7 @@
   }
   .acts {
     display: flex;
-    gap: 12px;
+    gap: 6px;
     flex: none;
   }
   .tabbar {
@@ -132,12 +133,9 @@
   }
   .hint {
     margin: 8px 0 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .foot {
     margin-top: 16px;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 </style>

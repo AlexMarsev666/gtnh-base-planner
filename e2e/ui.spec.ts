@@ -206,9 +206,9 @@ test('the mirror setting survives a share link', async ({ page, context }) => {
   await page.goto('/');
   await page.getByTestId('settings-toggle').click();
   const mirror = page.getByTestId('toggle-mirror');
-  await expect(mirror).toHaveAttribute('aria-pressed', 'false');
+  await expect(mirror).toHaveAttribute('aria-checked', 'false');
   await mirror.click();
-  await expect(mirror).toHaveAttribute('aria-pressed', 'true');
+  await expect(mirror).toHaveAttribute('aria-checked', 'true');
   await page.getByTestId('share').click();
   const link = await page.evaluate(() => navigator.clipboard.readText());
   expect(link).toContain('#p=');
@@ -219,7 +219,7 @@ test('the mirror setting survives a share link', async ({ page, context }) => {
   const offer = other.getByTestId('shared-confirm').getByRole('button', { name: 'Open' });
   if (await offer.isVisible()) await offer.click();
   await other.getByTestId('settings-toggle').click();
-  await expect(other.getByTestId('toggle-mirror')).toHaveAttribute('aria-pressed', 'true');
+  await expect(other.getByTestId('toggle-mirror')).toHaveAttribute('aria-checked', 'true');
 });
 
 test('buildability lists a hatch above the glass and clears when the glass tier is raised', async ({

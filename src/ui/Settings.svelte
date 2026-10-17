@@ -146,7 +146,7 @@
     <button class="link" onclick={onclose}>{t.close}</button>
   </div>
 
-  <button class="link active add-to-site" data-testid="add-to-site" onclick={addPlanToSite}
+  <button class="btn primary block add-to-site" data-testid="add-to-site" onclick={addPlanToSite}
     >{t.site.addToSite}</button
   >
 
@@ -371,7 +371,7 @@
     <h2>{t.plan}</h2>
     <ul class="rows">
       <li class="row">
-        <button class="link" data-testid="share" onclick={() => void copyShareLink()}>{t.shareLink}</button>
+        <button class="btn" data-testid="share" onclick={() => void copyShareLink()}>{t.shareLink}</button>
       </li>
       {#if $shareFallback}
         <li class="row col">
@@ -386,10 +386,10 @@
         </li>
       {/if}
       <li class="row">
-        <button class="link" onclick={downloadJson}>{t.downloadJson}</button>
+        <button class="btn" onclick={downloadJson}>{t.downloadJson}</button>
       </li>
       <li class="row">
-        <button class="link" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
+        <button class="btn" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
         <input
           bind:this={fileInput}
           class="visually-hidden"
@@ -401,7 +401,7 @@
         />
       </li>
       <li class="row">
-        <button class="link" class:danger={confirmReset} data-testid="reset" onclick={onreset}
+        <button class="btn danger" data-testid="reset" onclick={onreset}
           >{confirmReset ? t.resetConfirm : t.reset}</button
         >
       </li>
@@ -432,15 +432,12 @@
     color: var(--text);
   }
   .add-to-site {
-    display: block;
     margin-top: 4px;
   }
   section {
     margin-top: 36px;
   }
   h2 {
-    font: inherit;
-    color: var(--text);
     margin: 0 0 14px;
   }
   .limits {
@@ -450,20 +447,14 @@
   }
   .limit {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
   }
   .limit > span {
     white-space: nowrap;
   }
-  .limit :global(.field) {
-    text-align: left;
-  }
   .hint {
     margin: 10px 0 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .rows {
     list-style: none;
@@ -478,7 +469,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 26px;
+    min-height: 32px;
   }
   .row.col {
     flex-direction: column;
@@ -488,8 +479,6 @@
   .url {
     text-align: left;
     width: 100%;
-    text-transform: none;
-    letter-spacing: 0;
     color: var(--text);
   }
   .swatch {
@@ -508,9 +497,6 @@
     cursor: pointer;
     border: 0;
     padding: 0;
-  }
-  .danger {
-    color: var(--text);
   }
 
   /* Below the top bar, so its buttons stay reachable while the drawer is open. */

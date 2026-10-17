@@ -67,8 +67,12 @@ describe('siteKeyAction', () => {
   });
 
   it('leaves keys on a tab list alone', () => {
-    const inside = { closest: (sel: string) => (sel === '[role="tablist"]' ? {} : null) };
-    expect(inTablist({ target: inside as never })).toBe(true);
+    const within = (role: string) => ({
+      closest: (sel: string) => (sel.includes(`[role="${role}"]`) ? {} : null),
+    });
+    for (const role of ['tablist', 'radiogroup', 'switch'])
+      expect(inTablist({ target: within(role) as never })).toBe(true);
+    expect(inTablist({ target: within('button') as never })).toBe(false);
     expect(inTablist({ target: { closest: () => null } as never })).toBe(false);
     expect(inTablist({ target: null })).toBe(false);
   });

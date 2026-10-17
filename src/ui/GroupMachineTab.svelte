@@ -76,7 +76,7 @@
   </label>
   <div class="row">
     <span class="value">{def?.name ?? group.multiblockId}</span>
-    <button class="link" aria-expanded={replacing} onclick={() => (replacing = !replacing)}
+    <button class="btn small" aria-expanded={replacing} onclick={() => (replacing = !replacing)}
       >{t.site.replace}</button
     >
   </div>
@@ -84,12 +84,13 @@
   {#if replacing}
     <div class="row wrap replace">
       <span>{t.site.replaceWith}</span>
-      <button class="link" onclick={onreplace}>{t.site.replaceCatalog}</button>
+      <button class="btn small" onclick={onreplace}>{t.site.replaceCatalog}</button>
       {#if group.multiblockId !== SINGLE_BLOCK_ID}
-        <button class="link" onclick={() => replaceWith(SINGLE_BLOCK_ID)}>{t.importer.single}</button>
+        <button class="btn small" onclick={() => replaceWith(SINGLE_BLOCK_ID)}>{t.importer.single}</button>
       {/if}
       {#if group.multiblockId !== PLACEHOLDER_ID}
-        <button class="link" onclick={() => replaceWith(PLACEHOLDER_ID)}>{t.importer.placeholder}</button>
+        <button class="btn small" onclick={() => replaceWith(PLACEHOLDER_ID)}>{t.importer.placeholder}</button
+        >
       {/if}
     </div>
   {/if}
@@ -193,8 +194,7 @@
 <GroupHatchTiers {group} {placed} />
 
 <style>
-  .value,
-  .sub-title {
+  .value {
     color: var(--text);
   }
   .sub {
@@ -210,11 +210,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 26px;
+    min-height: 30px;
   }
   .row.wrap {
     flex-wrap: wrap;
-    row-gap: 0;
+    row-gap: 6px;
+    padding: 4px 0;
   }
   .replace > span {
     color: var(--muted);
@@ -223,20 +224,10 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    gap: 4px;
   }
   .col .text {
     width: 100%;
-  }
-  .text {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
-    border-bottom: 1px dotted var(--muted);
-    padding-bottom: 2px;
-  }
-  .text:focus {
-    border-bottom: 1px solid var(--text);
-    text-decoration: none;
   }
   .opts {
     margin-top: 6px;

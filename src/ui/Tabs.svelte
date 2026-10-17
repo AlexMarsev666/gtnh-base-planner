@@ -84,7 +84,7 @@
     font-size: 13px;
     letter-spacing: 0;
     text-transform: none;
-    color: var(--muted);
+    color: var(--segment-text);
     cursor: pointer;
     display: inline-flex;
     align-items: center;

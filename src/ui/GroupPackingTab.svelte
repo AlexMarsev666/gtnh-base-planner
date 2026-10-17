@@ -99,6 +99,7 @@
           {label}
           min={LIMIT_MIN}
           max={LIMIT_MAX}
+          width="2.4em"
           empty
           placeholder={t.unlimited}
           oncommit={(v) => commitLimit(axis, v)}
@@ -142,10 +143,6 @@
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    color: var(--text);
-  }
-  .meta {
-    color: var(--muted);
   }
   .sub-label {
     margin: 12px 0 0;
@@ -153,13 +150,13 @@
   .fields {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     gap: 4px 18px;
     margin: 2px 0 6px;
   }
   .pair {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
   }
   .pair > span {
@@ -174,7 +171,7 @@
     display: grid;
     grid-template-columns: repeat(3, auto);
     justify-content: space-between;
-    gap: 6px 12px;
+    gap: 6px 4px;
   }
   .rows {
     list-style: none;
@@ -183,9 +180,6 @@
   }
   .hint {
     margin: 8px 0 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .hint.warn {
     color: var(--text);

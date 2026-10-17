@@ -92,7 +92,6 @@
   }
   .sub-title {
     margin: 0 0 6px;
-    color: var(--text);
   }
   .rows {
     list-style: none;
@@ -101,9 +100,6 @@
   }
   .hint {
     margin: 8px 0 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .list {
     max-height: 220px;

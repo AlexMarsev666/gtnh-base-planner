@@ -244,7 +244,7 @@
           <ul class="rows">
             <li class="row">
               <button
-                class="link"
+                class="btn"
                 data-testid="site-arrange"
                 disabled={!$site.groups.length}
                 onclick={() => arrange()}>{t.site.arrange}</button
@@ -252,7 +252,7 @@
             </li>
             <li class="row">
               <button
-                class="link"
+                class="btn"
                 data-testid="site-optimize"
                 title={t.site.optimizeHint}
                 disabled={!$site.groups.length}
@@ -261,7 +261,7 @@
             </li>
             <li class="row">
               <button
-                class="link"
+                class="btn"
                 data-testid="site-neat"
                 title={t.site.neatHint}
                 disabled={!$site.groups.length}
@@ -270,7 +270,7 @@
             </li>
             <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
             <li class="row narrow-only">
-              <button class="link" onclick={onimport}>{t.site.importOpen}</button>
+              <button class="btn" onclick={onimport}>{t.site.importOpen}</button>
             </li>
           </ul>
         </section>
@@ -282,6 +282,7 @@
               label={t.site.routingStyle}
               value={routing.style}
               options={routingStyles}
+              segmented
               testid="site-routing-style"
               onchange={setStyle}
             />
@@ -336,7 +337,7 @@
           {#if routingState.legacy}
             <p class="hint" data-testid="site-routing-legacy">{t.site.routingLegacy(routing.depth)}</p>
             <button
-              class="link active"
+              class="btn primary"
               data-testid="site-use-neat"
               onclick={() => updateSite((s) => withRouting(s, routingState.neatOffer))}
               >{t.site.useNeat}</button
@@ -367,7 +368,7 @@
           <h2>{t.plan}</h2>
           <ul class="rows">
             <li class="row">
-              <button class="link" data-testid="site-share" onclick={() => void copySiteLink()}
+              <button class="btn" data-testid="site-share" onclick={() => void copySiteLink()}
                 >{t.shareLink}</button
               >
             </li>
@@ -383,9 +384,9 @@
                 />
               </li>
             {/if}
-            <li class="row"><button class="link" onclick={downloadSite}>{t.downloadJson}</button></li>
+            <li class="row"><button class="btn" onclick={downloadSite}>{t.downloadJson}</button></li>
             <li class="row">
-              <button class="link" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
+              <button class="btn" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
               <input
                 bind:this={fileInput}
                 class="visually-hidden"
@@ -397,7 +398,7 @@
               />
             </li>
             <li class="row">
-              <button class="link" onclick={onreset}>{t.site.reset}</button>
+              <button class="btn danger" onclick={onreset}>{t.site.reset}</button>
             </li>
           </ul>
         </section>
@@ -437,15 +438,13 @@
     display: flex;
     gap: 14px;
   }
-  .title,
-  h2 {
+  .title {
     color: var(--text);
   }
   section {
     margin-top: 32px;
   }
   h2 {
-    font: inherit;
     margin: 0 0 12px;
   }
   .tabbar {
@@ -460,7 +459,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 26px;
+    min-height: 32px;
   }
   .row.col {
     flex-direction: column;
@@ -470,41 +469,27 @@
   .fields {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 18px;
+    align-items: center;
+    gap: 6px 14px;
     margin: 6px 0;
   }
   .pair {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
   }
   .pair > span {
     white-space: nowrap;
   }
   .text {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
     flex: 1;
     min-width: 0;
-    border-bottom: 1px dotted var(--muted);
-    padding-bottom: 2px;
-  }
-  .text:focus {
-    border-bottom: 1px solid var(--text);
-    text-decoration: none;
   }
   .hint {
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
     margin: 8px 0 0;
   }
   .problems li {
     color: var(--text);
-    text-transform: none;
-    letter-spacing: 0.02em;
     margin-bottom: 4px;
   }
   .hint.warn,
@@ -519,8 +504,6 @@
   .url {
     text-align: left;
     width: 100%;
-    text-transform: none;
-    letter-spacing: 0;
     color: var(--text);
   }
   @media (min-width: 761px) {

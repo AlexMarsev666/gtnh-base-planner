@@ -47,10 +47,6 @@
 </div>
 
 <style>
-  .build {
-    text-transform: none;
-    letter-spacing: 0.02em;
-  }
   .verdict {
     margin: 0 0 4px;
     color: var(--muted);
@@ -75,8 +71,6 @@
   .lines button {
     text-align: left;
     padding: 0;
-    text-transform: none;
-    letter-spacing: inherit;
   }
   .hints,
   .hints button {

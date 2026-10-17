@@ -79,8 +79,7 @@
 </div>
 
 <style>
-  .value,
-  .sub-title {
+  .value {
     color: var(--text);
   }
   .sub {
@@ -92,18 +91,15 @@
     justify-content: space-between;
     gap: 12px;
   }
-  .meta {
-    color: var(--muted);
-  }
   .row {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 26px;
+    min-height: 30px;
   }
   .pair {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
   }
   .pair > span {
@@ -111,13 +107,13 @@
   }
   .placement {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     align-items: flex-start;
   }
   .coords {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
   }
   .axis-x {
     color: var(--axis-x);
@@ -127,8 +123,5 @@
   }
   .hint {
     margin: 8px 0 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
 </style>

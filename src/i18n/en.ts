@@ -128,8 +128,6 @@ export const t = {
   pipes: 'Pipes',
   cables: 'Cables',
   xray: 'X-ray',
-  on: 'On',
-  off: 'Off',
   plan: 'Plan',
   shareLink: 'Copy share link',
   linkCopied: 'Link copied.',

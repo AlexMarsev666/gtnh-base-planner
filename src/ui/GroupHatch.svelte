@@ -44,7 +44,7 @@
 <div class="sub" data-testid="group-hatch" bind:this={root}>
   <p class="sub-title">
     <span>{t.site.pickedHatch}</span>
-    <button class="link" onclick={() => siteHatch.set(null)}>{t.site.deselect}</button>
+    <button class="btn small" onclick={() => siteHatch.set(null)}>{t.site.deselect}</button>
   </p>
   <p class="line">
     <span class="value">{t.hatchKinds[info.kind]}{resourceName ? ` · ${resourceName}` : ''}</span>
@@ -75,16 +75,14 @@
   }
   .sub-title {
     margin: 0 0 6px;
-    color: var(--text);
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
   .line {
     margin: 0 0 4px;
     color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
     white-space: pre-line;
   }
   .value {
