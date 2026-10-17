@@ -13,6 +13,8 @@
     siteLink,
     siteLinkDraft,
     sitePipes,
+    templateTab,
+    type TemplateTab,
   } from '../state/site';
   import { connectBelow, xray } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
@@ -38,6 +40,7 @@
   import { groupName as siteGroupName, resName as siteResName } from './siteNames';
   import SiteOutline from './SiteOutline.svelte';
   import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
+  import Tabs from './Tabs.svelte';
   import ToggleRow from './ToggleRow.svelte';
   import { groupErrorCount } from './validityText';
 
@@ -82,11 +85,21 @@
   ];
   const routeStats = $derived($siteRouteInfo?.routeStats);
 
-  // The inspector is at the top: bring it into view when a group or link gets selected (from the scene too).
+  const templateTabs = [
+    { id: 'layout', label: t.site.tabs.layout },
+    { id: 'routing', label: t.site.tabs.routing },
+    { id: 'view', label: t.site.tabs.view },
+  ];
+  function setTemplateTab(id: string) {
+    const tab: TemplateTab | undefined = (['layout', 'routing', 'view'] as const).find((x) => x === id);
+    if (tab) templateTab.set(tab);
+  }
+
+  // The inspector is at the top: bring it into view when the selection changes (from the scene too).
   let drawer = $state<HTMLElement>();
   $effect(() => {
-    if (($siteGroup || $siteLink || $siteLinkDraft) && drawer)
-      drawer.scrollTo({ top: 0, behavior: 'smooth' });
+    void [$siteGroup, $siteLink, $siteLinkDraft];
+    drawer?.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // Numeric fields
@@ -136,239 +149,265 @@
     <LinkInspector link={selectedLink} />
   {:else if $siteLinkDraft}
     <LinkForm />
+  {:else}
+    {#if warnings.problems.length || wontForm.length}
+      <section>
+        <h2>{t.site.problems}</h2>
+        <ul class="rows problems" data-testid="site-problem-list">
+          {#each warnings.problems as w, i (i)}
+            <li>{t.site.warning(w, groupName, resName)}</li>
+          {/each}
+          {#each wontForm as g (g.id)}
+            <li data-testid="site-wont-form">{t.validity.groupProblem(groupName(g.id), g.n)}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
+    {#if notes.length || warnings.info.length}
+      <section>
+        <h2>{t.site.notes}</h2>
+        <ul class="rows problems info" data-testid="site-note-list">
+          {#each notes as n, i (i)}
+            <li>{t.site.note(n, groupName, resName)}</li>
+          {/each}
+          {#each warnings.info as w, i (i)}
+            <li>{t.site.warning(w, groupName, resName)}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
+    <div class="tabbar">
+      <Tabs
+        tabs={templateTabs}
+        active={$templateTab}
+        onchange={setTemplateTab}
+        label={t.site.tabs.template}
+        testid="site-template-tabs"
+      />
+    </div>
+    <div
+      role="tabpanel"
+      id="site-template-tabs-panel"
+      aria-labelledby="site-template-tabs-tab-{$templateTab}"
+    >
+      {#if $templateTab === 'layout'}
+        <section>
+          <h2>{t.site.size}</h2>
+          <label class="row">
+            <span>{t.site.name}</span>
+            <input
+              class="field text"
+              type="text"
+              value={$site.name ?? ''}
+              placeholder={t.site.unnamed}
+              aria-label={t.site.name}
+              onchange={(e) => updateSite((s) => withName(s, e.currentTarget.value))}
+            />
+          </label>
+          <div class="fields">
+            <label class="pair"
+              ><span>{t.site.width}</span><NumberStepper
+                value={String($site.size[0])}
+                label={t.site.width}
+                min={SITE_MIN_SIZE}
+                max={SITE_MAX_SIZE}
+                width="2.8em"
+                testid="site-width"
+                oncommit={(v) => commitSize(0, v)}
+              /></label
+            >
+            <label class="pair"
+              ><span>{t.site.depth}</span><NumberStepper
+                value={String($site.size[1])}
+                label={t.site.depth}
+                min={SITE_MIN_SIZE}
+                max={SITE_MAX_SIZE}
+                width="2.8em"
+                testid="site-depth"
+                oncommit={(v) => commitSize(1, v)}
+              /></label
+            >
+            <label class="pair"
+              ><span>{t.site.corridor}</span><NumberStepper
+                value={String($site.corridor)}
+                label={t.site.corridor}
+                min={0}
+                max={MAX_CORRIDOR}
+                width="2em"
+                oncommit={commitCorridor}
+              /></label
+            >
+          </div>
+          <p class="hint">{t.site.sizeHint(SITE_MIN_SIZE, SITE_MAX_SIZE)}</p>
+          <ul class="rows">
+            <li class="row">
+              <button
+                class="link"
+                data-testid="site-arrange"
+                disabled={!$site.groups.length}
+                onclick={() => arrange()}>{t.site.arrange}</button
+              >
+            </li>
+            <li class="row">
+              <button
+                class="link"
+                data-testid="site-optimize"
+                title={t.site.optimizeHint}
+                disabled={!$site.groups.length}
+                onclick={() => arrange(true)}>{t.site.optimize}</button
+              >
+            </li>
+            <li class="row">
+              <button
+                class="link"
+                data-testid="site-neat"
+                title={t.site.neatHint}
+                disabled={!$site.groups.length}
+                onclick={() => neatArrange()}>{t.site.neat}</button
+              >
+            </li>
+            <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
+            <li class="row narrow-only">
+              <button class="link" onclick={onimport}>{t.site.importOpen}</button>
+            </li>
+          </ul>
+        </section>
+      {:else if $templateTab === 'routing'}
+        <section data-testid="site-routing">
+          <h2>{t.site.routing}</h2>
+          <ul class="rows">
+            <SelectRow
+              label={t.site.routingStyle}
+              value={routing.style}
+              options={routingStyles}
+              testid="site-routing-style"
+              onchange={setStyle}
+            />
+            <SelectRow
+              label={t.site.routingDepth}
+              value={String(routing.depth)}
+              options={routingDepths}
+              testid="site-routing-depth"
+              onchange={setDepth}
+            />
+            <SelectRow
+              label={t.site.floor}
+              value={$site.floor ?? ''}
+              options={floorOptions}
+              testid="site-floor"
+              onchange={(v) => updateSite((s) => withFloor(s, v || undefined))}
+            />
+            <ToggleRow
+              on={$xray}
+              label={t.site.undergroundView}
+              title={t.site.undergroundViewHint}
+              testid="site-xray"
+              ontoggle={() => xray.update((v) => !v)}
+            />
+          </ul>
+          <p class="hint">{t.site.routingDepthHint}</p>
+          {#if $site.floor}<p class="hint">{t.site.floorHint}</p>{/if}
+          {#if $siteRouteInfo && depthReduced($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
+            <p class="hint warn" data-testid="site-depth-reduced">
+              {t.site.routingDepthUsed($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
+            </p>
+          {/if}
+          {#if routeStats}
+            <p class="hint" data-testid="site-route-stats">
+              {t.site.routeStats(
+                routeStats.length,
+                routeStats.bends,
+                routeStats.underground.reduce((a, b) => a + b, 0),
+              )}
+            </p>
+            {#if routeStats.underground.length > 1}
+              <p class="hint" data-testid="site-route-levels">
+                {t.site.routeStatsLevels(routeStats.underground)}
+              </p>
+            {/if}
+            {#if routeStats.surfaceTrunk + routeStats.surfaceStub > 0}
+              <p class="hint" data-testid="site-route-surface">
+                {t.site.routeStatsSurface(routeStats.surfaceTrunk, routeStats.surfaceStub)}
+              </p>
+            {/if}
+          {/if}
+          {#if routingState.legacy}
+            <p class="hint" data-testid="site-routing-legacy">{t.site.routingLegacy(routing.depth)}</p>
+            <button
+              class="link active"
+              data-testid="site-use-neat"
+              onclick={() => updateSite((s) => withRouting(s, routingState.neatOffer))}
+              >{t.site.useNeat}</button
+            >
+          {/if}
+        </section>
+      {:else}
+        <section>
+          <h2>{t.view}</h2>
+          <ul class="rows">
+            <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
+            <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
+            <ToggleRow
+              on={$flowAnimation}
+              label={t.site.flow}
+              ontoggle={() => flowAnimation.update((v) => !v)}
+            />
+            <ToggleRow
+              on={$showIcons}
+              label={t.site.icons}
+              testid="site-icons"
+              ontoggle={() => showIcons.update((v) => !v)}
+            />
+          </ul>
+        </section>
+
+        <section>
+          <h2>{t.plan}</h2>
+          <ul class="rows">
+            <li class="row">
+              <button class="link" data-testid="site-share" onclick={() => void copySiteLink()}
+                >{t.shareLink}</button
+              >
+            </li>
+            {#if $siteShareFallback}
+              <li class="row col">
+                <span>{t.linkFallback}</span>
+                <input
+                  class="field url"
+                  readonly
+                  value={$siteShareFallback}
+                  aria-label={t.linkFallback}
+                  onfocus={(e) => e.currentTarget.select()}
+                />
+              </li>
+            {/if}
+            <li class="row"><button class="link" onclick={downloadSite}>{t.downloadJson}</button></li>
+            <li class="row">
+              <button class="link" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
+              <input
+                bind:this={fileInput}
+                class="visually-hidden"
+                type="file"
+                accept="application/json,.json"
+                tabindex="-1"
+                aria-hidden="true"
+                onchange={onfile}
+              />
+            </li>
+            <li class="row">
+              <button class="link" onclick={onreset}>{t.site.reset}</button>
+            </li>
+          </ul>
+        </section>
+      {/if}
+    </div>
   {/if}
 
   {#if $narrow}
     <SiteOutline embedded {onpick} />
   {/if}
-
-  {#if warnings.problems.length || wontForm.length}
-    <section>
-      <h2>{t.site.problems}</h2>
-      <ul class="rows problems" data-testid="site-problem-list">
-        {#each warnings.problems as w, i (i)}
-          <li>{t.site.warning(w, groupName, resName)}</li>
-        {/each}
-        {#each wontForm as g (g.id)}
-          <li data-testid="site-wont-form">{t.validity.groupProblem(groupName(g.id), g.n)}</li>
-        {/each}
-      </ul>
-    </section>
-  {/if}
-
-  {#if notes.length || warnings.info.length}
-    <section>
-      <h2>{t.site.notes}</h2>
-      <ul class="rows problems info" data-testid="site-note-list">
-        {#each notes as n, i (i)}
-          <li>{t.site.note(n, groupName, resName)}</li>
-        {/each}
-        {#each warnings.info as w, i (i)}
-          <li>{t.site.warning(w, groupName, resName)}</li>
-        {/each}
-      </ul>
-    </section>
-  {/if}
-
-  <section>
-    <h2>{t.site.size}</h2>
-    <label class="row">
-      <span>{t.site.name}</span>
-      <input
-        class="field text"
-        type="text"
-        value={$site.name ?? ''}
-        placeholder={t.site.unnamed}
-        aria-label={t.site.name}
-        onchange={(e) => updateSite((s) => withName(s, e.currentTarget.value))}
-      />
-    </label>
-    <div class="fields">
-      <label class="pair"
-        ><span>{t.site.width}</span><NumberStepper
-          value={String($site.size[0])}
-          label={t.site.width}
-          min={SITE_MIN_SIZE}
-          max={SITE_MAX_SIZE}
-          width="2.8em"
-          testid="site-width"
-          oncommit={(v) => commitSize(0, v)}
-        /></label
-      >
-      <label class="pair"
-        ><span>{t.site.depth}</span><NumberStepper
-          value={String($site.size[1])}
-          label={t.site.depth}
-          min={SITE_MIN_SIZE}
-          max={SITE_MAX_SIZE}
-          width="2.8em"
-          testid="site-depth"
-          oncommit={(v) => commitSize(1, v)}
-        /></label
-      >
-      <label class="pair"
-        ><span>{t.site.corridor}</span><NumberStepper
-          value={String($site.corridor)}
-          label={t.site.corridor}
-          min={0}
-          max={MAX_CORRIDOR}
-          width="2em"
-          oncommit={commitCorridor}
-        /></label
-      >
-    </div>
-    <p class="hint">{t.site.sizeHint(SITE_MIN_SIZE, SITE_MAX_SIZE)}</p>
-    <ul class="rows">
-      <li class="row">
-        <button
-          class="link"
-          data-testid="site-arrange"
-          disabled={!$site.groups.length}
-          onclick={() => arrange()}>{t.site.arrange}</button
-        >
-      </li>
-      <li class="row">
-        <button
-          class="link"
-          data-testid="site-optimize"
-          title={t.site.optimizeHint}
-          disabled={!$site.groups.length}
-          onclick={() => arrange(true)}>{t.site.optimize}</button
-        >
-      </li>
-      <li class="row">
-        <button
-          class="link"
-          data-testid="site-neat"
-          title={t.site.neatHint}
-          disabled={!$site.groups.length}
-          onclick={() => neatArrange()}>{t.site.neat}</button
-        >
-      </li>
-      <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
-      <li class="row narrow-only"><button class="link" onclick={onimport}>{t.site.importOpen}</button></li>
-    </ul>
-  </section>
-
-  <section data-testid="site-routing">
-    <h2>{t.site.routing}</h2>
-    <ul class="rows">
-      <SelectRow
-        label={t.site.routingStyle}
-        value={routing.style}
-        options={routingStyles}
-        testid="site-routing-style"
-        onchange={setStyle}
-      />
-      <SelectRow
-        label={t.site.routingDepth}
-        value={String(routing.depth)}
-        options={routingDepths}
-        testid="site-routing-depth"
-        onchange={setDepth}
-      />
-      <SelectRow
-        label={t.site.floor}
-        value={$site.floor ?? ''}
-        options={floorOptions}
-        testid="site-floor"
-        onchange={(v) => updateSite((s) => withFloor(s, v || undefined))}
-      />
-      <ToggleRow
-        on={$xray}
-        label={t.site.undergroundView}
-        title={t.site.undergroundViewHint}
-        testid="site-xray"
-        ontoggle={() => xray.update((v) => !v)}
-      />
-    </ul>
-    <p class="hint">{t.site.routingDepthHint}</p>
-    {#if $site.floor}<p class="hint">{t.site.floorHint}</p>{/if}
-    {#if $siteRouteInfo && depthReduced($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
-      <p class="hint warn" data-testid="site-depth-reduced">
-        {t.site.routingDepthUsed($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
-      </p>
-    {/if}
-    {#if routeStats}
-      <p class="hint" data-testid="site-route-stats">
-        {t.site.routeStats(
-          routeStats.length,
-          routeStats.bends,
-          routeStats.underground.reduce((a, b) => a + b, 0),
-        )}
-      </p>
-      {#if routeStats.underground.length > 1}
-        <p class="hint" data-testid="site-route-levels">{t.site.routeStatsLevels(routeStats.underground)}</p>
-      {/if}
-      {#if routeStats.surfaceTrunk + routeStats.surfaceStub > 0}
-        <p class="hint" data-testid="site-route-surface">
-          {t.site.routeStatsSurface(routeStats.surfaceTrunk, routeStats.surfaceStub)}
-        </p>
-      {/if}
-    {/if}
-    {#if routingState.legacy}
-      <p class="hint" data-testid="site-routing-legacy">{t.site.routingLegacy(routing.depth)}</p>
-      <button
-        class="link active"
-        data-testid="site-use-neat"
-        onclick={() => updateSite((s) => withRouting(s, routingState.neatOffer))}>{t.site.useNeat}</button
-      >
-    {/if}
-  </section>
-
-  <section>
-    <h2>{t.view}</h2>
-    <ul class="rows">
-      <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
-      <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
-      <ToggleRow on={$flowAnimation} label={t.site.flow} ontoggle={() => flowAnimation.update((v) => !v)} />
-      <ToggleRow
-        on={$showIcons}
-        label={t.site.icons}
-        testid="site-icons"
-        ontoggle={() => showIcons.update((v) => !v)}
-      />
-    </ul>
-  </section>
-
-  <section>
-    <h2>{t.plan}</h2>
-    <ul class="rows">
-      <li class="row">
-        <button class="link" data-testid="site-share" onclick={() => void copySiteLink()}
-          >{t.shareLink}</button
-        >
-      </li>
-      {#if $siteShareFallback}
-        <li class="row col">
-          <span>{t.linkFallback}</span>
-          <input
-            class="field url"
-            readonly
-            value={$siteShareFallback}
-            aria-label={t.linkFallback}
-            onfocus={(e) => e.currentTarget.select()}
-          />
-        </li>
-      {/if}
-      <li class="row"><button class="link" onclick={downloadSite}>{t.downloadJson}</button></li>
-      <li class="row">
-        <button class="link" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
-        <input
-          bind:this={fileInput}
-          class="visually-hidden"
-          type="file"
-          accept="application/json,.json"
-          tabindex="-1"
-          aria-hidden="true"
-          onchange={onfile}
-        />
-      </li>
-      <li class="row">
-        <button class="link" onclick={onreset}>{t.site.reset}</button>
-      </li>
-    </ul>
-  </section>
 </aside>
 
 <style>
@@ -408,6 +447,9 @@
   h2 {
     font: inherit;
     margin: 0 0 12px;
+  }
+  .tabbar {
+    margin-top: 24px;
   }
   .rows {
     list-style: none;

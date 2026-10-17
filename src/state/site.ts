@@ -45,6 +45,14 @@ siteLinkDraft.subscribe((on) => {
  */
 export const siteHatch = writable<{ group: string; key: string; cell: Vec3 } | null>(null);
 siteGroup.subscribe((id) => siteHatch.update((h) => (h && h.group !== id ? null : h)));
+export type GroupTab = 'machine' | 'packing' | 'placement';
+/** The tab of the group inspector; kept across selections. */
+export const groupTab = writable<GroupTab>('machine');
+// A hatch picked in the scene is shown on the Machine tab.
+siteHatch.subscribe((h) => h && groupTab.set('machine'));
+export type TemplateTab = 'layout' | 'routing' | 'view';
+/** The tab of the template settings, shown while nothing is selected. */
+export const templateTab = writable<TemplateTab>('layout');
 /** Selected net id (from clicking a pipe): shown in the info line. */
 export const siteNet = writable<number | null>(null);
 /** Resource key whose nets are highlighted; every other net is drawn faded. */

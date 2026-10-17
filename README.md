@@ -90,7 +90,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
 ### Templates
 
 1. Switch to TEMPLATE in the top bar. Use TEMPLATE (top right) to open the template panel. The groups and links list is
-   the outline docked at the left (on narrow screens it is the first block of the template panel); the panel at the right is the inspector.
+   the outline docked at the left (on narrow screens it is the first block of the template panel); the panel at the right is the inspector. With a group selected it shows the group in three tabs: Machine (hatch, machine options, buildability, resources, hatch tiers; the tab shows the number of problems), Packing and Placement, with Duplicate and Remove below. With nothing selected it shows the template: its problems and notes, then the tabs Layout (name, size, ARRANGE / OPTIMIZE / NEAT), Routing and View (view toggles, share link, JSON files, reset). The tab you last used stays when you select another group.
 2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: + ADD in the outline's Groups heading opens a menu
    (Add multiblock, Add single-block machine, Add placeholder; Escape or a click elsewhere closes it, the arrow keys
    move through it). A group that GT would not form shows a badge with its number of problems. + LINK in the Links

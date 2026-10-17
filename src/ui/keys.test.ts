@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_THETA } from '../render/controls';
-import { isTyping, screenStep, siteKeyAction } from './keys';
+import { inTablist, isTyping, screenStep, siteKeyAction } from './keys';
 
 describe('screenStep', () => {
   it('keeps the classic moves in the default view', () => {
@@ -64,5 +64,12 @@ describe('siteKeyAction', () => {
     expect(isTyping(target('DIV', true))).toBe(true);
     expect(isTyping(target('CANVAS'))).toBe(false);
     expect(isTyping({ target: null })).toBe(false);
+  });
+
+  it('leaves keys on a tab list alone', () => {
+    const inside = { closest: (sel: string) => (sel === '[role="tablist"]' ? {} : null) };
+    expect(inTablist({ target: inside as never })).toBe(true);
+    expect(inTablist({ target: { closest: () => null } as never })).toBe(false);
+    expect(inTablist({ target: null })).toBe(false);
   });
 });

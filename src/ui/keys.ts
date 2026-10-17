@@ -40,6 +40,12 @@ export function isTyping(e: Pick<KeyboardEvent, 'target'>): boolean {
   );
 }
 
+/** Whether a key press goes to a tab list (its arrow keys switch tabs), not to the view. */
+export function inTablist(e: Pick<KeyboardEvent, 'target'>): boolean {
+  const el = e.target as HTMLElement | null;
+  return !!el?.closest?.('[role="tablist"]');
+}
+
 /** What a key does in the site view (see `siteKeyAction`). */
 export type SiteKeyAction =
   | { type: 'undo' }

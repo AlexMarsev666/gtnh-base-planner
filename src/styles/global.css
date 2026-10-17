@@ -6,6 +6,8 @@
   /* Decoration only (separators, disabled controls, key-cap borders): never text people must read. */
   --faint: #c8c8c8;
   --line: #ececec;
+  /* Track of a segmented control (Tabs). */
+  --track: #f1f1f1;
   /* Outline of the picked resource (Links, legend). */
   --pick: #e5484d;
   /* Axis names in the Template panel, as on the axis gizmo (darkened to read as small text). */

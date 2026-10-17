@@ -99,7 +99,18 @@ test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
   await expect(panel).toBeVisible();
   await outline.getByTestId('site-group').first().click();
   await expect(panel.getByTestId('site-group-editor')).toBeVisible();
+  // The template's size is in the template settings, which show while nothing is selected.
+  const readWidth = async () => {
+    await panel.getByRole('button', { name: 'Deselect' }).click();
+    await panel.getByTestId('site-template-tabs-layout').click();
+    const w = await panel.getByTestId('site-width').inputValue();
+    await outline.getByTestId('site-group').first().click();
+    await panel.getByTestId('site-group-tabs-placement').click();
+    return w;
+  };
+  await panel.getByTestId('site-group-tabs-placement').click();
   const x = panel.getByTestId('site-group-x');
+  const width = await readWidth();
   const before = Number(await x.inputValue());
   await outline.getByTestId('site-group').first().focus();
   await page.keyboard.press('ArrowRight');
@@ -115,16 +126,21 @@ test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
   await panel.getByTestId('nudge-ArrowLeft').click();
   await expect(x).toHaveValue(String(before + 5));
   // Past the west edge the template grows that way: the group stays inside, everything moves east.
-  const width = Number(await panel.getByTestId('site-width').inputValue());
+  // The nudge, the arrow keys and the undo follow each other at once: no selection changes in between.
+  await outline.getByTestId('site-group').first().focus();
   for (let i = 0; i < 3; i++) await page.keyboard.press('Shift+ArrowLeft');
-  await expect(panel.getByTestId('site-width')).not.toHaveValue(String(width));
+  await expect(page.getByTestId('site-name').locator('xpath=..')).not.toContainText(`${width} ×`);
   expect(Number(await x.inputValue())).toBeGreaterThanOrEqual(0);
   // One undo step (these moves and the nudge just before them follow each other quickly).
   await page.keyboard.press('Control+z');
-  await expect(panel.getByTestId('site-width')).toHaveValue(String(width));
+  expect(await readWidth()).toBe(width);
   await expect(x).toHaveValue(String(before + 6));
   await panel.getByTestId('site-group-rotate').click();
   await page.screenshot({ path: 'e2e/screenshots/site-panel.png' });
+
+  // Arrange, Optimize and the view toggles are template settings: they show once the group is deselected.
+  await panel.getByRole('button', { name: 'Deselect' }).click();
+  await panel.getByTestId('site-template-tabs-layout').click();
 
   // Arrange puts the chain back in order and everything stays connected.
   await panel.getByTestId('site-arrange').click();
@@ -136,6 +152,7 @@ test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
   await expect(stats).toContainText(/(\d+)\/\1 connected/);
 
   // Icons can be switched off: colour swatches only.
+  await panel.getByTestId('site-template-tabs-view').click();
   await panel.getByTestId('site-icons').click();
   await expect(page.getByTestId('site-legend').locator('img')).toHaveCount(0);
   await panel.getByTestId('site-icons').click();
@@ -184,6 +201,7 @@ test('builds a site by hand and switches back to the machine view', async ({ pag
   await expect(page.getByTestId('site-stats')).toContainText('2 groups');
 
   // Its limits can be kept: Arrange and Optimize leave a kept group's packing alone.
+  await panel.getByTestId('site-group-tabs-packing').click();
   const lock = panel.getByTestId('site-lock-limits');
   await expect(lock).toHaveAttribute('aria-pressed', 'false');
   await lock.click();
@@ -302,6 +320,7 @@ test('Neat arranges and routes underground in one undo step', async ({ page }) =
 
   await page.getByTestId('site-panel-toggle').click();
   const panel = page.getByTestId('site-panel');
+  await panel.getByTestId('site-template-tabs-layout').click();
   await panel.getByTestId('site-neat').click();
   await expect(page.getByRole('status').getByRole('button', { name: 'Undo' })).toBeVisible({
     timeout: 60000,
@@ -326,6 +345,7 @@ test('Cancel stops Optimize and leaves the template as it was', async ({ page })
   const before = await savedSite(page);
 
   await page.getByTestId('site-panel-toggle').click();
+  await page.getByTestId('site-panel').getByTestId('site-template-tabs-layout').click();
   await page.getByTestId('site-panel').getByTestId('site-optimize').click();
   await expect(page.getByTestId('arrange-progress')).toBeVisible();
   await page.getByTestId('arrange-cancel').click();

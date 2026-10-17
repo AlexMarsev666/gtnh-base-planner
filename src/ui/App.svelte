@@ -33,7 +33,7 @@
   import { hatchKeyAt, hatchPickHolds, hatchTierRows } from './hatchTierRows';
   import { build, machineBusy, machineDef } from './pipeline';
   import Scene from './Scene.svelte';
-  import { isTyping, siteKeyAction } from './keys';
+  import { inTablist, isTyping, siteKeyAction } from './keys';
   import MoveHint from './MoveHint.svelte';
   import Settings from './Settings.svelte';
   import { updateSite, withGroupPatched } from './siteActions';
@@ -227,7 +227,7 @@
       else if (blocksOpen) blocksOpen = false;
       return;
     }
-    if (!siteMode || importOpen || sitePicker || isTyping(e)) return;
+    if (!siteMode || importOpen || sitePicker || isTyping(e) || inTablist(e)) return;
     // Site view: undo and redo anything, then move and turn the selected group from the keyboard.
     const action = siteKeyAction(e);
     if (!action) return;
