@@ -15,9 +15,10 @@
     "C": { "blockId": "tectech:gt.blockcasingsTT@3" }
   },
   "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15315" },
+  "resize": { "axis": "z", "from": 1, "to": 2, "min": 3, "max": 18, "default": 3, "label": "length" },
   "hatchBlocks": { "energy": "gt.hatch.energy", "dynamo": "gt.hatch.dynamo" },
   "shareableHatches": [],
-  "requiredHatches": { "energy": { "min": 1 }, "dynamo": { "min": 1 } },
+  "requiredHatches": { "energy": { "min": 1 } },
   "defaultHatches": ["energy", "dynamo"],
   "zones": {
     "dot1": {

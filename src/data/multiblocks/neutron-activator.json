@@ -29,6 +29,7 @@
     }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32013" },
+  "resize": { "axis": "y", "from": 1, "to": 2, "min": 6, "max": 256, "default": 6, "label": "height" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "itemOut": "gt.hatch.outputBus",

@@ -220,8 +220,7 @@
     "itemIn": { "min": 1 },
     "fluidIn": { "min": 1 },
     "fluidOut": { "min": 1 },
-    "energy": { "min": 1 },
-    "dynamo": { "min": 1 }
+    "energy": { "min": 1 }
   },
   "minCasings": [{ "chars": ["A"], "min": 470 }],
   "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "dynamo"],

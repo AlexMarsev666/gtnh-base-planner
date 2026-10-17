@@ -6,9 +6,9 @@
   "size": [3, 5, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BBB", "BCB", "BBB"],
-    ["DDD", "DCD", "DDD"],
-    ["BBB", "BCB", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["CCC", "C-C", "CCC"],
+    ["BBB", "B-B", "BBB"],
     ["AAA", "AAA", "AAA"]
   ],
   "legend": {
@@ -18,8 +18,7 @@
       "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings5@0" },
-    "C": { "blockId": "gt.hatch.special" },
-    "D": { "blockId": "miscutils:gtplusplus.blocktieredcasings.1@4" }
+    "C": { "blockId": "miscutils:gtplusplus.blocktieredcasings.1@4" }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31023" },
   "hatchBlocks": {

@@ -5,19 +5,19 @@
   "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/MTEQuantumComputer.java",
   "size": [3, 4, 5],
   "layers": [
-    ["AA ", "BCD", "BCD", "BCD", "AA "],
-    ["A~ ", "EE ", "EE ", "EE ", "AA "],
-    ["AA ", "EE ", "EE ", "EE ", "AA "],
-    ["AA ", "BCD", "BCD", "BCD", "AA "]
+    ["AA ", "BC-", "BC-", "BC-", "AA "],
+    ["A~ ", "DD ", "DD ", "DD ", "AA "],
+    ["AA ", "DD ", "DD ", "DD ", "AA "],
+    ["AA ", "BC-", "BC-", "BC-", "AA "]
   ],
   "legend": {
     "A": { "blockId": "tectech:gt.blockcasingsTT@1", "hatches": ["energy", "maintenance"], "region": "dot1" },
     "B": { "blockId": "tectech:gt.blockcasingsTT@1" },
     "C": { "blockId": "tectech:gt.blockcasingsTT@2" },
-    "D": { "blockId": "gt.hatch.special" },
-    "E": { "blockId": "tectech:gt.blockcasingsTT@3" }
+    "D": { "blockId": "tectech:gt.blockcasingsTT@3" }
   },
   "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15311" },
+  "resize": { "axis": "z", "from": 1, "to": 2, "min": 5, "max": 16, "default": 5, "label": "length" },
   "hatchBlocks": { "energy": "gt.hatch.energy", "maintenance": "gt.hatch.maintenance" },
   "shareableHatches": [],
   "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },

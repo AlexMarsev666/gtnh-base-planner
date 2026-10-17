@@ -16,7 +16,7 @@
   "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15300" },
   "hatchBlocks": { "energy": "gt.hatch.energy", "dynamo": "gt.hatch.dynamo" },
   "shareableHatches": [],
-  "requiredHatches": { "energy": { "min": 1 }, "dynamo": { "min": 0 } },
+  "requiredHatches": { "energy": { "min": 1 } },
   "minCasings": [{ "chars": ["A"], "min": 5 }],
   "defaultHatches": ["energy", "dynamo"],
   "zones": {

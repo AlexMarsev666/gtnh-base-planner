@@ -178,7 +178,7 @@ Each multiblock is one JSON file in [`src/data/multiblocks/`](src/data/multibloc
 | `controller`         | `{ pos, facing, blockId }`; `pos` is the `~` cell, `facing` the front face (local frame).      |
 | `hatchBlocks`        | Block id placed for each hatch kind.                                                           |
 | `shareableHatches`   | Hatch kinds whose single block may serve several controllers (the muffler always may).         |
-| `requiredHatches`    | Optional `{ min, max }` per hatch kind and unit.                                               |
+| `requiredHatches`    | Optional `{ min, max, regions?, perSlab? }` per hatch kind and unit, see below.                |
 | `requiredAny`        | Optional `{ kinds, min }[]`: at least `min` hatches of any of `kinds` (GT's any input/output). |
 | `minCasings`         | Optional `{ chars, min, perSlab? }[]`: at least `min` cells of those legend keys stay casing.  |
 | `coils`              | Optional `{ chars }`: the legend keys of the heating coil (any tier forms; see below).         |
@@ -199,9 +199,13 @@ opening.
 
 **Variable size.** A multiblock that GT builds in several sizes stores its smallest form (`size[axis] === min`)
 with one copy of a repeating slab `[from, to)` along `axis`. A plan's height or length inserts more copies after
-it (`sizedDef` in [`src/model/resize.ts`](src/model/resize.ts)). A slab cell with a `region` gets one numbered
-region per copy (`layer` → `layer1`, `layer2`, …), and `requiredHatches.*.regions` naming it grow to match, so
-the Distillation Tower keeps one output hatch per layer. Never change `default`: plans without a size use it.
+it (`sizedDef` in [`src/model/resize.ts`](src/model/resize.ts)). A slab cell whose `region` a
+`requiredHatches.*.regions` names gets one numbered region per copy (`layer` → `layer1`, `layer2`, …) and the requirement
+grows to match, so the Distillation Tower keeps one output hatch per layer; any other region (the hatch zones of
+generated entries, `dot<N>`) keeps its name in every copy, so its zone covers them all. Generated entries get their
+rule from the dump's forms (see [`tools/game-dump/`](tools/game-dump/README.md)). A requirement of a resizable def may carry `perSlab`: its
+`min` and `max` are the smallest form's and each added slab raises both by `perSlab` (an Advanced Assembly Line's input
+bus per slice; `sizedDef` states them for its own size). Never change `default`: plans without a size use it.
 
 **Casing minimums and hatch groups.** GT refuses to form a multiblock whose structure check fails, so the data
 states two of its checks (read from the controller classes by [`tools/gt-source/casing-min.mjs`](tools/gt-source/README.md)):

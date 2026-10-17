@@ -83,9 +83,10 @@ describe('hatch sides, glass tier limits and data access hatches of the catalog'
   it('keeps the plain grate casing of the first slice of the Advanced Assembly Line free of the data hatch', () => {
     const def = getMultiblock('advanced-assembly-line')!;
     // GT 'G' (ofBlock only) beside the controller is not the data access element 'd': a key of its own.
-    expect(def.layers[2][2]).toBe('EEEEH');
-    expect(def.legend.H).toEqual({ blockId: def.legend.E.blockId });
-    expect(def.legend.E.hatches).toEqual(['dataAccess']);
+    const [data, , , , plain] = [...def.layers[2][2]];
+    expect(def.layers[2][2]).toBe(`${data.repeat(4)}${plain}`);
+    expect(def.legend[plain]).toEqual({ blockId: def.legend[data].blockId });
+    expect(def.legend[data].hatches).toEqual(['dataAccess']);
   });
 
   it('gives both Assembly Lines the same sides per cell (an output bus may face any side on the last slice)', () => {
@@ -97,8 +98,9 @@ describe('hatch sides, glass tier limits and data access hatches of the catalog'
   it('narrows the Dangote Distillus rings to the sides of their own element', () => {
     const def = getMultiblock('dangote-distillus')!;
     // GT 'l' (rings) disallows UP and DOWN, 't' (top) only DOWN; they share a hint dot.
-    expect(def.legend.B.allowFaces?.fluidOut).toEqual(['north', 'south', 'east', 'west']);
-    expect(def.legend.D.allowFaces?.fluidOut).toEqual(['north', 'south', 'east', 'west', 'up']);
+    const faces = (y: number) => def.legend[def.layers[y][0][0]].allowFaces?.fluidOut;
+    expect(faces(1)).toEqual(['north', 'south', 'east', 'west']);
+    expect(faces(def.size[1] - 1)).toEqual(['north', 'south', 'east', 'west', 'up']);
   });
 
   it('lets the top output hatches of the Distillation Tower face down (GT disallowOnly(UP))', () => {

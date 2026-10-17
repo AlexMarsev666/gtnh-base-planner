@@ -6,9 +6,9 @@
   "size": [5, 5, 6],
   "layers": [
     ["AA~AA", "BBBBB", "BBBBB", "BBBBB", "BBBBB", "CCCCC"],
-    ["CDDDC", "EFGFE", "EFFFE", "EFFFE", "EFHFE", "CDDDC"],
-    ["CDFDC", "EGIGE", "EFFFE", "EFFFE", "EHJHE", "CDKDC"],
-    ["CDDDC", "EFGFE", "EFFFE", "EFFFE", "EFHFE", "CDDDC"],
+    ["CDDDC", "E-F-E", "E---E", "E---E", "E-G-E", "CDDDC"],
+    ["CDHDC", "EFIFE", "E---E", "E---E", "EGJGE", "CDKDC"],
+    ["CDDDC", "E-F-E", "E---E", "E---E", "E-G-E", "CDDDC"],
     ["CCCCC", "BELEB", "BEEEB", "BEEEB", "BEMEB", "CCCCC"]
   ],
   "legend": {
@@ -21,9 +21,9 @@
     "C": { "blockId": "gregtech:gt.blockcasings3@10" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "gtnhlanth:tile.casing.shielded_accelerator_glass@0" },
-    "F": { "blockId": "gt.hatch.special" },
-    "G": { "blockId": "gtnhlanth:casing.focus_manipulator@0" },
-    "H": { "blockId": "gtnhlanth:casing.target_receptacle@0" },
+    "F": { "blockId": "gtnhlanth:casing.focus_manipulator@0" },
+    "G": { "blockId": "gtnhlanth:casing.target_receptacle@0" },
+    "H": { "blockId": "gt.hatch.special" },
     "I": { "blockId": "gtnhlanth:casing.focus_holder@0" },
     "J": { "blockId": "gtnhlanth:casing.target_holder@0" },
     "K": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"], "region": "dot5" },

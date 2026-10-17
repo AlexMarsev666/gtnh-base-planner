@@ -25,7 +25,7 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": [],
-  "requiredHatches": { "dynamo": { "min": 1 } },
+  "requiredHatches": {},
   "defaultHatches": ["energy", "dynamo"],
   "zones": {
     "dot1": { "kinds": ["energy", "dynamo"], "text": "Dynamo Hatch: Any Casing\nEnergy Hatch: Any Casing" }

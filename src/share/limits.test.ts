@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { PlanState } from '../model/plan/types';
 import type { SiteState } from '../model/site/types';
 import { LinkTooLargeError, MAX_PLAN_JSON_BYTES, MAX_SITE_JSON_BYTES, PlanFormatError } from './binary';
-import { MAX_COORD, MAX_COUNT, decodePlan, encodePlan, validatePlanState } from './codec';
+import { catalog } from '../data/catalog';
+import { MAX_COORD, MAX_COUNT, MAX_SIZE, decodePlan, encodePlan, validatePlanState } from './codec';
 import { loadStoredPlan, planFromJson, planToJson, saveStoredPlan, type StorageLike } from './persist';
 import { MAX_GROUPS, decodeSite, emptySite, encodeSite, siteFromJson, siteToJson } from './siteCodec';
 import { loadStoredSite, saveStoredSite } from './sitePersist';
@@ -163,3 +164,10 @@ describe('one size limit per form', () => {
 function validateSiteStateJson(site: SiteState): string {
   return JSON.stringify(JSON.parse(siteToJson(site)));
 }
+
+describe('MAX_SIZE', () => {
+  it('admits every size a multiblock can be resized to', () => {
+    for (const def of catalog)
+      if (def.resize) expect(MAX_SIZE, def.id).toBeGreaterThanOrEqual(def.resize.max);
+  });
+});

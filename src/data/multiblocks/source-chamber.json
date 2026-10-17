@@ -6,9 +6,9 @@
   "size": [5, 5, 6],
   "layers": [
     ["AA~AA", "BBCBB", "BBBBB", "BBBBB", "BBBBB", "BBBBB"],
-    ["BDDDB", "DEEED", "DFFFD", "DFFFD", "DEEED", "BDDDB"],
-    ["BDGDB", "DEFED", "DFFFD", "DFFFD", "DEFED", "BDFDB"],
-    ["BDDDB", "DEEED", "DFFFD", "DFFFD", "DEEED", "BDDDB"],
+    ["BDDDB", "DEEED", "D---D", "D---D", "DEEED", "BDDDB"],
+    ["BDFDB", "DE-ED", "D---D", "D---D", "DE-ED", "BDGDB"],
+    ["BDDDB", "DEEED", "D---D", "D---D", "DEEED", "BDDDB"],
     ["BBBBB", "BDDDB", "BDDDB", "BDDDB", "BDDDB", "BBBBB"]
   ],
   "legend": {
@@ -21,8 +21,8 @@
     "C": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"], "region": "dot2" },
     "D": { "blockId": "gtnhlanth:tile.casing.shielded_accelerator_glass@0" },
     "E": { "blockId": "gtnhlanth:casing.electrode@0" },
-    "F": { "blockId": "gt.hatch.special" },
-    "G": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn", "fluidIn"], "region": "dot1" }
+    "F": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn", "fluidIn"], "region": "dot1" },
+    "G": { "blockId": "gt.hatch.special" }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@10506" },
   "hatchBlocks": {

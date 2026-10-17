@@ -40,6 +40,16 @@ node tools/gt-source/machine-types.mjs ../gt5u
 Four catalog entries still come from the old converter, because the game dump cannot build them (their mods are
 not on the dump's dev server): Extreme Entity Crusher, Large Essentia Smeltery, Research Completer and Space
 Elevator. Their GT shapes are in `src/data/gt-shapes.generated.json`, checked by `src/data/gt-structures.test.ts`.
+`shape-complete.mjs` also writes a shape there for a dump cut off at its scratch world's height (the Exo Foundry); see
+[`tools/game-dump/`](../game-dump/README.md).
+
+## Variable sizes and truncated dumps
+
+`resize-derive.mjs` turns the forms of a machine the dump holds in several sizes into `MultiblockDef.resize`
+(`deriveResize`, `withResize`; rules in [`tools/game-dump/`](../game-dump/README.md)). It imports `src/model/resize.ts` as the
+oracle (Node 24 strips the types). `shape-complete.mjs` reads the tooltip's `beginStructureBlock` /
+`beginVariableStructureBlock` size (`structureSize`) and completes a dump cut off at its scratch world's height from the
+controller's piece of the structure definition (`completeFromShape`).
 
 ## Casing minimums and any-input checks
 
@@ -60,7 +70,7 @@ and an entry where that cannot be told apart fails the run. `min` is an `int` ex
 on the tooltip's casing line. `checkHasAnyInput/Output` becomes `requiredAny`, also when it is only called under a
 condition (a per-tier loop). Both follow superclasses (large boilers, XL turbines). A minimum or counter it cannot read
 fails the run with the class list (`--partial` writes the rest), as does a class that calls `checkCasingMin` but gets no
-entry, unless the entry is in `UNWRITTEN` with the reason (Exo Foundry: truncated structure; Nano Forge, PCB Factory:
+entry, unless the entry is in `UNWRITTEN` with the reason (Nano Forge, PCB Factory:
 the check only runs for another tier). It also lists tooltip disagreements and alternatives per structure tier (chosen
 by the tier of the entry's casing, then the tooltip, then the largest the structure meets), and `--write` refreshes
 `src/data/constraints.snapshot.json`. `tools/game-dump/build.mjs` applies the same code to the entries it writes.

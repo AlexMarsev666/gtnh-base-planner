@@ -360,6 +360,7 @@
     "M": { "blockId": "gregtech:gt.blockcasings2@12", "hatches": ["fluidOut"], "region": "dot4" }
   },
   "controller": { "pos": [8, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15516" },
+  "resize": { "axis": "y", "from": 12, "to": 18, "min": 30, "max": 54, "default": 30, "label": "height" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "itemOut": "gt.hatch.outputBus",
@@ -371,7 +372,7 @@
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {
     "fluidIn": { "min": 1 },
-    "fluidOut": { "min": 3, "max": 11 },
+    "fluidOut": { "min": 3, "max": 3, "perSlab": 2 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 }
   },

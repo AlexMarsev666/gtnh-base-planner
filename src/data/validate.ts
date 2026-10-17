@@ -189,6 +189,8 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
     if (!req || !isInt(req.min) || req.min < 0) err(`requiredHatches.${k}.min must be an integer >= 0`);
     if (req?.max !== undefined && (!isInt(req.max) || req.max < (req.min ?? 0)))
       err(`requiredHatches.${k}.max must be an integer >= min`);
+    if (req?.perSlab !== undefined && (!isInt(req.perSlab) || req.perSlab < 1 || def.resize === undefined))
+      err(`requiredHatches.${k}.perSlab must be an integer >= 1 and only on a resizable def`);
     for (const r of req?.regions ?? []) {
       if (!regions.get(r)?.has(k))
         err(`requiredHatches.${k}.regions lists "${r}" but no cell of it allows "${k}"`);

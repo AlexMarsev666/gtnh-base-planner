@@ -54,6 +54,13 @@ export interface HatchRequirement {
    * output hatch on every Distillation Tower layer, or Oil Cracker inputs on a side and in the middle.
    */
   regions?: string[];
+  /**
+   * For a resizable def (see `ResizeRule`): how many more hatches of this kind each repeating slab added by `sizedDef`
+   * needs, an Advanced Assembly Line's input bus per slice. `min` and `max` are those of the stored smallest form;
+   * `sizedDef` states them for its own size (its result has no `perSlab`), growing both by `perSlab` per added slab
+   * (on top of the one per numbered region of `regions`).
+   */
+  perSlab?: number;
 }
 
 /**
@@ -111,8 +118,9 @@ export interface HatchGroupRequirement {
  * How a multiblock grows along one local axis (GT `beginVariableStructureBlock`), e.g. Distillation Tower
  * height or Assembly Line length. The JSON holds the smallest form (`size[axis] === min`), with one copy of
  * the repeating slab `[from, to)`; a size of `n` inserts `(n - min) / (to - from)` more copies right after
- * it (see `sizedDef` in `src/model/resize.ts`). A slab cell with a `region` gets a numbered region per copy
- * (`layer` -> `layer1`, `layer2`, ...), and `requiredHatches.*.regions` naming it expand to match.
+ * it (see `sizedDef` in `src/model/resize.ts`). A slab cell whose `region` a `requiredHatches.*.regions` names gets a numbered
+ * region per copy (`layer` -> `layer1`, `layer2`, ...) and those requirements expand to match; any other region (a hatch
+ * zone) keeps its name in every copy.
  */
 export interface ResizeRule {
   axis: 'x' | 'y' | 'z';

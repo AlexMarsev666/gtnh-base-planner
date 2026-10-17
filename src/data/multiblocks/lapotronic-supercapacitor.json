@@ -20,13 +20,14 @@
     "C": { "blockId": "kekztech:kekztech_lapotronicenergyunit_block@6" }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@13106" },
+  "resize": { "axis": "y", "from": 2, "to": 3, "min": 4, "max": 50, "default": 4, "label": "height" },
   "hatchBlocks": {
     "energy": "gt.hatch.energy",
     "dynamo": "gt.hatch.dynamo",
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": [],
-  "requiredHatches": { "dynamo": { "min": 0 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": { "maintenance": { "min": 1, "max": 1 } },
   "minCasings": [{ "chars": ["A"], "min": 17 }],
   "defaultHatches": ["energy", "dynamo", "maintenance"],
   "zones": {

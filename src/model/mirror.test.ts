@@ -82,13 +82,14 @@ describe('mirroredDef', () => {
     }
   });
 
-  it('has no X-axis resize whose slab carries regions (their copies would be numbered the other way round)', () => {
+  it('has no X-axis resize whose slab carries a region a requirement counts (its copies would be numbered the other way round)', () => {
     for (const def of catalog.filter((d) => d.resize?.axis === 'x')) {
       const { from, to } = def.resize!;
+      const counted = new Set(Object.values(def.requiredHatches ?? {}).flatMap((r) => r?.regions ?? []));
       def.layers.forEach((layer) =>
         layer.forEach((row) =>
           [...row].forEach((ch, x) => {
-            if (x >= from && x < to) expect(def.legend[ch]?.region, def.id).toBeUndefined();
+            if (x >= from && x < to) expect(counted.has(def.legend[ch]?.region ?? ''), def.id).toBe(false);
           }),
         ),
       );
@@ -121,6 +122,12 @@ describe('mirroring per-cell data', () => {
     }
   });
 });
+
+/** The smallest sizes, a middle one and the largest: the expansion is the same code at every size (a tall machine has hundreds of steps). */
+const sampled = (steps: number[]) =>
+  [...new Set([steps[0], steps[1], steps[Math.floor(steps.length / 2)], steps[steps.length - 1]])].filter(
+    (n) => n !== undefined,
+  );
 
 describe('orientedDef', () => {
   const variants = [0, 1, 2, 3] as const;
@@ -181,7 +188,7 @@ describe('orientedDef', () => {
     };
     for (const def of catalog.filter((d) => d.resize))
       for (const v of variants)
-        for (const n of resizeSteps(def.resize!)) {
+        for (const n of sampled(resizeSteps(def.resize!))) {
           const a = orientedDef(sizedDef(def, n), v);
           const b = sizedDef(orientedDef(def, v), n);
           const what = `${def.id} ${v} ${n}`;

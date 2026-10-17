@@ -7,8 +7,8 @@
   "layers": [
     ["A   A", "     ", "     ", "     ", "A   A"],
     ["AA~AA", "ABBBA", "ABBBA", "ABBBA", "AAAAA"],
-    ["ACCCA", "CDDDC", "CDDDC", "CDDDC", "ACCCA"],
-    ["ACCCA", "CDDDC", "CDDDC", "CDDDC", "ACCCA"],
+    ["ACCCA", "C---C", "C---C", "C---C", "ACCCA"],
+    ["ACCCA", "C---C", "C---C", "C---C", "ACCCA"],
     [" AAA ", "AAAAA", "AAAAA", "AAAAA", " AAA "]
   ],
   "legend": {
@@ -18,8 +18,7 @@
       "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings@11" },
-    "C": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "D": { "blockId": "gt.hatch.special" }
+    "C": { "blockId": "bartworks:BW_TieredGlass@0" }
   },
   "controller": { "pos": [2, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@10501" },
   "hatchBlocks": {

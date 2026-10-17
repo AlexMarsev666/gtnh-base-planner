@@ -93,3 +93,43 @@ public class Reactor extends Base {
     expect(out.noMaintenance).toBe(false);
   });
 });
+
+describe('HatchRules.checksOf hand-written list checks', () => {
+  const machine = (body: string) =>
+    checks(
+      {
+        Base: base,
+        Swarm: `package x;
+public class Swarm extends Base {
+    public void checkMachine(IGregTechTileEntity te, ItemStack s, List<StructureError> errors) {
+${body}
+    }
+}`,
+      },
+      'Swarm',
+    );
+
+  it('reads an empty-list error as a minimum for the first modelled list', () => {
+    const out = machine(`
+        if (mDynamoHatches.isEmpty() && eDynamoMulti.isEmpty()) {
+            errors.add(StructureErrors.hatchCount(ErrorType.TOO_FEW, Dynamo, 0, 1));
+        }`);
+    expect(out.kinds.dynamo).toEqual({ min: 1 });
+  });
+
+  it('reads the size forms and the bare return', () => {
+    const out = machine(`
+        if (mInputBusses.size() < 2) return false;
+        if (mOutputHatches.size() == 0) errors.add(MISSING);`);
+    expect(out.kinds.itemIn).toEqual({ min: 2 });
+    expect(out.kinds.fluidOut).toEqual({ min: 1 });
+  });
+
+  it('ignores a check on a config, an || and a list the planner has no kind for', () => {
+    const out = machine(`
+        if (mConfig && mDynamoHatches.isEmpty()) errors.add(X);
+        if (mEnergyHatches.isEmpty() || mDynamoHatches.isEmpty()) errors.add(X);
+        if (eInputData.isEmpty()) errors.add(MISSING_DATA_HATCH);`);
+    expect(out.kinds).toEqual({});
+  });
+});

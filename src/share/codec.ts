@@ -57,7 +57,7 @@ export const MAX_LIMIT = MAX_COUNT;
 export const MAX_COORD = 4096;
 export const MAX_UNIT_ID = 1_000_000;
 /** Largest `size` accepted from input; the multiblock's own `resize.max` clamps it further. */
-export const MAX_SIZE = 64;
+export const MAX_SIZE = 256;
 const DEFAULT_COUNT = 4;
 
 /** Stable order of hatch kinds; the index is the bit used in share links. Append only. */

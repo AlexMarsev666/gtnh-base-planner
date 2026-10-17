@@ -678,3 +678,16 @@ describe('catalog structures match GT5-Unofficial', () => {
       });
   }
 });
+
+describe('generated entries the dump got wrong', () => {
+  it('keeps the Exo Foundry at the 55 layers GT builds (the dump stops at its scratch world height)', () => {
+    const def = catalog.find((d) => d.id === 'exo-foundry')!;
+    expect(def.size).toEqual([15, 55, 15]);
+    expect(def.layers).toHaveLength(55);
+  });
+
+  it('shows the Dangote Distillus ring centre as air (hint 13, nothing placed)', () => {
+    const def = catalog.find((d) => d.id === 'dangote-distillus')!;
+    expect([...def.layers[1][1]][1]).toBe('-');
+  });
+});

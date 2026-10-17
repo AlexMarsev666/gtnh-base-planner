@@ -198,7 +198,10 @@ export class HatchRules {
       const walk = (body) => {
         for (const st of statements(body)) {
           if (st.cond !== undefined) {
-            if (holds(st.cond) === true) walk(st.then);
+            const list = listCheck(st.cond);
+            if (list && /\berrors\.add\s*\(|\breturn\s+false\b/.test(st.then))
+              need(list.kind, list.min, undefined);
+            else if (holds(st.cond) === true) walk(st.then);
             continue;
           }
           const call = /^(super\.)?(?:this\.)?(\w+)\s*\(([\s\S]*)\)$/.exec(st.text.trim());
@@ -287,6 +290,39 @@ const HELPER_KIND = {
   SteamOutputBus: 'itemOut',
   EnergyHatchMaybeExotic: 'energy',
 };
+
+/** The hatch list fields of a controller → planner hatch kind (the lists the planner models). */
+const LIST_KIND = {
+  mDynamoHatches: 'dynamo',
+  mEnergyHatches: 'energy',
+  mInputBusses: 'itemIn',
+  mOutputBusses: 'itemOut',
+  mInputHatches: 'fluidIn',
+  mOutputHatches: 'fluidOut',
+  mMaintenanceHatches: 'maintenance',
+  mMufflerHatches: 'muffler',
+};
+
+/**
+ * A hand-written list check, `mDynamoHatches.isEmpty() && eDynamoMulti.isEmpty()`, `mInputBusses.size() < 2` or
+ * `mEnergyHatches.size() == 0`: the condition under which the structure check fails for want of hatches. `{ kind, min }`
+ * for the first list the planner models (the others are hatches it has no kind for), or null when the condition is
+ * anything else (an `||`, a comparison with another number, a config).
+ */
+export function listCheck(cond) {
+  const terms = cond.split('&&').map((x) => x.trim());
+  const read = (term) => {
+    const m = /^(?:this\.)?(\w+)\.(?:(isEmpty)\(\)|size\(\)\s*(<|==)\s*(\d+))$/.exec(term);
+    if (!m) return null;
+    if (m[2]) return { list: m[1], min: 1 };
+    if (m[3] === '<') return { list: m[1], min: Number(m[4]) };
+    return Number(m[4]) === 0 ? { list: m[1], min: 1 } : null;
+  };
+  const read1 = terms.map(read);
+  if (read1.some((x) => x === null)) return null;
+  const first = read1.find((x) => LIST_KIND[x.list]);
+  return first ? { kind: LIST_KIND[first.list], min: first.min } : null;
+}
 
 /** Records the demand of one structure-check call; false when the call is not one. */
 function checkCall(fn, args, ctx, need, out) {

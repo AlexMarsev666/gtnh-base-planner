@@ -6,9 +6,9 @@
   "size": [7, 6, 7],
   "layers": [
     ["ABB~BBA", "BCCCCCB", "BCCCCCB", "BCCCCCB", "BCCCCCB", "BCCCCCB", "ADDDDDA"],
-    ["AEEEEEA", "BFFFFFB", "GFHHHFG", "GFHHHFG", "GFHHHFG", "BFFFFFB", "ADDDDDA"],
-    ["AEEEEEA", "BFFFFFB", "GFFFFFG", "GFFFFFG", "GFFFFFG", "BFFFFFB", "ABBBBBA"],
-    ["AEEEEEA", "BFFFFFB", "BFFFFFB", "BFFFFFB", "BFFFFFB", "BFFFFFB", "ABBBBBA"],
+    ["AEEEEEA", "B-----B", "F-GGG-F", "F-GGG-F", "F-GGG-F", "B-----B", "ADDDDDA"],
+    ["AEEEEEA", "B-----B", "F-----F", "F-----F", "F-----F", "B-----B", "ABBBBBA"],
+    ["AEEEEEA", "B-----B", "B-----B", "B-----B", "B-----B", "B-----B", "ABBBBBA"],
     ["AAAAAAA", "BEEEEEB", "BEEEEEB", "BBBBBBB", "BBBBBBB", "BBBBBBB", "A     A"],
     ["       ", "A     A", "A     A", "AAAAAAA", "A     A", "A     A", "       "]
   ],
@@ -22,9 +22,8 @@
       "region": "dot1"
     },
     "E": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "F": { "blockId": "gt.hatch.special" },
-    "G": { "blockId": "gregtech:gt.blockcasings3@10" },
-    "H": { "blockId": "gregtech:gt.blockframes@367" }
+    "F": { "blockId": "gregtech:gt.blockcasings3@10" },
+    "G": { "blockId": "gregtech:gt.blockframes@367" }
   },
   "controller": { "pos": [3, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@356" },
   "hatchBlocks": {

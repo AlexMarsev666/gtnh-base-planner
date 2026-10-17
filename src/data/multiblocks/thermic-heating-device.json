@@ -6,11 +6,11 @@
   "size": [5, 6, 5],
   "layers": [
     [" AAA ", "AAAAA", "AAAAA", "AAAAA", " AAA "],
-    [" B~B ", "BCCCB", "BCCCB", "BCCCB", " BBB "],
-    [" BBB ", "BCCCB", "BC-CB", "BCCCB", " BBB "],
-    [" BBB ", "BCCCB", "BC-CB", "BCCCB", " BBB "],
-    [" BBB ", "BCCCB", "BCCCB", "BCCCB", " BBB "],
-    [" DDD ", "DDDDD", "DDDDD", "DDDDD", " DDD "]
+    [" B~B ", "B---B", "B---B", "B---B", " BBB "],
+    [" BBB ", "B---B", "B---B", "B---B", " BBB "],
+    [" BBB ", "B---B", "B---B", "B---B", " BBB "],
+    [" BBB ", "B---B", "B---B", "B---B", " BBB "],
+    [" CCC ", "CCCCC", "CCCCC", "CCCCC", " CCC "]
   ],
   "legend": {
     "A": {
@@ -19,8 +19,7 @@
       "region": "dot1"
     },
     "B": { "blockId": "miscutils:gtplusplus.blockcasings.2@11" },
-    "C": { "blockId": "gt.hatch.special" },
-    "D": {
+    "C": {
       "blockId": "miscutils:gtplusplus.blockcasings.3@2",
       "hatches": ["itemOut", "fluidOut", "energy", "maintenance", "muffler"],
       "region": "dot2"
@@ -46,7 +45,7 @@
     { "kinds": ["itemIn", "fluidIn"], "min": 1 },
     { "kinds": ["itemOut", "fluidOut"], "min": 1 }
   ],
-  "minCasings": [{ "chars": ["A", "D"], "min": 34 }],
+  "minCasings": [{ "chars": ["A", "C"], "min": 34 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
   "zones": {
     "dot1": {

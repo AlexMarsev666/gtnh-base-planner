@@ -13,7 +13,7 @@
     },
     "circuit-assembly-line": {
       "A": { "fluidIn": ["north", "south", "up", "down"], "maintenance": ["north", "south", "up", "down"] },
-      "B": { "itemOut": ["north", "south", "up", "down"] },
+      "B": { "itemIn": ["north", "south", "up", "down"], "itemOut": ["north", "south", "up", "down"] },
       "C": { "itemIn": ["down"] }
     },
     "dangote-distillus": {
@@ -29,7 +29,7 @@
         "energy": ["north", "south", "east", "west"],
         "maintenance": ["north", "south", "east", "west"]
       },
-      "D": { "fluidOut": ["north", "south", "east", "west", "up"] }
+      "C": { "fluidOut": ["north", "south", "east", "west", "up"] }
     },
     "industrial-maceration-stack": {
       "A": {

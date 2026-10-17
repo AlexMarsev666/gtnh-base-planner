@@ -6,12 +6,12 @@
   "size": [3, 8, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
     ["BBB", "BBB", "BBB"]
   ],
   "legend": {
@@ -31,8 +31,7 @@
       "hatches": ["fluidOut", "energy", "maintenance"],
       "allowFaces": { "fluidOut": ["north", "south", "east", "west"] },
       "region": "dot2"
-    },
-    "C": { "blockId": "gt.hatch.special" }
+    }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31035" },
   "hatchBlocks": {

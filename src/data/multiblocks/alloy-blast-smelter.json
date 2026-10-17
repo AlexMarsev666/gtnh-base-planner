@@ -6,8 +6,8 @@
   "size": [3, 4, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
     ["AAA", "AAA", "AAA"]
   ],
   "legend": {
@@ -16,8 +16,7 @@
       "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
       "region": "dot1"
     },
-    "B": { "blockId": "miscutils:miscutils.blockcasings@14" },
-    "C": { "blockId": "gt.hatch.special" }
+    "B": { "blockId": "miscutils:miscutils.blockcasings@14" }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@810" },
   "hatchBlocks": {

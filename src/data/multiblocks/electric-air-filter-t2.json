@@ -6,9 +6,9 @@
   "size": [3, 4, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BCB", "CDC", "BCB"],
-    ["BCB", "CDC", "BCB"],
-    ["EEE", "EEE", "EEE"]
+    ["BCB", "C-C", "BCB"],
+    ["BCB", "C-C", "BCB"],
+    ["DDD", "DDD", "DDD"]
   ],
   "legend": {
     "A": {
@@ -18,8 +18,7 @@
     },
     "B": { "blockId": "gregtech:gt.blockcasingsNH@4" },
     "C": { "blockId": "gregtech:gt.blockcasingsNH@3", "hatches": ["muffler"], "region": "dot2" },
-    "D": { "blockId": "gt.hatch.special" },
-    "E": { "blockId": "gregtech:gt.blockcasingsNH@3" }
+    "D": { "blockId": "gregtech:gt.blockcasingsNH@3" }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@12021" },
   "hatchBlocks": {

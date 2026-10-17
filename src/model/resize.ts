@@ -45,7 +45,9 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
   const copies = 1 + (n - rule.min) / t;
   const extra = (copies - 1) * t;
 
-  // Slab chars with a region get one fresh legend char per copy.
+  // Slab chars whose region a `requiredHatches` entry names get one fresh legend char (and region) per copy; any other
+  // region (a hatch zone) keeps its name in every copy, so `zones` still covers them.
+  const counted = new Set(Object.values(def.requiredHatches ?? {}).flatMap((r) => r?.regions ?? []));
   const legend: Record<string, LegendEntry> = { ...def.legend };
   const used = new Set([...Object.keys(legend), ...RESERVED]);
   let next = 0x21;
@@ -57,7 +59,7 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
   };
   const slabChars = new Set<string>();
   forEachCell(def, (ch, p) => {
-    if (p[a] >= rule.from && p[a] < rule.to && legend[ch]?.region !== undefined) slabChars.add(ch);
+    if (p[a] >= rule.from && p[a] < rule.to && counted.has(legend[ch]?.region ?? '')) slabChars.add(ch);
   });
   /** Per region-carrying slab char: its char in each copy. */
   const perCopy = new Map<string, string[]>();
@@ -104,19 +106,19 @@ function expand(def: MultiblockDef, rule: ResizeRule, n: number): MultiblockDef 
   const pos: [number, number, number] = [...def.controller.pos];
   if (pos[a] >= rule.to) pos[a] += extra;
 
+  // Requirements grow with each added slab: one more per numbered region, and `perSlab` more of the count; the
+  // expanded def states them for its own size (no `perSlab`).
   let requiredHatches = def.requiredHatches;
-  if (requiredHatches && expanded.size > 0) {
+  if (requiredHatches) {
     const req: Partial<Record<string, HatchRequirement>> = {};
     for (const [k, r] of Object.entries(requiredHatches)) {
-      if (!r?.regions?.some((name) => expanded.has(name))) {
-        req[k] = r;
-        continue;
-      }
-      const regions = r.regions.flatMap((name) => expanded.get(name) ?? [name]);
-      const grown = regions.length - r.regions.length;
+      if (!r) continue;
+      const { perSlab, ...rest } = r;
+      const regions = r.regions?.flatMap((name) => expanded.get(name) ?? [name]);
+      const grown = (regions ? regions.length - r.regions!.length : 0) + (perSlab ?? 0) * (copies - 1);
       req[k] = {
-        ...r,
-        regions,
+        ...rest,
+        ...(regions ? { regions } : {}),
         min: r.min + grown,
         ...(r.max !== undefined ? { max: r.max + grown } : {}),
       };

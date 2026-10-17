@@ -3,11 +3,11 @@
   "name": "Circuit Assembly Line",
   "generated": true,
   "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/bartworks/common/tileentities/multis/MTECircuitAssemblyLine.java",
-  "size": [3, 3, 3],
+  "size": [2, 3, 3],
   "layers": [
-    ["AA ", "BC ", "AA "],
-    ["DD ", "EE ", "DD "],
-    ["F~G", "FF ", "FF "]
+    ["AA", "BC", "AA"],
+    ["DD", "EE", "DD"],
+    ["F~", "FF", "FF"]
   ],
   "legend": {
     "A": {
@@ -21,8 +21,11 @@
     },
     "B": {
       "blockId": "gregtech:gt.blockcasings2@0",
-      "hatches": ["itemOut"],
-      "allowFaces": { "itemOut": ["north", "south", "up", "down"] },
+      "hatches": ["itemIn", "itemOut"],
+      "allowFaces": {
+        "itemIn": ["north", "south", "up", "down"],
+        "itemOut": ["north", "south", "up", "down"]
+      },
       "region": "dot2"
     },
     "C": {
@@ -33,10 +36,10 @@
     },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "gregtech:gt.blockcasings2@5" },
-    "F": { "blockId": "gregtech:gt.blockcasings3@10", "hatches": ["energy"], "region": "dot3" },
-    "G": { "blockId": "gt.hatch.energy", "hatches": ["energy"] }
+    "F": { "blockId": "gregtech:gt.blockcasings3@10", "hatches": ["energy"], "region": "dot3" }
   },
   "controller": { "pos": [1, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@12735" },
+  "resize": { "axis": "x", "from": 0, "to": 1, "min": 2, "max": 7, "default": 2, "label": "length" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "itemOut": "gt.hatch.outputBus",
@@ -46,7 +49,7 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": {
-    "itemIn": { "min": 1, "max": 6 },
+    "itemIn": { "min": 1, "max": 1, "perSlab": 1 },
     "itemOut": { "min": 1, "max": 1 },
     "fluidIn": { "min": 1, "max": 1 },
     "energy": { "min": 1, "max": 1 },
@@ -59,7 +62,7 @@
       "text": "1 Maintenance Hatch: Any layer 1 side casing\n1 Input Hatch: Any layer 1 side casing"
     },
     "dot2": {
-      "kinds": ["itemOut"],
+      "kinds": ["itemIn", "itemOut"],
       "text": "1-6 Input Bus: Bottom center of each slice\n1 Output Bus: Bottom center of last slice"
     },
     "dot3": { "kinds": ["energy"], "text": "1 Energy Hatch: Any layer 3 casing" }

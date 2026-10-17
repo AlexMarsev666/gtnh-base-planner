@@ -6,9 +6,9 @@
   "size": [5, 5, 5],
   "layers": [
     ["AA~AA", "ABBBA", "ABBBA", "ABBBA", "AAAAA"],
-    ["ABBBA", "BCCCB", "BCCCB", "BCCCB", "ABBBA"],
-    ["ABBBA", "BCCCB", "BC-CB", "BCCCB", "ABBBA"],
-    ["ABBBA", "BCCCB", "BCCCB", "BCCCB", "ABBBA"],
+    ["ABBBA", "B---B", "B---B", "B---B", "ABBBA"],
+    ["ABBBA", "B---B", "B---B", "B---B", "ABBBA"],
+    ["ABBBA", "B---B", "B---B", "B---B", "ABBBA"],
     ["AAAAA", "ABBBA", "ABBBA", "ABBBA", "AAAAA"]
   ],
   "legend": {
@@ -17,8 +17,7 @@
       "hatches": ["itemIn", "energy", "maintenance"],
       "region": "dot1"
     },
-    "B": { "blockId": "appliedenergistics2:tile.BlockQuartzLamp@0" },
-    "C": { "blockId": "gt.hatch.special" }
+    "B": { "blockId": "appliedenergistics2:tile.BlockQuartzLamp@0" }
   },
   "controller": { "pos": [2, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@14101" },
   "hatchBlocks": {

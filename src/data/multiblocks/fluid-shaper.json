@@ -3,13 +3,13 @@
   "name": "Fluid Shaper",
   "generated": true,
   "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFluidShaper.java",
-  "size": [10, 5, 5],
+  "size": [9, 5, 5],
   "layers": [
-    ["AAAA~AAAA ", "AAAAAAAAA ", "AAAAAAAAA ", "AAAAAAAAA ", "AAAAAAAAA "],
-    ["ABBBABBBA ", "A-------A ", "AC-C-C-CA ", "A-------A ", "ABBBBBBBA "],
-    ["ADDDDDDDA ", "A-------A ", "A-------A ", "A-------A ", "ADDDDDDDA "],
-    ["AAAAAAAAA ", "A-------A ", "AE-E-E-EA ", "A-------A ", "AAAAAAAAA "],
-    ["A       A ", "AAAAAAAAAF", "AAAAAAAAA ", "AAAAAAAAA ", "A       A "]
+    ["AAAA~AAAA", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA"],
+    ["ABBBABBBA", "A-------A", "AC-C-C-CA", "A-------A", "ABBBBBBBA"],
+    ["ADDDDDDDA", "A-------A", "A-------A", "A-------A", "ADDDDDDDA"],
+    ["AAAAAAAAA", "A-------A", "AE-E-E-EA", "A-------A", "AAAAAAAAA"],
+    ["A       A", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA", "A       A"]
   ],
   "legend": {
     "A": {
@@ -20,11 +20,7 @@
     "B": { "blockId": "gregtech:gt.blockcasings10@14" },
     "C": { "blockId": "gregtech:gt.blockcasings@11" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "E": { "blockId": "gregtech:gt.blockcasings4@1" },
-    "F": {
-      "blockId": "gt.hatch.inputBus",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
-    }
+    "E": { "blockId": "gregtech:gt.blockcasings4@1" }
   },
   "controller": { "pos": [4, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@366" },
   "hatchBlocks": {
@@ -35,12 +31,7 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": {
-    "itemOut": { "min": 1 },
-    "fluidIn": { "min": 1 },
-    "energy": { "min": 1 },
-    "maintenance": { "min": 1, "max": 1 }
-  },
+  "requiredHatches": { "itemOut": { "min": 1 }, "fluidIn": { "min": 1 }, "maintenance": { "min": 1 } },
   "minCasings": [{ "chars": ["A"], "min": 91 }],
   "glassTierLimits": { "chars": ["D"], "kinds": ["energy"] },
   "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],

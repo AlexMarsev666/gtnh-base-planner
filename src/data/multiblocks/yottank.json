@@ -20,6 +20,7 @@
     "F": { "blockId": "gregtech:gt.blockframes@305" }
   },
   "controller": { "pos": [2, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32014" },
+  "resize": { "axis": "y", "from": 2, "to": 3, "min": 5, "max": 19, "default": 5, "label": "height" },
   "hatchBlocks": { "fluidIn": "gt.hatch.inputHatch", "fluidOut": "gt.hatch.outputHatch" },
   "shareableHatches": ["fluidIn", "fluidOut"],
   "requiredHatches": { "fluidIn": { "min": 1 }, "fluidOut": { "min": 1 } },

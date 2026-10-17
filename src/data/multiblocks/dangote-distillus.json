@@ -6,8 +6,8 @@
   "size": [3, 3, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BBB", "BCB", "BBB"],
-    ["DDD", "BDD", "DDD"]
+    ["BBB", "B-B", "BBB"],
+    ["CCC", "BCC", "CCC"]
   ],
   "legend": {
     "A": {
@@ -32,8 +32,7 @@
       },
       "region": "dot2"
     },
-    "C": { "blockId": "gt.hatch.special" },
-    "D": {
+    "C": {
       "blockId": "gregtech:gt.blockcasings4@1",
       "hatches": ["fluidOut", "muffler"],
       "allowFaces": { "fluidOut": ["north", "south", "east", "west", "up"] },
@@ -41,6 +40,7 @@
     }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31021" },
+  "resize": { "axis": "y", "from": 1, "to": 2, "min": 3, "max": 12, "default": 3, "label": "height" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "itemOut": "gt.hatch.outputBus",
@@ -53,12 +53,12 @@
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {
     "fluidIn": { "min": 1 },
-    "fluidOut": { "min": 2, "max": 11 },
+    "fluidOut": { "min": 2, "max": 2, "perSlab": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
-  "minCasings": [{ "chars": ["A", "B", "D"], "min": 7 }],
+  "minCasings": [{ "chars": ["A", "B", "C"], "min": 7 }],
   "defaultHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
   "zones": {
     "dot1": {

@@ -27,6 +27,7 @@
     "E": { "blockId": "kekztech:kekztech_tfftstoragefield_block@1" }
   },
   "controller": { "pos": [2, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@13104" },
+  "resize": { "axis": "z", "from": 1, "to": 2, "min": 5, "max": 15, "default": 5, "label": "length" },
   "hatchBlocks": {
     "fluidIn": "gt.hatch.inputHatch",
     "fluidOut": "gt.hatch.outputHatch",

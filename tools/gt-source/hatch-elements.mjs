@@ -211,7 +211,7 @@ export function elementCalls(rules, sourceClass) {
 
 /**
  * Dot → the hatch elements that carry it (`Map<number, Set<string>[]>`, one kind set per distinct element; tooltip
- * dot numbering), plus `from`, the class the elements were read in.
+ * dot numbering; each set has a `foreign` property, see below), plus `from`, the class the elements were read in.
  */
 export function elementKinds(rules, sourceClass) {
   const out = new Map();
@@ -219,6 +219,11 @@ export function elementKinds(rules, sourceClass) {
   for (const { expr } of calls) {
     const { dot, kinds } = readElement(expr, ctx);
     if (dot === null || !kinds.size) continue;
+    // A chain member that names a dot of its own (the muffler on the Dangote Distillus's rings, dot 3) is counted in
+    // the chain's kinds; `kinds.foreign` holds the kinds only such members bring.
+    const members = chainMembers(expr)?.map((m) => readElement(m, ctx)) ?? [];
+    const here = members.filter((p) => p.dot === null || p.dot === dot).flatMap((p) => [...p.kinds]);
+    kinds.foreign = new Set([...kinds].filter((k) => members.length && !here.includes(k)));
     const sets = out.get(dot) ?? [];
     if (!sets.some((x) => x.size === kinds.size && [...kinds].every((k) => x.has(k)))) sets.push(kinds);
     out.set(dot, sets);

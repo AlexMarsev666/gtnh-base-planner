@@ -16,7 +16,7 @@
  *     name that is a field without an initialiser is the machine's size (`mHeight`, `width`, `mLength`): the minimum
  *     then grows with it. The value at the smallest size is the lower bound of the casing's tooltip line
  *     (`addCasing("16-79", ...)`, `addCasingInfoRange`), which must be the formula at a whole size, and `perSlab`
- *     is the formula's coefficient (a repeating slab adds one to the size, as in `beginVariableStructureBlock`).
+ *     is the formula's coefficient times the slab's width (the size is counted in cells, as in `beginVariableStructureBlock`).
  *     Alternatives (`cond ? a : b`, one `checkCasingMin` per structure tier) give the largest one the structure
  *     can meet; those are listed so they can be looked at.
  *   - the counter's blocks: `onElementPass(x -> ++x.counter, <element>)` names them (`ofBlock(field, meta)`,
@@ -907,8 +907,6 @@ export function constraintsOf(def, sourceClass, rules, blocks, names) {
  * is an error of the tool (src/data/constraints.test.ts checks the list against the catalog).
  */
 export const UNWRITTEN = {
-  'exo-foundry':
-    'the stored structure is truncated (15x47x15, GT builds 15x55x15), so the minimum of 462 cells cannot be met',
   'nano-forge': 'the check only runs for the tier 4 structure, the stored entry is another tier',
   'pcb-factory': 'the check only runs for the tier 3 structure, the stored entry is another tier',
 };
@@ -994,12 +992,11 @@ function readCall(k, def, ctx, blocks, names, legendIds, notes) {
     if ((lo - variable.c) % slope !== 0) throw new Error(`tooltip ${lo} is not ${k.min} at a whole size`);
     const entry = { chars, ids, min: lo };
     if (def.resize) {
-      const slabs = (def.resize.max - def.resize.min) / (def.resize.to - def.resize.from);
-      entry.perSlab = slope;
-      if (hi !== Infinity && lo + slope * slabs !== hi)
-        notes.push(
-          `${def.id}: tooltip says ${lo}-${hi}, the formula gives ${lo + slope * slabs} at the largest size`,
-        );
+      // The formula grows with the size (one cell of it per slab layer), a slab is `to - from` of them.
+      entry.perSlab = slope * (def.resize.to - def.resize.from);
+      const atMax = lo + slope * (def.resize.max - def.resize.min);
+      if (hi !== Infinity && atMax !== hi)
+        notes.push(`${def.id}: tooltip says ${lo}-${hi}, the formula gives ${atMax} at the largest size`);
     }
     return { ...entry, always: k.always, cands };
   }

@@ -6,9 +6,9 @@
   "size": [7, 4, 7],
   "layers": [
     ["AAA~AAA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "AAAAAAA"],
-    ["CCCCCCC", "CDDDDDC", "CDDDDDC", "CDDDDDC", "CDDDDDC", "CDDDDDC", "CCCCCCC"],
-    ["CCCCCCC", "CDDDDDC", "CDDDDDC", "CDDDDDC", "CDDDDDC", "CDDDDDC", "CCCCCCC"],
-    ["AAAAAAA", "ABBBBBA", "ABEEEBA", "ABEEEBA", "ABEEEBA", "ABBBBBA", "AAAAAAA"]
+    ["CCCCCCC", "C-----C", "C-----C", "C-----C", "C-----C", "C-----C", "CCCCCCC"],
+    ["CCCCCCC", "C-----C", "C-----C", "C-----C", "C-----C", "C-----C", "CCCCCCC"],
+    ["AAAAAAA", "ABBBBBA", "ABDDDBA", "ABDDDBA", "ABDDDBA", "ABBBBBA", "AAAAAAA"]
   ],
   "legend": {
     "A": {
@@ -18,8 +18,7 @@
     },
     "B": { "blockId": "miscutils:miscutils.blockcasings@12" },
     "C": { "blockId": "miscutils:miscutils.blockcasings@13" },
-    "D": { "blockId": "gt.hatch.special" },
-    "E": { "blockId": "miscutils:miscutils.blockcasings@12", "hatches": ["muffler"], "region": "dot2" }
+    "D": { "blockId": "miscutils:miscutils.blockcasings@12", "hatches": ["muffler"], "region": "dot2" }
   },
   "controller": { "pos": [3, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@751" },
   "hatchBlocks": {
@@ -37,7 +36,7 @@
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 4, "max": 4 }
   },
-  "minCasings": [{ "chars": ["A", "E"], "min": 27 }],
+  "minCasings": [{ "chars": ["A", "D"], "min": 27 }],
   "defaultHatches": ["fluidIn", "fluidOut", "dynamo", "maintenance", "muffler"],
   "zones": {
     "dot1": {

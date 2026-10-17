@@ -6,9 +6,9 @@
   "size": [7, 4, 7],
   "layers": [
     [" AA~AA ", "ABBBBBA", "ABCCCBA", "ABCCCBA", "ABCCCBA", "ABBBBBA", " AAAAA "],
-    [" ADDDA ", "ADEEEDA", "DEEEEED", "DEEEEED", "DEEEEED", "ADEEEDA", " ADDDA "],
-    ["  AAA  ", " AEEEA ", "AEEEEEA", "AEE EEA", "AEEEEEA", " AEEEA ", "  AAA  "],
-    ["       ", " AAAAA ", " AEEEA ", " AE EA ", " AEEEA ", " AAAAA ", "       "]
+    [" ADDDA ", "AD---DA", "D-----D", "D-----D", "D-----D", "AD---DA", " ADDDA "],
+    ["  AAA  ", " A---A ", "A-----A", "A-----A", "A-----A", " A---A ", "  AAA  "],
+    ["       ", " AAAAA ", " A---A ", " A---A ", " A---A ", " AAAAA ", "       "]
   ],
   "legend": {
     "A": {
@@ -18,8 +18,7 @@
     },
     "B": { "blockId": "gregtech:gt.blockcasings@11" },
     "C": { "blockId": "gregtech:gt.blockcasings4@1" },
-    "D": { "blockId": "gregtech:gt.blockcasings5@0" },
-    "E": { "blockId": "gt.hatch.special" }
+    "D": { "blockId": "gregtech:gt.blockcasings5@0" }
   },
   "controller": { "pos": [3, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@10500" },
   "hatchBlocks": {
