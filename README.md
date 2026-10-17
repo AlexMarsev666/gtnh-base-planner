@@ -91,8 +91,13 @@ The planner checks layout rules for the transcribed structure only. It is not a 
 
 1. Switch to TEMPLATE in the top bar. Use TEMPLATE (top right) to open the template panel. The groups and links list is
    the outline docked at the left (on narrow screens it is the first block of the template panel); the panel at the right is the inspector.
-2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: ADD MULTIBLOCK, then ADD LINK with a start
-   (a group or TEMPLATE INPUT), an end (a group or TEMPLATE OUTPUT) and a resource. In the single-machine view, SETTINGS →
+2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: + ADD in the outline's Groups heading opens a menu
+   (Add multiblock, Add single-block machine, Add placeholder; Escape or a click elsewhere closes it, the arrow keys
+   move through it). A group that GT would not form shows a badge with its number of problems. + LINK in the Links
+   heading opens the new link form at the top of the panel, with a start (a group or TEMPLATE INPUT), an end (a group
+   or TEMPLATE OUTPUT) and a resource; the link you add is selected. Click a link in the outline to select it: its
+   resource is isolated (the other nets fade) and the panel shows the link with its colour, a Remove link button, and
+   its ends and rate; click it again, or press Escape, to let go. In the single-machine view, SETTINGS →
    ADD TO TEMPLATE copies the current plan into the template as a group.
 3. ARRANGE lays the groups out west to east along the flow, turning each so its input hatches face upstream and its output
    hatches downstream (OPTIMIZE turns groups too, by where their hatches are). NEAT does that and switches to neat routing, at least
@@ -148,7 +153,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    whose voltage does not match the tier a machine takes, or a transformer GT does not make, is reported under
    PROBLEMS. PROBLEMS lists what could not be met; Notes
    lists what the build did on its own (spread resources, a wall-sharing fallback) and is not a problem.
-4. Click a pipe or a legend entry to highlight one resource; the other nets fade. The bottom line shows the
+4. Click a pipe, a legend entry or a link in the outline to highlight one resource; the other nets fade. The bottom line shows the
    selected group or net, and PROBLEMS lists overlaps, groups outside the template, hatches that did not fit and
    pipes that could not be routed.
 

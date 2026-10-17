@@ -4,9 +4,20 @@
   import { t } from '../i18n/en';
   import { MAX_CORRIDOR, SITE_MAX_SIZE, SITE_MIN_SIZE } from '../share/siteCodec';
   import { ROUTING_STYLES } from '../model/site/types';
-  import { flowAnimation, showIcons, site, siteCables, siteGroup, sitePipes } from '../state/site';
+  import {
+    flowAnimation,
+    showIcons,
+    site,
+    siteCables,
+    siteGroup,
+    siteLink,
+    siteLinkDraft,
+    sitePipes,
+  } from '../state/site';
   import { connectBelow, xray } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
+  import LinkForm from './LinkForm.svelte';
+  import LinkInspector from './LinkInspector.svelte';
   import { notify } from './notices';
   import { narrow } from './narrow';
   import NumberStepper from './NumberStepper.svelte';
@@ -28,7 +39,7 @@
   import SiteOutline from './SiteOutline.svelte';
   import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
   import ToggleRow from './ToggleRow.svelte';
-  import { errorCount, groupValidity } from './validityText';
+  import { groupErrorCount } from './validityText';
 
   interface Props {
     onclose: () => void;
@@ -41,6 +52,7 @@
   const build = $derived($siteBuild.build);
   const selected = $derived($site.groups.find((g) => g.id === $siteGroup) ?? null);
   const placed = $derived(build?.groups.find((g) => g.group.id === $siteGroup));
+  const selectedLink = $derived($site.links.find((l) => l.id === $siteLink) ?? null);
 
   const groupName = (id: string) => siteGroupName($site, id);
   const resName = (key: string) => siteResName($site, key);
@@ -49,9 +61,7 @@
   const notes = $derived(build?.notes ?? []);
   /** Groups GT would not form, with their number of problems. */
   const wontForm = $derived(
-    (build?.groups ?? [])
-      .map((g) => ({ id: g.group.id, n: errorCount(groupValidity(g)) }))
-      .filter((g) => g.n > 0),
+    (build?.groups ?? []).map((g) => ({ id: g.group.id, n: groupErrorCount(g) })).filter((g) => g.n > 0),
   );
 
   const routingState = $derived(routingView($site, $connectBelow));
@@ -72,10 +82,11 @@
   ];
   const routeStats = $derived($siteRouteInfo?.routeStats);
 
-  // The inspector is at the top: bring it into view when a group gets selected (from the scene too).
+  // The inspector is at the top: bring it into view when a group or link gets selected (from the scene too).
   let drawer = $state<HTMLElement>();
   $effect(() => {
-    if ($siteGroup && drawer) drawer.scrollTo({ top: 0, behavior: 'smooth' });
+    if (($siteGroup || $siteLink || $siteLinkDraft) && drawer)
+      drawer.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // Numeric fields
@@ -121,6 +132,10 @@
 
   {#if selected}
     <GroupInspector group={selected} {placed} onreplace={() => onpick('change')} />
+  {:else if selectedLink}
+    <LinkInspector link={selectedLink} />
+  {:else if $siteLinkDraft}
+    <LinkForm />
   {/if}
 
   {#if $narrow}

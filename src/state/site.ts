@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { Vec3 } from '../model/core/types';
 import type { SiteState } from '../model/site/types';
 import { emptySite } from '../share/siteCodec';
@@ -18,6 +18,28 @@ export const sitePort = writable<string | null>(null);
 siteGroup.subscribe((id) => id !== null && sitePort.set(null));
 sitePort.subscribe((id) => id !== null && siteGroup.set(null));
 /**
+ * Selected link id (from the outline): its resource is isolated and the inspector shows the link. Never
+ * together with a group or a port.
+ */
+export const siteLink = writable<string | null>(null);
+/** The inspector shows the form for a new link; it ends when anything gets selected. */
+export const siteLinkDraft = writable(false);
+siteGroup.subscribe((id) => id !== null && siteLink.set(null));
+sitePort.subscribe((id) => id !== null && siteLink.set(null));
+siteLink.subscribe((id) => {
+  if (id === null) return;
+  siteGroup.set(null);
+  sitePort.set(null);
+});
+for (const selection of [siteGroup, sitePort, siteLink])
+  selection.subscribe((id) => id !== null && siteLinkDraft.set(false));
+siteLinkDraft.subscribe((on) => {
+  if (!on) return;
+  siteGroup.set(null);
+  sitePort.set(null);
+  siteLink.set(null);
+});
+/**
  * The hatch picked in the 3D view: its `SiteGroup.hatchTiers` key (see `groupHatchKeys`) in the selected group.
  * Shown in the group editor and highlighted; it never outlives the selection of its group.
  */
@@ -27,6 +49,20 @@ siteGroup.subscribe((id) => siteHatch.update((h) => (h && h.group !== id ? null 
 export const siteNet = writable<number | null>(null);
 /** Resource key whose nets are highlighted; every other net is drawn faded. */
 export const isolate = writable<string | null>(null);
+// Selecting a link isolates its resource; deselecting it ends that, unless something else is isolated by now.
+let linkIsolated: string | null = null;
+siteLink.subscribe((id) => {
+  const res = id === null ? null : (get(site).links.find((l) => l.id === id)?.resource ?? null);
+  if (res !== null) isolate.set(res);
+  else if (linkIsolated !== null && get(isolate) === linkIsolated) isolate.set(null);
+  linkIsolated = res;
+});
+// Nothing stays selected in the link list or its form when the Template view is left.
+appMode.subscribe((mode) => {
+  if (mode === 'site') return;
+  siteLink.set(null);
+  siteLinkDraft.set(false);
+});
 export const sitePipes = writable(true);
 export const siteCables = writable(true);
 export const flowAnimation = writable(true);

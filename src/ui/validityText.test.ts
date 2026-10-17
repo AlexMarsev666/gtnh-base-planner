@@ -5,7 +5,14 @@ import { GROUP_STRIDE } from '../model/site/ids';
 import type { ValidityProblem } from '../model/validity';
 import { statsParts } from './statsText';
 import type { PipelineResult } from './pipeline';
-import { casingNames, errorCount, glassChoices, groupValidity, validityLines } from './validityText';
+import {
+  casingNames,
+  errorCount,
+  glassChoices,
+  groupErrorCount,
+  groupValidity,
+  validityLines,
+} from './validityText';
 
 const def = {
   legend: {
@@ -101,6 +108,20 @@ describe('validity text', () => {
     expect(joined[2 * GROUP_STRIDE]).toEqual([own, glass]);
     expect(joined[2 * GROUP_STRIDE + 1]).toEqual([glass]);
     expect(groupValidity({ index: 0 })).toEqual({});
+  });
+
+  it('counts the errors that keep a placed group from forming', () => {
+    const glass = err({ type: 'glassTier', kind: 'energy', hatchTier: 'IV', glassTier: 'HV' });
+    const own = err({ type: 'missingEnergy', have: 0, min: 1 });
+    expect(groupErrorCount(undefined)).toBe(0);
+    expect(groupErrorCount({ index: 1 })).toBe(0);
+    expect(
+      groupErrorCount({
+        index: 1,
+        build: { validity: { 0: [own], 1: [own, { ...own, severity: 'hint' }] } } as never,
+        glassValidity: { [GROUP_STRIDE]: [glass] },
+      }),
+    ).toBe(3);
   });
 
   it('offers the drawn glass tier first, then the tiers', () => {

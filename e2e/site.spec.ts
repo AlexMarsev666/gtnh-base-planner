@@ -174,6 +174,7 @@ test('builds a site by hand and switches back to the machine view', async ({ pag
   await page.getByTestId('site-panel-toggle').click();
   const panel = page.getByTestId('site-panel');
   const outline = page.getByTestId('site-outline');
+  await outline.getByTestId('site-add-menu').click();
   await outline.getByTestId('site-add-group').click();
   await page
     .getByTestId('picker')
@@ -191,14 +192,30 @@ test('builds a site by hand and switches back to the machine view', async ({ pag
   await expect(lock).toHaveAttribute('aria-pressed', 'false');
 
   // A link from a site input to the furnace, with a new resource.
+  // The form is in the inspector (the panel), opened from the outline.
   await outline.getByTestId('site-link-open').click();
-  const form = outline.getByTestId('site-link-form');
+  const form = panel.getByTestId('site-link-form');
   await form.getByLabel('From').selectOption({ label: 'Template input' });
   await form.getByLabel('To').selectOption({ label: 'Electric Blast Furnace' });
   await form.getByLabel('Resource name').fill('Iron Dust');
-  await outline.getByTestId('site-add-link').click();
+  await form.getByTestId('site-add-link').click();
   await expect(page.getByTestId('site-legend')).toContainText('Iron Dust');
   await expect(page.getByTestId('site-stats')).toContainText('2/2 connected');
+  // The new link is selected: the inspector shows it and its resource is isolated.
+  await expect(form).toBeHidden();
+  await expect(panel.getByTestId('site-link-inspector')).toContainText('Iron Dust');
+  await expect(page.getByTestId('site-legend').getByRole('button', { name: /Iron Dust/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  // Clicking the selected link row again deselects it and ends the isolation.
+  await outline.getByTestId('site-link').getByRole('button').first().click();
+  await expect(panel.getByTestId('site-link-inspector')).toBeHidden();
+  await expect(page.getByTestId('site-legend').getByRole('button', { name: /Iron Dust/ })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await outline.getByTestId('site-group').filter({ hasText: 'Electric Blast Furnace' }).click();
 
   // Removing a group is undone from its notice (the furnace is still selected since it was added).
   await panel.getByTestId('site-group-remove').click();

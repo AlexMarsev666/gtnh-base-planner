@@ -30,7 +30,7 @@ import {
   SITE_MIN_SIZE,
   emptySite,
 } from '../share/siteCodec';
-import { isolate, site, siteGroup, siteNet } from '../state/site';
+import { isolate, site, siteGroup, siteLink, siteLinkDraft, siteNet } from '../state/site';
 import { clampCount } from './fields';
 import { forgetPipes } from './sitePipeline';
 
@@ -498,6 +498,8 @@ export function withName(s: SiteState, name: string): SiteState {
 
 const clearSelection = () => {
   siteGroup.set(null);
+  siteLink.set(null);
+  siteLinkDraft.set(false);
   siteNet.set(null);
   isolate.set(null);
 };

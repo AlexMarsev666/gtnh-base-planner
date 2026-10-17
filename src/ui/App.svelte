@@ -10,6 +10,8 @@
     site,
     siteGroup,
     siteHatch,
+    siteLink,
+    siteLinkDraft,
     siteNet,
     sitePort,
   } from '../state/site';
@@ -114,6 +116,14 @@
     if (h && groups && !groupPickHolds(groups, h)) siteHatch.set(null);
   });
 
+  // A removed link (or an undo that takes it away) cannot stay selected.
+  // One that stays follows its resource (an undo can change it).
+  const linkResource = $derived($site.links.find((l) => l.id === $siteLink)?.resource ?? null);
+  $effect(() => {
+    if ($siteLink && linkResource === null) siteLink.set(null);
+    else if (linkResource !== null) isolate.set(linkResource);
+  });
+
   function onpick(ids: number[]) {
     if (!siteMode) {
       selectedUnits.set(ids);
@@ -130,6 +140,8 @@
     else {
       siteGroup.set(null);
       sitePort.set(null);
+      siteLink.set(null);
+      siteLinkDraft.set(false);
     }
   }
 
@@ -167,6 +179,9 @@
 
   function onpicknet(id: number | null) {
     if (!siteMode) return;
+    // A picked net replaces a selected link (and its isolation, set below).
+    siteLinkDraft.set(false);
+    siteLink.set(null);
     siteNet.set(id);
     const n = id === null ? undefined : $siteBuildInView.build?.nets.find((x) => x.id === id);
     isolate.set(n?.resource ?? null);
@@ -196,6 +211,8 @@
         if (importOpen) importOpen = false;
         else if (sitePicker) sitePicker = null;
         else if ($siteHatch) siteHatch.set(null);
+        else if ($siteLinkDraft) siteLinkDraft.set(false);
+        else if ($siteLink) siteLink.set(null);
         else if (sitePanelOpen) sitePanelOpen = false;
         else if (blocksOpen) blocksOpen = false;
         else {

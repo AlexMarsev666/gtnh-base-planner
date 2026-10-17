@@ -72,6 +72,13 @@ export function groupValidity(placed: Pick<PlacedGroup, 'build' | 'index' | 'gla
   return out;
 }
 
+/** How many problems keep GT from forming a placed group (0 when it forms, or is not built yet). */
+export function groupErrorCount(
+  placed: Pick<PlacedGroup, 'build' | 'index' | 'glassValidity'> | undefined,
+): number {
+  return placed ? errorCount(groupValidity(placed)) : 0;
+}
+
 /**
  * Choices of the heating coil picker: the coil the machine draws (empty value) and every coil of the table, weakest
  * first. `def` is the catalog def, not one with a coil chosen.
