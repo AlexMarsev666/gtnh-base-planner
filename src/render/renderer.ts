@@ -50,7 +50,7 @@ export interface Renderer {
    * Pixels of the canvas covered on the left (the outline), the right and at the bottom (a drawer or
    * sheet): the view is shifted so the scene centres in the part left free.
    */
-  setInset(left: number, right: number, bottom: number): void;
+  setInset(left: number, right: number, bottom: number, top: number): void;
   resize(): void;
   dispose(): void;
 }
@@ -435,7 +435,7 @@ export function createRenderer(
   let reportedTheta = NaN;
   let width = 0;
   let height = 0;
-  let inset = { left: 0, right: 0, bottom: 0 };
+  let inset = { left: 0, right: 0, bottom: 0, top: 0 };
   let dragEnabled = false;
   /** A drag of the selection: the ground plane at the grabbed height, where it was grabbed, the offset. */
   let drag: { plane: THREE.Plane; start: THREE.Vector3; dx: number; dz: number } | null = null;
@@ -599,7 +599,7 @@ export function createRenderer(
   function visibleView(): { fov: number; aspect: number } {
     if (width === 0 || height === 0) return { fov: camera.fov, aspect: camera.aspect };
     const w = Math.max(1, width - inset.left - inset.right);
-    const h = Math.max(1, height - inset.bottom);
+    const h = Math.max(1, height - inset.top - inset.bottom);
     const half = THREE.MathUtils.degToRad(camera.fov) / 2;
     const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(half) * (h / height)));
     return { fov, aspect: w / h };
@@ -1279,8 +1279,15 @@ export function createRenderer(
 
   function applyInset(): void {
     // Shift the view window so the scene centres in the uncovered part of the canvas.
-    if (inset.left > 0 || inset.right > 0 || inset.bottom > 0)
-      camera.setViewOffset(width, height, (inset.right - inset.left) / 2, inset.bottom / 2, width, height);
+    if (inset.left > 0 || inset.right > 0 || inset.bottom > 0 || inset.top > 0)
+      camera.setViewOffset(
+        width,
+        height,
+        (inset.right - inset.left) / 2,
+        (inset.bottom - inset.top) / 2,
+        width,
+        height,
+      );
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
   }
@@ -1416,13 +1423,20 @@ export function createRenderer(
       controls.update();
     },
 
-    setInset(left, right, bottom) {
+    setInset(left, right, bottom, top) {
       const next = {
         left: Math.max(0, Math.round(left)),
         right: Math.max(0, Math.round(right)),
         bottom: Math.max(0, Math.round(bottom)),
+        top: Math.max(0, Math.round(top)),
       };
-      if (next.left === inset.left && next.right === inset.right && next.bottom === inset.bottom) return;
+      if (
+        next.left === inset.left &&
+        next.right === inset.right &&
+        next.bottom === inset.bottom &&
+        next.top === inset.top
+      )
+        return;
       inset = next;
       if (width > 0 && height > 0) applyInset();
       labelView = '';

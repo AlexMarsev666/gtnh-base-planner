@@ -49,8 +49,8 @@ export const t = {
 
   // Top bar
   countLabel: 'Number of multiblocks',
-  decrease: 'Fewer multiblocks',
-  increase: 'More multiblocks',
+  countShort: 'Units',
+  sceneToolbar: 'Scene tools',
   minus: '−',
   plus: '+',
   settings: 'Settings',
@@ -124,11 +124,11 @@ export const t = {
   hatchTiersEmpty: 'No hatches to set.',
   notAllowed: '(not allowed)',
   resetHatchTiers: 'Reset hatch tiers',
-  view: 'View',
   pipes: 'Pipes',
   cables: 'Cables',
   xray: 'X-ray',
-  plan: 'Plan',
+  shareMenu: 'Share',
+  shareMenuLabel: 'Share and files',
   shareLink: 'Copy share link',
   linkCopied: 'Link copied.',
   linkCopiedLong:
@@ -137,7 +137,7 @@ export const t = {
   linkFailed: 'Could not create a link.',
   planTooLargeForLink: 'This plan is too large for a link. Download the JSON file instead.',
   downloadJson: 'Download JSON',
-  uploadJson: 'Open JSON',
+  uploadJson: 'Open JSON…',
   jsonLoaded: 'Plan opened.',
   jsonFailed: (msg: string) => `Could not open file: ${msg}`,
   jsonSaveFailed: 'Could not save file.',
@@ -146,7 +146,7 @@ export const t = {
   resetDone: 'Plan reset.',
   manualNote: 'Manual layout. Changing the count or limits re-packs.',
 
-  below: 'Connect from below',
+  below: 'From below',
   belowHint:
     'Hatches may face down from the lowest layer and pipes may run in a trench one block under the build.',
 
@@ -216,7 +216,7 @@ export const t = {
 
   site: {
     tooLargeForLink: 'This template is too large for a link. Download the JSON file instead.',
-    panel: 'Template',
+    panel: 'Inspector',
     outline: 'Groups and links',
     tabs: {
       group: 'Group sections',
@@ -226,7 +226,6 @@ export const t = {
       template: 'Template settings',
       layout: 'Layout',
       routing: 'Routing',
-      view: 'View',
     },
     name: 'Name',
     unnamed: 'Template',
@@ -308,6 +307,8 @@ export const t = {
       'Drag the selected group in the view, or use the arrows. PageUp and PageDown raise and lower it. X and Z are its corner in blocks.',
     undo: 'Undo',
     redo: 'Redo',
+    undoLabel: 'Undo (Ctrl+Z)',
+    redoLabel: 'Redo (Ctrl+Y)',
     undone: 'Undone.',
     redone: 'Redone.',
     nothingToUndo: 'Nothing to undo.',
@@ -366,7 +367,7 @@ export const t = {
     routingDepthUsed: (asked: number, used: number) =>
       `Depth ${used} is in use: the template is too big to route ${asked} layers under the ground.`,
     routingLegacy: (depth: number) =>
-      `This template has no routing of its own yet: it uses classic routing, ${depth === 0 ? 'on the ground' : `${depth} layer${depth === 1 ? '' : 's'} under the ground`}, following the Connect from below switch of the machine view. Choosing a style or depth here gives it its own routing.`,
+      `This template has no routing of its own yet: it uses classic routing, ${depth === 0 ? 'on the ground' : `${depth} layer${depth === 1 ? '' : 's'} under the ground`}, following the From below switch of the machine view. Choosing a style or depth here gives it its own routing.`,
     useNeat: 'Use neat routing',
     floor: 'Floor',
     floorNone: 'None',
@@ -419,10 +420,11 @@ export const t = {
     staleAssign: (n: number) =>
       `${n} ${n === 1 ? 'choice' : 'choices'} for resources this group no longer takes or gives.`,
     staleAssignClear: 'Clear',
-    flow: 'Flow animation',
-    animation: 'Animation',
+    flow: 'Flow',
     animationHint: 'Moving flow arrows on pipes and cables',
-    icons: 'Item icons (gtnhplanner.com)',
+    icons: 'Icons',
+    iconsHint: 'Item and fluid icons from gtnhplanner.com',
+    arrangeNoGroups: 'Add a group first',
     opened: 'Template opened.',
     reset: 'Reset template',
     resetDone: 'Template reset.',

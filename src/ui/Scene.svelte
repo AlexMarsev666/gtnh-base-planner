@@ -32,7 +32,7 @@
     /** Aim the camera at this box whenever `seq` changes. */
     frame?: { min: Vec3; max: Vec3; seq: number } | null;
     /** Canvas pixels covered by the outline (left), a drawer (right) or sheet (bottom). */
-    inset?: { left: number; right: number; bottom: number };
+    inset?: { left: number; right: number; bottom: number; top: number };
   }
   let {
     scene,
@@ -50,7 +50,7 @@
     onmove,
     ondrag,
     frame = null,
-    inset = { left: 0, right: 0, bottom: 0 },
+    inset = { left: 0, right: 0, bottom: 0, top: 0 },
   }: Props = $props();
 
   const EMPTY_SCENE: SceneModel = {
@@ -157,8 +157,8 @@
   });
   $effect(() => {
     const r = renderer;
-    const { left, right, bottom } = inset;
-    if (r) guard('setInset', () => r.setInset(left, right, bottom));
+    const { left, right, bottom, top } = inset;
+    if (r) guard('setInset', () => r.setInset(left, right, bottom, top));
   });
 </script>
 

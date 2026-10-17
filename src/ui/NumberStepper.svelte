@@ -5,7 +5,8 @@
 
   /**
    * A NumberField in a box with − / + buttons, so it reads as editable. ↑ / ↓ step too
-   * (Shift: 5). With `empty` (limits), stepping below `min` clears the field and + from empty gives `min`.
+   * (Shift: 5). With a `testid`, the buttons are `{testid}-dec` and `{testid}-inc`. With `empty` (limits),
+   * stepping below `min` clears the field and + from empty gives `min`.
    * A typed value outside `min`..`max` is clamped by the consumer; the field says so in a notice.
    */
   interface Props {
@@ -58,6 +59,7 @@
     type="button"
     tabindex="-1"
     aria-label={t.stepDown(label)}
+    data-testid={testid ? `${testid}-dec` : undefined}
     disabled={current === null || (!empty && current <= min)}
     onclick={() => step(-1)}>{t.minus}</button
   ><button
@@ -65,6 +67,7 @@
     type="button"
     tabindex="-1"
     aria-label={t.stepUp(label)}
+    data-testid={testid ? `${testid}-inc` : undefined}
     disabled={current !== null && current >= max}
     onclick={() => step(1)}>{t.plus}</button
   >

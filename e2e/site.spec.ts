@@ -138,24 +138,22 @@ test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
   await panel.getByTestId('site-group-rotate').click();
   await page.screenshot({ path: 'e2e/screenshots/site-panel.png' });
 
-  // Arrange, Optimize and the view toggles are template settings: they show once the group is deselected.
-  await panel.getByRole('button', { name: 'Deselect' }).click();
-  await panel.getByTestId('site-template-tabs-layout').click();
-
+  // Arrange, Optimize and the view chips are in the toolbar over the scene.
   // Arrange puts the chain back in order and everything stays connected.
-  await panel.getByTestId('site-arrange').click();
+  await page.getByTestId('site-arrange').click();
   await expect(stats).toContainText(/(\d+)\/\1 connected/);
 
   // Optimize searches for a tighter layout and keeps it only if the router connects everything.
-  await panel.getByTestId('site-optimize').click();
+  await page.getByTestId('site-optimize').click();
   await expect(page.getByText(/Optimized:|nothing changed/)).toBeVisible({ timeout: 60000 });
   await expect(stats).toContainText(/(\d+)\/\1 connected/);
 
   // Icons can be switched off: colour swatches only.
-  await panel.getByTestId('site-template-tabs-view').click();
-  await panel.getByTestId('site-icons').click();
+  await page.getByTestId('site-icons').click();
+  await expect(page.getByTestId('site-icons')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('site-legend').locator('img')).toHaveCount(0);
-  await panel.getByTestId('site-icons').click();
+  await page.getByTestId('site-icons').click();
+  await expect(page.getByTestId('site-icons')).toHaveAttribute('aria-pressed', 'true');
 
   // The site survives a reload; the view comes back in site mode.
   await page.waitForTimeout(500);
@@ -318,10 +316,7 @@ test('Neat arranges and routes underground in one undo step', async ({ page }) =
   await expect(stats).toContainText(/(\d+)\/\1 connected/);
   const before = await savedSite(page);
 
-  await page.getByTestId('site-panel-toggle').click();
-  const panel = page.getByTestId('site-panel');
-  await panel.getByTestId('site-template-tabs-layout').click();
-  await panel.getByTestId('site-neat').click();
+  await page.getByTestId('site-neat').click();
   await expect(page.getByRole('status').getByRole('button', { name: 'Undo' })).toBeVisible({
     timeout: 60000,
   });
@@ -331,7 +326,7 @@ test('Neat arranges and routes underground in one undo step', async ({ page }) =
   // are; that Neat applies layout and routing as one store update is covered by siteCommands.test.ts.
 
   // One undo takes back the layout and the routing together.
-  await panel.getByTestId('site-undo').click();
+  await page.getByTestId('site-undo').click();
   await expect.poll(async () => (await readSaved(page)).routing).toEqual(before.routing);
   expect(originsOf(await readSaved(page))).toEqual(originsOf(before));
   expect(errors).toEqual([]);
@@ -344,9 +339,7 @@ test('Cancel stops Optimize and leaves the template as it was', async ({ page })
   await expect(page.getByTestId('site-stats')).toContainText(/(\d+)\/\1 connected/);
   const before = await savedSite(page);
 
-  await page.getByTestId('site-panel-toggle').click();
-  await page.getByTestId('site-panel').getByTestId('site-template-tabs-layout').click();
-  await page.getByTestId('site-panel').getByTestId('site-optimize').click();
+  await page.getByTestId('site-optimize').click();
   await expect(page.getByTestId('arrange-progress')).toBeVisible();
   await page.getByTestId('arrange-cancel').click();
   await expect(page.getByTestId('arrange-progress')).toBeHidden();
@@ -354,6 +347,17 @@ test('Cancel stops Optimize and leaves the template as it was', async ({ page })
 
   const after = await savedSite(page);
   expect(after).toEqual(before);
+  expect(errors).toEqual([]);
+});
+
+test('Arrange, Optimize and Neat say why they are unavailable on an empty template', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await page.getByTestId('mode-site').click();
+  const arrange = page.getByTestId('site-arrange');
+  await expect(arrange).toHaveAttribute('aria-disabled', 'true');
+  await arrange.focus();
+  await expect(page.getByRole('tooltip')).toHaveText('Add a group first');
   expect(errors).toEqual([]);
 });
 

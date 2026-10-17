@@ -50,7 +50,7 @@ export type GroupTab = 'machine' | 'packing' | 'placement';
 export const groupTab = writable<GroupTab>('machine');
 // A hatch picked in the scene is shown on the Machine tab.
 siteHatch.subscribe((h) => h && groupTab.set('machine'));
-export type TemplateTab = 'layout' | 'routing' | 'view';
+export type TemplateTab = 'layout' | 'routing';
 /** The tab of the template settings, shown while nothing is selected. */
 export const templateTab = writable<TemplateTab>('layout');
 /** Selected net id (from clicking a pipe): shown in the info line. */

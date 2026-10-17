@@ -6,6 +6,8 @@ export interface Inset {
   left: number;
   right: number;
   bottom: number;
+  /** The top bar. */
+  top: number;
 }
 
 /**
@@ -19,16 +21,20 @@ export function watchDrawerInset(report: (inset: Inset) => void): () => void {
     const drawer = document.querySelector<HTMLElement>('aside.drawer');
     const outline = document.querySelector<HTMLElement>('aside.outline');
     const measure = () => {
+      const top = Math.max(
+        0,
+        Math.round(document.querySelector('header.bar')?.getBoundingClientRect().bottom ?? 0),
+      );
       const left = outline?.isConnected ? Math.max(0, Math.round(outline.getBoundingClientRect().right)) : 0;
       if (!drawer?.isConnected) {
-        report({ left, right: 0, bottom: 0 });
+        report({ left, right: 0, bottom: 0, top });
         return;
       }
       const r = drawer.getBoundingClientRect();
       report(
         r.left > 0
-          ? { left, right: Math.max(0, window.innerWidth - r.left), bottom: 0 }
-          : { left, right: 0, bottom: Math.max(0, window.innerHeight - r.top) },
+          ? { left, right: Math.max(0, window.innerWidth - r.left), bottom: 0, top }
+          : { left, right: 0, bottom: Math.max(0, window.innerHeight - r.top), top },
       );
     };
     measure();

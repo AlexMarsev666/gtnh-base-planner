@@ -57,7 +57,7 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Shared walls**: blocks that coincide in the same cell are counted once; incompatible overlaps are highlighted.
 - **Hatches**: enable hatch kinds per plan; shareable hatches serve several controllers from one block. A hatch faces open space rather than a gap between units, and never the ground: the build stands on its lowest layer. Hatches of different kinds are spread apart, and none faces a cell its pipe could not leave. In a shared wall, item, fluid and steam hatches and the muffler (which needs air in front) serve every machine around them; maintenance and energy hatches do so only when asked (next item).
 - **Share maintenance / Share energy** (Settings, and in a template group's settings; off by default): a maintenance or energy hatch in a shared wall serves both machines instead of each having its own. GT forms such machines, so these are not errors, but Buildability shows a hint: a manual repair of a shared maintenance hatch fixes only one machine at a time (an auto-maintenance hatch avoids that), and a shared energy hatch gives each machine 1 A of its 2 A, so recipes must stay within 1 A. A shared energy hatch serves at most two machines.
-- **Pipe routing** per hatch kind (items, fluids, steam), with length estimates. The kinds are negotiated rather than laid one after another (a cell two networks want gets dearer each round until one gives way), so no network walls in another kind's hatch. With pipes or cables on, a layout whose walkways cannot hold a line per kind is spaced out step by step (walkways and gaps of one or two blocks, same rows and layers) until every hatch is connected; a warning remains only for hatches that still cannot be reached (e.g. in a manual layout). Packing and routing run in the background, so the page stays responsive while a large build is laid out (the stats line says when it is still working, and pipes appear after an unrouted preview). Routing has a fixed work budget, so it never runs for minutes: on a very large build (such as several Nanochip Assembly Complexes) it can stop early and leave a few hatches unconnected, and the warning says so. Bends are priced in, so pipes run in straight trunks with fewer bends than plain shortest paths. A pipe may reach a hatch from any open side (the hatch is turned to face it, as with a wrench in game). With Connect from below (or a template's routing depth) hatches may face down and pipes run in trenches under the build.
+- **Pipe routing** per hatch kind (items, fluids, steam), with length estimates. The kinds are negotiated rather than laid one after another (a cell two networks want gets dearer each round until one gives way), so no network walls in another kind's hatch. With pipes or cables on, a layout whose walkways cannot hold a line per kind is spaced out step by step (walkways and gaps of one or two blocks, same rows and layers) until every hatch is connected; a warning remains only for hatches that still cannot be reached (e.g. in a manual layout). Packing and routing run in the background, so the page stays responsive while a large build is laid out (the stats line says when it is still working, and pipes appear after an unrouted preview). Routing has a fixed work budget, so it never runs for minutes: on a very large build (such as several Nanochip Assembly Complexes) it can stop early and leave a few hatches unconnected, and the warning says so. Bends are priced in, so pipes run in straight trunks with fewer bends than plain shortest paths. A pipe may reach a hatch from any open side (the hatch is turned to face it, as with a wrench in game). With From below (or a template's routing depth) hatches may face down and pipes run in trenches under the build.
 - **Cable routing**: the Cables toggle connects energy hatches (and dynamo hatches of generators) with thinner cables, like pipes.
 - **Textured view**: real GregTech textures, layered and tinted the way the game draws them (glass is
   see-through, a hatch shows the casing it replaces with its own overlay), flat colours when they cannot load,
@@ -79,18 +79,22 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 
 1. Choose a multiblock in the catalog.
 2. Set the count and, if needed, the maximum footprint.
-3. Set the height or length of a resizable multiblock; toggle hatch kinds, pipes and cables. Settings also holds
-   the tier, Mirror, Shared walls, Share maintenance and Share energy, and Hatch tiers, and Connect from below (hatches facing down, pipes in a trench
-   under the build).
+3. Set the height or length of a resizable multiblock; toggle hatch kinds in Settings, which also holds
+   the tier, Mirror, Shared walls, Share maintenance and Share energy, and Hatch tiers. The chips over the scene
+   switch Pipes, Cables, From below (hatches facing down, pipes in a trench under the build) and X-ray.
 4. Drag to orbit, scroll or pinch to zoom, right-drag to pan, double-click to reset. Click a block to select its unit.
-5. Copy a share link, or download the plan as JSON.
+5. The Share menu in the top bar copies a share link, downloads or opens the plan as JSON, and resets the plan (a second
+   click confirms).
 
 The planner checks layout rules for the transcribed structure only. It is not a full in-game build validation.
 
 ### Templates
 
-1. Switch to TEMPLATE in the top bar. Use TEMPLATE (top right) to open the template panel. The groups and links list is
-   the outline docked at the left (on narrow screens it is the first block of the template panel); the panel at the right is the inspector. With a group selected it shows the group in three tabs: Machine (hatch, machine options, buildability, resources, hatch tiers; the tab shows the number of problems), Packing and Placement, with Duplicate and Remove below. With nothing selected it shows the template: its problems and notes, then the tabs Layout (name, size, ARRANGE / OPTIMIZE / NEAT), Routing and View (view toggles, share link, JSON files, reset). The tab you last used stays when you select another group.
+1. Switch to TEMPLATE in the top bar. Use INSPECTOR (top right) to open the template panel. The groups and links list is
+   the outline docked at the left (on narrow screens it is the first block of the template panel); the panel at the right is the inspector. With a group selected it shows the group in three tabs: Machine (hatch, machine options, buildability, resources, hatch tiers; the tab shows the number of problems), Packing and Placement, with Duplicate and Remove below. With nothing selected it shows the template: its problems and notes, then the tabs Layout (name, size) and Routing. The tab you last used stays when you select another group.
+   The top bar holds Undo and Redo, IMPORT FROM GTNH PLANNER, BLOCKS and the Share menu (copy share link, download or open
+   JSON, reset the template; a reset can be undone). The toolbar over the scene has ARRANGE, OPTIMIZE and NEAT, and the
+   view chips Pipes, Cables, Flow (the flow animation), X-ray and Icons (item icons).
 2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: + ADD in the outline's Groups heading opens a menu
    (Add multiblock, Add single-block machine, Add placeholder; Escape or a click elsewhere closes it, the arrow keys
    move through it). A group that GT would not form shows a badge with its number of problems. + LINK in the Links
@@ -99,7 +103,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    resource is isolated (the other nets fade) and the panel shows the link with its colour, a Remove link button, and
    its ends and rate; click it again, or press Escape, to let go. In the single-machine view, SETTINGS →
    ADD TO TEMPLATE copies the current plan into the template as a group.
-3. ARRANGE lays the groups out west to east along the flow, turning each so its input hatches face upstream and its output
+3. ARRANGE (in the toolbar over the scene) lays the groups out west to east along the flow, turning each so its input hatches face upstream and its output
    hatches downstream (OPTIMIZE turns groups too, by where their hatches are). NEAT does that and switches to neat routing, at least
    one layer under the ground, as one undo step (the layout and the routing come back together). OPTIMIZE arranges,
    then searches for a tighter layout with shorter pipes in the background: simulated annealing on a cheap length
@@ -123,13 +127,13 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    and Delete removes it. The panel edits the selected group: its label and machine, count, limits and extra
    hatches, and X, Z and height to place it exactly. Template inputs and outputs (the chests, tanks and energy
    blocks on the edge) move the same way: click one, then drag it or use the arrows; A gives it back to
-   automatic placement. Ports stand on the ground, so they have no height. Ctrl+Z undoes any
-   change to the template (Ctrl+Shift+Z or Ctrl+Y redoes it). Moving a group past an edge grows the template
+   automatic placement. Ports stand on the ground, so they have no height. Ctrl+Z (or the Undo button in the top bar) undoes any
+   change to the template (Ctrl+Shift+Z or Ctrl+Y, or Redo, redoes it). Moving a group past an edge grows the template
    that way (and ARRANGE grows it when the chain does not fit). While you move or turn groups the pipes wait,
    shown faded, and are routed again a moment after you stop.
    The panel's Routing block sets the router (Classic or Neat) and how deep pipes may go under the ground (0 to 3;
    a very big template may be routed shallower, and the panel says so), and shows the route: blocks routed, bends,
-   blocks per underground level and, on the ground, trunk lines against stubs at hatches. X-ray sees through the
+   blocks per underground level and, on the ground, trunk lines against stubs at hatches. X-ray (a chip in the toolbar) sees through the
    ground. The Floor setting (None by default; Light Concrete, a few machine casings or iron) lays one layer of that
    block under the whole template at y = -1 for the machines to stand on (groups raised off the ground are
    unaffected). With a floor, pipes and cables that go under the ground cross it only straight down or up, each
@@ -137,7 +141,7 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    reaches the floor layer; the levels reported are those below the floor, so depth 2 shows 2; depth 0 keeps everything above, so the floor has no holes). The floor shows see-through
    while something runs under it, and the Blocks panel lists its blocks (width x depth less the holes). A template without a floor
    is unchanged. A template saved before the Routing block existed keeps its old routing (classic, following the machine
-   view's Connect from below) and offers Use neat routing; old files and links load unchanged. The selected group also
+   view's From below) and offers Use neat routing; old files and links load unchanged. The selected group also
    has a tier (its energy hatches; a transformer's high side), Mirror, a shared-walls choice, Share maintenance and Share energy, Quadruple input hatches (on by default; off gives every fluid its own regular input hatch, shown only for machines with fluid inputs; stored in the template only when off), a Resources list
    (put a resource's hatch on one unit, on all units, or into a hatch zone of the multiblock; Auto spreads them;
    the Zone list offers only zones with a place for that hatch kind, and a saved zone without one is reported and ignored)
@@ -165,7 +169,7 @@ looked up among the machine types GT gives each multiblock ("Vacuum Furnace" is 
 `tools/gt-source/machine-types.mjs` collects. The template is sized to the chain, and each port sits on the
 edge nearest the groups it serves. After an import the template is shown at once with the plain layout, then optimized
 in the background (the box "Optimize the layout after import" in the dialog, on by default; Undo brings the plain layout
-back). ARRANGE, NEAT and OPTIMIZE stay in the template panel for later. Storages between machines are passed
+back). ARRANGE, NEAT and OPTIMIZE stay in the toolbar over the scene for later. Storages between machines are passed
 through; product drains become output ports, trash drains void ports. Thaumcraft aspect flows are left out.
 Odd values in an export do not stop the import: control characters in names are replaced, machine counts are
 clamped and impossible rates are dropped, and the dialog says how many values were adjusted.
@@ -244,7 +248,7 @@ A lowest-layer cell walled in on every side but the ground (the Advanced Assembl
 output hatches) still takes a hatch of a kind the machine requires (`requiredHatches` min) when a single machine has too
 few other cells for it, facing down: GT does not ask a hatch for a free face. These cells are used only after the normal
 ones and only up to the minimum (a crowded layout is loosened instead), and a hint tells
-the hatch faces the ground and must be fed from below (Connect from below, or a template's routing depth). Without a
+the hatch faces the ground and must be fed from below (From below, or a template's routing depth). Without a
 trench such a hatch is simply left unconnected by routing.
 `variants` lists the orientations the controller's alignment limits allow (`getInitialAlignmentLimits` / `getAlignmentLimits`
 of the class and its superclasses, `tools/gt-source/orientation.mjs`): 0 as in the catalog, 1 mirrored left-right, 2 upside down
@@ -295,8 +299,8 @@ There is no server, account or tracking. Plans are stored in your browser's `loc
 
 The GTNH Planner import reads the file you open or paste in the browser; the file itself is never sent anywhere.
 Exports carry an icon path for each item and fluid, and the template view shows those icons (legend, link list,
-import dialog) by loading the images from gtnhplanner.com, without a referrer. Turn off **Item icons** in the template
-panel to show colour swatches instead; then the page loads nothing from other sites. Only `/datasets/...png` paths
+import dialog) by loading the images from gtnhplanner.com, without a referrer. Turn off the **Icons** chip in the template
+toolbar to show colour swatches instead; then the page loads nothing from other sites. Only `/datasets/...png` paths
 on gtnhplanner.com are accepted, so a shared template link cannot make the page load any other address. The 3D view
 uses colours only: the browser does not allow images from another site in WebGL.
 

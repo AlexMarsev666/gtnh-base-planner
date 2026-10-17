@@ -7,19 +7,10 @@
   import Buildability from './Buildability.svelte';
   import { coilChoices, glassChoices, validityLines, type ValidityLine } from './validityText';
   import { tick } from 'svelte';
-  import {
-    connectBelow,
-    plan,
-    selectedHatch,
-    selectedUnits,
-    showCables,
-    showPipes,
-    xray,
-  } from '../state/store';
+  import { plan, selectedHatch, selectedUnits } from '../state/store';
   import {
     resetColors,
     resetHatchTiers,
-    resetPlan,
     setCoil,
     setHatchColor,
     setHatchTier,
@@ -35,14 +26,12 @@
   } from './actions';
   import { hatchKindsOf } from './catalogView';
   import { LIMIT_MAX, LIMIT_MIN, formatLimit, parseLimit, parseSize } from './fields';
-  import { notify } from './notices';
   import NumberStepper from './NumberStepper.svelte';
   import { mirrorDisabled } from './orientationText';
   import ToggleRow from './ToggleRow.svelte';
   import { hatchKeyAt, hatchTierOptions, hatchTierRows, unmatchedHatchTiers } from './hatchTierRows';
   import { build, mergeColors } from './pipeline';
   import SelectRow from './SelectRow.svelte';
-  import { copyShareLink, downloadJson, openJsonFile, shareFallback } from './session';
   import { addPlanToSite } from './siteCommands';
 
   interface Props {
@@ -115,29 +104,6 @@
     const v = parseLimit(text);
     if (v !== undefined) setLimit(axis, v);
   }
-
-  let fileInput = $state<HTMLInputElement>();
-  function onfile(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (file) void openJsonFile(file);
-  }
-
-  let confirmReset = $state(false);
-  let resetTimer: ReturnType<typeof setTimeout> | undefined;
-  function onreset() {
-    clearTimeout(resetTimer);
-    if (confirmReset) {
-      confirmReset = false;
-      resetPlan();
-      notify(t.resetDone);
-      return;
-    }
-    confirmReset = true;
-    resetTimer = setTimeout(() => (confirmReset = false), 3000);
-  }
-  $effect(() => () => clearTimeout(resetTimer));
 </script>
 
 <aside class="drawer" aria-label={t.settings} data-testid="settings">
@@ -340,73 +306,6 @@
       {/if}
     </section>
   {/if}
-
-  <section>
-    <h2>{t.view}</h2>
-    <ul class="rows">
-      <ToggleRow
-        on={$showPipes}
-        label={t.pipes}
-        testid="toggle-pipes"
-        ontoggle={() => showPipes.update((v) => !v)}
-      />
-      <ToggleRow
-        on={$showCables}
-        label={t.cables}
-        testid="toggle-cables"
-        ontoggle={() => showCables.update((v) => !v)}
-      />
-      <ToggleRow
-        on={$connectBelow}
-        label={t.below}
-        title={t.belowHint}
-        testid="toggle-below"
-        ontoggle={() => connectBelow.update((v) => !v)}
-      />
-      <ToggleRow on={$xray} label={t.xray} testid="toggle-xray" ontoggle={() => xray.update((v) => !v)} />
-    </ul>
-  </section>
-
-  <section>
-    <h2>{t.plan}</h2>
-    <ul class="rows">
-      <li class="row">
-        <button class="btn" data-testid="share" onclick={() => void copyShareLink()}>{t.shareLink}</button>
-      </li>
-      {#if $shareFallback}
-        <li class="row col">
-          <span>{t.linkFallback}</span>
-          <input
-            class="field url"
-            readonly
-            value={$shareFallback}
-            aria-label={t.linkFallback}
-            onfocus={(e) => e.currentTarget.select()}
-          />
-        </li>
-      {/if}
-      <li class="row">
-        <button class="btn" onclick={downloadJson}>{t.downloadJson}</button>
-      </li>
-      <li class="row">
-        <button class="btn" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
-        <input
-          bind:this={fileInput}
-          class="visually-hidden"
-          type="file"
-          accept="application/json,.json"
-          tabindex="-1"
-          aria-hidden="true"
-          onchange={onfile}
-        />
-      </li>
-      <li class="row">
-        <button class="btn danger" data-testid="reset" onclick={onreset}
-          >{confirmReset ? t.resetConfirm : t.reset}</button
-        >
-      </li>
-    </ul>
-  </section>
 </aside>
 
 <style>
@@ -464,22 +363,6 @@
   .tier-list {
     max-height: 220px;
     overflow-y: auto;
-  }
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 32px;
-  }
-  .row.col {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
-  }
-  .url {
-    text-align: left;
-    width: 100%;
-    color: var(--text);
   }
   .swatch {
     position: relative;

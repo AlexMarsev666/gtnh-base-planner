@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { tick } from 'svelte';
   import { SINGLE_BLOCK_ID, PLACEHOLDER_ID } from '../data/generic';
   import { t } from '../i18n/en';
   import { site, siteGroup, siteLink, siteLinkDraft } from '../state/site';
+  import MenuButton from './MenuButton.svelte';
   import ResourceIcon from './ResourceIcon.svelte';
   import { updateSite, withLinkRemoved } from './siteActions';
   import { addGroup } from './siteCommands';
@@ -22,51 +22,6 @@
 
   const build = $derived($siteBuild.build);
 
-  // The Add menu: a popover under its button.
-  let menuOpen = $state(false);
-  let menuBox = $state<HTMLElement>();
-  let menuButton = $state<HTMLButtonElement>();
-  const menuItems = () => [...(menuBox?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
-  async function openMenu() {
-    menuOpen = true;
-    await tick();
-    menuItems()[0]?.focus();
-  }
-  function closeMenu(refocus = true) {
-    menuOpen = false;
-    if (refocus) menuButton?.focus();
-  }
-  function pickItem(run: () => void) {
-    closeMenu();
-    run();
-  }
-  function onmenukey(e: KeyboardEvent) {
-    if (!menuOpen) return;
-    if (e.key === 'Escape') {
-      // Only the menu closes; the app's own Escape (deselect) must not run as well.
-      e.stopPropagation();
-      closeMenu();
-      return;
-    }
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
-    e.preventDefault();
-    const items = menuItems();
-    const at = items.indexOf(document.activeElement as HTMLElement);
-    const last = items.length - 1;
-    let next = 0;
-    if (e.key === 'End') next = last;
-    else if (e.key === 'ArrowDown') next = at < last ? at + 1 : 0;
-    else if (e.key === 'ArrowUp') next = at > 0 ? at - 1 : last;
-    items[next]?.focus();
-  }
-  // Tabbing out of the menu closes it, and focus goes on where Tab sent it.
-  function onmenufocusout(e: FocusEvent) {
-    if (menuOpen && !menuBox?.contains(e.relatedTarget as Node | null)) closeMenu(false);
-  }
-  function outsideClick(e: MouseEvent) {
-    if (menuOpen && !menuBox?.contains(e.target as Node)) closeMenu(false);
-  }
-
   function selectLink(id: string) {
     const next = id === $siteLink ? null : id;
     siteLink.set(next);
@@ -78,45 +33,32 @@
   }
 </script>
 
-<svelte:window onclick={outsideClick} />
-
 {#snippet body()}
   <section>
     <div class="head">
       <h2>{t.site.groupsCount($site.groups.length)}</h2>
-      <div
-        class="menu-box"
-        bind:this={menuBox}
-        onkeydown={onmenukey}
-        onfocusout={onmenufocusout}
-        role="presentation"
+      <MenuButton
+        label={t.site.addMenuLabel}
+        buttonLabel={t.site.addMenuLabel}
+        buttonClass="btn small"
+        testid="site-add-menu"
       >
-        <button
-          class="btn small"
-          bind:this={menuButton}
-          data-testid="site-add-menu"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          aria-label={t.site.addMenuLabel}
-          onclick={() => (menuOpen ? closeMenu() : void openMenu())}>{t.site.addMenu}</button
-        >
-        {#if menuOpen}
-          <div class="menu" role="menu" aria-label={t.site.addMenuLabel}>
-            <button
-              class="link"
-              role="menuitem"
-              data-testid="site-add-group"
-              onclick={() => pickItem(() => onpick('add'))}>{t.site.addGroup}</button
-            >
-            <button class="link" role="menuitem" onclick={() => pickItem(() => addGroup(SINGLE_BLOCK_ID))}
-              >{t.site.addSingle}</button
-            >
-            <button class="link" role="menuitem" onclick={() => pickItem(() => addGroup(PLACEHOLDER_ID))}
-              >{t.site.addPlaceholder}</button
-            >
-          </div>
-        {/if}
-      </div>
+        {#snippet button()}{t.site.addMenu}{/snippet}
+        {#snippet children({ pick })}
+          <button
+            class="menu-item"
+            role="menuitem"
+            data-testid="site-add-group"
+            onclick={() => pick(() => onpick('add'))}>{t.site.addGroup}</button
+          >
+          <button class="menu-item" role="menuitem" onclick={() => pick(() => addGroup(SINGLE_BLOCK_ID))}
+            >{t.site.addSingle}</button
+          >
+          <button class="menu-item" role="menuitem" onclick={() => pick(() => addGroup(PLACEHOLDER_ID))}
+            >{t.site.addPlaceholder}</button
+          >
+        {/snippet}
+      </MenuButton>
     </div>
     {#if !$site.groups.length}<p class="hint">{t.site.noGroups}</p>{/if}
     <ul class="rows">
@@ -230,27 +172,6 @@
     justify-content: space-between;
     gap: 12px;
     margin: 0 0 12px;
-  }
-  .menu-box {
-    position: relative;
-  }
-  .menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 200px;
-    padding: 8px 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
-  }
-  .menu .link {
-    text-align: left;
   }
   .rows {
     list-style: none;

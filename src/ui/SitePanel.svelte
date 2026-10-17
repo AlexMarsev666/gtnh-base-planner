@@ -4,44 +4,20 @@
   import { t } from '../i18n/en';
   import { MAX_CORRIDOR, SITE_MAX_SIZE, SITE_MIN_SIZE } from '../share/siteCodec';
   import { ROUTING_STYLES } from '../model/site/types';
-  import {
-    flowAnimation,
-    showIcons,
-    site,
-    siteCables,
-    siteGroup,
-    siteLink,
-    siteLinkDraft,
-    sitePipes,
-    templateTab,
-    type TemplateTab,
-  } from '../state/site';
-  import { connectBelow, xray } from '../state/store';
+  import { site, siteGroup, siteLink, siteLinkDraft, templateTab, type TemplateTab } from '../state/site';
+  import { connectBelow } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
   import LinkForm from './LinkForm.svelte';
   import LinkInspector from './LinkInspector.svelte';
-  import { notify } from './notices';
   import { narrow } from './narrow';
   import NumberStepper from './NumberStepper.svelte';
-  import {
-    resetSite,
-    updateSite,
-    withCorridor,
-    withFloor,
-    withName,
-    withRouting,
-    withSiteSize,
-  } from './siteActions';
-  import { arrange, neatArrange } from './siteCommands';
-  import { canRedo, canUndo, redoSite, undoAction, undoSite } from './siteHistory';
+  import { updateSite, withCorridor, withFloor, withName, withRouting, withSiteSize } from './siteActions';
   import { ROUTING_DEPTHS, depthReduced, routingView, splitWarnings } from './siteInspect';
   import { siteBuild, siteRouteInfo } from './sitePipeline';
   import SelectRow from './SelectRow.svelte';
   import { groupName as siteGroupName, resName as siteResName } from './siteNames';
   import SiteOutline from './SiteOutline.svelte';
-  import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
   import Tabs from './Tabs.svelte';
-  import ToggleRow from './ToggleRow.svelte';
   import { groupErrorCount } from './validityText';
 
   interface Props {
@@ -88,10 +64,9 @@
   const templateTabs = [
     { id: 'layout', label: t.site.tabs.layout },
     { id: 'routing', label: t.site.tabs.routing },
-    { id: 'view', label: t.site.tabs.view },
   ];
   function setTemplateTab(id: string) {
-    const tab: TemplateTab | undefined = (['layout', 'routing', 'view'] as const).find((x) => x === id);
+    const tab: TemplateTab | undefined = (['layout', 'routing'] as const).find((x) => x === id);
     if (tab) templateTab.set(tab);
   }
 
@@ -114,33 +89,12 @@
     const n = Number(text.trim());
     if (text.trim() !== '' && Number.isFinite(n)) updateSite((s) => withCorridor(s, n));
   }
-
-  function onreset() {
-    resetSite();
-    notify(t.site.resetDone, 6000, 'edit', undoAction());
-  }
-
-  let fileInput = $state<HTMLInputElement>();
-  function onfile(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (file) void openSiteFile(file);
-  }
 </script>
 
 <aside class="drawer" aria-label={t.site.panel} data-testid="site-panel" bind:this={drawer}>
   <div class="top">
     <span class="title">{t.site.panel}</span>
-    <span class="top-acts">
-      <button class="link" disabled={!$canUndo} data-testid="site-undo" onclick={undoSite}
-        >{t.site.undo}</button
-      >
-      <button class="link" disabled={!$canRedo} data-testid="site-redo" onclick={redoSite}
-        >{t.site.redo}</button
-      >
-      <button class="link" onclick={onclose}>{t.close}</button>
-    </span>
+    <button class="link" onclick={onclose}>{t.close}</button>
   </div>
 
   {#if selected}
@@ -242,32 +196,6 @@
           </div>
           <p class="hint">{t.site.sizeHint(SITE_MIN_SIZE, SITE_MAX_SIZE)}</p>
           <ul class="rows">
-            <li class="row">
-              <button
-                class="btn"
-                data-testid="site-arrange"
-                disabled={!$site.groups.length}
-                onclick={() => arrange()}>{t.site.arrange}</button
-              >
-            </li>
-            <li class="row">
-              <button
-                class="btn"
-                data-testid="site-optimize"
-                title={t.site.optimizeHint}
-                disabled={!$site.groups.length}
-                onclick={() => arrange(true)}>{t.site.optimize}</button
-              >
-            </li>
-            <li class="row">
-              <button
-                class="btn"
-                data-testid="site-neat"
-                title={t.site.neatHint}
-                disabled={!$site.groups.length}
-                onclick={() => neatArrange()}>{t.site.neat}</button
-              >
-            </li>
             <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
             <li class="row narrow-only">
               <button class="btn" onclick={onimport}>{t.site.importOpen}</button>
@@ -299,13 +227,6 @@
               options={floorOptions}
               testid="site-floor"
               onchange={(v) => updateSite((s) => withFloor(s, v || undefined))}
-            />
-            <ToggleRow
-              on={$xray}
-              label={t.site.undergroundView}
-              title={t.site.undergroundViewHint}
-              testid="site-xray"
-              ontoggle={() => xray.update((v) => !v)}
             />
           </ul>
           <p class="hint">{t.site.routingDepthHint}</p>
@@ -344,64 +265,6 @@
             >
           {/if}
         </section>
-      {:else}
-        <section>
-          <h2>{t.view}</h2>
-          <ul class="rows">
-            <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
-            <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
-            <ToggleRow
-              on={$flowAnimation}
-              label={t.site.flow}
-              ontoggle={() => flowAnimation.update((v) => !v)}
-            />
-            <ToggleRow
-              on={$showIcons}
-              label={t.site.icons}
-              testid="site-icons"
-              ontoggle={() => showIcons.update((v) => !v)}
-            />
-          </ul>
-        </section>
-
-        <section>
-          <h2>{t.plan}</h2>
-          <ul class="rows">
-            <li class="row">
-              <button class="btn" data-testid="site-share" onclick={() => void copySiteLink()}
-                >{t.shareLink}</button
-              >
-            </li>
-            {#if $siteShareFallback}
-              <li class="row col">
-                <span>{t.linkFallback}</span>
-                <input
-                  class="field url"
-                  readonly
-                  value={$siteShareFallback}
-                  aria-label={t.linkFallback}
-                  onfocus={(e) => e.currentTarget.select()}
-                />
-              </li>
-            {/if}
-            <li class="row"><button class="btn" onclick={downloadSite}>{t.downloadJson}</button></li>
-            <li class="row">
-              <button class="btn" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
-              <input
-                bind:this={fileInput}
-                class="visually-hidden"
-                type="file"
-                accept="application/json,.json"
-                tabindex="-1"
-                aria-hidden="true"
-                onchange={onfile}
-              />
-            </li>
-            <li class="row">
-              <button class="btn danger" onclick={onreset}>{t.site.reset}</button>
-            </li>
-          </ul>
-        </section>
       {/if}
     </div>
   {/if}
@@ -434,10 +297,6 @@
     background: var(--bg);
     z-index: 1;
   }
-  .top-acts {
-    display: flex;
-    gap: 14px;
-  }
   .title {
     color: var(--text);
   }
@@ -460,11 +319,6 @@
     align-items: center;
     gap: 12px;
     min-height: 32px;
-  }
-  .row.col {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
   }
   .fields {
     display: flex;
@@ -500,11 +354,6 @@
     color: var(--text);
     border-left: 2px solid var(--pick);
     padding-left: 8px;
-  }
-  .url {
-    text-align: left;
-    width: 100%;
-    color: var(--text);
   }
   @media (min-width: 761px) {
     .narrow-only {

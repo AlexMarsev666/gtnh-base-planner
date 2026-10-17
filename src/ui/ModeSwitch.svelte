@@ -1,33 +1,29 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import { appMode } from '../state/site';
+  import Tabs from './Tabs.svelte';
+
+  const modes = [
+    { id: 'machine', label: t.modeMachine },
+    { id: 'site', label: t.modeSite },
+  ];
+  function setMode(id: string) {
+    if (id === 'machine' || id === 'site') appMode.set(id);
+  }
 </script>
 
-<div class="mode" role="group" aria-label={t.modeLabel}>
-  <button
-    class="link"
-    class:active={$appMode === 'machine'}
-    aria-pressed={$appMode === 'machine'}
-    data-testid="mode-machine"
-    onclick={() => appMode.set('machine')}>{t.modeMachine}</button
-  >
-  <span class="sep" aria-hidden="true">{t.slash}</span>
-  <button
-    class="link"
-    class:active={$appMode === 'site'}
-    aria-pressed={$appMode === 'site'}
-    data-testid="mode-site"
-    onclick={() => appMode.set('site')}>{t.modeSite}</button
-  >
+<!-- Tab test ids: mode-machine, mode-site. -->
+<div class="mode">
+  <Tabs tabs={modes} active={$appMode} onchange={setMode} label={t.modeLabel} testid="mode" panel={false} />
 </div>
 
 <style>
-  .mode {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .mode :global(.tab) {
+    padding: 4px 12px;
   }
-  .sep {
-    color: var(--faint);
+  @media (max-width: 760px) {
+    .mode :global(.tab) {
+      padding: 4px 8px;
+    }
   }
 </style>

@@ -16,8 +16,10 @@
     /** Accessible name of the tab list. */
     label: string;
     testid: string;
+    /** False when no panel belongs to the tabs (a mode switch): `aria-controls` is left out. */
+    panel?: boolean;
   }
-  let { tabs, active, onchange, label, testid }: Props = $props();
+  let { tabs, active, onchange, label, testid, panel = true }: Props = $props();
 
   let buttons = $state<HTMLButtonElement[]>([]);
 
@@ -53,7 +55,7 @@
       class="tab"
       class:on={tab.id === active}
       aria-selected={tab.id === active}
-      aria-controls="{testid}-panel"
+      aria-controls={panel ? `${testid}-panel` : undefined}
       tabindex={tab.id === active ? 0 : -1}
       data-testid="{testid}-{tab.id}"
       onclick={() => onchange(tab.id)}

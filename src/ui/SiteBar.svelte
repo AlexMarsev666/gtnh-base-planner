@@ -2,6 +2,8 @@
   import { t } from '../i18n/en';
   import { site } from '../state/site';
   import ModeSwitch from './ModeSwitch.svelte';
+  import ShareMenu from './ShareMenu.svelte';
+  import { canRedo, canUndo, redoSite, undoSite } from './siteHistory';
 
   interface Props {
     panelOpen: boolean;
@@ -14,35 +16,72 @@
 </script>
 
 <header class="bar">
-  <div class="group name">
+  <div class="modes"><ModeSwitch /></div>
+
+  <div class="name">
     <span class="title" data-testid="site-name">{$site.name ?? t.site.unnamed}</span>
-    <span class="tier">{$site.size[0]} × {$site.size[1]}</span>
+    <span class="size">{$site.size[0]} × {$site.size[1]}</span>
   </div>
 
-  <!-- In its own column so it never runs into the mode switch. -->
-  <div class="group actions">
-    <button class="link" data-testid="site-import" title={t.site.importOpen} onclick={onimport}
-      >{t.site.importShort}</button
-    >
-  </div>
-
-  <div class="group modes">
-    <ModeSwitch />
-  </div>
-
-  <div class="group settings">
-    <span class="sep dot" aria-hidden="true">{t.separator}</span>
+  <div class="history">
     <button
-      class="link"
-      class:active={blocksOpen}
+      class="btn icon"
+      disabled={!$canUndo}
+      aria-label={t.site.undoLabel}
+      title={t.site.undoLabel}
+      data-testid="site-undo"
+      onclick={undoSite}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"
+        ><path
+          d="M6 3L2.5 6.5 6 10M2.5 6.5H9.5a3.5 3.5 0 0 1 0 7H7"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        /></svg
+      >
+    </button>
+    <button
+      class="btn icon"
+      disabled={!$canRedo}
+      aria-label={t.site.redoLabel}
+      title={t.site.redoLabel}
+      data-testid="site-redo"
+      onclick={redoSite}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"
+        ><path
+          d="M10 3l3.5 3.5L10 10M13.5 6.5H6.5a3.5 3.5 0 0 0 0 7H9"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        /></svg
+      >
+    </button>
+  </div>
+
+  <span class="spacer"></span>
+
+  <div class="right">
+    <!-- Too narrow to fit: the action stays in the Inspector's Layout tab instead. -->
+    <button class="btn import" data-testid="site-import" title={t.site.importOpen} onclick={onimport}
+      ><span class="long">{t.site.importOpen}</span><span class="short">{t.site.importShort}</span></button
+    >
+    <button
+      class="btn"
+      class:on={blocksOpen}
       aria-expanded={blocksOpen}
       data-testid="blocks-toggle"
       onclick={ontoggleblocks}>{t.bom.toggle}</button
     >
-    <span class="sep dot" aria-hidden="true">{t.separator}</span>
+    <ShareMenu kind="site" />
     <button
-      class="link"
-      class:active={panelOpen}
+      class="btn"
+      class:on={panelOpen}
       aria-expanded={panelOpen}
       data-testid="site-panel-toggle"
       onclick={ontogglepanel}>{t.site.panel}</button
@@ -58,97 +97,96 @@
     right: 0;
     height: var(--bar-h);
     padding: 0 var(--gutter);
-    display: grid;
-    grid-template-columns: auto auto 1fr auto auto;
-    grid-template-areas: 'name actions . modes settings';
-    column-gap: 24px;
+    display: flex;
     align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
     z-index: 30;
-    pointer-events: none;
+    color: var(--text);
   }
-  .group {
+  .name {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+  .title {
+    font-weight: bold;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .size {
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .history {
+    display: flex;
+    gap: 4px;
+    flex: none;
+  }
+  .spacer {
+    flex: 1;
+  }
+  .right {
     display: flex;
     align-items: center;
     gap: 8px;
-    pointer-events: auto;
+    flex: none;
   }
-  .name {
-    grid-area: name;
-    justify-self: start;
-    min-width: 0;
-    max-width: calc(50vw - var(--gutter) - 120px);
-    gap: 10px;
+  .short {
+    display: none;
   }
-  .title {
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .tier {
-    white-space: nowrap;
-  }
-  .actions {
-    grid-area: actions;
-    min-width: 0;
-    white-space: nowrap;
-  }
-  /* Wide enough for the middle of the bar to be free: centred on the page, like the count in the machine view. */
-  @media (min-width: 1100px) {
-    .actions {
-      /* A grid area would be the containing block; the bar itself is wanted. */
-      grid-area: auto;
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-  }
-  .modes {
-    grid-area: modes;
-    justify-self: end;
-  }
-  .settings {
-    grid-area: settings;
-  }
-  .sep {
-    color: var(--faint);
-  }
-  .dot {
-    margin: 0 10px;
-  }
-  /* Too narrow to fit beside the name: the action stays in the Template panel instead. */
-  @media (max-width: 760px) {
-    .actions {
+  @media (max-width: 1279px) {
+    .long {
       display: none;
     }
+    .short {
+      display: inline;
+    }
   }
-  @media (max-width: 900px) {
-    .name {
-      max-width: none;
+  @media (max-width: 760px) {
+    .bar {
+      gap: 8px;
+    }
+    .import {
+      display: none;
+    }
+    .right {
+      gap: 4px;
+    }
+    .right :global(.btn) {
+      padding: 0 8px;
     }
   }
   @media (max-width: 640px) {
     .bar {
-      grid-template-columns: 1fr auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       grid-template-rows: 1fr 1fr;
       grid-template-areas:
-        'name settings'
-        'modes modes';
-      padding-top: 8px;
-      padding-bottom: 8px;
+        'modes right'
+        'name history';
+      align-items: center;
+      padding: 4px 10px;
+      gap: 4px 8px;
     }
     .modes {
-      justify-self: start;
+      grid-area: modes;
     }
-    .settings {
-      justify-self: end;
+    .name {
+      grid-area: name;
     }
-    .dot {
+    .history {
+      grid-area: history;
+    }
+    .right {
+      grid-area: right;
+    }
+    .spacer {
       display: none;
-    }
-    .modes {
-      gap: 8px 12px;
     }
   }
 </style>

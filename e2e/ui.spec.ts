@@ -156,9 +156,9 @@ test('required blocks checklist', async ({ page }) => {
   // Pipes and cables get their own list once they are switched on.
   await panel.getByRole('button', { name: 'Close' }).click();
   await expect(panel).toBeHidden();
-  await page.getByTestId('settings-toggle').click();
+  // The view chips are in the toolbar over the scene, not in Settings.
   await page.getByTestId('toggle-pipes').click();
-  await page.getByTestId('settings').getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByTestId('toggle-pipes')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('blocks-toggle').click();
   await expect(panel).toBeVisible();
   await expect(panel.getByTestId('bom-io-off')).toBeHidden();
@@ -179,9 +179,7 @@ test('a large build with pipes keeps the page responsive while it computes', asy
     .getByTestId('picker-item')
     .filter({ has: page.getByText('Nanochip Assembly Complex', { exact: true }) })
     .click();
-  await page.getByTestId('settings-toggle').click();
   await page.getByTestId('toggle-pipes').click();
-  await page.getByTestId('settings').getByRole('button', { name: 'Close' }).click();
   await page.getByTestId('count').fill('7');
   await page.getByTestId('count').press('Enter');
   await expect(page.getByTestId('count')).toHaveValue('7');
@@ -209,6 +207,7 @@ test('the mirror setting survives a share link', async ({ page, context }) => {
   await expect(mirror).toHaveAttribute('aria-checked', 'false');
   await mirror.click();
   await expect(mirror).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('share-menu').click();
   await page.getByTestId('share').click();
   const link = await page.evaluate(() => navigator.clipboard.readText());
   expect(link).toContain('#p=');

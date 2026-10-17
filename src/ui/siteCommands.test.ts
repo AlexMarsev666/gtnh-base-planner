@@ -5,7 +5,14 @@ import { t } from '../i18n/en';
 import { emptySite } from '../share/siteCodec';
 import type { SiteBuild } from '../model/site/buildTypes';
 import type { SiteRouting, SiteState } from '../model/site/types';
-import { arrange, freeOrigin, neatArrange, optimizeAfterImport, whenBuilt } from './siteCommands';
+import {
+  arrange,
+  arrangeBlockReason,
+  freeOrigin,
+  neatArrange,
+  optimizeAfterImport,
+  whenBuilt,
+} from './siteCommands';
 import { canRedo, canUndo, redo, startSiteHistory, undo as undoStep } from './siteHistory';
 import { arrangeOutcome, site } from '../state/site';
 import { JobCancelled } from './siteWorkerController';
@@ -25,6 +32,16 @@ const resultOf = (s: SiteState, pending?: boolean): SiteResult => ({
   error: null,
   pending,
   of: s,
+});
+
+describe('arrangeBlockReason', () => {
+  it('says an empty template has nothing to arrange', () => {
+    expect(arrangeBlockReason(emptySite())).toBe(t.site.arrangeNoGroups);
+  });
+
+  it('is null once the template has a group', () => {
+    expect(arrangeBlockReason(imported())).toBeNull();
+  });
 });
 
 describe('whenBuilt', () => {

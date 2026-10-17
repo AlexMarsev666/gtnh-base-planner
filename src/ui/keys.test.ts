@@ -70,7 +70,7 @@ describe('siteKeyAction', () => {
     const within = (role: string) => ({
       closest: (sel: string) => (sel.includes(`[role="${role}"]`) ? {} : null),
     });
-    for (const role of ['tablist', 'radiogroup', 'switch'])
+    for (const role of ['tablist', 'radiogroup', 'switch', 'menu', 'toolbar'])
       expect(inTablist({ target: within(role) as never })).toBe(true);
     expect(inTablist({ target: within('button') as never })).toBe(false);
     expect(inTablist({ target: { closest: () => null } as never })).toBe(false);

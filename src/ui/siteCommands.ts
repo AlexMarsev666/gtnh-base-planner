@@ -67,6 +67,14 @@ export function addPlanToSite(): void {
 }
 
 /**
+ * Why Arrange, Optimize and Neat cannot run on `s`, or null when they can. They share one condition (`runArrange`
+ * returns at once without groups): there is something to arrange.
+ */
+export function arrangeBlockReason(s: SiteState): string | null {
+  return s.groups.length ? null : t.site.arrangeNoGroups;
+}
+
+/**
  * Arranges the groups along the flow inside the template's own size: what is too wide for the ground goes on
  * floors above it, and a group bigger than the ground stacks its machines up. The size is never changed. It
  * runs in the build worker, as a big template takes seconds to measure.

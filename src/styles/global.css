@@ -126,9 +126,11 @@ select {
   white-space: nowrap;
 }
 
-/* Panels (the drawers and the outline) read as plain sentences; only their headings stay small caps. */
+/* Panels (the drawers and the outline) and the bars read as plain sentences; only their headings stay small caps. */
 .drawer,
-.outline {
+.outline,
+.bar,
+.scene-toolbar {
   font-size: 13px;
   letter-spacing: normal;
   text-transform: none;
@@ -175,10 +177,20 @@ select {
 .btn:hover:not(:disabled) {
   background: var(--surface);
 }
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled='true'] {
   background: var(--surface);
   color: var(--disabled);
   cursor: default;
+}
+/* A toggle button that is switched on (Blocks, Settings while their drawer is open). */
+.btn.on {
+  background: var(--surface);
+  border-color: var(--text);
+}
+.btn.icon {
+  width: 32px;
+  padding: 0;
 }
 .btn.primary {
   background: var(--text);
@@ -206,6 +218,85 @@ select {
 }
 .btn.block {
   width: 100%;
+}
+
+/* A pill that switches a view option on and off (the scene toolbar). */
+.chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chip:hover {
+  background: var(--surface);
+}
+.chip[aria-pressed='true'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* A popup menu under a button (MenuButton). */
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.menu.right {
+  right: 0;
+}
+.menu-item {
+  appearance: none;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  margin: 0;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--surface);
+}
+.menu-item:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+.menu-item.danger {
+  color: #b42318;
+}
+.menu-sep {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line);
 }
 
 /* Bordered select in the panels (the chevron is drawn here, the native one is off). */

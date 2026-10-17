@@ -22,7 +22,6 @@
   import BlocksPanel from './BlocksPanel.svelte';
   import { clearOtherViewWarnings, createBuildWarnings } from './buildWarnings';
   import { watchDrawerInset, type Inset } from './drawerInset';
-  import FlowToggle from './FlowToggle.svelte';
   import Footer from './Footer.svelte';
   import ImportDialog from './ImportDialog.svelte';
   import Legend from './Legend.svelte';
@@ -33,6 +32,7 @@
   import { hatchKeyAt, hatchPickHolds, hatchTierRows } from './hatchTierRows';
   import { build, machineBusy, machineDef } from './pipeline';
   import Scene from './Scene.svelte';
+  import SceneToolbar from './SceneToolbar.svelte';
   import { inTablist, isTyping, siteKeyAction } from './keys';
   import MoveHint from './MoveHint.svelte';
   import Settings from './Settings.svelte';
@@ -257,7 +257,7 @@
   const outlineDocked = $derived(siteMode && !sitePicker && !$narrow);
 
   /** Canvas pixels the outline and the open drawer cover: the view centres the model in the rest. */
-  let inset = $state<Inset>({ left: 0, right: 0, bottom: 0 });
+  let inset = $state<Inset>({ left: 0, right: 0, bottom: 0, top: 0 });
   $effect(() => {
     // Re-measure whenever the outline appears or a drawer opens or closes.
     void sitePanelOpen;
@@ -271,7 +271,7 @@
 
 <svelte:window {onkeydown} {onkeyup} onblur={() => shiftHeld.set(false)} />
 
-<main style:--outline-w={outlineDocked ? '260px' : '0px'}>
+<main style:--outline-w={outlineDocked ? '260px' : '0px'} style:--drawer-w="{inset.right}px">
   <Scene
     scene={siteMode ? $siteSceneInView : $build.scene}
     mode={$viewMode}
@@ -342,7 +342,7 @@
         />
       {/if}
       <SiteLegend />
-      <FlowToggle />
+      {#if !importOpen}<SceneToolbar view="site" />{/if}
       <SiteStats
         onproblems={() => {
           blocksOpen = false;
@@ -418,6 +418,7 @@
     {#if pickerOpen}
       <Picker currentId={$plan.multiblockId} {onselect} onclose={() => (pickerOpen = false)} />
     {:else}
+      <SceneToolbar view="machine" />
       <Legend enabled={$plan.enabledHatches} colors={$plan.colors} />
       <StatsLine result={$build} />
     {/if}
