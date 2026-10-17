@@ -47,10 +47,10 @@ export interface Renderer {
   /** Aim at a box (inclusive min, exclusive max, in blocks), keeping the camera angles. */
   frameBox(min: Vec3, max: Vec3): void;
   /**
-   * Pixels of the canvas covered on the right and at the bottom (a drawer or sheet): the view is shifted so
-   * the scene centres in the part left free.
+   * Pixels of the canvas covered on the left (the outline), the right and at the bottom (a drawer or
+   * sheet): the view is shifted so the scene centres in the part left free.
    */
-  setInset(right: number, bottom: number): void;
+  setInset(left: number, right: number, bottom: number): void;
   resize(): void;
   dispose(): void;
 }
@@ -435,7 +435,7 @@ export function createRenderer(
   let reportedTheta = NaN;
   let width = 0;
   let height = 0;
-  let inset = { right: 0, bottom: 0 };
+  let inset = { left: 0, right: 0, bottom: 0 };
   let dragEnabled = false;
   /** A drag of the selection: the ground plane at the grabbed height, where it was grabbed, the offset. */
   let drag: { plane: THREE.Plane; start: THREE.Vector3; dx: number; dz: number } | null = null;
@@ -548,7 +548,7 @@ export function createRenderer(
     gizmoCamera.quaternion.copy(camera.quaternion);
     gizmoCamera.position.set(0, 0, 4).applyQuaternion(camera.quaternion);
     gl.clearDepth();
-    gl.setViewport(GIZMO_MARGIN_PX, GIZMO_MARGIN_PX, GIZMO_PX, GIZMO_PX);
+    gl.setViewport(GIZMO_MARGIN_PX + inset.left, GIZMO_MARGIN_PX, GIZMO_PX, GIZMO_PX);
     gl.render(gizmo, gizmoCamera);
     gl.setViewport(0, 0, width, height);
 
@@ -595,10 +595,10 @@ export function createRenderer(
     return out.length > 0 ? out : fitPoints([[0, 0, 0]]);
   }
 
-  /** Field of view and aspect of the part of the canvas an open drawer or sheet leaves free. */
+  /** Field of view and aspect of the part of the canvas an open outline, drawer or sheet leaves free. */
   function visibleView(): { fov: number; aspect: number } {
     if (width === 0 || height === 0) return { fov: camera.fov, aspect: camera.aspect };
-    const w = Math.max(1, width - inset.right);
+    const w = Math.max(1, width - inset.left - inset.right);
     const h = Math.max(1, height - inset.bottom);
     const half = THREE.MathUtils.degToRad(camera.fov) / 2;
     const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(half) * (h / height)));
@@ -1279,8 +1279,8 @@ export function createRenderer(
 
   function applyInset(): void {
     // Shift the view window so the scene centres in the uncovered part of the canvas.
-    if (inset.right > 0 || inset.bottom > 0)
-      camera.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
+    if (inset.left > 0 || inset.right > 0 || inset.bottom > 0)
+      camera.setViewOffset(width, height, (inset.right - inset.left) / 2, inset.bottom / 2, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
   }
@@ -1416,9 +1416,13 @@ export function createRenderer(
       controls.update();
     },
 
-    setInset(right, bottom) {
-      const next = { right: Math.max(0, Math.round(right)), bottom: Math.max(0, Math.round(bottom)) };
-      if (next.right === inset.right && next.bottom === inset.bottom) return;
+    setInset(left, right, bottom) {
+      const next = {
+        left: Math.max(0, Math.round(left)),
+        right: Math.max(0, Math.round(right)),
+        bottom: Math.max(0, Math.round(bottom)),
+      };
+      if (next.left === inset.left && next.right === inset.right && next.bottom === inset.bottom) return;
       inset = next;
       if (width > 0 && height > 0) applyInset();
       labelView = '';

@@ -513,6 +513,13 @@
     color: var(--text);
   }
 
+  /* Below the top bar, so its buttons stay reachable while the drawer is open. */
+  @media (min-width: 761px) {
+    .drawer {
+      top: var(--bar-h);
+      z-index: 28;
+    }
+  }
   @media (max-width: 640px) {
     .drawer {
       top: auto;

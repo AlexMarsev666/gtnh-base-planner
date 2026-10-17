@@ -81,7 +81,7 @@
   .card,
   .chip {
     position: fixed;
-    left: var(--gutter);
+    left: calc(var(--gutter) + var(--outline-w, 0px));
     /* Above the axis gizmo in the bottom-left corner. */
     bottom: 128px;
     z-index: 20;

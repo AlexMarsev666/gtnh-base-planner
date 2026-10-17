@@ -14,7 +14,7 @@
   /* A quiet line under the stats, centred between the axis gizmo and the legend. */
   .footer {
     position: fixed;
-    left: 50%;
+    left: calc(50% + var(--outline-w, 0px) / 2);
     bottom: 4px;
     transform: translateX(-50%);
     display: flex;

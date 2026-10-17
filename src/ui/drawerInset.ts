@@ -1,33 +1,41 @@
-/** Canvas pixels a drawer covers on the right (side drawer) or at the bottom (bottom sheet on phones). */
+/**
+ * Canvas pixels the docked outline covers on the left, a drawer on the right (side drawer) or at the bottom
+ * (bottom sheet on phones).
+ */
 export interface Inset {
+  left: number;
   right: number;
   bottom: number;
 }
 
 /**
- * Measures the open drawer (`aside.drawer`) on the next frame and whenever it resizes, reporting the
- * part of the canvas it covers (none when no drawer is open). Returns a function that stops watching.
+ * Measures the docked outline (`aside.outline`) and the open drawer (`aside.drawer`) on the next frame and
+ * whenever either resizes, reporting the part of the canvas they cover (none when neither is shown).
+ * Returns a function that stops watching.
  */
 export function watchDrawerInset(report: (inset: Inset) => void): () => void {
   let observer: ResizeObserver | undefined;
   const raf = requestAnimationFrame(() => {
-    const el = document.querySelector<HTMLElement>('aside.drawer');
+    const drawer = document.querySelector<HTMLElement>('aside.drawer');
+    const outline = document.querySelector<HTMLElement>('aside.outline');
     const measure = () => {
-      if (!el?.isConnected) {
-        report({ right: 0, bottom: 0 });
+      const left = outline?.isConnected ? Math.max(0, Math.round(outline.getBoundingClientRect().right)) : 0;
+      if (!drawer?.isConnected) {
+        report({ left, right: 0, bottom: 0 });
         return;
       }
-      const r = el.getBoundingClientRect();
+      const r = drawer.getBoundingClientRect();
       report(
         r.left > 0
-          ? { right: Math.max(0, window.innerWidth - r.left), bottom: 0 }
-          : { right: 0, bottom: Math.max(0, window.innerHeight - r.top) },
+          ? { left, right: Math.max(0, window.innerWidth - r.left), bottom: 0 }
+          : { left, right: 0, bottom: Math.max(0, window.innerHeight - r.top) },
       );
     };
     measure();
-    if (el && typeof ResizeObserver !== 'undefined') {
+    if (typeof ResizeObserver !== 'undefined') {
       observer = new ResizeObserver(measure);
-      observer.observe(el);
+      if (drawer) observer.observe(drawer);
+      if (outline) observer.observe(outline);
     }
   });
   return () => {

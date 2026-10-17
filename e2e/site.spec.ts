@@ -94,12 +94,14 @@ test('imports a GTNH Planner chain into a routed site', async ({ page }) => {
   // Select a group in the panel, move and turn it from the keyboard.
   await page.getByTestId('site-panel-toggle').click();
   const panel = page.getByTestId('site-panel');
+  // The groups and links list is the docked outline at the left, not part of the panel.
+  const outline = page.getByTestId('site-outline');
   await expect(panel).toBeVisible();
-  await panel.getByTestId('site-group').first().click();
+  await outline.getByTestId('site-group').first().click();
   await expect(panel.getByTestId('site-group-editor')).toBeVisible();
   const x = panel.getByTestId('site-group-x');
   const before = Number(await x.inputValue());
-  await panel.getByTestId('site-group').first().focus();
+  await outline.getByTestId('site-group').first().focus();
   await page.keyboard.press('ArrowRight');
   await expect(x).toHaveValue(String(before + 1));
   await page.keyboard.press('Shift+ArrowRight');
@@ -171,7 +173,8 @@ test('builds a site by hand and switches back to the machine view', async ({ pag
 
   await page.getByTestId('site-panel-toggle').click();
   const panel = page.getByTestId('site-panel');
-  await panel.getByTestId('site-add-group').click();
+  const outline = page.getByTestId('site-outline');
+  await outline.getByTestId('site-add-group').click();
   await page
     .getByTestId('picker')
     .getByTestId('picker-item')
@@ -188,12 +191,12 @@ test('builds a site by hand and switches back to the machine view', async ({ pag
   await expect(lock).toHaveAttribute('aria-pressed', 'false');
 
   // A link from a site input to the furnace, with a new resource.
-  await panel.getByTestId('site-link-open').click();
-  const form = panel.getByTestId('site-link-form');
+  await outline.getByTestId('site-link-open').click();
+  const form = outline.getByTestId('site-link-form');
   await form.getByLabel('From').selectOption({ label: 'Template input' });
   await form.getByLabel('To').selectOption({ label: 'Electric Blast Furnace' });
   await form.getByLabel('Resource name').fill('Iron Dust');
-  await panel.getByTestId('site-add-link').click();
+  await outline.getByTestId('site-add-link').click();
   await expect(page.getByTestId('site-legend')).toContainText('Iron Dust');
   await expect(page.getByTestId('site-stats')).toContainText('2/2 connected');
 

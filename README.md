@@ -89,7 +89,8 @@ The planner checks layout rules for the transcribed structure only. It is not a 
 
 ### Templates
 
-1. Switch to TEMPLATE in the top bar. Use TEMPLATE (top right) to open the template panel.
+1. Switch to TEMPLATE in the top bar. Use TEMPLATE (top right) to open the template panel. The groups and links list is
+   the outline docked at the left (on narrow screens it is the first block of the template panel); the panel at the right is the inspector.
 2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: ADD MULTIBLOCK, then ADD LINK with a start
    (a group or TEMPLATE INPUT), an end (a group or TEMPLATE OUTPUT) and a resource. In the single-machine view, SETTINGS →
    ADD TO TEMPLATE copies the current plan into the template as a group.

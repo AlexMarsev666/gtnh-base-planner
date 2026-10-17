@@ -219,6 +219,7 @@ export const t = {
   site: {
     tooLargeForLink: 'This template is too large for a link. Download the JSON file instead.',
     panel: 'Template',
+    outline: 'Groups and links',
     name: 'Name',
     unnamed: 'Template',
     size: 'Size',

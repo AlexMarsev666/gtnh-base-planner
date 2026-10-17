@@ -72,7 +72,7 @@
 <style>
   .notices {
     position: fixed;
-    left: var(--gutter);
+    left: calc(var(--gutter) + var(--outline-w, 0px));
     right: var(--gutter);
     bottom: 52px;
     display: flex;

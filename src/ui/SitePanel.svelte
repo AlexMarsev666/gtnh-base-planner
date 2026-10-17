@@ -1,35 +1,31 @@
 <script lang="ts">
   import { blockInfo } from '../data/blocks';
   import { FLOOR_BLOCKS } from '../data/floor';
-  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
   import { t } from '../i18n/en';
-  import type { Endpoint, ResourceKind } from '../model/site/types';
   import { MAX_CORRIDOR, SITE_MAX_SIZE, SITE_MIN_SIZE } from '../share/siteCodec';
   import { ROUTING_STYLES } from '../model/site/types';
-  import { flowAnimation, isolate, showIcons, site, siteCables, siteGroup, sitePipes } from '../state/site';
+  import { flowAnimation, showIcons, site, siteCables, siteGroup, sitePipes } from '../state/site';
   import { connectBelow, xray } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
   import { notify } from './notices';
+  import { narrow } from './narrow';
   import NumberStepper from './NumberStepper.svelte';
-  import ResourceIcon from './ResourceIcon.svelte';
   import {
     resetSite,
     updateSite,
     withCorridor,
     withFloor,
-    withLinkAdded,
-    withLinkRemoved,
     withName,
-    withResourceColor,
     withRouting,
     withSiteSize,
-    type LinkEnd,
   } from './siteActions';
-  import { addGroup, arrange, neatArrange } from './siteCommands';
+  import { arrange, neatArrange } from './siteCommands';
   import { canRedo, canUndo, redoSite, undoAction, undoSite } from './siteHistory';
   import { ROUTING_DEPTHS, depthReduced, routingView, splitWarnings } from './siteInspect';
   import { siteBuild, siteRouteInfo } from './sitePipeline';
   import SelectRow from './SelectRow.svelte';
+  import { groupName as siteGroupName, resName as siteResName } from './siteNames';
+  import SiteOutline from './SiteOutline.svelte';
   import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
   import ToggleRow from './ToggleRow.svelte';
   import { errorCount, groupValidity } from './validityText';
@@ -46,27 +42,8 @@
   const selected = $derived($site.groups.find((g) => g.id === $siteGroup) ?? null);
   const placed = $derived(build?.groups.find((g) => g.group.id === $siteGroup));
 
-  function groupName(id: string): string {
-    const g = $site.groups.find((x) => x.id === id);
-    if (!g) return id;
-    return g.label ?? getSiteDef(g.multiblockId)?.name ?? g.multiblockId;
-  }
-  function resName(key: string): string {
-    return $site.resources[key]?.name ?? key;
-  }
-  function endName(e: Endpoint): string {
-    if ('group' in e) return groupName(e.group);
-    const p = $site.ports.find((x) => x.id === e.port);
-    return p?.dir === 'in' ? t.site.inputPort : t.site.outputPort;
-  }
-  /** Names in the From / To menus: two groups of the same machine must be told apart. */
-  function menuName(id: string): string {
-    const name = groupName(id);
-    const same = $site.groups.filter((g) => groupName(g.id) === name);
-    if (same.length < 2) return name;
-    const g = $site.groups.find((x) => x.id === id)!;
-    return `${name} (${g.origin[0]}, ${g.origin[1]})`;
-  }
+  const groupName = (id: string) => siteGroupName($site, id);
+  const resName = (key: string) => siteResName($site, key);
 
   const warnings = $derived(splitWarnings(build?.warnings ?? []));
   const notes = $derived(build?.notes ?? []);
@@ -119,35 +96,6 @@
     notify(t.site.resetDone, 6000, 'edit', undoAction());
   }
 
-  // New link form, folded until asked for.
-  let linkOpen = $state(false);
-  let linkFrom = $state('');
-  let linkTo = $state('');
-  let linkRes = $state('');
-  let newResName = $state('');
-  let newResKind = $state<ResourceKind>('item');
-  let linkRate = $state('');
-  const resourceKeys = $derived(
-    Object.keys($site.resources).sort((a, b) => resName(a).localeCompare(resName(b))),
-  );
-  function end(v: string): LinkEnd | null {
-    if (v === '@port') return { port: true };
-    return v ? { group: v } : null;
-  }
-  function addLink() {
-    const from = end(linkFrom);
-    const to = end(linkTo);
-    if (!from || !to) return;
-    const res = linkRes && linkRes !== '@new' ? { key: linkRes } : { name: newResName, kind: newResKind };
-    const rate = Number(linkRate);
-    const before = $site;
-    updateSite((s) => withLinkAdded(s, from, to, res, Number.isFinite(rate) && rate > 0 ? rate : undefined));
-    if ($site !== before) {
-      newResName = '';
-      linkRate = '';
-    }
-  }
-
   let fileInput = $state<HTMLInputElement>();
   function onfile(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
@@ -175,144 +123,9 @@
     <GroupInspector group={selected} {placed} onreplace={() => onpick('change')} />
   {/if}
 
-  <section>
-    <h2>{t.site.groups}</h2>
-    {#if !$site.groups.length}<p class="hint">{t.site.noGroups}</p>{/if}
-    <ul class="rows">
-      {#each $site.groups as g (g.id)}
-        {@const pg = build?.groups.find((x) => x.group.id === g.id)}
-        <li class="row">
-          <button
-            class="link"
-            class:active={g.id === $siteGroup}
-            data-testid="site-group"
-            onclick={() => siteGroup.set(g.id === $siteGroup ? null : g.id)}
-            >{groupName(g.id)} ×{pg?.units.length ?? g.count}</button
-          >
-          {#if g.source?.machineCount !== undefined}<span class="meta"
-              >{t.site.needed(g.source.machineCount)}</span
-            >{/if}
-        </li>
-      {/each}
-    </ul>
-    <ul class="rows add">
-      <li class="row">
-        <button class="link" data-testid="site-add-group" onclick={() => onpick('add')}
-          >{t.site.addGroup}</button
-        >
-      </li>
-      <li class="row">
-        <button class="link" onclick={() => addGroup(SINGLE_BLOCK_ID)}>{t.site.addSingle}</button>
-      </li>
-      <li class="row">
-        <button class="link" onclick={() => addGroup(PLACEHOLDER_ID)}>{t.site.addPlaceholder}</button>
-      </li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>{t.site.links}</h2>
-    {#if !$site.links.length}<p class="hint">{t.site.noLinks}</p>{/if}
-    <ul class="rows">
-      {#each $site.links as l (l.id)}
-        {@const res = $site.resources[l.resource]}
-        <li class="row link-row" class:picked={$isolate === l.resource} data-testid="site-link">
-          <label class="swatch" style:background={res?.color} title={res?.name}>
-            <input
-              type="color"
-              value={res?.color ?? '#888888'}
-              aria-label={res?.name}
-              onchange={(e) => updateSite((s) => withResourceColor(s, l.resource, e.currentTarget.value))}
-            />
-          </label>
-          {#if res}<span class="res-icon"><ResourceIcon {res} size={20} /></span>{/if}
-          <button
-            class="link text-left"
-            class:active={$isolate === l.resource}
-            onclick={() => isolate.set($isolate === l.resource ? null : l.resource)}
-            ><span class="res">{resName(l.resource)}</span>
-            <span class="meta"
-              >{endName(l.from)} → {endName(l.to)}{l.rate !== undefined && res
-                ? ` · ${t.site.rateText(l.rate, res.kind)}`
-                : ''}</span
-            ></button
-          >
-          <button
-            class="link x"
-            aria-label={t.site.remove}
-            onclick={() => updateSite((s) => withLinkRemoved(s, l.id))}>×</button
-          >
-        </li>
-      {/each}
-    </ul>
-
-    {#if linkOpen}
-      <div class="form" data-testid="site-link-form">
-        <label class="pair wide"
-          ><span>{t.site.from}</span>
-          <select class="field select" bind:value={linkFrom} aria-label={t.site.from}>
-            <option value="">—</option>
-            <option value="@port">{t.site.inputPort}</option>
-            {#each $site.groups as g (g.id)}<option value={g.id}>{menuName(g.id)}</option>{/each}
-          </select></label
-        >
-        <label class="pair wide"
-          ><span>{t.site.to}</span>
-          <select class="field select" bind:value={linkTo} aria-label={t.site.to}>
-            <option value="">—</option>
-            <option value="@port">{t.site.outputPort}</option>
-            {#each $site.groups as g (g.id)}<option value={g.id}>{menuName(g.id)}</option>{/each}
-          </select></label
-        >
-        <label class="pair wide"
-          ><span>{t.site.resource}</span>
-          <select class="field select" bind:value={linkRes} aria-label={t.site.resource}>
-            <option value="@new">{t.site.newResource}</option>
-            {#each resourceKeys as k (k)}<option value={k}>{resName(k)}</option>{/each}
-          </select></label
-        >
-        {#if !linkRes || linkRes === '@new'}
-          <label class="pair wide"
-            ><span>{t.site.resourceName}</span><input
-              class="field text"
-              type="text"
-              bind:value={newResName}
-              aria-label={t.site.resourceName}
-            /></label
-          >
-          <label class="pair wide"
-            ><span>{t.site.kind}</span>
-            <select class="field select" bind:value={newResKind} aria-label={t.site.kind}>
-              <option value="item">{t.site.kinds.item}</option>
-              <option value="fluid">{t.site.kinds.fluid}</option>
-              <option value="power">{t.site.kinds.power}</option>
-            </select></label
-          >
-        {/if}
-        <label class="pair wide"
-          ><span>{t.site.rate}</span><input
-            class="field text"
-            type="text"
-            inputmode="decimal"
-            bind:value={linkRate}
-            aria-label={t.site.rate}
-          /></label
-        >
-        <div class="row">
-          <button class="link active" data-testid="site-add-link" onclick={addLink}>{t.site.addLink}</button>
-          <button class="link" onclick={() => (linkOpen = false)}>{t.site.addLinkClose}</button>
-        </div>
-      </div>
-    {:else}
-      <ul class="rows add">
-        <li class="row">
-          <button class="link" data-testid="site-link-open" onclick={() => (linkOpen = true)}
-            >{t.site.addLinkOpen}</button
-          >
-        </li>
-      </ul>
-    {/if}
-  </section>
+  {#if $narrow}
+    <SiteOutline embedded {onpick} />
+  {/if}
 
   {#if warnings.problems.length || wontForm.length}
     <section>
@@ -612,13 +425,6 @@
   .pair > span {
     white-space: nowrap;
   }
-  .pair.wide {
-    justify-content: space-between;
-    width: 100%;
-  }
-  .pair.wide > span {
-    flex: none;
-  }
   .text {
     text-align: left;
     text-transform: none;
@@ -632,76 +438,11 @@
     border-bottom: 1px solid var(--text);
     text-decoration: none;
   }
-  .select {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
-    max-width: 200px;
-    cursor: pointer;
-  }
-  .hint,
-  .meta {
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
-  }
   .hint {
-    margin: 8px 0 0;
-  }
-  .add {
-    margin-top: 10px;
-  }
-  .link-row {
-    align-items: flex-start;
-    /* Room for the outline of the isolated resource. */
-    margin: 0 -6px;
-    padding: 0 6px;
-    outline: 1px solid transparent;
-  }
-  .link-row.picked {
-    outline-color: var(--pick);
-  }
-  .text-left {
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-  }
-  .res {
+    color: var(--muted);
     text-transform: none;
     letter-spacing: 0.02em;
-  }
-  .x {
-    color: var(--muted);
-  }
-  .swatch {
-    position: relative;
-    width: 10px;
-    height: 10px;
-    flex: none;
-    margin-top: 8px;
-    cursor: pointer;
-  }
-  .res-icon {
-    margin-top: 4px;
-    flex: none;
-  }
-  .swatch input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    border: 0;
-    padding: 0;
-  }
-  .form {
-    margin-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    margin: 8px 0 0;
   }
   .problems li {
     color: var(--text);
@@ -728,6 +469,11 @@
   @media (min-width: 761px) {
     .narrow-only {
       display: none;
+    }
+    /* Below the top bar, so its buttons stay reachable while the drawer is open. */
+    .drawer {
+      top: var(--bar-h);
+      z-index: 28;
     }
   }
   @media (max-width: 640px) {

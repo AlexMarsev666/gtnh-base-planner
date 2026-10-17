@@ -24,6 +24,7 @@
   import Footer from './Footer.svelte';
   import ImportDialog from './ImportDialog.svelte';
   import Legend from './Legend.svelte';
+  import { narrow } from './narrow';
   import Notices from './Notices.svelte';
   import { notify } from './notices';
   import Picker from './Picker.svelte';
@@ -48,6 +49,7 @@
   } from './siteEditing';
   import { redoSite, undoSite } from './siteHistory';
   import SiteBar from './SiteBar.svelte';
+  import SiteOutline from './SiteOutline.svelte';
   import { addGroup } from './siteCommands';
   import { groupHatchAt, groupPickHolds } from './siteInspect';
   import SiteLegend from './SiteLegend.svelte';
@@ -234,21 +236,25 @@
     if (e.key === 'Shift') shiftHeld.set(false);
   }
 
-  /** Canvas pixels the open drawer covers: the view centres the model in the rest. */
-  let inset = $state<Inset>({ right: 0, bottom: 0 });
+  /** The docked outline: the Template view's groups and links, except on narrow screens. */
+  const outlineDocked = $derived(siteMode && !sitePicker && !$narrow);
+
+  /** Canvas pixels the outline and the open drawer cover: the view centres the model in the rest. */
+  let inset = $state<Inset>({ left: 0, right: 0, bottom: 0 });
   $effect(() => {
-    // Re-measure whenever a drawer opens or closes.
+    // Re-measure whenever the outline appears or a drawer opens or closes.
     void sitePanelOpen;
     void settingsOpen;
     void blocksOpen;
     void siteMode;
+    void outlineDocked;
     return watchDrawerInset((next) => (inset = next));
   });
 </script>
 
 <svelte:window {onkeydown} {onkeyup} onblur={() => shiftHeld.set(false)} />
 
-<main>
+<main style:--outline-w={outlineDocked ? '260px' : '0px'}>
   <Scene
     scene={siteMode ? $siteSceneInView : $build.scene}
     mode={$viewMode}
@@ -306,6 +312,18 @@
         onclose={() => (sitePicker = null)}
       />
     {:else}
+      {#if outlineDocked}
+        <SiteOutline
+          onpick={(purpose) => {
+            sitePicker = purpose;
+            sitePanelOpen = false;
+          }}
+          onselect={() => {
+            sitePanelOpen = true;
+            blocksOpen = false;
+          }}
+        />
+      {/if}
       <SiteLegend />
       <FlowToggle />
       <SiteStats

@@ -75,7 +75,7 @@
 <style>
   .stats {
     position: fixed;
-    left: 160px;
+    left: calc(160px + var(--outline-w, 0px));
     right: 240px;
     bottom: 22px;
     display: flex;

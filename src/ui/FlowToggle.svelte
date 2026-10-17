@@ -15,7 +15,7 @@
 <style>
   .flow {
     position: fixed;
-    left: var(--gutter);
+    left: calc(var(--gutter) + var(--outline-w, 0px));
     /* Right under the site name and size in the top bar. */
     top: calc(var(--bar-h) - 8px);
     padding: 0;
