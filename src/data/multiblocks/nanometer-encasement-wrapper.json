@@ -2,23 +2,27 @@
   "id": "nanometer-encasement-wrapper",
   "name": "Nanometer Encasement Wrapper",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEEncasementWrapperModule.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEEncasementWrapperModule.java",
   "size": [7, 9, 7],
   "layers": [
-    [" AAAAA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    ["       ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", "       "],
-    [" AA~AA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    [" DECED ", "DB---BD", "E-----E", "C-----C", "E-----E", "DB---BD", " DECED "],
-    [" DECED ", "DB-D-BD", "E-BBB-E", "CDBBBDC", "E-BBB-E", "DB-D-BD", " DECED "],
-    [" DECED ", "DB---BD", "E-----E", "C-----C", "E-----E", "DB---BD", " DECED "],
-    ["  ECE  ", " B-D-B ", "E-BBB-E", "CDBBBDC", "E-BBB-E", " B-D-B ", "  ECE  "],
-    ["  ECE  ", " B---B ", "E-----E", "C-----C", "E-----E", " B---B ", "  ECE  "],
-    ["       ", "  CCC  ", " CBBBC ", " CBBBC ", " CBBBC ", "  CCC  ", "       "]
+    [" AAAAA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA "],
+    ["       ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", "       "],
+    [" AA~AA ", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", " AAAAA "],
+    [" DEBED ", "DC---CD", "E-----E", "B-----B", "E-----E", "DC---CD", " DEBED "],
+    [" DEBED ", "DC-D-CD", "E-CCC-E", "BDCCCDB", "E-CCC-E", "DC-D-CD", " DEBED "],
+    [" DEBED ", "DC---CD", "E-----E", "B-----B", "E-----E", "DC---CD", " DEBED "],
+    ["  EBE  ", " C-D-C ", "E-CCC-E", "BDCCCDB", "E-CCC-E", " C-D-C ", "  EBE  "],
+    ["  EBE  ", " C---C ", "E-----E", "B-----B", "E-----E", " C---C ", "  EBE  "],
+    ["       ", "  BBB  ", " BCCCB ", " BCCCB ", " BCCCB ", "  BBB  ", "       "]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings12@1", "hatches": ["itemIn", "fluidIn", "fluidOut"] },
-    "B": { "blockId": "gregtech:gt.blockcasings12@1" },
-    "C": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "A": {
+      "blockId": "gregtech:gt.blockcasings12@1",
+      "hatches": ["itemIn", "fluidIn", "fluidOut"],
+      "region": "dot3"
+    },
+    "B": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "C": { "blockId": "gregtech:gt.blockcasings12@1" },
     "D": { "blockId": "gregtech:gt.blockframes@391" },
     "E": { "blockId": "gregtech:gt.blockglass1@8" }
   },
@@ -29,8 +33,14 @@
     "fluidOut": "gt.hatch.outputHatch"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": {},
-  "defaultHatches": ["itemIn"],
+  "requiredHatches": { "fluidIn": { "min": 1 } },
+  "defaultHatches": ["itemIn", "fluidIn"],
+  "zones": {
+    "dot3": {
+      "kinds": ["fluidIn"],
+      "text": "1+ Input Hatch: Any base mesh casing\n0+ Vacuum Conveyor Input: Any base mesh casing\n0+ Vacuum Conveyor Output: Any base mesh casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEEncasementWrapperModule (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEEncasementWrapperModule (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

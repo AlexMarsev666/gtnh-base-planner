@@ -1,15 +1,17 @@
-import { isSingleBlock } from '../../data/generic';
-import { singleMachineBlockId } from '../../data/single-machines';
-import { DEFAULT_HATCH_COLORS } from '../colors';
-import { key } from '../geometry';
+import { isSingleBlock, singleMachineLook } from '../../data/generic';
+import { DEFAULT_HATCH_COLORS, JUNCTION_COLOR } from '../colors';
+import { key, step } from '../geometry';
+import type { BomTiers } from '../bom';
 import { buildSceneModel } from '../scene';
-import type { Vec3 } from '../core/types';
-import type { SceneModel, Voxel } from '../render/types';
+import { followsGroupTier, groupKey, hatchTier } from '../tiers';
+import type { Dir, Vec3 } from '../core/types';
+import type { PipeJunction, SceneModel, Voxel } from '../render/types';
 import type { RouteNet } from '../routing/routeNet';
 import type { PlacedGroup, PlacedPort, SiteNet } from './buildTypes';
 import { siteResource } from './demand';
 import { groupPoint, type SiteHatch } from './group';
 import { portUnitId } from './ids';
+import { isCable } from '../routing/kinds';
 import { netKind } from './nets';
 import type { SiteState } from './types';
 
@@ -25,6 +27,7 @@ export function buildSiteScene(
   routed: readonly SiteNet[],
   conflictCells: ReadonlySet<string>,
   isolate?: string | null,
+  sharedCells?: ReadonlyMap<string, readonly number[]>,
 ): SceneModel {
   const [w, d] = site.size;
   const colors = { ...DEFAULT_HATCH_COLORS, ...site.colors };
@@ -50,15 +53,20 @@ export function buildSiteScene(
       null,
       colors,
     );
-    // Each single-block machine shows the look of its own machine.
-    const look = single && pg.group.machine ? singleMachineBlockId(pg.group.machine) : null;
+    // Each single-block machine shows the look of its own machine in its tier (a transformer: with its step and
+    // amperage; the voxel's facing is the front, which a step-down transformer takes its input on).
+    const { machine, tier, step, amps } = pg.group;
+    const look = single && machine ? singleMachineLook(machine, tier, step, amps) : null;
     for (const v of local.voxels) {
       if (look) v.blockId = look;
       const k = key(v.pos);
       if (conflictCells.has(k)) v.conflict = true;
       const prev = voxelMap.get(k);
+      // A wall two groups share is drawn once, for the first group (lowest index), and counted once; it
+      // answers for the units of both, and keeps a conflict its own group had.
+      const share = prev && !conflictCells.has(k) && sharedCells?.has(k);
       if (prev) {
-        prev.conflict = true;
+        if (!share || v.conflict) prev.conflict = true;
         prev.unitIds = [...new Set([...prev.unitIds, ...v.unitIds])].sort((a, b) => a - b);
       } else voxelMap.set(k, v);
     }
@@ -87,7 +95,13 @@ export function buildSiteScene(
       markers.push({
         pos: h.cell,
         face: h.face,
-        color: h.resource ? resourceOf(h.resource).color : colors[h.kind],
+        // A hatch holding several resources has no colour of its own to show: all of them meet at its front.
+        color:
+          (h.resources?.length ?? 0) > 1
+            ? JUNCTION_COLOR
+            : h.resource
+              ? resourceOf(h.resource).color
+              : colors[h.kind],
       });
     }
   for (const n of routed)
@@ -118,6 +132,7 @@ export function buildSiteScene(
       dim: !!isolate && isolate !== n.resource,
     };
   });
+  const junctions = pipeJunctions(routed, pipes);
   // Port blocks take a stub like hatches.
   const portStubs = routed.flatMap((n) =>
     n.terminals.flatMap((t, ti) => {
@@ -159,7 +174,102 @@ export function buildSiteScene(
     bounds: { min: lo, max: hi },
     colors,
     markers,
+    ...(junctions.length ? { junctions } : {}),
     labels,
     site: { size: [w, d] },
+    ...(site.floor
+      ? { floor: { y: FLOOR_Y, blockId: site.floor, size: [w, d], holes: floorHoles(pipes, w, d) } }
+      : {}),
   };
+}
+
+/** Height of the floor layer: the one block layer just below the ground. */
+export const FLOOR_Y = -1;
+
+/** The [x, z] cells of the floor a pipe or cable passes through (in z, then x order). */
+function floorHoles(pipes: readonly RouteNet[], w: number, d: number): [number, number][] {
+  const cells = new Set<number>();
+  for (const n of pipes)
+    for (const path of n.paths)
+      for (const c of path)
+        if (c[1] === FLOOR_Y && c[0] >= 0 && c[0] < w && c[2] >= 0 && c[2] < d) cells.add(c[0] + w * c[2]);
+  return [...cells].sort((a, b) => a - b).map((i): [number, number] => [i % w, Math.floor(i / w)]);
+}
+
+/**
+ * The cell in front of each hatch two or more routed nets end at (they all end in that one cell), with the
+ * nets and their colours. `pipes` are the nets' scene counterparts, in the order of `routed`.
+ */
+function pipeJunctions(routed: readonly SiteNet[], pipes: readonly RouteNet[]): PipeJunction[] {
+  const byHatch = new Map<string, { net: number; face?: Dir | null; cell: Vec3 }[]>();
+  routed.forEach((n, ni) =>
+    n.terminals.forEach((t, ti) => {
+      if (!t.hatch) return;
+      const k = key(t.cell);
+      const list = byHatch.get(k) ?? [];
+      byHatch.set(k, [...list, { net: ni, face: n.route?.attach[ti], cell: t.cell }]);
+    }),
+  );
+  const out: PipeJunction[] = [];
+  for (const all of byHatch.values()) {
+    // Only nets that connected here count, and only those that reach the hatch through one common face.
+    const face = all.find((e) => e.face)?.face;
+    if (!face) continue;
+    const list = all.filter((e) => e.face === face);
+    const nets = [...new Set(list.map((e) => e.net))].filter((i) => !isCable(pipes[i].kind));
+    if (nets.length < 2) continue;
+    const hatch = list[0].cell;
+    out.push({
+      cell: step(hatch, face),
+      kind: pipes[nets[0]].kind,
+      nets: nets.map((i) => pipes[i].id!),
+      colors: nets.map((i) => pipes[i].color!),
+      hatch,
+      face,
+      ...(nets.every((i) => pipes[i].dim) ? { dim: true } : {}),
+    });
+  }
+  return out;
+}
+
+/**
+ * The `SiteGroup.hatchTiers` key of each hatch of a group, in the order given (see `groupKey`): kinds without a
+ * resource by their number among the hatches of the kind, the others by resource and unit index (the position
+ * in `unitIds`), or `shared` for a hatch serving several units.
+ */
+export function groupHatchKeys(
+  hatches: readonly Pick<SiteHatch, 'kind' | 'resource' | 'unitIds'>[],
+  unitIds: readonly number[],
+): string[] {
+  const seen = new Map<string, number>();
+  return hatches.map((h) => {
+    const n = seen.get(h.kind) ?? 0;
+    seen.set(h.kind, n + 1);
+    const index = unitIds.indexOf(h.unitIds[0]);
+    return groupKey(h.kind, n, h.resource, h.unitIds.length > 1 || index < 0 ? 'shared' : index);
+  });
+}
+
+/**
+ * Tiers for the bill of materials of a built site, matching `SceneModel.hatches` of `buildSiteScene` (the
+ * groups' hatches in group order). Each hatch gets the tier `hatchTier` names for its group: its own entry,
+ * else the group's tier for energy and dynamo hatches. Undefined when no group has any, so an untiered
+ * template lists exactly what it did before.
+ */
+export function siteBomTiers(groups: readonly PlacedGroup[]): BomTiers | undefined {
+  const hatchKeys: string[] = [];
+  const hatchTiers: Record<string, NonNullable<ReturnType<typeof hatchTier>>> = {};
+  for (const pg of groups) {
+    const keys = groupHatchKeys(
+      pg.hatches,
+      pg.units.map((u) => u.id),
+    );
+    pg.hatches.forEach((h, i) => {
+      const global = `${pg.group.id}|${keys[i]}`;
+      hatchKeys.push(global);
+      const tier = hatchTier(h.kind, keys[i], pg.group.tier, pg.group.hatchTiers, followsGroupTier);
+      if (tier) hatchTiers[global] = tier;
+    });
+  }
+  return Object.keys(hatchTiers).length ? { hatchKeys, hatchTiers } : undefined;
 }

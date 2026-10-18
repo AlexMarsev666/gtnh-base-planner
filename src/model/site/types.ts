@@ -1,5 +1,6 @@
-import type { Rotation } from '../core/types';
+import type { Rotation, Tier } from '../core/types';
 import type { HatchKind, PlanLimits } from '../multiblock/types';
+import type { HatchTiers, WallshareMode } from '../plan/types';
 
 /**
  * A site: several groups of multiblocks placed on a bounded ground area, with links that carry one
@@ -34,6 +35,20 @@ export const ICON_RE = /^\/datasets(\/[A-Za-z0-9_\-][A-Za-z0-9._\-]*)+\.png$/;
 export function iconUrl(path: string): string | null {
   return ICON_RE.test(path) && path.length <= 300 && !path.includes('..') ? ICON_HOST + path : null;
 }
+
+/** Where one resource's hatch of a group goes. Both parts are optional. */
+export interface HatchAssign {
+  unit?: number | 'all';
+  zone?: string;
+}
+
+export type TransformerStep = 'up' | 'down';
+/**
+ * Transformer families by the amperage of the low side: 4 (plain, 1A in), 16 (Hi-Amp, 4A in) and 64 (Power, 16A
+ * in); each from an LV high side up.
+ */
+export const TRANSFORMER_AMPS = [4, 16, 64] as const;
+export type TransformerAmps = (typeof TRANSFORMER_AMPS)[number];
 
 export interface SiteGroup {
   /** Stable id within the site (`[a-z0-9_-]`), used by links. */
@@ -70,6 +85,33 @@ export interface SiteGroup {
    * not fit its ground area is built on several floors, each one a level of groups raised this much.
    */
   elevation?: number;
+  /** Machine tier = tier of the group's energy hatches (a transformer: its high side); absent = default. */
+  tier?: Tier;
+  /** Tier of single hatches that differ from `tier` (see `HatchTiers`). */
+  hatchTiers?: HatchTiers;
+  /** Tier of the glass that limits the hatches (see `PlanState.glassTier`); absent = the def's glass. */
+  glassTier?: Tier;
+  /** Heating coil of the group's units (see `PlanState.coil`); absent = the def's own coil. */
+  coil?: string;
+  /** Units are built mirrored in X. Absent = not mirrored. */
+  mirror?: boolean;
+  /** Wall sharing mode inside the group; absent = `auto`. */
+  wallshare?: WallshareMode;
+  /** One maintenance hatch in a shared wall may serve several units (see `PlanState.shareMaintenance`). */
+  shareMaintenance?: boolean;
+  /** One energy hatch in a shared wall may serve two units (see `PlanState.shareEnergy`). */
+  shareEnergy?: boolean;
+  /** Fluid inputs may merge into Quadruple Input Hatches (EV and up). Stored only as `false` (one regular hatch per fluid); absent = on. */
+  quadFluid?: false;
+  /**
+   * Where each resource's hatch goes, by resource key: onto one unit (its index in the group, or `all`) and/or
+   * into a hatch zone of the multiblock (a region name such as `dot2`). Absent = automatic.
+   */
+  assign?: Record<string, HatchAssign>;
+  /** Transformers only (single block, `machine` = `transformer`; `tier` is the high side): direction. */
+  step?: TransformerStep;
+  /** Transformers only: amperage of the low side (see `TRANSFORMER_AMPS`); absent = 4. */
+  amps?: TransformerAmps;
   /** Where an imported group came from (shown in labels and the group list). */
   source?: { name: string; machineCount?: number; tier?: string };
 }
@@ -101,6 +143,15 @@ export interface SitePort {
   void?: boolean;
 }
 
+/** `classic` is the plain router, `neat` aligns and bundles runs; `depth` is how many layers below a build pipes may run. */
+export const ROUTING_STYLES = ['classic', 'neat'] as const;
+export type RoutingStyle = (typeof ROUTING_STYLES)[number];
+export type RoutingDepth = 0 | 1 | 2 | 3;
+export interface SiteRouting {
+  style: RoutingStyle;
+  depth: RoutingDepth;
+}
+
 export interface SiteState {
   v: 1;
   kind: 'site';
@@ -115,6 +166,12 @@ export interface SiteState {
   resources: Record<string, ResourceDef>;
   /** Hatch colour overrides, as in `PlanState.colors`. */
   colors: Partial<Record<HatchKind, string>>;
+  /** Routing style and depth; absent = classic, depth from the old "connect below" switch. */
+  routing?: SiteRouting;
+  /** A layer of this block (one of `FLOOR_BLOCKS`) under the site at y = -1; absent = no floor. */
+  floor?: string;
+  /** Seed for the randomised steps (Optimize), a non-negative integer; absent = the built-in one. */
+  seed?: number;
 }
 
 export function isGroupEnd(e: Endpoint): e is { group: string } {

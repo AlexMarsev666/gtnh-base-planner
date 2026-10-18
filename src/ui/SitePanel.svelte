@@ -1,30 +1,24 @@
 <script lang="ts">
-  import { PLACEHOLDER_ID, SINGLE_BLOCK_ID, getSiteDef } from '../data/generic';
+  import { blockInfo } from '../data/blocks';
+  import { FLOOR_BLOCKS } from '../data/floor';
   import { t } from '../i18n/en';
-  import type { Endpoint, ResourceKind } from '../model/site/types';
   import { MAX_CORRIDOR, SITE_MAX_SIZE, SITE_MIN_SIZE } from '../share/siteCodec';
-  import { flowAnimation, isolate, showIcons, site, siteCables, siteGroup, sitePipes } from '../state/site';
-  import { connectBelow, xray } from '../state/store';
+  import { ROUTING_STYLES } from '../model/site/types';
+  import { site, siteGroup, siteLink, siteLinkDraft, templateTab, type TemplateTab } from '../state/site';
+  import { connectBelow } from '../state/store';
   import GroupInspector from './GroupInspector.svelte';
-  import { notify } from './notices';
+  import LinkForm from './LinkForm.svelte';
+  import LinkInspector from './LinkInspector.svelte';
+  import { narrow } from './narrow';
   import NumberStepper from './NumberStepper.svelte';
-  import ResourceIcon from './ResourceIcon.svelte';
-  import {
-    resetSite,
-    updateSite,
-    withCorridor,
-    withLinkAdded,
-    withLinkRemoved,
-    withName,
-    withResourceColor,
-    withSiteSize,
-    type LinkEnd,
-  } from './siteActions';
-  import { addGroup, arrange } from './siteCommands';
-  import { canRedo, canUndo, redoSite, undoAction, undoSite } from './siteHistory';
-  import { siteBuild } from './sitePipeline';
-  import { copySiteLink, downloadSite, openSiteFile, siteShareFallback } from './siteSession';
-  import ToggleRow from './ToggleRow.svelte';
+  import { updateSite, withCorridor, withFloor, withName, withRouting, withSiteSize } from './siteActions';
+  import { ROUTING_DEPTHS, depthReduced, routingView, splitWarnings } from './siteInspect';
+  import { siteBuild, siteRouteInfo } from './sitePipeline';
+  import SelectRow from './SelectRow.svelte';
+  import { groupName as siteGroupName, resName as siteResName } from './siteNames';
+  import SiteOutline from './SiteOutline.svelte';
+  import Tabs from './Tabs.svelte';
+  import { groupErrorCount } from './validityText';
 
   interface Props {
     onclose: () => void;
@@ -37,35 +31,50 @@
   const build = $derived($siteBuild.build);
   const selected = $derived($site.groups.find((g) => g.id === $siteGroup) ?? null);
   const placed = $derived(build?.groups.find((g) => g.group.id === $siteGroup));
+  const selectedLink = $derived($site.links.find((l) => l.id === $siteLink) ?? null);
 
-  function groupName(id: string): string {
-    const g = $site.groups.find((x) => x.id === id);
-    if (!g) return id;
-    return g.label ?? getSiteDef(g.multiblockId)?.name ?? g.multiblockId;
+  const groupName = (id: string) => siteGroupName($site, id);
+  const resName = (key: string) => siteResName($site, key);
+
+  const warnings = $derived(splitWarnings(build?.warnings ?? []));
+  const notes = $derived(build?.notes ?? []);
+  /** Groups GT would not form, with their number of problems. */
+  const wontForm = $derived(
+    (build?.groups ?? []).map((g) => ({ id: g.group.id, n: groupErrorCount(g) })).filter((g) => g.n > 0),
+  );
+
+  const routingState = $derived(routingView($site, $connectBelow));
+  const routing = $derived(routingState.routing);
+  const routingStyles = ROUTING_STYLES.map((v) => ({ value: v, label: t.site.routingStyles[v] }));
+  const routingDepths = ROUTING_DEPTHS.map((d) => ({ value: String(d), label: String(d) }));
+  function setStyle(v: string) {
+    const style = ROUTING_STYLES.find((x) => x === v);
+    if (style) updateSite((s) => withRouting(s, { ...routing, style }));
   }
-  function resName(key: string): string {
-    return $site.resources[key]?.name ?? key;
+  function setDepth(v: string) {
+    const depth = ROUTING_DEPTHS.find((x) => String(x) === v);
+    if (depth !== undefined) updateSite((s) => withRouting(s, { ...routing, depth }));
   }
-  function endName(e: Endpoint): string {
-    if ('group' in e) return groupName(e.group);
-    const p = $site.ports.find((x) => x.id === e.port);
-    return p?.dir === 'in' ? t.site.inputPort : t.site.outputPort;
-  }
-  /** Names in the From / To menus: two groups of the same machine must be told apart. */
-  function menuName(id: string): string {
-    const name = groupName(id);
-    const same = $site.groups.filter((g) => groupName(g.id) === name);
-    if (same.length < 2) return name;
-    const g = $site.groups.find((x) => x.id === id)!;
-    return `${name} (${g.origin[0]}, ${g.origin[1]})`;
+  const floorOptions = [
+    { value: '', label: t.site.floorNone },
+    ...FLOOR_BLOCKS.map((id) => ({ value: id, label: blockInfo(id).name })),
+  ];
+  const routeStats = $derived($siteRouteInfo?.routeStats);
+
+  const templateTabs = [
+    { id: 'layout', label: t.site.tabs.layout },
+    { id: 'routing', label: t.site.tabs.routing },
+  ];
+  function setTemplateTab(id: string) {
+    const tab: TemplateTab | undefined = (['layout', 'routing'] as const).find((x) => x === id);
+    if (tab) templateTab.set(tab);
   }
 
-  const warnings = $derived(build?.warnings ?? []);
-
-  // The inspector is at the top: bring it into view when a group gets selected (from the scene too).
+  // The inspector is at the top: bring it into view when the selection changes (from the scene too).
   let drawer = $state<HTMLElement>();
   $effect(() => {
-    if ($siteGroup && drawer) drawer.scrollTo({ top: 0, behavior: 'smooth' });
+    void [$siteGroup, $siteLink, $siteLinkDraft];
+    drawer?.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // Numeric fields
@@ -80,350 +89,189 @@
     const n = Number(text.trim());
     if (text.trim() !== '' && Number.isFinite(n)) updateSite((s) => withCorridor(s, n));
   }
-
-  function onreset() {
-    resetSite();
-    notify(t.site.resetDone, 6000, 'edit', undoAction());
-  }
-
-  // New link form, folded until asked for.
-  let linkOpen = $state(false);
-  let linkFrom = $state('');
-  let linkTo = $state('');
-  let linkRes = $state('');
-  let newResName = $state('');
-  let newResKind = $state<ResourceKind>('item');
-  let linkRate = $state('');
-  const resourceKeys = $derived(
-    Object.keys($site.resources).sort((a, b) => resName(a).localeCompare(resName(b))),
-  );
-  function end(v: string): LinkEnd | null {
-    if (v === '@port') return { port: true };
-    return v ? { group: v } : null;
-  }
-  function addLink() {
-    const from = end(linkFrom);
-    const to = end(linkTo);
-    if (!from || !to) return;
-    const res = linkRes && linkRes !== '@new' ? { key: linkRes } : { name: newResName, kind: newResKind };
-    const rate = Number(linkRate);
-    const before = $site;
-    updateSite((s) => withLinkAdded(s, from, to, res, Number.isFinite(rate) && rate > 0 ? rate : undefined));
-    if ($site !== before) {
-      newResName = '';
-      linkRate = '';
-    }
-  }
-
-  let fileInput = $state<HTMLInputElement>();
-  function onfile(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (file) void openSiteFile(file);
-  }
 </script>
 
 <aside class="drawer" aria-label={t.site.panel} data-testid="site-panel" bind:this={drawer}>
   <div class="top">
     <span class="title">{t.site.panel}</span>
-    <span class="top-acts">
-      <button class="link" disabled={!$canUndo} data-testid="site-undo" onclick={undoSite}
-        >{t.site.undo}</button
-      >
-      <button class="link" disabled={!$canRedo} data-testid="site-redo" onclick={redoSite}
-        >{t.site.redo}</button
-      >
-      <button class="link" onclick={onclose}>{t.close}</button>
-    </span>
+    <button class="link" onclick={onclose}>{t.close}</button>
   </div>
 
   {#if selected}
     <GroupInspector group={selected} {placed} onreplace={() => onpick('change')} />
-  {/if}
+  {:else if selectedLink}
+    <LinkInspector link={selectedLink} />
+  {:else if $siteLinkDraft}
+    <LinkForm />
+  {:else}
+    {#if warnings.problems.length || wontForm.length}
+      <section>
+        <h2>{t.site.problems}</h2>
+        <ul class="rows problems" data-testid="site-problem-list">
+          {#each warnings.problems as w, i (i)}
+            <li>{t.site.warning(w, groupName, resName)}</li>
+          {/each}
+          {#each wontForm as g (g.id)}
+            <li data-testid="site-wont-form">{t.validity.groupProblem(groupName(g.id), g.n)}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
 
-  <section>
-    <h2>{t.site.groups}</h2>
-    {#if !$site.groups.length}<p class="hint">{t.site.noGroups}</p>{/if}
-    <ul class="rows">
-      {#each $site.groups as g (g.id)}
-        {@const pg = build?.groups.find((x) => x.group.id === g.id)}
-        <li class="row">
-          <button
-            class="link"
-            class:active={g.id === $siteGroup}
-            data-testid="site-group"
-            onclick={() => siteGroup.set(g.id === $siteGroup ? null : g.id)}
-            >{groupName(g.id)} ×{pg?.units.length ?? g.count}</button
-          >
-          {#if g.source?.machineCount !== undefined}<span class="meta"
-              >{t.site.needed(g.source.machineCount)}</span
-            >{/if}
-        </li>
-      {/each}
-    </ul>
-    <ul class="rows add">
-      <li class="row">
-        <button class="link" data-testid="site-add-group" onclick={() => onpick('add')}
-          >{t.site.addGroup}</button
-        >
-      </li>
-      <li class="row">
-        <button class="link" onclick={() => addGroup(SINGLE_BLOCK_ID)}>{t.site.addSingle}</button>
-      </li>
-      <li class="row">
-        <button class="link" onclick={() => addGroup(PLACEHOLDER_ID)}>{t.site.addPlaceholder}</button>
-      </li>
-    </ul>
-  </section>
+    {#if notes.length || warnings.info.length}
+      <section>
+        <h2>{t.site.notes}</h2>
+        <ul class="rows problems info" data-testid="site-note-list">
+          {#each notes as n, i (i)}
+            <li>{t.site.note(n, groupName, resName)}</li>
+          {/each}
+          {#each warnings.info as w, i (i)}
+            <li>{t.site.warning(w, groupName, resName)}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
 
-  <section>
-    <h2>{t.site.links}</h2>
-    {#if !$site.links.length}<p class="hint">{t.site.noLinks}</p>{/if}
-    <ul class="rows">
-      {#each $site.links as l (l.id)}
-        {@const res = $site.resources[l.resource]}
-        <li class="row link-row" class:picked={$isolate === l.resource} data-testid="site-link">
-          <label class="swatch" style:background={res?.color} title={res?.name}>
+    <div class="tabbar">
+      <Tabs
+        tabs={templateTabs}
+        active={$templateTab}
+        onchange={setTemplateTab}
+        label={t.site.tabs.template}
+        testid="site-template-tabs"
+      />
+    </div>
+    <div
+      role="tabpanel"
+      id="site-template-tabs-panel"
+      aria-labelledby="site-template-tabs-tab-{$templateTab}"
+    >
+      {#if $templateTab === 'layout'}
+        <section>
+          <h2>{t.site.size}</h2>
+          <label class="row">
+            <span>{t.site.name}</span>
             <input
-              type="color"
-              value={res?.color ?? '#888888'}
-              aria-label={res?.name}
-              onchange={(e) => updateSite((s) => withResourceColor(s, l.resource, e.currentTarget.value))}
-            />
-          </label>
-          {#if res}<span class="res-icon"><ResourceIcon {res} size={20} /></span>{/if}
-          <button
-            class="link text-left"
-            class:active={$isolate === l.resource}
-            onclick={() => isolate.set($isolate === l.resource ? null : l.resource)}
-            ><span class="res">{resName(l.resource)}</span>
-            <span class="meta"
-              >{endName(l.from)} → {endName(l.to)}{l.rate !== undefined && res
-                ? ` · ${t.site.rateText(l.rate, res.kind)}`
-                : ''}</span
-            ></button
-          >
-          <button
-            class="link x"
-            aria-label={t.site.remove}
-            onclick={() => updateSite((s) => withLinkRemoved(s, l.id))}>×</button
-          >
-        </li>
-      {/each}
-    </ul>
-
-    {#if linkOpen}
-      <div class="form" data-testid="site-link-form">
-        <label class="pair wide"
-          ><span>{t.site.from}</span>
-          <select class="field select" bind:value={linkFrom} aria-label={t.site.from}>
-            <option value="">—</option>
-            <option value="@port">{t.site.inputPort}</option>
-            {#each $site.groups as g (g.id)}<option value={g.id}>{menuName(g.id)}</option>{/each}
-          </select></label
-        >
-        <label class="pair wide"
-          ><span>{t.site.to}</span>
-          <select class="field select" bind:value={linkTo} aria-label={t.site.to}>
-            <option value="">—</option>
-            <option value="@port">{t.site.outputPort}</option>
-            {#each $site.groups as g (g.id)}<option value={g.id}>{menuName(g.id)}</option>{/each}
-          </select></label
-        >
-        <label class="pair wide"
-          ><span>{t.site.resource}</span>
-          <select class="field select" bind:value={linkRes} aria-label={t.site.resource}>
-            <option value="@new">{t.site.newResource}</option>
-            {#each resourceKeys as k (k)}<option value={k}>{resName(k)}</option>{/each}
-          </select></label
-        >
-        {#if !linkRes || linkRes === '@new'}
-          <label class="pair wide"
-            ><span>{t.site.resourceName}</span><input
               class="field text"
               type="text"
-              bind:value={newResName}
-              aria-label={t.site.resourceName}
-            /></label
-          >
-          <label class="pair wide"
-            ><span>{t.site.kind}</span>
-            <select class="field select" bind:value={newResKind} aria-label={t.site.kind}>
-              <option value="item">{t.site.kinds.item}</option>
-              <option value="fluid">{t.site.kinds.fluid}</option>
-              <option value="power">{t.site.kinds.power}</option>
-            </select></label
-          >
-        {/if}
-        <label class="pair wide"
-          ><span>{t.site.rate}</span><input
-            class="field text"
-            type="text"
-            inputmode="decimal"
-            bind:value={linkRate}
-            aria-label={t.site.rate}
-          /></label
-        >
-        <div class="row">
-          <button class="link active" data-testid="site-add-link" onclick={addLink}>{t.site.addLink}</button>
-          <button class="link" onclick={() => (linkOpen = false)}>{t.site.addLinkClose}</button>
-        </div>
-      </div>
-    {:else}
-      <ul class="rows add">
-        <li class="row">
-          <button class="link" data-testid="site-link-open" onclick={() => (linkOpen = true)}
-            >{t.site.addLinkOpen}</button
-          >
-        </li>
-      </ul>
-    {/if}
-  </section>
-
-  {#if warnings.length}
-    <section>
-      <h2>{t.site.problems}</h2>
-      <ul class="rows problems">
-        {#each warnings as w, i (i)}
-          <li>{t.site.warning(w, groupName, resName)}</li>
-        {/each}
-      </ul>
-    </section>
+              value={$site.name ?? ''}
+              placeholder={t.site.unnamed}
+              aria-label={t.site.name}
+              onchange={(e) => updateSite((s) => withName(s, e.currentTarget.value))}
+            />
+          </label>
+          <div class="fields">
+            <label class="pair"
+              ><span>{t.site.width}</span><NumberStepper
+                value={String($site.size[0])}
+                label={t.site.width}
+                min={SITE_MIN_SIZE}
+                max={SITE_MAX_SIZE}
+                width="2.8em"
+                testid="site-width"
+                oncommit={(v) => commitSize(0, v)}
+              /></label
+            >
+            <label class="pair"
+              ><span>{t.site.depth}</span><NumberStepper
+                value={String($site.size[1])}
+                label={t.site.depth}
+                min={SITE_MIN_SIZE}
+                max={SITE_MAX_SIZE}
+                width="2.8em"
+                testid="site-depth"
+                oncommit={(v) => commitSize(1, v)}
+              /></label
+            >
+            <label class="pair"
+              ><span>{t.site.corridor}</span><NumberStepper
+                value={String($site.corridor)}
+                label={t.site.corridor}
+                min={0}
+                max={MAX_CORRIDOR}
+                width="2em"
+                oncommit={commitCorridor}
+              /></label
+            >
+          </div>
+          <p class="hint">{t.site.sizeHint(SITE_MIN_SIZE, SITE_MAX_SIZE)}</p>
+          <ul class="rows">
+            <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
+            <li class="row narrow-only">
+              <button class="btn" onclick={onimport}>{t.site.importOpen}</button>
+            </li>
+          </ul>
+        </section>
+      {:else if $templateTab === 'routing'}
+        <section data-testid="site-routing">
+          <h2>{t.site.routing}</h2>
+          <ul class="rows">
+            <SelectRow
+              label={t.site.routingStyle}
+              value={routing.style}
+              options={routingStyles}
+              segmented
+              testid="site-routing-style"
+              onchange={setStyle}
+            />
+            <SelectRow
+              label={t.site.routingDepth}
+              value={String(routing.depth)}
+              options={routingDepths}
+              testid="site-routing-depth"
+              onchange={setDepth}
+            />
+            <SelectRow
+              label={t.site.floor}
+              value={$site.floor ?? ''}
+              options={floorOptions}
+              testid="site-floor"
+              onchange={(v) => updateSite((s) => withFloor(s, v || undefined))}
+            />
+          </ul>
+          <p class="hint">{t.site.routingDepthHint}</p>
+          {#if $site.floor}<p class="hint">{t.site.floorHint}</p>{/if}
+          {#if $siteRouteInfo && depthReduced($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
+            <p class="hint warn" data-testid="site-depth-reduced">
+              {t.site.routingDepthUsed($siteRouteInfo.routing.depth, $siteRouteInfo.depthUsed)}
+            </p>
+          {/if}
+          {#if routeStats}
+            <p class="hint" data-testid="site-route-stats">
+              {t.site.routeStats(
+                routeStats.length,
+                routeStats.bends,
+                routeStats.underground.reduce((a, b) => a + b, 0),
+              )}
+            </p>
+            {#if routeStats.underground.length > 1}
+              <p class="hint" data-testid="site-route-levels">
+                {t.site.routeStatsLevels(routeStats.underground)}
+              </p>
+            {/if}
+            {#if routeStats.surfaceTrunk + routeStats.surfaceStub > 0}
+              <p class="hint" data-testid="site-route-surface">
+                {t.site.routeStatsSurface(routeStats.surfaceTrunk, routeStats.surfaceStub)}
+              </p>
+            {/if}
+          {/if}
+          {#if routingState.legacy}
+            <p class="hint" data-testid="site-routing-legacy">{t.site.routingLegacy(routing.depth)}</p>
+            <button
+              class="btn primary"
+              data-testid="site-use-neat"
+              onclick={() => updateSite((s) => withRouting(s, routingState.neatOffer))}
+              >{t.site.useNeat}</button
+            >
+          {/if}
+        </section>
+      {/if}
+    </div>
   {/if}
 
-  <section>
-    <h2>{t.site.size}</h2>
-    <label class="row">
-      <span>{t.site.name}</span>
-      <input
-        class="field text"
-        type="text"
-        value={$site.name ?? ''}
-        placeholder={t.site.unnamed}
-        aria-label={t.site.name}
-        onchange={(e) => updateSite((s) => withName(s, e.currentTarget.value))}
-      />
-    </label>
-    <div class="fields">
-      <label class="pair"
-        ><span>{t.site.width}</span><NumberStepper
-          value={String($site.size[0])}
-          label={t.site.width}
-          min={SITE_MIN_SIZE}
-          max={SITE_MAX_SIZE}
-          width="2.8em"
-          testid="site-width"
-          oncommit={(v) => commitSize(0, v)}
-        /></label
-      >
-      <label class="pair"
-        ><span>{t.site.depth}</span><NumberStepper
-          value={String($site.size[1])}
-          label={t.site.depth}
-          min={SITE_MIN_SIZE}
-          max={SITE_MAX_SIZE}
-          width="2.8em"
-          testid="site-depth"
-          oncommit={(v) => commitSize(1, v)}
-        /></label
-      >
-      <label class="pair"
-        ><span>{t.site.corridor}</span><NumberStepper
-          value={String($site.corridor)}
-          label={t.site.corridor}
-          min={0}
-          max={MAX_CORRIDOR}
-          width="2em"
-          oncommit={commitCorridor}
-        /></label
-      >
-    </div>
-    <p class="hint">{t.site.sizeHint(SITE_MIN_SIZE, SITE_MAX_SIZE)}</p>
-    <ul class="rows">
-      <li class="row">
-        <button
-          class="link"
-          data-testid="site-arrange"
-          disabled={!$site.groups.length}
-          onclick={() => arrange()}>{t.site.arrange}</button
-        >
-      </li>
-      <li class="row">
-        <button
-          class="link"
-          data-testid="site-optimize"
-          title={t.site.optimizeHint}
-          disabled={!$site.groups.length}
-          onclick={() => arrange(true)}>{t.site.optimize}</button
-        >
-      </li>
-      <!-- In the top bar on wide screens; here only when the bar has no room for it. -->
-      <li class="row narrow-only"><button class="link" onclick={onimport}>{t.site.importOpen}</button></li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>{t.view}</h2>
-    <ul class="rows">
-      <ToggleRow on={$sitePipes} label={t.pipes} ontoggle={() => sitePipes.update((v) => !v)} />
-      <ToggleRow on={$siteCables} label={t.cables} ontoggle={() => siteCables.update((v) => !v)} />
-      <ToggleRow
-        on={$connectBelow}
-        label={t.below}
-        title={t.belowHint}
-        testid="site-below"
-        ontoggle={() => connectBelow.update((v) => !v)}
-      />
-      <ToggleRow on={$flowAnimation} label={t.site.flow} ontoggle={() => flowAnimation.update((v) => !v)} />
-      <ToggleRow
-        on={$showIcons}
-        label={t.site.icons}
-        testid="site-icons"
-        ontoggle={() => showIcons.update((v) => !v)}
-      />
-      <ToggleRow on={$xray} label={t.xray} ontoggle={() => xray.update((v) => !v)} />
-    </ul>
-  </section>
-
-  <section>
-    <h2>{t.plan}</h2>
-    <ul class="rows">
-      <li class="row">
-        <button class="link" data-testid="site-share" onclick={() => void copySiteLink()}
-          >{t.shareLink}</button
-        >
-      </li>
-      {#if $siteShareFallback}
-        <li class="row col">
-          <span>{t.linkFallback}</span>
-          <input
-            class="field url"
-            readonly
-            value={$siteShareFallback}
-            aria-label={t.linkFallback}
-            onfocus={(e) => e.currentTarget.select()}
-          />
-        </li>
-      {/if}
-      <li class="row"><button class="link" onclick={downloadSite}>{t.downloadJson}</button></li>
-      <li class="row">
-        <button class="link" onclick={() => fileInput?.click()}>{t.uploadJson}</button>
-        <input
-          bind:this={fileInput}
-          class="visually-hidden"
-          type="file"
-          accept="application/json,.json"
-          tabindex="-1"
-          aria-hidden="true"
-          onchange={onfile}
-        />
-      </li>
-      <li class="row">
-        <button class="link" onclick={onreset}>{t.site.reset}</button>
-      </li>
-    </ul>
-  </section>
+  {#if $narrow}
+    <SiteOutline embedded {onpick} />
+  {/if}
 </aside>
 
 <style>
@@ -449,20 +297,17 @@
     background: var(--bg);
     z-index: 1;
   }
-  .top-acts {
-    display: flex;
-    gap: 14px;
-  }
-  .title,
-  h2 {
+  .title {
     color: var(--text);
   }
   section {
     margin-top: 32px;
   }
   h2 {
-    font: inherit;
     margin: 0 0 12px;
+  }
+  .tabbar {
+    margin-top: 24px;
   }
   .rows {
     list-style: none;
@@ -473,135 +318,51 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 26px;
-  }
-  .row.col {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
+    min-height: 32px;
   }
   .fields {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 18px;
+    align-items: center;
+    gap: 6px 14px;
     margin: 6px 0;
   }
   .pair {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
   }
   .pair > span {
     white-space: nowrap;
   }
-  .pair.wide {
-    justify-content: space-between;
-    width: 100%;
-  }
-  .pair.wide > span {
-    flex: none;
-  }
   .text {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
     flex: 1;
     min-width: 0;
-    border-bottom: 1px dotted var(--muted);
-    padding-bottom: 2px;
-  }
-  .text:focus {
-    border-bottom: 1px solid var(--text);
-    text-decoration: none;
-  }
-  .select {
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0.02em;
-    max-width: 200px;
-    cursor: pointer;
-  }
-  .hint,
-  .meta {
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   .hint {
     margin: 8px 0 0;
   }
-  .add {
-    margin-top: 10px;
-  }
-  .link-row {
-    align-items: flex-start;
-    /* Room for the outline of the isolated resource. */
-    margin: 0 -6px;
-    padding: 0 6px;
-    outline: 1px solid transparent;
-  }
-  .link-row.picked {
-    outline-color: var(--pick);
-  }
-  .text-left {
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-  }
-  .res {
-    text-transform: none;
-    letter-spacing: 0.02em;
-  }
-  .x {
-    color: var(--muted);
-  }
-  .swatch {
-    position: relative;
-    width: 10px;
-    height: 10px;
-    flex: none;
-    margin-top: 8px;
-    cursor: pointer;
-  }
-  .res-icon {
-    margin-top: 4px;
-    flex: none;
-  }
-  .swatch input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    border: 0;
-    padding: 0;
-  }
-  .form {
-    margin-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
   .problems li {
     color: var(--text);
-    text-transform: none;
-    letter-spacing: 0.02em;
     margin-bottom: 4px;
   }
-  .url {
-    text-align: left;
-    width: 100%;
-    text-transform: none;
-    letter-spacing: 0;
+  .hint.warn,
+  .info li {
+    color: var(--muted);
+  }
+  .hint.warn {
     color: var(--text);
+    border-left: 2px solid var(--pick);
+    padding-left: 8px;
   }
   @media (min-width: 761px) {
     .narrow-only {
       display: none;
+    }
+    /* Below the top bar, so its buttons stay reachable while the drawer is open. */
+    .drawer {
+      top: var(--bar-h);
+      z-index: 28;
     }
   }
   @media (max-width: 640px) {

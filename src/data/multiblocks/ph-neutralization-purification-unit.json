@@ -2,7 +2,7 @@
   "id": "ph-neutralization-purification-unit",
   "name": "pH Neutralization Purification Unit",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitPhAdjustment.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitPhAdjustment.java",
   "size": [15, 6, 5],
   "layers": [
     ["ABBBA     ABBBA", "BBBBB     BBBBB", "BBBBBCCCCCBBBBB", "BBBBB     BBBBB", "ABBBA     ABBBA"],
@@ -17,9 +17,19 @@
     "B": { "blockId": "gregtech:gt.blockcasings9@8" },
     "C": { "blockId": "gregtech:gt.blockcasings9@7" },
     "D": { "blockId": "gregtech:gt.blockglass1@0" },
-    "E": { "blockId": "gregtech:gt.blockcasings9@7", "hatches": ["fluidIn", "fluidOut"] },
-    "F": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"] },
-    "G": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"] }
+    "E": { "blockId": "gregtech:gt.blockcasings9@7", "hatches": ["fluidIn", "fluidOut"], "region": "dot1" },
+    "F": {
+      "blockId": "gt.hatch.inputHatch",
+      "hatches": ["fluidIn"],
+      "allowFaces": { "fluidIn": ["up"] },
+      "region": "dot4"
+    },
+    "G": {
+      "blockId": "gt.hatch.inputBus",
+      "hatches": ["itemIn"],
+      "allowFaces": { "itemIn": ["up"] },
+      "region": "dot3"
+    }
   },
   "controller": { "pos": [7, 1, 1], "facing": "north", "blockId": "gregtech:gt.blockmachines@9406" },
   "hatchBlocks": {
@@ -28,8 +38,19 @@
     "fluidOut": "gt.hatch.outputHatch"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": {},
-  "defaultHatches": ["itemIn"],
+  "requiredHatches": { "itemIn": { "min": 1, "max": 1 }, "fluidIn": { "min": 1 }, "fluidOut": { "min": 1 } },
+  "defaultHatches": ["itemIn", "fluidIn", "fluidOut"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "fluidOut"],
+      "text": "2+ Input Hatch: Top of right chamber (hydrochloric acid), behind controller (water)\n1+ Output Hatch: Behind controller"
+    },
+    "dot3": { "kinds": ["itemIn"], "text": "1 Input Bus: Top of left chamber (sodium hydroxide)" },
+    "dot4": {
+      "kinds": ["fluidIn"],
+      "text": "2+ Input Hatch: Top of right chamber (hydrochloric acid), behind controller (water)"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPurificationUnitPhAdjustment (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPurificationUnitPhAdjustment (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

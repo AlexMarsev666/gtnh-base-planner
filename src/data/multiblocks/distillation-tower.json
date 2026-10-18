@@ -1,7 +1,7 @@
 {
   "id": "distillation-tower",
   "name": "Distillation Tower",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEDistillationTower.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEDistillationTower.java",
   "size": [3, 3, 3],
   "layers": [
     ["b~b", "bbb", "bbb"],
@@ -22,7 +22,7 @@
     "t": {
       "blockId": "gt.casing.cleanStainless",
       "hatches": ["fluidOut", "energy", "maintenance"],
-      "disallowFaces": { "fluidOut": ["up", "down"] },
+      "disallowFaces": { "fluidOut": ["up"] },
       "region": "top"
     },
     "c": { "blockId": "gt.casing.cleanStainless" }
@@ -43,8 +43,10 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["b", "l", "t", "c"], "min": 16, "perSlab": 7 }],
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+  "variants": [0, 1],
   "wallshare": true,
   "resize": { "axis": "y", "from": 1, "to": 2, "min": 3, "max": 12, "default": 5, "label": "height" },
-  "notes": "Variable height in GT (3 to 12 blocks); set it with Height (default 5, which gives 4 output layers, enough for oil distillation). All blocks are Clean Stainless Steel Machine Casings (at least 7 x height - 5). Bottom layer: solid 3x3 with the controller in the front centre; it takes the input hatch, input and output buses, energy and maintenance. Every layer above the bottom is a ring around an air core and needs at least one output hatch of its own: output number N goes to the hatches on layer N+1, so the planner places one output hatch on every layer (one region per ring layer plus the top). The top layer is closed with a casing in its centre. Ring casings also take energy and maintenance. Output hatches on the rings may not face up or down (GT disallowOnly(UP, DOWN)); the planner never turns them that way. GT does not allow the tower to be rotated or flipped. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so a shared wall can carry one output hatch per layer for two towers. Only do that when both towers run the same recipe, because each layer receives a different fluid. Energy and maintenance are never marked shareable (energy starvation; maintenance flags are cleared by the first reader)."
+  "notes": "Variable height in GT (3 to 12 blocks); set it with Height (default 5, which gives 4 output layers, enough for oil distillation). All blocks are Clean Stainless Steel Machine Casings (at least 7 x height - 5). Bottom layer: solid 3x3 with the controller in the front centre; it takes the input hatch, input and output buses, energy and maintenance. Every layer above the bottom is a ring around an air core and needs at least one output hatch of its own: output number N goes to the hatches on layer N+1, so the planner places one output hatch on every layer (one region per ring layer plus the top). The top layer is closed with a casing in its centre. Ring casings also take energy and maintenance. GT turns output hatches on the rings away from up and down (disallowOnly(UP, DOWN), an auto-placement hint, not a structure rule); the planner never turns them that way. GT does not allow the tower to be rolled or turned upside down; a left-right mirror is allowed. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so a shared wall can carry one output hatch per layer for two towers. Only do that when both towers run the same recipe, because each layer receives a different fluid. Energy and maintenance hatches are not shared unless the Share options ask for it (a shared energy hatch gives each of two machines 1 A, and a shared maintenance hatch is repaired one machine at a time)."
 }

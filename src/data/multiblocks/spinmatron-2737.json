@@ -2,7 +2,7 @@
   "id": "spinmatron-2737",
   "name": "Spinmatron-2737",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTESpinmatron.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTESpinmatron.java",
   "size": [17, 17, 17],
   "layers": [
     [
@@ -332,7 +332,8 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings12@9",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "GoodGenerator:supercriticalFluidTurbineCasing@0" },
     "C": { "blockId": "gregtech:gt.blockcasings9@0" },
@@ -355,7 +356,18 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A"], "min": 550 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+      "text": "1+ Energy Hatch: Any vibration safe casing\n1 Maintenance Hatch: Any vibration safe casing\n1+ Input Bus/Hatch: Any vibration safe casing\n1+ Output Bus/Hatch: Any vibration safe casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTESpinmatron (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTESpinmatron (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

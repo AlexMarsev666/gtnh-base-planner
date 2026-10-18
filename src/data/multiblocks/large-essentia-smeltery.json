@@ -2,7 +2,7 @@
   "id": "large-essentia-smeltery",
   "name": "Large Essentia Smeltery",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/MTELargeEssentiaSmeltery.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTELargeEssentiaSmeltery.java",
   "size": [5, 5, 5],
   "layers": [
     ["  A  ", " AAA ", " AAA ", " AAA ", "  A  "],
@@ -14,30 +14,21 @@
   "legend": {
     "A": {
       "blockId": "gt5u.magicCasing.0",
-      "hatches": ["itemIn", "fluidIn", "energy", "maintenance"]
+      "hatches": ["itemIn", "fluidIn", "energy", "maintenance"],
+      "allowFaces": {
+        "itemIn": ["north"],
+        "fluidIn": ["north"],
+        "energy": ["north"],
+        "maintenance": ["north"]
+      }
     },
-    "B": {
-      "blockId": "gt.hatch.muffler",
-      "hatches": ["muffler"]
-    },
-    "E": {
-      "blockId": "gt5u.essentiaCell.0"
-    },
-    "C": {
-      "blockId": "gt5u.essentiaFilterCasing.0"
-    },
-    "D": {
-      "blockId": "ext.blockCosmeticOpaque"
-    },
-    "F": {
-      "blockId": "ext.thaumicbasesAdvAlchFurnace"
-    }
+    "B": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"], "allowFaces": { "muffler": ["up"] } },
+    "E": { "blockId": "gt5u.essentiaCell.0" },
+    "C": { "blockId": "gt5u.essentiaFilterCasing.0" },
+    "D": { "blockId": "ext.blockCosmeticOpaque" },
+    "F": { "blockId": "ext.thaumicbasesAdvAlchFurnace" }
   },
-  "controller": {
-    "pos": [2, 2, 0],
-    "facing": "north",
-    "blockId": "gt5u.controller.largeEssentiaSmeltery"
-  },
+  "controller": { "pos": [2, 2, 0], "facing": "north", "blockId": "gt5u.controller.largeEssentiaSmeltery" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "fluidIn": "gt.hatch.inputHatch",
@@ -47,19 +38,13 @@
   },
   "shareableHatches": ["itemIn", "fluidIn"],
   "requiredHatches": {
-    "energy": {
-      "min": 1
-    },
-    "maintenance": {
-      "min": 1,
-      "max": 1
-    },
-    "muffler": {
-      "min": 1,
-      "max": 1
-    }
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 },
+    "muffler": { "min": 3, "max": 7 }
   },
+  "requiredAny": [{ "kinds": ["itemIn", "fluidIn"], "min": 1 }],
+  "minCasings": [{ "chars": ["A"], "min": 24 }],
   "defaultHatches": ["itemIn", "energy", "maintenance", "muffler"],
   "wallshare": true,
-  "notes": "Generated from MTELargeEssentiaSmeltery (GT5-Unofficial 5.09.54.133) by tools/gt-source: the structure is copied cell by cell; hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows), so check the tooltip in game. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
+  "notes": "Generated from MTELargeEssentiaSmeltery (GT5-Unofficial 5.09.54.205) by tools/gt-source: the structure is copied cell by cell; hatch counts follow the controller's tooltip and structure check. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
 }

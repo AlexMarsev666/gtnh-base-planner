@@ -2,7 +2,7 @@
   "id": "beam-splitter",
   "name": "Beam Splitter",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamSplitter.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/beamcrafting/MTEBeamSplitter.java",
   "size": [9, 3, 9],
   "layers": [
     [
@@ -51,5 +51,5 @@
   "requiredHatches": {},
   "defaultHatches": [],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEBeamSplitter (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEBeamSplitter (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

@@ -1,11 +1,14 @@
 import type { PlacedGroup, PlacedPort, SiteBuild, SiteBuilder, SiteNet } from './buildTypes';
 import { deriveSiteDemand } from './demand';
 import { placeGroups, type GroupCache } from './groups';
-import { buildSiteNetworks, routeSiteNetworks } from './nets';
+import { lazyFaces, type LazyFaces } from './groupFaces';
+import { buildSiteNetworks, routeSiteNetworks, routingOf } from './nets';
 import { analyzeOccupancy } from './occupancy';
+import { analysePower } from './power';
 import { placeSitePorts } from './ports';
-import type { RouteResult } from './router';
+import type { RouteResult, RouteStats } from './router';
 import { buildSiteScene } from './siteScene';
+import type { Terminals } from './terminals';
 import { groupToward } from './toward';
 
 /**
@@ -21,7 +24,7 @@ export function createSiteBuilder(): SiteBuilder {
       site,
       demand.demands,
       groupToward(site, demand.endsOf),
-      !!opts.below,
+      routingOf(opts).depth > 0,
       cache,
       !opts.keepCache,
     );
@@ -34,15 +37,27 @@ export function createSiteBuilder(): SiteBuilder {
       groups,
       ports,
       nets,
-      scene: buildSiteScene(site, groups, ports, routing.routed, occupancy.conflictCells, opts.isolate),
+      routing: { ...routingOf(opts), depthUsed: routing.depthUsed },
+      scene: buildSiteScene(
+        site,
+        groups,
+        ports,
+        routing.routed,
+        occupancy.conflictCells,
+        opts.isolate,
+        occupancy.sharedCells,
+      ),
       warnings: [
         ...demand.warnings,
         ...placed.warnings,
+        ...placed.problems,
         ...occupancy.warnings,
         ...portWarnings,
         ...routing.warnings,
+        ...analysePower(site),
       ],
-      stats: siteStats(groups, ports, routing.routed),
+      notes: placed.notes,
+      stats: siteStats(groups, ports, routing.routed, occupancy.sharedBlocks),
     };
   };
 }
@@ -52,8 +67,9 @@ function siteStats(
   groups: readonly PlacedGroup[],
   ports: readonly PlacedPort[],
   routed: readonly SiteNet[],
+  sharedBlocks: number,
 ): SiteBuild['stats'] {
-  let blocks = ports.length;
+  let blocks = ports.length - sharedBlocks;
   let hatches = 0;
   for (const pg of groups) {
     blocks += pg.build?.stats.totalBlocks ?? 0;
@@ -61,10 +77,21 @@ function siteStats(
   }
   const sum = (list: readonly SiteNet[], f: (r: RouteResult) => number) =>
     list.reduce((s, n) => s + (n.route ? f(n.route) : 0), 0);
+  const routeStats: RouteStats = { length: 0, bends: 0, surfaceTrunk: 0, surfaceStub: 0, underground: [] };
+  for (const n of routed) {
+    const r = n.route?.stats;
+    if (!r) continue;
+    routeStats.length += r.length;
+    routeStats.bends += r.bends;
+    routeStats.surfaceTrunk += r.surfaceTrunk;
+    routeStats.surfaceStub += r.surfaceStub;
+    r.underground.forEach((v, i) => (routeStats.underground[i] = (routeStats.underground[i] ?? 0) + v));
+  }
   return {
     groups: groups.length,
     units: groups.reduce((s, g) => s + g.units.length, 0),
     blocks,
+    sharedBlocks,
     hatches,
     pipeBlocks: sum(
       routed.filter((n) => n.kind !== 'power'),
@@ -76,6 +103,7 @@ function siteStats(
     ),
     connected: sum(routed, (r) => r.connected),
     terminals: sum(routed, (r) => r.total),
+    routeStats,
   };
 }
 
@@ -90,5 +118,20 @@ export function localHeights(build: SiteBuild): Map<string, number> {
 export function localFootprints(build: SiteBuild): Map<string, [number, number]> {
   const out = new Map<string, [number, number]>();
   for (const g of build.groups) if (g.build) out.set(g.group.id, [g.build.size[0], g.build.size[2]]);
+  return out;
+}
+
+/** Where each built group's links attach (see `Terminals`), for `arrangeSite` and `annealGroups`. */
+export function localTerminals(build: SiteBuild): Map<string, Terminals> {
+  const out = new Map<string, Terminals>();
+  for (const g of build.groups) if (g.build?.ends) out.set(g.group.id, g.build.ends);
+  return out;
+}
+
+/** The side faces of each built group (see `groupFaces`), for `annealGroups`. */
+export function localFaces(build: SiteBuild): Map<string, LazyFaces> {
+  const out = new Map<string, LazyFaces>();
+  // Tests build with stubs that carry no units.
+  for (const g of build.groups) if (g.build?.units) out.set(g.group.id, lazyFaces(g.build));
   return out;
 }

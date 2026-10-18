@@ -72,6 +72,54 @@ describe('encodePlan / decodePlan', () => {
     expect(await decodePlan(await encodePlan(plan))).toEqual(plan);
   });
 
+  it('keeps the orientation variant of manual units, and rejects a bad one', async () => {
+    const plan: PlanState = {
+      ...defaultPlan(),
+      manualUnits: [
+        { id: 0, origin: [0, 0, 0], rotation: 0 },
+        { id: 1, origin: [5, 0, 0], rotation: 3, variant: 1 },
+        { id: 2, origin: [9, 1, 0], rotation: 2, variant: 2 },
+        { id: 3, origin: [9, 1, 5], rotation: 1, variant: 3 },
+      ],
+    };
+    expect(await decodePlan(await encodePlan(plan))).toEqual(plan);
+    expect(validatePlanState(JSON.parse(JSON.stringify(plan))).manualUnits).toEqual(plan.manualUnits);
+    // The link holds rotation + 4 * variant, so old links (0..3) read as before.
+    const flat = (
+      await decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 7, u: [1, 2, 3, 11, 0, 0, 0, 2] }))
+    ).manualUnits;
+    expect(flat).toEqual([
+      { id: 0, origin: [1, 2, 3], rotation: 3, variant: 2 },
+      { id: 1, origin: [0, 0, 0], rotation: 2 },
+    ]);
+    const json = JSON.stringify(plan);
+    expect(json).toContain('"variant":1');
+    expect(JSON.stringify(plan.manualUnits![0])).not.toContain('variant');
+    const bad = { ...plan, manualUnits: [{ id: 0, origin: [0, 0, 0], rotation: 0, variant: 4 }] };
+    expect(() => validatePlanState(bad)).toThrow(PlanFormatError);
+  });
+
+  it('rejects bad variants in JSON and bad rotation slots in links; variant 0 is the same as none', async () => {
+    const unit = { id: 0, origin: [0, 0, 0], rotation: 0 };
+    for (const variant of [4, -1, 1.5, '1', null, true])
+      expect(
+        () => validatePlanState({ ...defaultPlan(), manualUnits: [{ ...unit, variant }] }),
+        String(variant),
+      ).toThrow(PlanFormatError);
+    for (const slot of [16, -1, 1.5, '1', null])
+      await expect(
+        decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 7, u: [0, 0, 0, slot] })),
+        String(slot),
+      ).rejects.toThrow(PlanFormatError);
+    const plain: PlanState = { ...defaultPlan(), manualUnits: [{ id: 0, origin: [1, 2, 3], rotation: 2 }] };
+    const zero = validatePlanState({
+      ...plain,
+      manualUnits: [{ id: 0, origin: [1, 2, 3], rotation: 2, variant: 0 }],
+    });
+    expect(zero.manualUnits).toEqual(plain.manualUnits);
+    expect(await encodePlan(zero)).toBe(await encodePlan(plain));
+  });
+
   it('works with the fflate fallback in both directions', async () => {
     const plan = manualPlan(12);
     const viaFallback = await encodePlan(plan, { fallback: true });
@@ -146,16 +194,17 @@ describe('encodePlan / decodePlan', () => {
       { l: [2001, 0, 0] },
       { l: [-1, 0, 0] },
       { l: [1, 2] },
-      { h: 512 },
+      { h: 1024 },
       { s: 0 },
       { s: 2.5 },
       { h: -1 },
       { c: { '0': 'red' } },
       { c: { '0': '"><script>' } },
-      { c: { '9': 'ffffff' } },
+      { c: { '10': 'ffffff' } },
+      { c: { '09': 'ffffff' } },
       { u: [0, 0, 0] },
       { u: [0, 0, 4097, 0] },
-      { u: [0, 0, 0, 4] },
+      { u: [0, 0, 0, 16] },
       { u: [0, 0, 0.5, 0] },
       { u: [0, 0, 0, 0], i: [1, 2] },
       { u: [0, 0, 0, 0, 1, 1, 1, 1], i: [3, 3] },
@@ -265,6 +314,47 @@ describe('validatePlanState', () => {
 
   it('knows every hatch kind exactly once', () => {
     expect(new Set(HATCH_KINDS).size).toBe(HATCH_KINDS.length);
+  });
+
+  it('only ever appends hatch kinds, so a link keeps its bits', () => {
+    // Links made before the Data Access Hatch have the nine older kinds in bits 0 to 8.
+    expect(HATCH_KINDS.slice(0, 9)).toEqual([
+      'itemIn',
+      'itemOut',
+      'fluidIn',
+      'fluidOut',
+      'energy',
+      'dynamo',
+      'maintenance',
+      'muffler',
+      'steamIn',
+    ]);
+    expect(HATCH_KINDS[9]).toBe('dataAccess');
+  });
+
+  it('decodes a link whose hatch mask has no Data Access bit (at most 511)', async () => {
+    const all = await decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 511, c: { '8': 'c9b99a' } }));
+    expect(all.enabledHatches).toEqual(HATCH_KINDS.slice(0, 9));
+    expect(all.colors).toEqual({ steamIn: '#c9b99a' });
+    const some = await decodePlan(await rawLink({ v: 1, m: 'coke-oven', h: 3 }));
+    expect(some.enabledHatches).toEqual(['itemIn', 'itemOut']);
+  });
+
+  it('round-trips the Data Access Hatch and its colour', async () => {
+    const plan: PlanState = {
+      ...defaultPlan('assembly-line'),
+      enabledHatches: ['itemOut', 'dataAccess'],
+      colors: { dataAccess: '#3fc9b0' },
+    };
+    const link = await encodePlan(plan);
+    const decoded = await decodePlan(link);
+    expect(decoded.enabledHatches).toEqual(['itemOut', 'dataAccess']);
+    expect(decoded.colors).toEqual({ dataAccess: '#3fc9b0' });
+    expect(plansEqual(decoded, plan)).toBe(true);
+    // The bit and the colour key sit right after the older kinds.
+    const raw = JSON.parse(new TextDecoder().decode(await inflateRaw(fromBase64Url(link))));
+    expect(raw.h).toBe((1 << 1) | (1 << 9));
+    expect(raw.c).toEqual({ '9': '3fc9b0' });
   });
 });
 

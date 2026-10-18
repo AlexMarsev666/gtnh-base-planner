@@ -5,7 +5,8 @@
   import { setCount } from './actions';
   import { COUNT_MAX, COUNT_MIN, parseCount } from './fields';
   import ModeSwitch from './ModeSwitch.svelte';
-  import NumberField from './NumberField.svelte';
+  import NumberStepper from './NumberStepper.svelte';
+  import ShareMenu from './ShareMenu.svelte';
 
   interface Props {
     def: MultiblockDef | undefined;
@@ -26,64 +27,61 @@
 </script>
 
 <header class="bar">
-  <div class="group name">
+  <div class="modes"><ModeSwitch /></div>
+
+  <div class="name">
     <button
-      class="link"
-      class:active={pickerOpen}
+      class="btn machine"
+      class:on={pickerOpen}
       data-testid="multiblock-name"
       aria-expanded={pickerOpen}
       aria-haspopup="dialog"
       onclick={ontogglepicker}
     >
-      {def?.name ?? $plan.multiblockId}
+      <strong class="title">{def?.name ?? $plan.multiblockId}</strong>
+      {#if def?.tier}<span class="tier">{def.tier}</span>{/if}
+      <svg class="chevron" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"
+        ><path
+          d="M1 1l4 4 4-4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        /></svg
+      >
     </button>
-    {#if def?.tier}<span class="tier">{def.tier}</span>{/if}
     {#if def?.generated}<span class="unverified" title={t.generatedHint} data-testid="unverified"
         >{t.generatedTag}</span
       >{/if}
   </div>
 
-  <div class="group count" role="group" aria-label={t.countLabel}>
-    <button
-      class="link step"
-      aria-label={t.decrease}
-      data-testid="count-dec"
-      disabled={$plan.count <= COUNT_MIN}
-      onclick={() => setCount($plan.count - 1)}>{t.minus}</button
-    >
-    <NumberField
+  <label class="count">
+    <span class="count-label">{t.countShort}</span>
+    <NumberStepper
       value={String($plan.count)}
       label={t.countLabel}
-      testid="count"
+      min={COUNT_MIN}
+      max={COUNT_MAX}
       width="3em"
+      testid="count"
       oncommit={commitCount}
     />
-    <button
-      class="link step"
-      aria-label={t.increase}
-      data-testid="count-inc"
-      disabled={$plan.count >= COUNT_MAX}
-      onclick={() => setCount($plan.count + 1)}>{t.plus}</button
-    >
-  </div>
+  </label>
 
-  <div class="group modes">
-    <ModeSwitch />
-  </div>
+  <span class="spacer"></span>
 
-  <div class="group settings">
-    <span class="sep dot" aria-hidden="true">{t.separator}</span>
+  <div class="right">
     <button
-      class="link"
-      class:active={blocksOpen}
+      class="btn"
+      class:on={blocksOpen}
       aria-expanded={blocksOpen}
       data-testid="blocks-toggle"
       onclick={ontoggleblocks}>{t.bom.toggle}</button
     >
-    <span class="sep dot" aria-hidden="true">{t.separator}</span>
+    <ShareMenu kind="machine" />
     <button
-      class="link"
-      class:active={settingsOpen}
+      class="btn"
+      class:on={settingsOpen}
       aria-expanded={settingsOpen}
       data-testid="settings-toggle"
       onclick={ontogglesettings}>{t.settings}</button
@@ -99,91 +97,101 @@
     right: 0;
     height: var(--bar-h);
     padding: 0 var(--gutter);
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    grid-template-areas: 'name modes settings';
+    display: flex;
     align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
     z-index: 30;
-    pointer-events: none;
+    color: var(--text);
   }
-  .group {
+  .name {
     display: flex;
     align-items: center;
     gap: 8px;
-    pointer-events: auto;
-  }
-  .name {
-    grid-area: name;
-    justify-self: start;
     min-width: 0;
-    max-width: calc(50vw - var(--gutter) - 72px);
-    gap: 10px;
   }
-  .name .link {
-    color: var(--text);
-    white-space: nowrap;
+  .machine {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .title {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .tier {
+  .tier,
+  .unverified {
+    color: var(--muted);
     white-space: nowrap;
   }
   .unverified {
-    white-space: nowrap;
-    color: var(--muted);
     cursor: help;
   }
-  /* Centred on the page, independent of the side groups' widths. */
+  .chevron {
+    flex: none;
+  }
   .count {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
   }
-  .step {
-    width: 20px;
-    text-align: center;
-    font-size: 13px;
+  .count-label {
+    color: var(--muted);
   }
-  .modes {
-    grid-area: modes;
-    justify-self: end;
+  .spacer {
+    flex: 1;
   }
-  .settings {
-    grid-area: settings;
-  }
-  .sep {
-    color: var(--faint);
-  }
-  .dot {
-    margin: 0 10px;
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
   }
 
+  @media (max-width: 900px) {
+    .count-label {
+      display: none;
+    }
+  }
+  @media (max-width: 760px) {
+    .bar {
+      gap: 8px;
+    }
+    .right {
+      gap: 4px;
+    }
+    .right :global(.btn) {
+      padding: 0 8px;
+    }
+  }
   @media (max-width: 640px) {
     .bar {
-      grid-template-columns: 1fr auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       grid-template-rows: 1fr 1fr;
       grid-template-areas:
-        'name settings'
-        'count modes';
-      padding-top: 8px;
-      padding-bottom: 8px;
+        'modes right'
+        'name count';
+      align-items: center;
+      padding: 4px 10px;
+      gap: 4px 8px;
     }
-    .count {
-      position: static;
-      transform: none;
-      grid-area: count;
-      justify-self: start;
-      margin-left: -5px;
+    .modes {
+      grid-area: modes;
     }
     .name {
-      max-width: none;
+      grid-area: name;
     }
-    .settings {
-      justify-self: end;
+    .count {
+      grid-area: count;
     }
-    .dot {
+    .right {
+      grid-area: right;
+    }
+    .spacer {
       display: none;
     }
   }

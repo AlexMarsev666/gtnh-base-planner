@@ -8,13 +8,13 @@
 
   function storedOpen(): boolean {
     try {
-      return globalThis.localStorage?.getItem(KEY) !== '0';
+      return globalThis.localStorage?.getItem(KEY) === '1';
     } catch {
-      return true;
+      return false;
     }
   }
 
-  /** Folded to a small "Controls" link once closed; remembered per browser. */
+  /** Folded to a one-line strip by default; the full sheet is remembered per browser. */
   let open = $state(storedOpen());
 
   function setOpen(on: boolean) {
@@ -72,25 +72,77 @@
     <p class="note">{t.site.hint.camera}</p>
   </div>
 {:else}
-  <button class="link chip" data-testid="move-hint-open" onclick={() => setOpen(true)}
-    >{t.site.hint.open}</button
-  >
+  <div class="strip" data-testid="move-hint-strip">
+    <span>{t.site.hint.strip}</span>
+    <span class="dot">·</span>
+    <span class="item"><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> {t.site.hint.stripNudge}</span>
+    <span class="dot">·</span>
+    <span class="item"
+      ><kbd>{port ? 'A' : 'R'}</kbd> {port ? t.site.hint.stripAuto : t.site.hint.stripTurn}</span
+    >
+    <button
+      class="help"
+      data-testid="move-hint-open"
+      aria-label={t.site.hint.open}
+      title={t.site.hint.open}
+      aria-expanded="false"
+      onclick={() => setOpen(true)}>?</button
+    >
+  </div>
 {/if}
 
 <style>
   .card,
-  .chip {
+  .strip {
     position: fixed;
-    left: var(--gutter);
+    left: calc(var(--gutter) + var(--outline-w, 0px));
     /* Above the axis gizmo in the bottom-left corner. */
     bottom: 128px;
     z-index: 20;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text);
+  }
+  .strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100vw - var(--gutter) * 2 - var(--outline-w, 0px) - var(--drawer-w, 0px));
+    padding: 5px 6px 5px 10px;
+    white-space: nowrap;
+  }
+  .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .dot {
+    color: var(--muted);
+  }
+  .help {
+    appearance: none;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-left: 4px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--bg);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .help:hover {
+    background: var(--surface);
   }
   .card {
-    width: 250px;
+    width: 260px;
     padding: 10px 12px 12px;
-    background: var(--bg);
-    border: 1px solid var(--line);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
   }
   .top {
@@ -100,10 +152,10 @@
     margin-bottom: 6px;
   }
   .title {
-    color: var(--text);
+    font-weight: 600;
   }
   .x {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
     padding: 0 2px;
   }
@@ -130,6 +182,7 @@
     padding: 1px 4px;
     border: 1px solid var(--faint);
     border-bottom-width: 2px;
+    border-radius: 4px;
     color: var(--text);
     font: inherit;
     font-size: 10px;
@@ -140,14 +193,6 @@
   .plus {
     color: var(--muted);
   }
-  .text,
-  .note {
-    text-transform: none;
-    letter-spacing: 0.02em;
-  }
-  .text {
-    color: var(--text);
-  }
   .note {
     margin: 8px 0 0;
     color: var(--muted);
@@ -155,7 +200,7 @@
   /* Phones have no arrow keys: the nudge pad in the Template panel does the same. */
   @media (max-width: 640px), (pointer: coarse) {
     .card,
-    .chip {
+    .strip {
       display: none;
     }
   }

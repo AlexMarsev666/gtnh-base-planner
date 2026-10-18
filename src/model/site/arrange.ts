@@ -1,5 +1,9 @@
 import type { Rotation } from '../core/types';
+import { AbortedError, throttledProgress, throwIfAborted } from './progress';
+import { coversFootprint, turnedReach, type Terminals } from './terminals';
 import type { SiteGroup, SiteState } from './types';
+
+export { AbortedError };
 
 /**
  * Auto-arrange: place groups on the site in flow order, west to east.
@@ -10,14 +14,23 @@ import type { SiteGroup, SiteState } from './types';
  *    which keeps crossings down.
  * 4. Columns are stacked north to south with `corridor` free blocks between groups and around the
  *    edges; the west and east edges keep one more block for the boundary ports. A column that is too deep
- *    for the site is split into several columns.
+ *    for the site is split into several columns. Groups of a column share their west edge and all columns
+ *    share their north edge (the chain as a whole is centred), so the result reads as straight rows and
+ *    columns; the pipes may be longer than they could be (Optimize shortens them).
  *
  * 5. With `floors`, a chain that is wider than the site does not widen it: the columns that no longer fit
  *    start a new floor, raised above the one below by its tallest group and a clearance for pipes. Floors
  *    run back and forth (the second one west, the third east again, ...), so the end of one floor lies next
  *    to the start of the next.
  *
- * `sizeOf` gives a group's local footprint [x, z] (before rotation). Pure and deterministic.
+ * 6. Each group is turned so that its hatches can face the way the flow goes: those that take resources in
+ *    reach towards the west (the east on the floors that run back), those that give them out towards the other
+ *    side, as far as the cells a hatch of that kind may take allow. That is a choice between the two turns the
+ *    footprint allows, and needs `ends`.
+ *
+ * `sizeOf` gives a group's local footprint [x, z] (before rotation). Pure and deterministic, and idempotent:
+ * arranging an arranged site gives the same site (rotations are chosen from the footprints and the groups'
+ * hatches alone, never from the current rotations).
  */
 
 export interface ArrangeResult {
@@ -33,7 +46,18 @@ export interface ArrangeResult {
 export interface ArrangeOptions {
   /** Build on several floors instead of widening the site; gives each group's height (blocks). */
   floors?: { heightOf: (id: string) => number };
+  /** Where each group's links attach, by group id (see `localTerminals`). Groups without it are not turned to face. */
+  ends?: (id: string) => Terminals | undefined;
+  /** Called with (steps done, steps in all) as the arrangement proceeds (at most ~20 times a second). */
+  onProgress?: (done: number, total: number) => void;
+  /** Aborting throws `AbortedError`. */
+  signal?: AbortSignal;
+  /** Clock for the progress throttle. Default `performance.now`. */
+  now?: () => number;
 }
+
+/** Stages reported by `arrangeSite`: cycles, layers, four sweeps, placement. */
+const STEPS = 7;
 
 /** Free blocks between one floor's tallest group and the next floor, for pipes to pass. */
 export const FLOOR_CLEARANCE = 3;
@@ -43,6 +67,13 @@ export function arrangeSite(
   sizeOf: (id: string) => [number, number] | undefined,
   opts: ArrangeOptions = {},
 ): ArrangeResult {
+  const report = throttledProgress(opts.onProgress, opts.now ?? (() => performance.now()));
+  let steps = 0;
+  const step = () => {
+    throwIfAborted(opts.signal);
+    report?.(++steps, STEPS);
+  };
+  throwIfAborted(opts.signal);
   const ids = site.groups.map((g) => g.id);
   const index = new Map(ids.map((id, i) => [id, i]));
   const succ = ids.map(() => new Set<number>());
@@ -102,6 +133,7 @@ export function arrangeSite(
     left.push(best);
     alive.delete(best);
   }
+  step();
   const rank = new Map([...left, ...right].map((v, i) => [v, i]));
   const dag = ids.map((_, v) =>
     [...succ[v]].filter((w) => rank.get(w)! > rank.get(v)!).sort((a, b) => a - b),
@@ -120,6 +152,7 @@ export function arrangeSite(
           changed = true;
         }
   }
+  step();
   const columns: number[][] = [];
   layer.forEach((l, v) => (columns[l] ??= []).push(v));
   const cols = columns.filter((c) => c && c.length > 0);
@@ -144,6 +177,7 @@ export function arrangeSite(
       c.sort((a, b) => key.get(a)! - key.get(b)! || a - b);
       c.forEach((v, i) => position.set(v, i));
     }
+    step();
   }
 
   const [w, d] = site.size;
@@ -156,15 +190,59 @@ export function arrangeSite(
     return r % 2 === 0 ? s : [s[1], s[0]];
   };
 
-  /** Rotations for a column: as they are, all narrow (min x), or all short (min z); the first that fits. */
+  /**
+   * Resources each group takes in and gives out: links to a boundary port count too, the ports being on the
+   * west (in) and east (out) edges.
+   */
+  const takes = ids.map(() => new Set<string>());
+  const gives = ids.map(() => new Set<string>());
+  for (const l of site.links) {
+    const to = 'group' in l.to ? index.get(l.to.group) : undefined;
+    const from = 'group' in l.from ? index.get(l.from.group) : undefined;
+    if (to !== undefined) takes[to].add(l.resource);
+    if (from !== undefined) gives[from].add(l.resource);
+  }
+  /**
+   * The turn of group `v` for its footprint turn `r` (0 or 1): `r` or the half turn after it, whichever lets the
+   * hatches that take resources in reach further west and those that give out further east (the other way
+   * round when `back`), by the part of the group each may go on. Ties, and groups whose hatches may go
+   * anywhere or are unknown, keep `r`.
+   */
+  const facing = (v: number, r: Rotation, back: boolean): Rotation => {
+    const ends = opts.ends?.(ids[v]);
+    const size = sizeOf(ids[v]) ?? [3, 3];
+    if (!ends) return r;
+    const lean = (t: Rotation) => {
+      let sum = 0;
+      for (const [set, west] of [
+        [takes[v], !back],
+        [gives[v], back],
+      ] as const)
+        for (const k of set) {
+          const box = ends[k];
+          if (!box || coversFootprint(box, size)) continue;
+          const [x0, x1] = turnedReach(box, size, t);
+          // Reaching west is a low west edge; reaching east, a high east edge.
+          sum += west ? x0 : -x1;
+        }
+      return sum;
+    };
+    const half = ((r + 2) % 4) as Rotation;
+    return lean(half) < lean(r) - 1e-9 ? half : r;
+  };
+
+  /**
+   * Rotations for a column: all narrow (min x), or all short (min z); the first that fits. Square footprints
+   * stay unrotated (`facing` may still turn them half way). The groups' current rotations play no part, which
+   * keeps the arrangement idempotent.
+   */
   const chooseRotations = (c: number[]): Rotation[] => {
     const options: Rotation[][] = [
-      c.map((v) => site.groups[v].rotation),
       c.map((v) => (foot(v, 0)[0] <= foot(v, 1)[0] ? 0 : 1) as Rotation),
       c.map((v) => (foot(v, 0)[1] <= foot(v, 1)[1] ? 0 : 1) as Rotation),
     ];
     const total = (rs: Rotation[]) => c.reduce((s, v, i) => s + foot(v, rs[i])[1], 0) + gap * (c.length - 1);
-    return options.find((rs) => total(rs) <= depth) ?? options[2];
+    return options.find((rs) => total(rs) <= depth) ?? options[1];
   };
 
   const out = site.groups.map((g) => {
@@ -174,10 +252,12 @@ export function arrangeSite(
     return copy;
   });
   let x = edge;
-  let maxZ = 0;
   /** Where each group stands on its floor, for the floors' mirroring and heights. */
   const onFloor = new Map<number, { floor: number; x: number; fx: number }>();
+  /** Offset of each group below the top of its column. */
+  const below = new Map<number, number>();
   let floor = 0;
+  let tallest = 0;
   for (const c of cols) {
     const rots = chooseRotations(c);
     // Split into sub-columns that fit the depth.
@@ -201,35 +281,40 @@ export function arrangeSite(
         floor++;
         x = edge;
       }
-      // Centre the column in the depth when it fits, else start at the corridor.
-      let z = Math.max(Math.max(1, gap), Math.floor((d - height) / 2));
+      tallest = Math.max(tallest, height);
+      let dz = 0;
       for (const e of sub) {
         const [fx, fz] = foot(e.v, e.r);
-        out[e.v].rotation = e.r;
-        const gx = x + Math.floor((width - fx) / 2);
-        out[e.v].origin = [gx, z];
-        onFloor.set(e.v, { floor, x: gx, fx });
-        z += fz + gap;
-        maxZ = Math.max(maxZ, z - gap);
+        out[e.v].rotation = facing(e.v, e.r, floor % 2 === 1);
+        // Groups of a column share their west edge.
+        out[e.v].origin = [x, 0];
+        onFloor.set(e.v, { floor, x, fx });
+        below.set(e.v, dz);
+        dz += fz + gap;
       }
       x += width + gap;
     }
   }
+  step();
+  // All columns share their north edge: centred in the depth when the tallest fits, else at the corridor.
+  const side = Math.max(1, gap);
+  const top = Math.max(side, Math.floor((d - tallest) / 2));
+  for (const [v, dz] of below) out[v].origin = [out[v].origin[0], top + dz];
   let reach = 0;
   for (const p of onFloor.values()) reach = Math.max(reach, p.x + p.fx);
   const neededW = cols.length ? (opts.floors && floor > 0 ? reach + edge : x - gap + edge) : 0;
-  const neededD = maxZ + Math.max(1, gap);
+  const neededD = cols.length ? tallest + 2 * side : 0;
   if (opts.floors && floor > 0) {
     const { heightOf } = opts.floors;
     // Every second floor runs the other way: its x mirrored within the width of the widest floor.
     const span = reach - edge;
-    const top = new Map<number, number>();
+    const tops = new Map<number, number>();
     for (const [v, p] of onFloor) {
-      top.set(p.floor, Math.max(top.get(p.floor) ?? 0, heightOf(ids[v])));
+      tops.set(p.floor, Math.max(tops.get(p.floor) ?? 0, heightOf(ids[v])));
       if (p.floor % 2 === 1) out[v].origin = [2 * edge + span - p.x - p.fx, out[v].origin[1]];
     }
     const base: number[] = [0];
-    for (let f = 1; f <= floor; f++) base[f] = base[f - 1] + (top.get(f - 1) ?? 0) + FLOOR_CLEARANCE;
+    for (let f = 1; f <= floor; f++) base[f] = base[f - 1] + (tops.get(f - 1) ?? 0) + FLOOR_CLEARANCE;
     for (const [v, p] of onFloor) if (base[p.floor] > 0) out[v].elevation = base[p.floor];
   }
   // Centre the chain along X when there is room, so the pipes to both edges' ports stay short.

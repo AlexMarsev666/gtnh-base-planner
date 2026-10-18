@@ -1,5 +1,6 @@
 import type { Dir, HorizontalDir, Rotation, Vec3 } from './core/types';
-import type { MultiblockDef, Unit, UnitCell } from './multiblock/types';
+import type { HatchKind, LegendEntry, MultiblockDef, Unit, UnitCell } from './multiblock/types';
+import { orientedDef } from './mirror';
 
 /**
  * Shared geometry helpers. Implemented in the foundation; all model units must use these.
@@ -18,6 +19,24 @@ export class DefinitionError extends Error {
 }
 
 export const DIRS: readonly Dir[] = ['north', 'south', 'east', 'west', 'up', 'down'];
+
+/**
+ * The local sides a hatch of `kind` should not face in a cell of this legend entry: `disallowFaces`, plus
+ * every side outside `allowFaces` when the kind is listed there. Undefined when nothing is hinted.
+ */
+export function hintedAgainstFaces(entry: LegendEntry | undefined, kind: HatchKind): Dir[] | undefined {
+  const no = entry?.disallowFaces?.[kind];
+  const outside = outsideAllowedFaces(entry, kind);
+  if (outside.length === 0) return no;
+  const out = DIRS.filter((d) => outside.includes(d) || no?.includes(d));
+  return out.length > 0 ? out : undefined;
+}
+
+/** The local sides outside `allowFaces` for `kind` (none when the kind is not listed there). */
+export function outsideAllowedFaces(entry: LegendEntry | undefined, kind: HatchKind): Dir[] {
+  const yes = entry?.allowFaces?.[kind];
+  return yes ? DIRS.filter((d) => !yes.includes(d)) : [];
+}
 
 const VEC: Record<Dir, Vec3> = {
   north: [0, 0, -1],
@@ -159,14 +178,24 @@ export function localCells(def: MultiblockDef): LocalCell[] {
   return out;
 }
 
+/**
+ * The def a unit is built from: `def` in the unit's `variant` (see `orientedDef`). Flips keep the size, so
+ * `rotatedSize`, `unitBounds` and `rotateLocal` take any of the variants; the cells, legend entries and
+ * controller of a unit come from here.
+ */
+export function defOfUnit(def: MultiblockDef, unit: Pick<Unit, 'variant'>): MultiblockDef {
+  return unit.variant ? orientedDef(def, unit.variant) : def;
+}
+
 /** Structure cells of a placed unit in world coords. */
 export function unitCells(def: MultiblockDef, unit: Unit): UnitCell[] {
-  return localCells(def).map((c) => ({ ...c, pos: toWorld(def, unit, c.local) }));
+  const d = defOfUnit(def, unit);
+  return localCells(d).map((c) => ({ ...c, pos: toWorld(d, unit, c.local) }));
 }
 
 /** World direction the unit's controller faces. */
 export function controllerFacing(def: MultiblockDef, unit: Unit): Dir {
-  return rotateDir(def.controller.facing, unit.rotation);
+  return rotateDir(defOfUnit(def, unit).controller.facing, unit.rotation);
 }
 
 /** World bounding box (inclusive min, exclusive max) of a unit. */

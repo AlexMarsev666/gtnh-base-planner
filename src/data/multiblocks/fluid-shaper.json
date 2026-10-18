@@ -2,28 +2,25 @@
   "id": "fluid-shaper",
   "name": "Fluid Shaper",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEFluidShaper.java",
-  "size": [10, 5, 5],
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEFluidShaper.java",
+  "size": [9, 5, 5],
   "layers": [
-    ["AAAA~AAAA ", "AAAAAAAAA ", "AAAAAAAAA ", "AAAAAAAAA ", "AAAAAAAAA "],
-    ["ABBBABBBA ", "A-------A ", "AC-C-C-CA ", "A-------A ", "ABBBBBBBA "],
-    ["ADDDDDDDA ", "A-------A ", "A-------A ", "A-------A ", "ADDDDDDDA "],
-    ["AAAAAAAAA ", "A-------A ", "AE-E-E-EA ", "A-------A ", "AAAAAAAAA "],
-    ["A       A ", "AAAAAAAAAF", "AAAAAAAAA ", "AAAAAAAAA ", "A       A "]
+    ["AAAA~AAAA", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA"],
+    ["ABBBABBBA", "A-------A", "AC-C-C-CA", "A-------A", "ABBBBBBBA"],
+    ["ADDDDDDDA", "A-------A", "A-------A", "A-------A", "ADDDDDDDA"],
+    ["AAAAAAAAA", "A-------A", "AE-E-E-EA", "A-------A", "AAAAAAAAA"],
+    ["A       A", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA", "A       A"]
   ],
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings10@13",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings10@14" },
     "C": { "blockId": "gregtech:gt.blockcasings@11" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "E": { "blockId": "gregtech:gt.blockcasings4@1" },
-    "F": {
-      "blockId": "gt.hatch.inputBus",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"]
-    }
+    "E": { "blockId": "gregtech:gt.blockcasings4@1" }
   },
   "controller": { "pos": [4, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@366" },
   "hatchBlocks": {
@@ -34,8 +31,16 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "requiredHatches": { "itemOut": { "min": 1 }, "fluidIn": { "min": 1 }, "maintenance": { "min": 1 } },
+  "minCasings": [{ "chars": ["A"], "min": 91 }],
+  "glassTierLimits": { "chars": ["D"], "kinds": ["energy"] },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+      "text": "Input Bus: Any Casing\nOutput Bus: Any Casing\nInput Hatch: Any Casing\nEnergy Hatch: Any Casing\nMaintenance Hatch: Any Casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEFluidShaper (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEFluidShaper (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

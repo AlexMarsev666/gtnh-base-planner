@@ -111,7 +111,7 @@ interface LinkState {
 
 - `codec.ts`: `PLAN_VERSION = 2` with a validator for the new shape; v1 is still decoded and migrated. Only
   the fields above are stored. Recipes, icons and NEI data are dropped, so a 20-group import stays a few KB
-  compressed, well under `MAX_PAYLOAD_BYTES` (64 KB).
+  compressed, well under `MAX_LINK_CODE_CHARS` (64 KB).
 - `store.ts`: `plan` becomes the site. The current single-machine UI edits the selected group.
 
 ## 4. Pipeline changes
@@ -165,7 +165,8 @@ Today: `plan → packUnits → placeHatches → computeWallStats → routePipes 
   Groups whose limits are locked (`SiteGroup.limitsLocked`, set by editing them) are never repacked, nor by Arrange.
   It runs when the OPTIMIZE button is pressed and, unless switched off in the import dialog, by itself once an
   imported template has been built and shown (skipped if it was edited meanwhile); ARRANGE stays as it was.
-  One time budget (10 s) covers everything; one routing of the start layout sets the pace, so slow-to-route plans
+  The work is an iteration budget that grows with the plan (not time), so a run is repeatable for a seed; only a
+  60 s safety limit can cut it short. One routing of the start layout sets the pace, so slow-to-route plans
   (a thousand machines: seconds per routing) get fewer candidates and no polish. Packs are kept across the search
   (`SiteBuildOptions.keepCache`). Measured on exported plans of 16 to 154 groups: 25-50 % fewer pipe and cable blocks
   on most, 5-14 % where routing is slow, nothing where no layout beat the start. Not yet: routing only the nets a

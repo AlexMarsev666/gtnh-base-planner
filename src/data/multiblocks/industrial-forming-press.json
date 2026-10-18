@@ -2,7 +2,7 @@
   "id": "industrial-forming-press",
   "name": "Industrial Forming Press",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialFormingPress.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialFormingPress.java",
   "size": [5, 5, 3],
   "layers": [
     ["AA~AA", "BBBBB", "AAAAA"],
@@ -14,7 +14,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:miscutils.blockcasings@4",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings2@13" },
     "C": { "blockId": "gregtech:gt.blockcasings12@14" },
@@ -32,11 +33,20 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 5 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any machine casing\n1 Maintenance Hatch: Any machine casing\n1 Muffler Hatch: Any machine casing\n1+ Input Bus: Any machine casing\n0+ Input Hatch: Any machine casing\n1+ Output Bus: Any machine casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialFormingPress (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialFormingPress (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

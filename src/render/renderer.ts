@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import { JUNCTION_COLOR } from '../model/colors';
 import { dirVec, key } from '../model/geometry';
 import { isCable } from '../model/routing/kinds';
 import type { Dir, Vec3, ViewMode } from '../model/core/types';
 import type { SceneModel, Voxel } from '../model/render/types';
 import { DEFAULT_PHI, DEFAULT_THETA, fitPoints, fitView, OrbitControls } from './controls';
 import type { BlockVisual, MaterialProvider } from './materials';
+import { choosePick, type PickHit } from './pick';
 import { createSimpleProvider } from './simple';
 
 export interface RendererOptions {
@@ -12,6 +14,8 @@ export interface RendererOptions {
   onPick?: (unitIds: number[]) => void;
   /** Called on click with the id of the net (`RouteNet.id`) under the pointer, or null. */
   onPickNet?: (netId: number | null) => void;
+  /** Called on click with the cell of the hatch block under the pointer, or null when it is something else. */
+  onPickHatch?: (cell: Vec3 | null) => void;
   /** Called after a frame when the camera azimuth (`OrbitControls.theta`, radians) changed. */
   onView?: (theta: number) => void;
   /**
@@ -21,6 +25,8 @@ export interface RendererOptions {
   onMoveSelection?: (dx: number, dz: number) => void;
   /** While dragging the selection: the offset so far (null when the drag ends). */
   onDragOffset?: (offset: [number, number] | null) => void;
+  /** Called when DETAILED was requested but SIMPLE is drawn instead (the textures could not be loaded). */
+  onViewModeFallback?: () => void;
   /** Keep the drawing buffer after compositing so tests can read pixels back. Default false. */
   preserveDrawingBuffer?: boolean;
 }
@@ -30,6 +36,8 @@ export interface Renderer {
   setViewMode(mode: ViewMode): Promise<void>;
   setXray(on: boolean): void;
   setSelected(unitIds: number[]): void;
+  /** Highlight single cells (the selected hatch); an empty list clears the highlight. */
+  setMarkedCells(cells: readonly Vec3[]): void;
   /** Animate flow arrows along nets that carry `flows` (site view). */
   setFlowAnimation(on: boolean): void;
   /** Reset camera to fit the scene. */
@@ -39,10 +47,10 @@ export interface Renderer {
   /** Aim at a box (inclusive min, exclusive max, in blocks), keeping the camera angles. */
   frameBox(min: Vec3, max: Vec3): void;
   /**
-   * Pixels of the canvas covered on the right and at the bottom (a drawer or sheet): the view is shifted so
-   * the scene centres in the part left free.
+   * Pixels of the canvas covered on the left (the outline), the right and at the bottom (a drawer or
+   * sheet): the view is shifted so the scene centres in the part left free.
    */
-  setInset(right: number, bottom: number): void;
+  setInset(left: number, right: number, bottom: number, top: number): void;
   resize(): void;
   dispose(): void;
 }
@@ -60,11 +68,15 @@ export interface RendererDebug {
 }
 
 const CASING_XRAY_OPACITY = 0.1;
+/** A floor with pipes under it is drawn this see-through, like the plain ground then. */
+const FLOOR_SEE_THROUGH_OPACITY = 0.55;
 const CONFLICT_COLOR = '#e5484d';
 const SELECT_TINT = '#3b82f6';
 const SELECT_LINE = '#111111';
 /** Pipe thickness: square like GT pipes, 6/16 of a block (a small pipe). */
 const PIPE_WIDTH = 6 / 16;
+/** A pipe junction block is a little thicker than the pipes that merge into it. */
+const JUNCTION_WIDTH = PIPE_WIDTH * 1.35;
 /** Cable thickness: thinner than pipes (a 2x GT cable), so the two read apart at a glance. */
 const CABLE_WIDTH = 3 / 16;
 /** Flow arrows: wider than a pipe so they show around it, and their speed (blocks per second). */
@@ -94,6 +106,23 @@ function center(p: Vec3): THREE.Vector3 {
   return new THREE.Vector3(p[0] + 0.5, p[1] + 0.5, p[2] + 0.5);
 }
 
+/** Line segment endpoints (x, y, z of each) of the 12 edges of every box. */
+function boxEdges(boxes: readonly THREE.Box3[]): number[] {
+  const positions: number[] = [];
+  const corner = (b: THREE.Box3, i: number): number[] => [
+    i & 1 ? b.max.x : b.min.x,
+    i & 2 ? b.max.y : b.min.y,
+    i & 4 ? b.max.z : b.min.z,
+  ];
+  const edges = [
+    [0, 1], [2, 3], [4, 5], [6, 7],
+    [0, 2], [1, 3], [4, 6], [5, 7],
+    [0, 4], [1, 5], [2, 6], [3, 7],
+  ]; // prettier-ignore
+  for (const b of boxes) for (const [a, c] of edges) positions.push(...corner(b, a), ...corner(b, c));
+  return positions;
+}
+
 function visualKey(v: Voxel): string {
   return `${v.blockId}|${v.kind}|${v.hatchKind ?? ''}|${v.facing ?? ''}|${v.baseBlockId ?? ''}|${v.conflict ? 1 : 0}`;
 }
@@ -106,6 +135,8 @@ interface VoxelBatch {
   conflict: boolean;
   /** A single material when all six faces match (one draw call instead of six). */
   baseMaterials: THREE.Material | THREE.Material[];
+  /** Drawn see-through (glass): a click goes on to what is behind it, like for a faded block. */
+  glass: boolean;
 }
 
 /** Device pixels per CSS pixel the canvas is drawn at (the same cap as the WebGL renderer). */
@@ -296,7 +327,9 @@ export function createRenderer(
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 5000);
   const content = new THREE.Group();
   const selection = new THREE.Group();
-  scene.add(content, selection);
+  /** The highlighted hatch cells; unlike the selection it never moves with a drag. */
+  const marks = new THREE.Group();
+  scene.add(content, selection, marks);
 
   const gizmo = buildGizmo();
   const half = GIZMO_SPAN / 2;
@@ -376,8 +409,15 @@ export function createRenderer(
   let points: THREE.Vector3[] = scenePoints(null);
   let batches: VoxelBatch[] = [];
   /** Pipe meshes and the net id of each instance, for picking. */
-  let pipeBatches: { mesh: THREE.InstancedMesh; netIds: number[] }[] = [];
+  let pipeBatches: { mesh: THREE.InstancedMesh; netIds: number[]; dim: boolean }[] = [];
   /** Flow arrows: one instance per directed step, moved every frame while animating. */
+  /** The floor's meshes, kept across rebuilds (see `buildFloor`). */
+  let floorCache: {
+    key: string;
+    group: THREE.Group;
+    geometries: THREE.BufferGeometry[];
+    materials: THREE.Material[];
+  } | null = null;
   let flows: {
     mesh: THREE.InstancedMesh;
     steps: { a: THREE.Vector3; d: THREE.Vector3; q: THREE.Quaternion }[];
@@ -385,6 +425,7 @@ export function createRenderer(
   let flowOn = true;
   const clock = typeof performance === 'undefined' ? () => Date.now() : () => performance.now();
   let selected = new Set<number>();
+  let marked: readonly Vec3[] = [];
   let xray = false;
   const xrayMaterials = new Map<string, THREE.Material>();
   let fittedBoundsKey = '';
@@ -394,7 +435,7 @@ export function createRenderer(
   let reportedTheta = NaN;
   let width = 0;
   let height = 0;
-  let inset = { right: 0, bottom: 0 };
+  let inset = { left: 0, right: 0, bottom: 0, top: 0 };
   let dragEnabled = false;
   /** A drag of the selection: the ground plane at the grabbed height, where it was grabbed, the offset. */
   let drag: { plane: THREE.Plane; start: THREE.Vector3; dx: number; dz: number } | null = null;
@@ -411,6 +452,12 @@ export function createRenderer(
   };
   canvas.addEventListener('pointerdown', stopAutoFit);
   canvas.addEventListener('wheel', stopAutoFit, { passive: true });
+
+  // Rendering is on demand, so a restored context needs one explicit redraw.
+  const onContextLost = (e: Event): void => e.preventDefault(); // lets the browser restore the context
+  const onContextRestored = (): void => requestRender();
+  canvas.addEventListener('webglcontextlost', onContextLost);
+  canvas.addEventListener('webglcontextrestored', onContextRestored);
 
   const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => resize());
   resizeObserver?.observe(canvas);
@@ -501,7 +548,7 @@ export function createRenderer(
     gizmoCamera.quaternion.copy(camera.quaternion);
     gizmoCamera.position.set(0, 0, 4).applyQuaternion(camera.quaternion);
     gl.clearDepth();
-    gl.setViewport(GIZMO_MARGIN_PX, GIZMO_MARGIN_PX, GIZMO_PX, GIZMO_PX);
+    gl.setViewport(GIZMO_MARGIN_PX + inset.left, GIZMO_MARGIN_PX, GIZMO_PX, GIZMO_PX);
     gl.render(gizmo, gizmoCamera);
     gl.setViewport(0, 0, width, height);
 
@@ -548,11 +595,11 @@ export function createRenderer(
     return out.length > 0 ? out : fitPoints([[0, 0, 0]]);
   }
 
-  /** Field of view and aspect of the part of the canvas an open drawer or sheet leaves free. */
+  /** Field of view and aspect of the part of the canvas an open outline, drawer or sheet leaves free. */
   function visibleView(): { fov: number; aspect: number } {
     if (width === 0 || height === 0) return { fov: camera.fov, aspect: camera.aspect };
-    const w = Math.max(1, width - inset.right);
-    const h = Math.max(1, height - inset.bottom);
+    const w = Math.max(1, width - inset.left - inset.right);
+    const h = Math.max(1, height - inset.top - inset.bottom);
     const half = THREE.MathUtils.degToRad(camera.fov) / 2;
     const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(half) * (h / height)));
     return { fov, aspect: w / h };
@@ -605,9 +652,13 @@ export function createRenderer(
   }
 
   /** X-ray fades the casings; controllers, hatches and conflicts stay solid so they can be found. */
+  function isFaded(b: { conflict: boolean; kind: string }): boolean {
+    return xray && !(b.conflict || b.kind === 'hatch' || b.kind === 'controller');
+  }
+
   function applyXray(): void {
     for (const b of batches) {
-      if (b.conflict || b.kind === 'hatch' || b.kind === 'controller' || !xray) {
+      if (!isFaded(b)) {
         b.mesh.material = b.baseMaterials;
         b.mesh.renderOrder = 0;
         continue;
@@ -649,7 +700,8 @@ export function createRenderer(
       mesh.instanceMatrix.needsUpdate = true;
       mesh.computeBoundingSphere();
       content.add(mesh);
-      batches.push({ mesh, indices, kind: first.kind, conflict, baseMaterials });
+      const glass = [baseMaterials].flat().some((m) => m.transparent);
+      batches.push({ mesh, indices, kind: first.kind, conflict, baseMaterials, glass });
     }
   }
 
@@ -727,6 +779,11 @@ export function createRenderer(
     }[] = [];
     const cubes: { p: THREE.Vector3; color: string; w: number; net: number; dim: boolean }[] = [];
     const steps: { a: THREE.Vector3; d: THREE.Vector3; q: THREE.Quaternion; color: string }[] = [];
+    const junctions = m.junctions ?? [];
+    const joinCells = new Set(junctions.map((j) => key(j.cell)));
+    const joinHatches = new Set(junctions.map((j) => key(j.hatch)));
+    /** Beams that end at a junction stop at the face of its cube (a hair inside, so no gap shows). */
+    const junctionReach = (): number => -(JUNCTION_WIDTH / 2) + 0.005;
     m.pipes.forEach((net, ni) => {
       const color = net.color ?? m.colors[net.kind];
       const netId = net.id ?? -1 - ni;
@@ -749,7 +806,8 @@ export function createRenderer(
       for (const path of net.paths) {
         path.forEach((p) => cells.add(key(p)));
         const pts = path.map(center);
-        if (pts.length === 1) cubes.push({ p: pts[0], color, w, net: netId, dim });
+        const joined = (p: Vec3): boolean => joinCells.has(key(p));
+        if (pts.length === 1 && !joined(path[0])) cubes.push({ p: pts[0], color, w, net: netId, dim });
         let start = 0;
         for (let i = 1; i < pts.length; i++) {
           const last = i === pts.length - 1;
@@ -760,7 +818,12 @@ export function createRenderer(
               .normalize()
               .distanceTo(new THREE.Vector3().subVectors(pts[i + 1], pts[i]).normalize()) > 1e-6;
           if (last || bend) {
-            beam(pts[start], pts[i], half, half);
+            beam(
+              pts[start],
+              pts[i],
+              joined(path[start]) ? junctionReach() : half,
+              joined(path[i]) ? junctionReach() : half,
+            );
             start = i;
           }
         }
@@ -770,7 +833,7 @@ export function createRenderer(
         if (h.net !== undefined && net.id !== undefined ? h.net !== net.id : h.kind !== net.kind) continue;
         const v = dirVec(h.face);
         const front: Vec3 = [h.cell[0] + v[0], h.cell[1] + v[1], h.cell[2] + v[2]];
-        if (!cells.has(key(front))) continue;
+        if (!cells.has(key(front)) || (joinCells.has(key(front)) && joinHatches.has(key(h.cell)))) continue;
         beam(center(h.cell).addScaledVector(dirVector(h.face), 0.5), center(front), 0, half);
       }
       if (!dim)
@@ -785,6 +848,19 @@ export function createRenderer(
           });
         }
     });
+    // One neutral block where the nets of a multi-item hatch merge, and one stub from it to the hatch face.
+    for (const j of junctions) {
+      const p = center(j.cell);
+      cubes.push({ p, color: JUNCTION_COLOR, w: JUNCTION_WIDTH / PIPE_WIDTH, net: -1, dim: !!j.dim });
+      segments.push({
+        a: center(j.hatch).addScaledVector(dirVector(j.face), 0.5),
+        b: p.clone().addScaledVector(dirVector(j.face), JUNCTION_WIDTH / 2 - 0.005),
+        color: JUNCTION_COLOR,
+        w: 1,
+        net: -1,
+        dim: !!j.dim,
+      });
+    }
     const matrix = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const scale = new THREE.Vector3();
@@ -811,7 +887,7 @@ export function createRenderer(
       beams.computeBoundingSphere();
       if (dim) beams.renderOrder = 1;
       content.add(beams);
-      pipeBatches.push({ mesh: beams, netIds: list.map((s) => s.net) });
+      pipeBatches.push({ mesh: beams, netIds: list.map((s) => s.net), dim });
     }
     for (const dim of [false, true]) {
       const list = cubes.filter((c) => c.dim === dim);
@@ -826,7 +902,7 @@ export function createRenderer(
       mesh.computeBoundingSphere();
       if (dim) mesh.renderOrder = 1;
       content.add(mesh);
-      pipeBatches.push({ mesh, netIds: list.map((c) => c.net) });
+      pipeBatches.push({ mesh, netIds: list.map((c) => c.net), dim });
     }
     if (steps.length > 0) {
       const mesh = new THREE.InstancedMesh(flowGeo, flowMat, steps.length);
@@ -842,16 +918,28 @@ export function createRenderer(
     }
   }
 
-  /** The site's ground: a light floor, a faint block grid and a darker outline. */
+  /** Whether any pipe or cable runs below the ground (y < 0). */
+  function hasTrench(m: SceneModel): boolean {
+    return (m.pipes ?? []).some((n) => n.paths.some((path) => path.some((c) => c[1] < 0)));
+  }
+
+  /**
+   * The site's ground: a light floor (a plane; a floor of blocks replaces it, see `buildFloor`), a faint block
+   * grid and a darker outline (above the floor blocks, on y = 0).
+   */
   function buildSite(m: SceneModel): void {
     if (!m.site) return;
     const [w, d] = m.site.size;
-    // Pipes in a trench under the ground show through a see-through floor.
-    const trench = (m.pipes ?? []).some((n) => n.paths.some((path) => path.some((c) => c[1] < 0)));
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), trench ? floorSeeThroughMat : floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(w / 2, 0, d / 2);
-    content.add(floor);
+    if (!m.floor) {
+      // Pipes in a trench under the ground show through a see-through floor.
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, d),
+        hasTrench(m) ? floorSeeThroughMat : floorMat,
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(w / 2, 0, d / 2);
+      content.add(floor);
+    }
     const y = 0.003;
     const grid: number[] = [];
     for (let x = 1; x < w; x++) grid.push(x, y, 0, x, y, d);
@@ -863,6 +951,100 @@ export function createRenderer(
     const edgeGeo = new THREE.BufferGeometry();
     edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
     content.add(new THREE.LineSegments(edgeGeo, edgeMat));
+  }
+
+  /**
+   * The floor layer of a site: the top face of every block and the four outer sides of the slab, none at the
+   * holes pipes and cables make (the faces inside are never seen). It is not pickable (it is not in `batches`),
+   * turns see-through when something runs under it, and is kept between rebuilds while its inputs stay the same.
+   */
+  function buildFloor(m: SceneModel): void {
+    const f = m.floor;
+    if (!f) return;
+    const [w, d] = f.size;
+    const see = hasTrench(m);
+    const k = `${f.blockId}|${w}|${d}|${see ? 1 : 0}|${provider.mode}|${f.holes.join(';')}`;
+    if (floorCache?.key !== k) {
+      disposeFloor();
+      floorCache = { key: k, ...makeFloor(m, f, see) };
+    }
+    content.add(floorCache.group);
+  }
+
+  function makeFloor(
+    m: SceneModel,
+    f: NonNullable<SceneModel['floor']>,
+    see: boolean,
+  ): { group: THREE.Group; geometries: THREE.BufferGeometry[]; materials: THREE.Material[] } {
+    const [w, d] = f.size;
+    const hole = new Set<number>();
+    for (const [x, z] of f.holes) if (x >= 0 && x < w && z >= 0 && z < d) hole.add(x + w * z);
+    const faces = provider.materials({ blockId: f.blockId, kind: 'casing' }, m.colors);
+    // Own copies: the floor sits just behind the grid lines, and may be see-through, unlike the voxels.
+    const own = (face: THREE.Material): THREE.Material => {
+      const c = face.clone();
+      c.polygonOffset = true;
+      c.polygonOffsetFactor = 2;
+      c.polygonOffsetUnits = 2;
+      if (see) {
+        c.transparent = true;
+        c.opacity = FLOOR_SEE_THROUGH_OPACITY;
+        c.depthWrite = false;
+      }
+      return c;
+    };
+    // BoxGeometry face order: +x, -x, +y, -y, +z, -z.
+    const topMat = own(faces[2] ?? faces[0]);
+    const sideMat = own(faces[4] ?? faces[0]);
+    const top = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+    const side = new THREE.PlaneGeometry(1, 1);
+    const tops = new THREE.InstancedMesh(top, topMat, w * d - hole.size);
+    const matrix = new THREE.Matrix4();
+    let n = 0;
+    for (let z = 0; z < d; z++)
+      for (let x = 0; x < w; x++)
+        if (!hole.has(x + w * z) && n < tops.instanceMatrix.count)
+          tops.setMatrixAt(n++, matrix.makeTranslation(x + 0.5, f.y + 1, z + 0.5));
+    tops.count = n;
+    tops.instanceMatrix.needsUpdate = true;
+    tops.computeBoundingSphere();
+    // Sides of the edge blocks facing outwards: the plane faces +z, turned about Y to the side it is on.
+    const edges: { x: number; z: number; turn: number; at: [number, number] }[] = [];
+    for (let x = 0; x < w; x++) {
+      edges.push({ x, z: 0, turn: Math.PI, at: [x + 0.5, 0] });
+      edges.push({ x, z: d - 1, turn: 0, at: [x + 0.5, d] });
+    }
+    for (let z = 0; z < d; z++) {
+      edges.push({ x: 0, z, turn: -Math.PI / 2, at: [0, z + 0.5] });
+      edges.push({ x: w - 1, z, turn: Math.PI / 2, at: [w, z + 0.5] });
+    }
+    const shown = edges.filter((e) => !hole.has(e.x + w * e.z));
+    const sides = new THREE.InstancedMesh(side, sideMat, shown.length);
+    const q = new THREE.Quaternion();
+    const one = new THREE.Vector3(1, 1, 1);
+    shown.forEach((e, i) =>
+      sides.setMatrixAt(
+        i,
+        matrix.compose(
+          new THREE.Vector3(e.at[0], f.y + 0.5, e.at[1]),
+          q.setFromAxisAngle(Y_AXIS, e.turn),
+          one,
+        ),
+      ),
+    );
+    sides.instanceMatrix.needsUpdate = true;
+    sides.computeBoundingSphere();
+    const group = new THREE.Group();
+    group.add(tops, sides);
+    return { group, geometries: [top, side], materials: [topMat, sideMat] };
+  }
+
+  function disposeFloor(): void {
+    if (!floorCache) return;
+    for (const mesh of floorCache.group.children) if (mesh instanceof THREE.InstancedMesh) mesh.dispose();
+    for (const g of floorCache.geometries) g.dispose();
+    for (const mat of floorCache.materials) mat.dispose();
+    floorCache = null;
   }
 
   /**
@@ -918,8 +1100,10 @@ export function createRenderer(
   function rebuild(): void {
     labelView = '';
     clearContent();
+    if (!model?.floor) disposeFloor();
     if (model) {
       buildSite(model);
+      buildFloor(model);
       buildDimensions(model);
       buildVoxels(model);
       buildHatchMarkers(model);
@@ -928,12 +1112,14 @@ export function createRenderer(
     }
     applyXray();
     rebuildSelection();
+    rebuildMarks();
     requestRender();
   }
 
   function rebuildSelection(): void {
     disposeSelection();
     selection.position.set(0, 0, 0);
+    marks.position.set(0, 0, 0);
     if (!model || selected.size === 0) return;
     const voxels = model.voxels.filter((v) => v.unitIds.some((id) => selected.has(id)));
     if (voxels.length === 0) return;
@@ -956,21 +1142,8 @@ export function createRenderer(
         if (!b) boxes.set(id, (b = new THREE.Box3()));
         b.expandByPoint(new THREE.Vector3(...v.pos)).expandByPoint(center(v.pos).addScalar(0.5));
       }
-    const positions: number[] = [];
-    const corner = (b: THREE.Box3, i: number): number[] => [
-      i & 1 ? b.max.x : b.min.x,
-      i & 2 ? b.max.y : b.min.y,
-      i & 4 ? b.max.z : b.min.z,
-    ];
-    const edges = [
-      [0, 1], [2, 3], [4, 5], [6, 7],
-      [0, 2], [1, 3], [4, 6], [5, 7],
-      [0, 4], [1, 5], [2, 6], [3, 7],
-    ]; // prettier-ignore
-    for (const b of boxes.values()) {
-      b.expandByScalar(0.035);
-      for (const [a, c] of edges) positions.push(...corner(b, a), ...corner(b, c));
-    }
+    for (const box of boxes.values()) box.expandByScalar(0.035);
+    const positions = boxEdges([...boxes.values()]);
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     const lines = new THREE.LineSegments(lineGeo, lineMat);
@@ -978,12 +1151,35 @@ export function createRenderer(
     selection.add(tint, lines);
   }
 
-  function disposeSelection(): void {
-    for (const child of [...selection.children]) {
-      selection.remove(child);
+  function disposeGroup(group: THREE.Group): void {
+    for (const child of [...group.children]) {
+      group.remove(child);
       if (child instanceof THREE.InstancedMesh) child.dispose();
       else if (child instanceof THREE.LineSegments) child.geometry.dispose();
     }
+  }
+  const disposeSelection = (): void => disposeGroup(selection);
+
+  /** A tint and an outline, a little bigger than the cell, around each marked cell (the selected hatch). */
+  function rebuildMarks(): void {
+    disposeGroup(marks);
+    if (marked.length === 0) return;
+    const tint = new THREE.InstancedMesh(boxGeo, tintMat, marked.length);
+    const matrix = new THREE.Matrix4();
+    const size = new THREE.Vector3(1.1, 1.1, 1.1);
+    const q = new THREE.Quaternion();
+    marked.forEach((c, i) => tint.setMatrixAt(i, matrix.compose(center(c), q, size)));
+    tint.instanceMatrix.needsUpdate = true;
+    tint.computeBoundingSphere();
+    tint.renderOrder = 2;
+    const boxes = marked.map((c) =>
+      new THREE.Box3(new THREE.Vector3(...c), center(c).addScalar(0.5)).expandByScalar(0.06),
+    );
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(boxEdges(boxes), 3));
+    const lines = new THREE.LineSegments(lineGeo, lineMat);
+    lines.renderOrder = 3;
+    marks.add(tint, lines);
   }
 
   // ---------------------------------------------------------------- picking
@@ -1000,14 +1196,36 @@ export function createRenderer(
     return true;
   }
 
-  function startDrag(e: PointerEvent): boolean {
-    if (!dragEnabled || !options.onMoveSelection || !model || selected.size === 0 || !aim(e)) return false;
-    const hits = raycaster.intersectObjects(
+  interface Found {
+    hit: THREE.Intersection;
+    pipes?: (typeof pipeBatches)[number];
+    voxels?: (typeof batches)[number];
+  }
+
+  /** What the (already aimed) ray hits: the nearest solid thing, else the nearest faded one. */
+  function hitsUnderPointer(): Found | undefined {
+    const hits: (Found & PickHit)[] = [];
+    for (const hit of raycaster.intersectObjects(
       [...batches.map((b) => b.mesh), ...pipeBatches.map((b) => b.mesh)],
       false,
-    );
-    const hit = hits.find((h) => h.instanceId !== undefined);
-    const batch = hit && batches.find((b) => b.mesh === hit.object);
+    )) {
+      if (hit.instanceId === undefined) continue;
+      const pipes = pipeBatches.find((b) => b.mesh === hit.object);
+      if (pipes) {
+        hits.push({ hit, pipes, translucent: pipes.dim });
+        continue;
+      }
+      const voxels = batches.find((b) => b.mesh === hit.object);
+      if (voxels) hits.push({ hit, voxels, translucent: voxels.glass || isFaded(voxels) });
+    }
+    return choosePick(hits);
+  }
+
+  function startDrag(e: PointerEvent): boolean {
+    if (!dragEnabled || !options.onMoveSelection || !model || selected.size === 0 || !aim(e)) return false;
+    const found = hitsUnderPointer();
+    const hit = found?.hit;
+    const batch = found?.voxels;
     if (!hit || !batch) return false;
     const voxel = model.voxels[batch.indices[hit.instanceId!]];
     if (!voxel.unitIds.some((id) => selected.has(id))) return false;
@@ -1028,6 +1246,7 @@ export function createRenderer(
     drag.dx = dx;
     drag.dz = dz;
     selection.position.set(dx, 0, dz);
+    marks.position.set(dx, 0, dz);
     options.onDragOffset?.([dx, dz]);
     requestRender();
   }
@@ -1041,6 +1260,7 @@ export function createRenderer(
     if (!d) return;
     if (cancelled || (d.dx === 0 && d.dz === 0)) {
       selection.position.set(0, 0, 0);
+      marks.position.set(0, 0, 0);
       requestRender();
       // A press on the selection that did not move is a click.
       if (!cancelled && e) pick(e);
@@ -1059,8 +1279,15 @@ export function createRenderer(
 
   function applyInset(): void {
     // Shift the view window so the scene centres in the uncovered part of the canvas.
-    if (inset.right > 0 || inset.bottom > 0)
-      camera.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
+    if (inset.left > 0 || inset.right > 0 || inset.bottom > 0 || inset.top > 0)
+      camera.setViewOffset(
+        width,
+        height,
+        (inset.right - inset.left) / 2,
+        (inset.bottom - inset.top) / 2,
+        width,
+        height,
+      );
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
   }
@@ -1068,28 +1295,24 @@ export function createRenderer(
   function pick(e: PointerEvent): void {
     if (!options.onPick || !model) return;
     if (!aim(e)) return;
-    const hits = raycaster.intersectObjects(
-      [...batches.map((b) => b.mesh), ...pipeBatches.map((b) => b.mesh)],
-      false,
-    );
-    for (const hit of hits) {
-      if (hit.instanceId === undefined) continue;
-      const pipes = pipeBatches.find((b) => b.mesh === hit.object);
-      if (pipes) {
-        const id = pipes.netIds[hit.instanceId];
-        options.onPick([]);
-        options.onPickNet?.(id >= 0 ? id : null);
-        return;
-      }
-      const batch = batches.find((b) => b.mesh === hit.object);
-      if (!batch) continue;
-      const voxel = model.voxels[batch.indices[hit.instanceId]];
+    const found = hitsUnderPointer();
+    if (found?.pipes) {
+      const id = found.pipes.netIds[found.hit.instanceId!];
+      options.onPick([]);
+      options.onPickNet?.(id >= 0 ? id : null);
+      options.onPickHatch?.(null);
+      return;
+    }
+    if (found?.voxels) {
+      const voxel = model.voxels[found.voxels.indices[found.hit.instanceId!]];
       options.onPick([...voxel.unitIds]);
       options.onPickNet?.(null);
+      options.onPickHatch?.(voxel.kind === 'hatch' ? voxel.pos : null);
       return;
     }
     options.onPick([]);
     options.onPickNet?.(null);
+    options.onPickHatch?.(null);
   }
 
   // ---------------------------------------------------------------- public API
@@ -1137,6 +1360,7 @@ export function createRenderer(
           detailedLoad = null; // allow a retry later
           console.warn('DETAILED view is unavailable, falling back to SIMPLE.', err);
           next = simpleProvider;
+          if (!disposed && request === modeRequest) options.onViewModeFallback?.();
         }
       }
       if (disposed || request !== modeRequest || next === provider) return;
@@ -1156,6 +1380,14 @@ export function createRenderer(
       if (unitIds.length === selected.size && unitIds.every((id) => selected.has(id))) return;
       selected = new Set(unitIds);
       rebuildSelection();
+      requestRender();
+    },
+
+    setMarkedCells(cells) {
+      if (cells.length === marked.length && cells.every((c, i) => c.every((n, a) => n === marked[i][a])))
+        return;
+      marked = cells.map((c) => [...c] as Vec3);
+      rebuildMarks();
       requestRender();
     },
 
@@ -1191,9 +1423,20 @@ export function createRenderer(
       controls.update();
     },
 
-    setInset(right, bottom) {
-      const next = { right: Math.max(0, Math.round(right)), bottom: Math.max(0, Math.round(bottom)) };
-      if (next.right === inset.right && next.bottom === inset.bottom) return;
+    setInset(left, right, bottom, top) {
+      const next = {
+        left: Math.max(0, Math.round(left)),
+        right: Math.max(0, Math.round(right)),
+        bottom: Math.max(0, Math.round(bottom)),
+        top: Math.max(0, Math.round(top)),
+      };
+      if (
+        next.left === inset.left &&
+        next.right === inset.right &&
+        next.bottom === inset.bottom &&
+        next.top === inset.top
+      )
+        return;
       inset = next;
       if (width > 0 && height > 0) applyInset();
       labelView = '';
@@ -1242,8 +1485,12 @@ export function createRenderer(
       controls.dispose();
       canvas.removeEventListener('pointerdown', stopAutoFit);
       canvas.removeEventListener('wheel', stopAutoFit);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
       clearContent();
       disposeSelection();
+      disposeGroup(marks);
+      disposeFloor();
       for (const g of sharedGeometries) g.dispose();
       for (const m of ownedMaterials) m.dispose();
       disposeObjectTree(gizmo);

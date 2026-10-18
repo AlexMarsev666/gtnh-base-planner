@@ -22,10 +22,17 @@ describe('generated catalog entries', () => {
   });
 
   describe.each(generated.map((def) => ({ id: def.id, def })))('$id', ({ def }) => {
-    it('places every default hatch for 1 and 4 units', () => {
+    // A hatch of the lowest layer may face down when connections from below are on, so the layer under the
+    // build counts as open: the entry may need it.
+    it('places every default hatch for 1 and 4 units (from below if need be)', () => {
+      const below = (
+        d: typeof def,
+        u: Parameters<typeof placeHatches>[1],
+        e: Parameters<typeof placeHatches>[2],
+      ) => placeHatches(d, u, e, undefined, { below: true });
       for (const n of [1, 4]) {
         const r = resolveLayout(def, packUnits(def, n, unlimited), def.defaultHatches, unlimited, {
-          placeHatches,
+          placeHatches: below,
           layoutCandidates,
         });
         expect(r.hatches.unplaced, `${def.id} × ${n}`).toEqual([]);

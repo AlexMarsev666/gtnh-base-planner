@@ -5,8 +5,8 @@ import { catalog } from './catalog';
 import generatedShapes from './gt-shapes.generated.json';
 
 /**
- * Every hand-made catalog structure, cell by cell, against the StructureLib shape in GT5-Unofficial 5.09.54.133
- * (the version in GT:NH 2.9.0-beta-3). Entries built from the game dump (tools/game-dump) are the game's own
+ * Every hand-made catalog structure, cell by cell, against the StructureLib shape in GT5-Unofficial 5.09.54.205
+ * (the version in GT:NH 2.9.0-RC-2). Entries built from the game dump (tools/game-dump) are the game's own
  * placement and are not listed here. Shapes and elements are copied from the Java sources linked in each JSON
  * `source`: which block each character is and which hatches (`buildHatchAdder(...).atLeast(...)`) may replace it.
  * The few entries still converted from the sources (tools/gt-source) bring their GT shape along in
@@ -21,7 +21,7 @@ type Cat =
 
 const casing = (block: string, ...hatches: HatchKind[]): Cat => ({ t: 'casing', block, hatches });
 const hatchOnly = (kind: HatchKind): Cat => ({ t: 'hatchOnly', kind });
-const [IB, OB, IH, OH, MA, EN, MU, DY, SI]: HatchKind[] = [
+const [IB, OB, IH, OH, MA, EN, MU, DY, SI, DA]: HatchKind[] = [
   'itemIn',
   'itemOut',
   'fluidIn',
@@ -31,6 +31,7 @@ const [IB, OB, IH, OH, MA, EN, MU, DY, SI]: HatchKind[] = [
   'muffler',
   'dynamo',
   'steamIn',
+  'dataAccess',
 ];
 
 /** Assembly Line slices, [layer from top][z]: first (controller), later, and the last one (output bus). */
@@ -525,7 +526,7 @@ const GT: Record<string, { transposed: boolean; shape: Shape; el: Record<string,
       ),
     el: {
       G: casing('gt.casing.grate'),
-      d: casing('gt.casing.grate'),
+      d: casing('gt.casing.grate', DA),
       l: casing('gt.casing.assembler'),
       m: casing('gt.casing.assemblyLine'),
       g: casing('glass'),
@@ -676,4 +677,17 @@ describe('catalog structures match GT5-Unofficial', () => {
         expect(wrong.map(([k, ch]) => `${k}: "${ch}" vs GT "${gt.get(k)}"`)).toEqual([]);
       });
   }
+});
+
+describe('generated entries the dump got wrong', () => {
+  it('keeps the Exo Foundry at the 55 layers GT builds (the dump stops at its scratch world height)', () => {
+    const def = catalog.find((d) => d.id === 'exo-foundry')!;
+    expect(def.size).toEqual([15, 55, 15]);
+    expect(def.layers).toHaveLength(55);
+  });
+
+  it('shows the Dangote Distillus ring centre as air (hint 13, nothing placed)', () => {
+    const def = catalog.find((d) => d.id === 'dangote-distillus')!;
+    expect([...def.layers[1][1]][1]).toBe('-');
+  });
 });

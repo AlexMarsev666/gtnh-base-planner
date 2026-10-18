@@ -1,4 +1,5 @@
 import { add, dirVec, key, localCells, rotateDir, rotatedSize, rotateLocal } from '../geometry';
+import { orientedDef } from '../mirror';
 import type { Vec3 } from '../core/types';
 import type { MultiblockDef } from '../multiblock/types';
 import type { DefCache, Shape } from './types';
@@ -26,8 +27,7 @@ export function axisVec(a: number, v: number): Vec3 {
   return a === 0 ? [v, 0, 0] : a === 1 ? [0, v, 0] : [0, 0, v];
 }
 
-export function buildShapes(def: MultiblockDef): Shape[] {
-  const blockIndex = new Map<string, number>();
+export function buildShapes(def: MultiblockDef, blockIndex = new Map<string, number>()): Shape[] {
   const cells = localCells(def);
   const shapes: Shape[] = [];
   for (const r of [0, 1, 2, 3] as const) {
@@ -57,17 +57,46 @@ export function buildShapes(def: MultiblockDef): Shape[] {
   return shapes;
 }
 
+type Variant = 0 | 1 | 2 | 3;
+
+/** The four rotated shapes of `def` in `variant` (see `orientedDef`); cached with the def's. */
+function shapesOf(def: MultiblockDef, cache: DefCache, variant: Variant): Shape[] {
+  if (variant === 0) return cache.shapes;
+  return (cache.variantShapes[variant] ??= buildShapes(orientedDef(def, variant), cache.blocks));
+}
+
+/** Do two variants of `def` have the same four rotated shapes (a symmetric structure)? */
+export function sameShapes(def: MultiblockDef, cache: DefCache, va: Variant, vb: Variant): boolean {
+  const a = shapesOf(def, cache, va);
+  const b = shapesOf(def, cache, vb);
+  return a.every(
+    (sa, i) =>
+      sa.grid.length === b[i].grid.length &&
+      sa.grid.every((c, j) => c === b[i].grid[j]) &&
+      sa.front?.join() === b[i].front?.join(),
+  );
+}
+
 /**
  * Can unit B (rotation rb, origin at offset d from unit A's origin) coexist with unit A (rotation ra)?
+ * `va` and `vb` are the units' variants (relative to `def`, see `Unit.variant`), 0 for the packer's units.
  * Overlapping cells must be casings of the same block on a wall-sharing def, or air on air; controllers never
  * overlap anything, air never overlaps a block, and neither controller's front cell may be covered by the
  * other unit's blocks.
  */
-export function pairOk(def: MultiblockDef, cache: DefCache, ra: number, rb: number, d: Vec3): boolean {
-  const k = `${ra},${rb},${key(d)}`;
+export function pairOk(
+  def: MultiblockDef,
+  cache: DefCache,
+  ra: number,
+  rb: number,
+  d: Vec3,
+  va: Variant = 0,
+  vb: Variant = 0,
+): boolean {
+  const k = va || vb ? `${ra},${rb},${key(d)},${va},${vb}` : `${ra},${rb},${key(d)}`;
   const hit = cache.pairs.get(k);
   if (hit !== undefined) return hit;
-  const ok = computePairOk(def.wallshare, cache.shapes[ra], cache.shapes[rb], d);
+  const ok = computePairOk(def.wallshare, shapesOf(def, cache, va)[ra], shapesOf(def, cache, vb)[rb], d);
   cache.pairs.set(k, ok);
   return ok;
 }

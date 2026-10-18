@@ -2,7 +2,7 @@
   "id": "industrial-sledgehammer",
   "name": "Industrial Sledgehammer",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialForgeHammer.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialForgeHammer.java",
   "size": [5, 9, 5],
   "layers": [
     [" AAA ", "AAAAA", "BAAAB", "AAAAA", " AAA "],
@@ -18,7 +18,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.5@6",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "bartworks:bw.werkstoffblockscasingadvanced.01@32100" },
     "C": { "blockId": "gregtech:gt.blockcasings13@4" },
@@ -37,11 +38,20 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 10 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any base forge casing\n1 Maintenance Hatch: Any base forge casing\n1 Muffler Hatch: Any base forge casing\n1+ Input Bus: Any base forge casing\n0+ Input Hatch: Any base forge casing\n1+ Output Bus: Any base forge casing\n0+ Output Hatch: Any base forge casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialForgeHammer (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialForgeHammer (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

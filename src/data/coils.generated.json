@@ -1,0 +1,82 @@
+[
+  {
+    "id": "cupronickel",
+    "blockId": "gregtech:gt.blockcasings5@0",
+    "level": "LV",
+    "heat": 1801,
+    "name": "Cupronickel"
+  },
+  {
+    "id": "kanthal",
+    "blockId": "gregtech:gt.blockcasings5@1",
+    "level": "MV",
+    "heat": 2701,
+    "name": "Kanthal"
+  },
+  {
+    "id": "nichrome",
+    "blockId": "gregtech:gt.blockcasings5@2",
+    "level": "HV",
+    "heat": 3601,
+    "name": "Nichrome"
+  },
+  { "id": "tpv", "blockId": "gregtech:gt.blockcasings5@3", "level": "EV", "heat": 4501, "name": "TPV" },
+  { "id": "hss-g", "blockId": "gregtech:gt.blockcasings5@4", "level": "IV", "heat": 5401, "name": "HSS-G" },
+  {
+    "id": "naquadah",
+    "blockId": "gregtech:gt.blockcasings5@5",
+    "level": "ZPM",
+    "heat": 7201,
+    "name": "Naquadah"
+  },
+  {
+    "id": "naquadah-alloy",
+    "blockId": "gregtech:gt.blockcasings5@6",
+    "level": "UV",
+    "heat": 8101,
+    "name": "Naquadah Alloy"
+  },
+  {
+    "id": "fluxed-electrum",
+    "blockId": "gregtech:gt.blockcasings5@7",
+    "level": "UEV",
+    "heat": 9901,
+    "name": "Fluxed Electrum"
+  },
+  {
+    "id": "awakened-draconium",
+    "blockId": "gregtech:gt.blockcasings5@8",
+    "level": "UIV",
+    "heat": 10801,
+    "name": "Awakened Draconium"
+  },
+  { "id": "hss-s", "blockId": "gregtech:gt.blockcasings5@9", "level": "LuV", "heat": 6301, "name": "HSS-S" },
+  {
+    "id": "trinium",
+    "blockId": "gregtech:gt.blockcasings5@10",
+    "level": "UHV",
+    "heat": 9001,
+    "name": "Trinium"
+  },
+  {
+    "id": "infinity",
+    "blockId": "gregtech:gt.blockcasings5@11",
+    "level": "UMV",
+    "heat": 11701,
+    "name": "Infinity"
+  },
+  {
+    "id": "hypogen",
+    "blockId": "gregtech:gt.blockcasings5@12",
+    "level": "UXV",
+    "heat": 12601,
+    "name": "Hypogen"
+  },
+  {
+    "id": "eternal",
+    "blockId": "gregtech:gt.blockcasings5@13",
+    "level": "MAX",
+    "heat": 13501,
+    "name": "Eternal"
+  }
+]

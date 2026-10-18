@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getMultiblock } from '../../data/catalog';
+import { requiredBlocks } from '../bom';
 import { PLACEHOLDER_DEF, SINGLE_BLOCK_DEF } from '../../data/generic';
 import { validateMultiblockDef } from '../../data/validate';
 import { key, toWorld, localCells } from '../geometry';
@@ -10,8 +11,8 @@ import { deriveSiteDemand, hatchKindFor } from './demand';
 import { placeGroups, type GroupCache } from './groups';
 import { groupIndexOfUnit, portIndexOfUnit, portUnitId } from './ids';
 import { groupToward } from './toward';
-import { buildGroup, groupPoint, placeUnit, singleBlockLimits, withDemand } from './group';
-import type { SiteGroup, SiteState } from './types';
+import { buildGroup, groupPoint, placeUnit, singleBlockLimits } from './group';
+import type { SiteGroup, SiteRouting, SiteState } from './types';
 
 const ebf = getMultiblock('electric-blast-furnace')!;
 const vf = getMultiblock('vacuum-freezer')!;
@@ -85,9 +86,16 @@ describe('group transform', () => {
 
 describe('hatch demand', () => {
   it('places one hatch per resource on every unit and tags it', () => {
-    const def = withDemand(ebf, { itemIn: ['item:dust'], fluidIn: ['fluid:o2'], itemOut: ['item:hot'] });
-    expect(def.requiredHatches?.itemIn?.min).toBe(1);
-    const b = buildGroup(ebf, 2, noLimits, [], { itemIn: ['item:dust', 'item:x'], itemOut: ['item:hot'] });
+    const b = buildGroup(
+      ebf,
+      2,
+      noLimits,
+      [],
+      { itemIn: ['item:dust', 'item:x'], itemOut: ['item:hot'] },
+      false,
+      {},
+      { tier: 'ULV' },
+    );
     expect(b.missing).toEqual([]);
     for (const u of b.units)
       for (const r of ['item:dust', 'item:x'])
@@ -390,6 +398,116 @@ describe('buildSite', () => {
     expect(b.nets[0].links).toEqual(['x', 'y']);
     expect(b.nets[0].route!.connected).toBe(3);
   });
+
+  describe('routing options', () => {
+    const build = (opts: object) => createSiteBuilder()(chain, { pipes: true, cables: true, ...opts });
+    const same = (x: object, y: object) => expect(JSON.stringify(x)).toBe(JSON.stringify(y));
+
+    it('classic depth 1 is the legacy below, classic depth 0 the default', () => {
+      same(build({ routing: { style: 'classic', depth: 1 } }), build({ below: true }));
+      same(build({ routing: { style: 'classic', depth: 0 } }), build({}));
+      same(build({ routing: { style: 'classic', depth: 0 } }), build({ below: false }));
+    });
+
+    it('reports where the routed blocks are', () => {
+      for (const routing of [
+        { style: 'classic', depth: 0 },
+        { style: 'neat', depth: 2 },
+      ] as const) {
+        const b = build({ routing });
+        const r = b.stats.routeStats;
+        expect(r.length).toBe(b.stats.pipeBlocks + b.stats.cableBlocks);
+        expect(r.length).toBe(r.surfaceTrunk + r.surfaceStub + r.underground.reduce((x, y) => x + y, 0));
+        expect(r.underground).toHaveLength(routing.depth);
+        expect(b.stats.connected).toBe(b.stats.terminals);
+      }
+    });
+
+    it('clamps the depth when the search grid would be too big', () => {
+      const big = site({
+        size: [256, 256],
+        groups: [group('ebf', 'electric-blast-furnace', [100, 100], { count: 1, elevation: 12 })],
+        ports: [{ id: 'p', dir: 'in', resource: 'item:dust' }],
+        links: [{ id: 'l', from: { port: 'p' }, to: { group: 'ebf' }, resource: 'item:dust' }],
+      });
+      const ask = (depth: 0 | 1 | 2 | 3) =>
+        createSiteBuilder()(big, { pipes: true, cables: false, routing: { style: 'neat', depth } });
+      expect(ask(0).routing.depthUsed).toBe(0);
+      expect(ask(1).routing.depthUsed).toBe(1);
+      const deep = ask(3);
+      expect(deep.routing.depth).toBe(3);
+      expect(deep.routing.depthUsed).toBeLessThan(3);
+      expect(deep.routing.depthUsed).toBeGreaterThanOrEqual(1);
+    });
+
+    describe('with a floor', () => {
+      const FLOOR = 'gt.casing.solidSteel';
+      const floored = (routing: SiteRouting) =>
+        createSiteBuilder()({ ...chain, floor: FLOOR }, { pipes: true, cables: true, routing });
+      const cellsOf = (b: ReturnType<typeof build>) =>
+        (b.scene.pipes ?? []).flatMap((n) => n.paths.map((p) => p.map((c) => c.join())));
+
+      it('is absent without one, and a floor does not change a route that stays on the ground', () => {
+        expect(build({ routing: { style: 'neat', depth: 2 } }).scene.floor).toBeUndefined();
+        const ground = { style: 'classic', depth: 0 } as const;
+        const f = floored(ground);
+        same(f.scene.pipes ?? [], build({ routing: ground }).scene.pipes ?? []);
+        expect(f.scene.floor).toEqual({ y: -1, blockId: FLOOR, size: [30, 30], holes: [] });
+      });
+
+      it('lets pipes cross it only straight down or up, and runs the trench below it', () => {
+        const b = floored({ style: 'neat', depth: 2 });
+        expect(b.stats.connected).toBe(b.stats.terminals);
+        const paths = (b.scene.pipes ?? []).flatMap((n) => n.paths);
+        const cells = paths.flat();
+        expect(cells.some((c) => c[1] <= -2)).toBe(true);
+        for (const p of paths)
+          p.forEach((c, i) => {
+            expect(c[1]).toBeGreaterThanOrEqual(-3);
+            if (c[1] !== -1) return;
+            // Both neighbours on the path are straight above or below it.
+            for (const n of [p[i - 1], p[i + 1]])
+              if (n) expect([n[0], n[2], Math.abs(n[1] - c[1])]).toEqual([c[0], c[2], 1]);
+          });
+        // The floor layer is no level of its own: the depth asked for is what is reported.
+        const r = b.stats.routeStats;
+        expect(r.underground).toHaveLength(2);
+        expect(r.length).toBe(r.surfaceTrunk + r.surfaceStub + r.underground.reduce((x, y) => x + y, 0));
+      });
+
+      it('has a hole at every floor cell a pipe occupies, and no other', () => {
+        const b = floored({ style: 'neat', depth: 2 });
+        const inFloor = new Set(
+          (b.scene.pipes ?? [])
+            .flatMap((n) => n.paths.flat())
+            .filter((c) => c[1] === -1)
+            .map((c) => `${c[0]},${c[2]}`),
+        );
+        const holes = b.scene.floor!.holes;
+        expect(holes.length).toBeGreaterThan(0);
+        expect(new Set(holes.map((h) => h.join())).size).toBe(holes.length);
+        expect(new Set(holes.map((h) => h.join()))).toEqual(inFloor);
+        expect(cellsOf(b).length).toBeGreaterThan(0);
+      });
+
+      it('counts the floor blocks less the holes in the bill of materials', () => {
+        const b = floored({ style: 'neat', depth: 2 });
+        const row = requiredBlocks(b.scene).blocks.find((r) => r.blockId === FLOOR)!;
+        expect(row.count).toBe(30 * 30 - b.scene.floor!.holes.length);
+        const bare = requiredBlocks(build({ routing: { style: 'neat', depth: 2 } }).scene);
+        expect(bare.blocks.some((r) => r.blockId === FLOOR && r.count > 800)).toBe(false);
+      });
+    });
+
+    it('neat keeps the trunks off the surface, and is deterministic', () => {
+      const routing = { style: 'neat', depth: 2 } as const;
+      const neat = build({ routing });
+      const classic = build({ routing: { style: 'classic', depth: 2 } });
+      expect(neat.stats.routeStats.underground[0]).toBeGreaterThan(0);
+      expect(neat.stats.routeStats.surfaceTrunk).toBeLessThan(classic.stats.routeStats.surfaceTrunk);
+      same(neat, build({ routing }));
+    });
+  });
 });
 
 describe('placeholder', () => {
@@ -412,6 +530,63 @@ describe('the per-group pack cache', () => {
     const d = deriveSiteDemand(s);
     placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache, prune);
   };
+
+  it('shares maintenance and energy hatches only when the group asks, with its own cache entry', () => {
+    const cache: GroupCache = new Map();
+    const hatchesOf = (extra: Partial<SiteGroup>) => {
+      const s = site({
+        groups: [
+          group('a', 'pyrolyse-oven', [3, 3], {
+            limits: { x: 2, y: 1, z: 1 },
+            enabledHatches: ['energy', 'maintenance'],
+            ...extra,
+          }),
+        ],
+      });
+      const d = deriveSiteDemand(s);
+      const { groups } = placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache, false);
+      const of = (kind: string) =>
+        groups[0].hatches.filter((h) => h.kind === kind).map((h) => h.unitIds.length);
+      const hints = Object.values(groups[0].build?.validity ?? {})
+        .flat()
+        .map((p) => p.type)
+        .filter((type) => type === 'sharedEnergy' || type === 'sharedMaintenance')
+        .sort();
+      return { energy: of('energy'), maintenance: of('maintenance'), hints };
+    };
+    const off = hatchesOf({});
+    expect(off).toMatchObject({ energy: [1, 1], maintenance: [1, 1] });
+    expect(off.hints).toEqual([]);
+    const on = hatchesOf({ shareEnergy: true, shareMaintenance: true });
+    expect(on).toMatchObject({ energy: [2], maintenance: [2] });
+    expect(on.hints).toEqual(['sharedEnergy', 'sharedEnergy', 'sharedMaintenance', 'sharedMaintenance']);
+    expect(cache.size).toBe(2);
+    expect(hatchesOf({})).toEqual(off);
+    expect(cache.size).toBe(2);
+  });
+
+  it('checks the glass tier on every placement without keying the pack cache on it', () => {
+    const glassOf = (extra: Partial<SiteGroup>) => {
+      const s = site({
+        groups: [
+          group('a', 'mega-oil-cracker', [3, 3], { enabledHatches: ['energy', 'maintenance'], ...extra }),
+        ],
+      });
+      const d = deriveSiteDemand(s);
+      const cache: GroupCache = new Map();
+      const { groups } = placeGroups(s, d.demands, groupToward(s, d.endsOf), false, cache);
+      return { glass: groups[0].glassValidity, size: cache.size };
+    };
+    expect(glassOf({}).glass).toBeUndefined();
+    const high = glassOf({ tier: 'EV' });
+    expect(Object.values(high.glass!).flat()).toEqual([
+      { type: 'glassTier', kind: 'energy', hatchTier: 'EV', glassTier: 'HV', severity: 'error' },
+      { type: 'glassTier', kind: 'energy', hatchTier: 'EV', glassTier: 'HV', severity: 'error' },
+    ]);
+    expect(glassOf({ tier: 'EV', glassTier: 'UV' }).glass).toBeUndefined();
+    // A hatch tier override of an energy hatch counts too (keys as in `groupKey`).
+    expect(glassOf({ tier: 'HV', hatchTiers: { 'energy:0': 'IV' } }).glass).toBeDefined();
+  });
 
   it('drops the packs a site does not use, so editing keeps memory bounded', () => {
     const cache: GroupCache = new Map();

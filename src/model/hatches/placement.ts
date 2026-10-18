@@ -2,13 +2,35 @@ import { type CellKey, DefinitionError, step } from '../geometry';
 import { ROUTED_KINDS } from '../routing/kinds';
 import type { Dir, Vec3 } from '../core/types';
 import type { HatchKind, MultiblockDef, Unit } from '../multiblock/types';
-import type { HatchPlacement, HatchResult } from '../plan/types';
 import { HATCH_PRIORITY } from './constants';
+import { capacityOf } from './capacity';
 import { lineKeys, openRank } from './geometry';
-import { allUnplaced, kindsToPlace, quota, sortedIds } from './quota';
+import { casingFloor, casingRooms, floorsOf } from './floor';
+import { SHARE_LIMIT, SHARED_ALWAYS } from './sharing';
+import { allUnplaced, anyMins, kindsToPlace, quota, sortedIds } from './quota';
+import {
+  FLUID_KINDS,
+  minOf,
+  type Stage,
+  shortOfAny,
+  shortOfMin,
+  stagesOf,
+  wantedOfKinds,
+  wantedOfStages,
+} from './requests';
 import { compareEntries, compareFaces, EntryHeap, type FaceScore } from './scoring';
 import { findSites } from './sites';
-import type { Entry, HatchAvoid, PlaceOptions, Site } from './types';
+import { inZone, resolveZone, withHatchZones } from './zones';
+import type {
+  Entry,
+  HatchAvoid,
+  HatchRequest,
+  KeyedHatch,
+  PlaceOptions,
+  PlaceResult,
+  Site,
+  UnplacedHatch,
+} from './types';
 
 /**
  * UNIT 3 — Hatch placement.
@@ -16,8 +38,8 @@ import type { Entry, HatchAvoid, PlaceOptions, Site } from './types';
  * Place one hatch of every enabled kind for every unit (respecting `def.requiredHatches` min/max where set):
  * - Only on casing cells whose legend allows that kind, with an exposed outward face
  *   (the neighbouring cell in that direction is not part of any unit).
- * - Prefer cells shared by as many units as possible for kinds in `def.shareableHatches`
- *   (one hatch serves all of them); ties broken deterministically.
+ * - Prefer cells shared by as many units as possible for kinds in `def.shareableHatches` and the muffler
+ *   (one hatch serves all of them, at most `SHARE_LIMIT` units); ties broken deterministically.
  * - One hatch per cell; never on controllers; never on a cell another kind already uses.
  * - Never throws: hatches that cannot be placed go to `unplaced`.
  * Pure and deterministic: same input -> same output, no mutation of arguments.
@@ -29,7 +51,7 @@ import type { Entry, HatchAvoid, PlaceOptions, Site } from './types';
  *   cell in front of a controller. Two hatches of different kinds never face the
  *   same empty cell, so each can get its own pipe.
  * - A cell inside several units is only usable if every one of them has a casing there that allows the
- *   kind (same block id). Such a cell hosts a hatch only for shareable kinds of a `wallshare` def, and
+ *   kind (same block id). Such a cell hosts a hatch only for shareable kinds of a `wallshare` def (see `sharing.ts`), and
  *   the hatch serves all of those units; otherwise only cells of exactly one unit are used.
  * - A hatch is never placed where it would push a unit above `requiredHatches[kind].max`.
  * - Greedy: repeatedly take the cell serving the most units still below their target; ties prefer fewer
@@ -39,7 +61,27 @@ import type { Entry, HatchAvoid, PlaceOptions, Site } from './types';
  *   fewer hatches of other kinds around, then the face nearest the point `toward` gives for the kind, then a
  *   side face over top over bottom, then the lowest y, z, x.
  * - `below` opens the layer under the build: hatches of the lowest layer may face down into it.
+ * - Without `below`, a lowest-layer cell the def itself walls in on every side but the ground still takes a hatch
+ *   of a kind whose `requiredHatches` min one unit has too few free cells for (an Advanced Assembly Line's input
+ *   buses), facing down: GT does not ask a hatch for a free face. Such fallback sites (`Site.fromBelow`) are used
+ *   after every normal site and only up to the minimum; their hatches carry `fromBelow`.
  * - `avoid` keeps listed cells free of the listed kinds (they may still take other kinds).
+ * - With `opts.requests` the listed hatches are placed instead (see `HatchRequest`; `enabled` is ignored):
+ *   mandatory ones (the first `requiredHatches[kind].min` requests of a kind) before the rest, each by kind
+ *   priority, on cells of the request's zone, a fluid hatch only where every unit on the cell asked for it,
+ *   and `key` copied to the hatch (`withHatchZones` is applied to `def` first). Nothing is placed that was
+ *   not asked for; `unplaced` says what is missing and why (`UnplacedHatch.reason`): hatches that found no
+ *   cell, kinds or unit ids that do not exist, and requirements (`requiredHatches` min or region) the
+ *   requests leave open. A hatch in a wall shared by units serves all of them, as in GT.
+ * - `minCasings`: a hatch never goes where it would leave a unit with fewer counted casing cells than the
+ *   minimum asks (a hatch on a cell shared by units takes one from each). Hatches placed first win the room:
+ *   with requests the mandatory ones go first anyway; without, the usual order is tried and, only if the floor
+ *   turned a hatch away, redone with the mandatory kinds (`requiredHatches` min, `requiredAny`) first. A hatch
+ *   that found a cell but no room under a floor is `unplaced` with reason `casings` (with requests).
+ * - `requiredAny` groups: without requests the group's `min` is placed of its first enabled kind, as a
+ *   `requiredHatches` min is; a group with no enabled kind is left unmet (see `checkValidity`).
+ * - `capacity` lists the units that want more hatches than they have cells for (see `CapacityEntry`); it is
+ *   absent when nothing is overfull, and never changes what is placed.
  * - Unit ids are expected to be unique. The result is independent of the order of `units` and
  *   `enabled`: hatches are listed in placement order, `unplaced` by kind priority then unit id.
  */
@@ -49,7 +91,8 @@ export function placeHatches(
   enabled: readonly HatchKind[],
   avoid?: HatchAvoid,
   opts: PlaceOptions = {},
-): HatchResult {
+): PlaceResult {
+  if (opts.requests) return placeRequested(def, units, opts.requests, avoid, opts);
   let kinds: HatchKind[] = [];
   try {
     kinds = kindsToPlace(def, enabled);
@@ -62,6 +105,54 @@ export function placeHatches(
   }
 }
 
+/** `placeHatches` with `PlaceOptions.requests`. */
+function placeRequested(
+  base: MultiblockDef,
+  units: readonly Unit[],
+  requests: readonly HatchRequest[],
+  avoid: HatchAvoid | undefined,
+  opts: PlaceOptions,
+): PlaceResult {
+  const def = withHatchZones(base);
+  const ids = sortedIds(units);
+  const kinds = kindsToPlace(
+    def,
+    requests.map((r) => r.kind),
+  );
+  const resolved = requests.map((r) => (r.zone === undefined ? r : { ...r, zone: resolveZone(def, r.zone) }));
+  const { stages, rejected } = stagesOf(def, resolved, ids, kinds);
+  let placed: PlaceResult = { hatches: [], unplaced: [] };
+  if (stages.length > 0) {
+    try {
+      placed = place(def, units, kinds, avoid, !!opts.below, opts.toward, stages);
+    } catch (err) {
+      // Malformed definition (e.g. unknown legend char): nothing can be placed. Anything else is a bug.
+      if (!(err instanceof DefinitionError)) throw err;
+      for (const st of stages)
+        for (const unitId of [...st.units].sort((a, b) => a - b))
+          placed.unplaced.push({
+            unitId,
+            kind: st.kind,
+            ...(st.key !== undefined ? { key: st.key } : {}),
+            reason: 'noCell',
+          });
+    }
+  }
+  const regionMisses = (unitId: number, kind: HatchKind): number =>
+    placed.unplaced.filter((u) => u.reason === 'required' && u.unitId === unitId && u.kind === kind).length;
+  const out: PlaceResult = {
+    hatches: placed.hatches,
+    unplaced: [
+      ...rejected,
+      ...placed.unplaced,
+      ...shortOfMin(def, ids, stages, regionMisses),
+      ...shortOfAny(def, ids, stages),
+    ],
+  };
+  if (placed.capacity) out.capacity = placed.capacity;
+  return out;
+}
+
 function place(
   def: MultiblockDef,
   units: readonly Unit[],
@@ -69,10 +160,22 @@ function place(
   avoid?: HatchAvoid,
   below = false,
   toward?: PlaceOptions['toward'],
-): HatchResult {
+  stages?: readonly Stage[],
+  mandatoryFirst = false,
+): PlaceResult {
   const { sites, openAround, openToward, nearby, volume } = findSites(def, units, below);
   const unitIds = sortedIds(units);
-  const shareable = new Set(def.shareableHatches ?? []);
+  const floor = def.minCasings?.length ? casingFloor(def, unitIds) : null;
+  const any = anyMins(def, kinds);
+  // With a casing floor the first hatches placed win the room. Kinds go by `HATCH_PRIORITY` until the floor
+  // leaves a unit short of a hatch; the layout is then placed again with the mandatory kinds first, and
+  // that result kept when it is no worse.
+  const flooredKinds = new Set<string>();
+  const must = (k: HatchKind) => Math.max(minOf(def, k), any.get(k) ?? 0) > 0;
+  if (floor && !stages && mandatoryFirst) {
+    kinds = [...kinds.filter(must), ...kinds.filter((k) => !must(k))];
+  }
+  const shareable = new Set([...(def.shareableHatches ?? []), ...(def.wallshare ? SHARED_ALWAYS : [])]);
   const used = new Set<CellKey>();
   /** Empty cell in front of a hatch -> kind of that hatch. */
   const frontMap = new Map<CellKey, HatchKind>();
@@ -122,25 +225,51 @@ function place(
     }
     return n;
   };
-  const hatches: HatchPlacement[] = [];
-  const unplaced: HatchResult['unplaced'] = [];
+  const hatches: KeyedHatch[] = [];
+  const unplaced: UnplacedHatch[] = [];
+  const canShareKind = (kind: HatchKind, units = 2): boolean =>
+    !!def.wallshare && shareable.has(kind) && units <= (SHARE_LIMIT[kind] ?? Infinity);
+  const wantedByUnit = stages ? wantedOfStages(stages) : null;
+  const wantedAll = wantedByUnit ? [] : wantedOfKinds(def, kinds);
+  const { entries: capacity, lacking } = capacityOf(
+    sites,
+    new Map(unitIds.map((id) => [id, wantedByUnit ? (wantedByUnit.get(id) ?? []) : wantedAll])),
+    canShareKind,
+    floor ? { rooms: casingRooms(def), of: (s, id) => floorsOf(def, s.chars.get(id)) } : undefined,
+  );
 
-  kinds.forEach((kind, ki) => {
-    const later = kinds.slice(ki + 1);
-    const { target, max } = quota(def, kind);
-    if (target <= 0) return;
-    const canShare = def.wallshare && shareable.has(kind);
+  /** Per kind, the hatches placed per unit and per line (see `lineKeys`): shared by all requests of a kind. */
+  const counts = new Map<HatchKind, Map<number, number>>();
+  const lineCounts = new Map<HatchKind, Map<string, number>>();
+
+  /**
+   * Sets up placing hatches of `kind` on the sites `accept` allows (at most `max` per unit across calls);
+   * `key` and `keys` are copied to each hatch. Returns `count` (hatches of the kind per unit so far) and `pass`.
+   */
+  const setup = (
+    kind: HatchKind,
+    later: HatchKind[],
+    max: number,
+    accept: (s: Site) => boolean,
+    key?: string,
+    keys?: string[],
+  ) => {
+    /** Units that asked for a hatch of this kind and found a cell only a casing floor kept them from. */
+    const floored = new Set<number>();
     const avoided = avoid?.get(kind);
     const candidates = sites.filter(
       (s) =>
         s.kinds.has(kind) &&
         !used.has(s.key) &&
-        (canShare || s.unitIds.length === 1) &&
-        !avoided?.has(s.pos.join()),
+        (s.unitIds.length === 1 || canShareKind(kind, s.unitIds.length)) &&
+        !avoided?.has(s.pos.join()) &&
+        accept(s),
     );
-    const count = new Map<number, number>(unitIds.map((id) => [id, 0]));
-    /** Placed hatches of this kind per line (see `lineKeys`), and the candidates with a face on each line. */
-    const lines = new Map<string, number>();
+    let count = counts.get(kind);
+    if (!count) counts.set(kind, (count = new Map<number, number>(unitIds.map((id) => [id, 0]))));
+    let lines = lineCounts.get(kind);
+    if (!lines) lineCounts.set(kind, (lines = new Map<string, number>()));
+    /** The candidates with a face on each line. */
     const onLine = new Map<string, number[]>();
     const unitsOnLine = new Map<string, Set<number>>();
     // Only kinds that take a pipe or cable gain from lining up (a maintenance hatch or muffler does not).
@@ -184,10 +313,21 @@ function place(
         let score = 0;
         for (const id of c.unitIds) {
           if ((count.get(id) ?? 0) >= max) return null;
+          // A fallback site only makes up the required minimum.
+          if (c.fromBelow && (count.get(id) ?? 0) >= minOf(def, kind)) return null;
           if (needs(c, id)) score++;
         }
         if (score === 0) return null;
+        if (floor && !floor.allows(c)) {
+          for (const id of c.unitIds)
+            if (needs(c, id)) {
+              floored.add(id);
+              flooredKinds.add(`${kind}|${id}`);
+            }
+          return null;
+        }
         const blocked = c.blocked.get(kind);
+        const disfavored = c.disfavored.get(kind);
         const target = toward?.[kind];
         const farOf = (dir: Dir): number => {
           if (!target) return 0;
@@ -200,6 +340,7 @@ function place(
           if ((frontOf(f.front) ?? kind) !== kind || blocked?.has(f.dir)) continue;
           const option: FaceScore = {
             face: fi,
+            hinted: disfavored?.has(f.dir) ? 1 : 0,
             walled: walledIn(f.front, kind) ? 1 : 0,
             open: openRank(f.rank),
             crowded: crowd(f.front, kind),
@@ -213,6 +354,7 @@ function place(
         return {
           ...best,
           i,
+          ground: c.fromBelow ? 1 : 0,
           score,
           waste: c.unitIds.length - score,
           wanted: later.reduce((n, k) => n + (c.kinds.has(k) ? 1 : 0), 0),
@@ -241,11 +383,20 @@ function place(
         const best = candidates[now.i];
         const bestFace = best.faces[now.face];
         used.add(best.key);
+        floor?.take(best);
         if (frontIndex) frontIndex[bestFace.front as number] = HATCH_PRIORITY.indexOf(kind);
         else frontMap.set(bestFace.front, kind);
         for (const id of best.unitIds) count.set(id, (count.get(id) ?? 0) + 1);
         served(best);
-        hatches.push({ kind, cell: best.pos, face: bestFace.dir, unitIds: [...best.unitIds] });
+        hatches.push({
+          kind,
+          cell: best.pos,
+          face: bestFace.dir,
+          unitIds: [...best.unitIds],
+          ...(best.fromBelow ? { fromBelow: true as const } : {}),
+          ...(key !== undefined ? { key } : {}),
+          ...(keys !== undefined ? { keys } : {}),
+        });
         for (const k of faceKeys[now.i][now.face]) {
           lines.set(k, (lines.get(k) ?? 0) + 1);
           for (const i of onLine.get(k) ?? []) {
@@ -256,6 +407,14 @@ function place(
       }
     };
 
+    return { count, pass, floored };
+  };
+
+  const legacy = (kind: HatchKind, ki: number): void => {
+    const later = kinds.slice(ki + 1);
+    const { target, max } = quota(def, kind, any.get(kind));
+    if (target <= 0) return;
+    const { count, pass } = setup(kind, later, max, () => true);
     // Regions that each need one hatch of this kind come first (e.g. every Distillation Tower layer),
     // then the remaining count up to the target anywhere allowed.
     const regions = def.requiredHatches?.[kind]?.regions ?? [];
@@ -279,7 +438,111 @@ function place(
       const short = Math.max(target - (count.get(id) ?? 0), missing.get(id) ?? 0);
       for (let n = 0; n < short; n++) unplaced.push({ unitId: id, kind });
     }
-  });
+  };
 
-  return { hatches, unplaced };
+  /**
+   * Per kind and key: the units any of its stages names (a fluid hatch is one fluid's), and the hatches placed
+   * for it, with the units that already counted one of them toward a stage.
+   */
+  const groupOf = (st: Stage): string => `${st.kind}|${JSON.stringify(st.keys ?? st.key ?? '')}`;
+  const union = new Map<string, Set<number>>();
+  const made = new Map<string, { cell: string; units: number[]; used: Set<number> }[]>();
+  for (const st of stages ?? []) {
+    const g = groupOf(st);
+    const set = union.get(g) ?? union.set(g, new Set()).get(g)!;
+    for (const id of st.units) set.add(id);
+  }
+  const siteAt = new Map(sites.map((s) => [s.pos.join(), s]));
+
+  const requested = (st: Stage, si: number, all: readonly Stage[]): void => {
+    const later = [...new Set(all.slice(si + 1).map((x) => x.kind))].filter((k) => k !== st.kind);
+    const fluid = FLUID_KINDS.includes(st.kind);
+    const g = groupOf(st);
+    const { max } = quota(def, st.kind);
+    // A cell may hold a fluid hatch when every unit on it takes that fluid (some stage of the same kind and
+    // key names it). A hatch an earlier stage of the same kind and key placed, on a cell in this stage's zone,
+    // that serves a unit of this stage (and no earlier stage of the unit used it) counts for that unit.
+    const { count, pass, floored } = setup(
+      st.kind,
+      later,
+      max,
+      (s) =>
+        (st.zone === undefined || s.unitIds.every((id) => inZone(s, id, st.zone!))) &&
+        (!fluid || s.unitIds.every((id) => union.get(g)!.has(id))),
+      st.key,
+      st.keys,
+    );
+    const earlier = made.get(g) ?? made.set(g, []).get(g)!;
+    const done = new Set<number>();
+    for (const id of [...st.units].sort((a, b) => a - b)) {
+      const h = earlier.find(
+        (e) =>
+          e.units.includes(id) &&
+          !e.used.has(id) &&
+          (st.zone === undefined || inZone(siteAt.get(e.cell)!, id, st.zone)),
+      );
+      if (h) {
+        h.used.add(id);
+        done.add(id);
+      }
+    }
+    pass(
+      (_, id) => st.units.has(id) && !done.has(id),
+      (site) => {
+        const used = new Set<number>();
+        for (const id of site.unitIds) {
+          if (st.units.has(id) && !done.has(id)) used.add(id);
+          done.add(id);
+        }
+        earlier.push({ cell: site.pos.join(), units: site.unitIds, used });
+      },
+    );
+    for (const id of [...st.units].sort((a, b) => a - b)) {
+      if (done.has(id)) continue;
+      const entry: UnplacedHatch = { unitId: id, kind: st.kind };
+      if (st.key !== undefined) entry.key = st.key;
+      entry.reason = (count.get(id) ?? 0) >= max ? 'max' : floored.has(id) ? 'casings' : 'noCell';
+      unplaced.push(entry);
+    }
+  };
+
+  if (stages) stages.forEach(requested);
+  else kinds.forEach(legacy);
+  const result: PlaceResult = { hatches, unplaced };
+  if (capacity.length > 0) {
+    result.capacity = capacity;
+    if (stages) {
+      // Only a hatch its unit's cells are too few for (per kind) is blamed on capacity.
+      for (const u of unplaced) {
+        const short = lacking.get(u.unitId);
+        const left = u.reason === 'noCell' ? (short?.get(u.kind) ?? 0) : 0;
+        if (left > 0) {
+          u.reason = 'capacity';
+          short!.set(u.kind, left - 1);
+        }
+      }
+    }
+  }
+  if (stages) {
+    // Required regions (e.g. a Distillation Tower layer) that no placed hatch of the kind serves the unit in.
+    for (const kind of kinds)
+      for (const region of def.requiredHatches?.[kind]?.regions ?? [])
+        for (const id of unitIds) {
+          if (!stages.some((st) => st.kind === kind && st.units.has(id))) continue;
+          const ok = hatches.some(
+            (h) =>
+              h.kind === kind &&
+              h.unitIds.includes(id) &&
+              siteAt.get(h.cell.join())?.regions.get(id) === region,
+          );
+          if (!ok) unplaced.push({ unitId: id, kind, reason: 'required', region });
+        }
+  }
+  if (!stages && !mandatoryFirst && unplaced.some((u) => flooredKinds.has(`${u.kind}|${u.unitId}`))) {
+    const again = place(def, units, kinds, avoid, below, toward, stages, true);
+    const cost = (r: PlaceResult) => [r.unplaced.filter((u) => must(u.kind)).length, r.unplaced.length];
+    const [a, b] = [cost(again), cost(result)];
+    if (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) return again;
+  }
+  return result;
 }

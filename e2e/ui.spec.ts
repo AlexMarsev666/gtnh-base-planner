@@ -156,13 +156,97 @@ test('required blocks checklist', async ({ page }) => {
   // Pipes and cables get their own list once they are switched on.
   await panel.getByRole('button', { name: 'Close' }).click();
   await expect(panel).toBeHidden();
-  await page.getByTestId('settings-toggle').click();
+  // The view chips are in the toolbar over the scene, not in Settings.
   await page.getByTestId('toggle-pipes').click();
-  await page.getByTestId('settings').getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByTestId('toggle-pipes')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('blocks-toggle').click();
   await expect(panel).toBeVisible();
   await expect(panel.getByTestId('bom-io-off')).toBeHidden();
   await expect(panel).toContainText(/pipes/i);
+
+  expect(errors).toEqual([]);
+});
+
+test('a large build with pipes keeps the page responsive while it computes', async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await expect(page.getByTestId('scene')).toBeVisible();
+
+  await page.getByTestId('multiblock-name').click();
+  await page
+    .getByTestId('picker')
+    .getByTestId('picker-item')
+    .filter({ has: page.getByText('Nanochip Assembly Complex', { exact: true }) })
+    .click();
+  await page.getByTestId('toggle-pipes').click();
+  await page.getByTestId('count').fill('7');
+  await page.getByTestId('count').press('Enter');
+  await expect(page.getByTestId('count')).toHaveValue('7');
+
+  // The build runs in a worker: the page answers while it is busy (a blocked main thread would not).
+  const stats = page.getByTestId('stats');
+  await expect(stats).toContainText(/laying out/i);
+  for (let i = 0; i < 3; i++) {
+    const start = Date.now();
+    await page.evaluate(() => 1);
+    expect(Date.now() - start).toBeLessThan(500);
+  }
+
+  // The final build arrives: nothing is computing or waiting for pipes any more, and the scene is shown.
+  await expect(stats).not.toContainText(/laying out|routing pipes/i, { timeout: 180_000 });
+  await expect(page.getByTestId('preview-notice')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('the mirror setting survives a share link', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  await page.getByTestId('settings-toggle').click();
+  const mirror = page.getByTestId('toggle-mirror');
+  await expect(mirror).toHaveAttribute('aria-checked', 'false');
+  await mirror.click();
+  await expect(mirror).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('share-menu').click();
+  await page.getByTestId('share').click();
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain('#p=');
+
+  // A fresh page has nothing stored, so the link opens straight away; if it is offered, accept it.
+  const other = await context.newPage();
+  await other.goto(link);
+  const offer = other.getByTestId('shared-confirm').getByRole('button', { name: 'Open' });
+  if (await offer.isVisible()) await offer.click();
+  await other.getByTestId('settings-toggle').click();
+  await expect(other.getByTestId('toggle-mirror')).toHaveAttribute('aria-checked', 'true');
+});
+
+test('buildability lists a hatch above the glass and clears when the glass tier is raised', async ({
+  page,
+}) => {
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await expect(page.getByTestId('scene')).toBeVisible();
+
+  await page.getByTestId('multiblock-name').click();
+  await page
+    .getByTestId('picker')
+    .getByTestId('picker-item')
+    .filter({ has: page.getByText('Mega Oil Cracker', { exact: true }) })
+    .click();
+  await page.getByTestId('settings-toggle').click();
+  const drawer = page.getByTestId('settings');
+  await drawer.getByTestId('machine-tier').selectOption('IV');
+
+  await drawer.getByTestId('machine-glass').selectOption('HV');
+  await expect(drawer.getByTestId('buildability-verdict')).toContainText(/won't form/i);
+  await expect(drawer.getByTestId('buildability-errors')).toContainText(/above the glass \(HV\)/);
+  await expect(page.getByTestId('stats')).toContainText(/won't form/i);
+
+  await drawer.getByTestId('machine-glass').selectOption('IV');
+  // With no errors left the list is gone and the verdict says so.
+  await expect(drawer.getByTestId('buildability-verdict')).toContainText(/will form/i);
+  await expect(drawer.getByTestId('buildability-errors')).toHaveCount(0);
 
   expect(errors).toEqual([]);
 });

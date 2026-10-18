@@ -2,7 +2,7 @@
   "id": "integrated-ore-factory",
   "name": "Integrated Ore Factory",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIntegratedOreFactory.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIntegratedOreFactory.java",
   "size": [15, 9, 13],
   "layers": [
     [
@@ -147,7 +147,8 @@
     "C": { "blockId": "gregtech:gt.blockcasings8@7" },
     "D": {
       "blockId": "gregtech:gt.blockcasings4@1",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "muffler"],
+      "region": "dot1"
     },
     "E": { "blockId": "gregtech:gt.blockcasings2@4" },
     "F": { "blockId": "gregtech:gt.blockcasings5@8" },
@@ -162,16 +163,23 @@
     "itemOut": "gt.hatch.outputBus",
     "fluidIn": "gt.hatch.inputHatch",
     "energy": "gt.hatch.energy",
-    "maintenance": "gt.hatch.maintenance",
     "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
+    "fluidIn": { "min": 1 },
     "energy": { "min": 1 },
-    "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "muffler"],
+      "text": "1+ Energy Hatch: Any stainless steel casing\n1 Muffler Hatch: Any stainless steel casing\n1+ Input Bus: Any stainless steel casing\n1+ Input Hatch: Any stainless steel casing\n1+ Output Bus: Any stainless steel casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIntegratedOreFactory (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIntegratedOreFactory (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

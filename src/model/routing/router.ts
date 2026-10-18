@@ -3,7 +3,7 @@ import type { Dir, Vec3 } from '../core/types';
 import type { MultiblockDef, Unit } from '../multiblock/types';
 import type { HatchPlacement } from '../plan/types';
 import type { RouteNet } from './routeNet';
-import { DEFAULT_TURN_COST, DEFAULT_WALL_COST, MAX_ROUNDS } from './constants';
+import { DEFAULT_TURN_COST, DEFAULT_WALL_COST, MAX_ROUNDS, ROUTE_POP_CAP } from './constants';
 import { buildGrid, outsideCells, posOf } from './grid';
 import { CellHeap } from './heap';
 import { PIPE_KINDS, ROUTED_KINDS } from './kinds';
@@ -38,7 +38,7 @@ export function routePipes(
   hatches: HatchPlacement[],
   opts: RouteOptions = {},
 ): RouteNet[] {
-  const byKind = routedHatchesByKind(hatches, opts.kinds ?? PIPE_KINDS);
+  const byKind = routedHatchesByKind(hatches, opts.kinds ?? PIPE_KINDS, !!opts.below);
   if (byKind.size === 0) return [];
 
   const cellsOf = units.map((u) => unitCells(def, u));
@@ -67,8 +67,17 @@ export function routePipes(
   const wallCost = Math.max(0, opts.wallCost ?? DEFAULT_WALL_COST);
   priceCells(r, hatches, wallCost);
 
-  negotiateRoutes(r, states, Math.max(0, Math.floor(opts.rounds ?? MAX_ROUNDS)));
+  const capped = negotiateRoutes(
+    r,
+    states,
+    Math.max(0, Math.floor(opts.rounds ?? MAX_ROUNDS)),
+    opts.maxPops ?? ROUTE_POP_CAP,
+  );
   if (opts.refine !== false) refineRoutes(r, states, wallCost);
+  if (opts.budget) {
+    opts.budget.used += r.heap.pops;
+    if (capped) opts.budget.capped = true;
+  }
   return states.map((s) => toRouteNet(r, s));
 }
 

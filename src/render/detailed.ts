@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { blockInfo } from '../data/blocks';
+import { parseMachineLookId, singleMachineBlockId, transformerLook } from '../data/single-machines';
 import type { Dir } from '../model/core/types';
 import type { HatchKind } from '../model/multiblock/types';
 import { BOX_FACE_ORDER, type BlockVisual, type MaterialProvider } from './materials';
@@ -23,8 +24,12 @@ export interface BlockFaces {
   bottom?: string;
   /** Overlay drawn over `side` on the controller's facing side. */
   front?: string;
+  /** Overlay drawn over every face but the facing one (a transformer's low side). */
+  sides?: string;
   /** No texture: DETAILED view uses the flat colour from blocks.ts. */
   flat?: boolean;
+  /** Glass in game: drawn see-through. Decided by scripts/build-atlas.mjs from the block identity. */
+  translucent?: boolean;
 }
 
 export interface TextureManifest {
@@ -97,11 +102,18 @@ function frame(size: number, rgb: [number, number, number]): Uint8Array {
 /** A face to render: base tile plus overlays, or a flat colour. */
 type FaceSpec =
   | { type: 'flat'; color: string }
-  | { type: 'tiles'; base: string; front?: string; hatch?: { kind: HatchKind; color: string } };
+  | {
+      type: 'tiles';
+      base: string;
+      front?: string;
+      sides?: string;
+      hatch?: { kind: HatchKind; color: string };
+      translucent?: boolean;
+    };
 
 function faceKey(spec: FaceSpec): string {
   if (spec.type === 'flat') return `flat:${spec.color}`;
-  return `tiles:${spec.base}|${spec.front ?? ''}|${spec.hatch ? spec.hatch.kind + ':' + spec.hatch.color : ''}`;
+  return `tiles:${spec.base}${spec.translucent ? '*' : ''}|${spec.front ?? ''}|${spec.sides ?? ''}|${spec.hatch ? spec.hatch.kind + ':' + spec.hatch.color : ''}`;
 }
 
 async function loadAtlasFromUrl(url: string): Promise<AtlasPixels> {
@@ -177,6 +189,10 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
       const front = tilePixels(spec.front);
       if (front) over(out, front);
     }
+    if (spec.sides) {
+      const sides = tilePixels(spec.sides);
+      if (sides) over(out, sides);
+    }
     if (spec.hatch) {
       const rgb = hexToRgb(spec.hatch.color);
       over(out, frame(manifest.atlas.tile, rgb));
@@ -212,18 +228,26 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
     if (px) {
       const tex = makeTexture(px, manifest.atlas.tile);
       textures.set(key, tex);
-      // Frames and grates are cut out (alpha 0 or 255); glass is see-through (mostly partial alpha), as the game
-      // draws it in its translucent pass.
-      let cutout = false;
-      let partial = 0;
-      for (let i = 3; i < px.length; i += 4) {
-        if (px[i] < 255) cutout = true;
-        if (px[i] > 0 && px[i] < 255) partial++;
+      // Glass (flagged in the manifest) is see-through, as the game draws it in its translucent pass. Anything
+      // else is opaque, or cut out (alpha 0 or 255) like frames and grates.
+      if (spec.type === 'tiles' && spec.translucent) {
+        material = new THREE.MeshLambertMaterial({
+          map: tex,
+          transparent: true,
+          depthWrite: false,
+          alphaTest: 0.02,
+        });
+      } else {
+        let cutout = false;
+        for (let i = 3; i < px.length; i += 4) {
+          if (px[i] < 255) {
+            cutout = true;
+            break;
+          }
+        }
+        // 0.1 is Minecraft's terrain alpha test: semi-transparent pixels of a solid casing do not become holes.
+        material = new THREE.MeshLambertMaterial({ map: tex, alphaTest: cutout ? 0.1 : 0 });
       }
-      material =
-        partial * 4 > px.length / 4
-          ? new THREE.MeshLambertMaterial({ map: tex, transparent: true, depthWrite: false, alphaTest: 0.02 })
-          : new THREE.MeshLambertMaterial({ map: tex, alphaTest: cutout ? 0.5 : 0 });
     } else {
       const color = spec.type === 'flat' ? spec.color : '#999999';
       material = new THREE.MeshLambertMaterial({ color });
@@ -232,15 +256,49 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
     return material;
   }
 
+  /**
+   * The faces of a block. The tiered looks of single-block machines have no entry in the manifest: the hull of
+   * the tier with the machine's front (taken from its untiered block, which every machine has: a test in
+   * single-machines.test.ts keeps it so), or a transformer's hull with its two overlays (`transformerLook`).
+   */
+  const lookFaces = new Map<string, BlockFaces | undefined>();
+  function facesOf(blockId: string): BlockFaces | undefined {
+    const known = manifest.blocks[blockId];
+    if (known || lookFaces.has(blockId)) return known ?? lookFaces.get(blockId);
+    const look = parseMachineLookId(blockId);
+    let faces: BlockFaces | undefined;
+    if (look?.step) {
+      const { hull, front, sides } = transformerLook(look.tier, look.step, look.amps);
+      faces = {
+        side: `MACHINE_${hull}_SIDE`,
+        top: `MACHINE_${hull}_TOP`,
+        bottom: `MACHINE_${hull}_BOTTOM`,
+        front,
+        sides,
+      };
+    } else if (look) {
+      const { tier } = look;
+      const front = manifest.blocks[singleMachineBlockId(look.machine.id)]?.front;
+      faces = {
+        side: `MACHINE_${tier}_SIDE`,
+        top: `MACHINE_${tier}_TOP`,
+        bottom: `MACHINE_${tier}_BOTTOM`,
+        front,
+      };
+    }
+    lookFaces.set(blockId, faces);
+    return faces;
+  }
+
   function faceSpec(visual: BlockVisual, dir: Dir, colors: Record<HatchKind, string>): FaceSpec {
     const hatchColor = visual.hatchKind ? colors[visual.hatchKind] : undefined;
     const isHatch = visual.kind === 'hatch' && visual.hatchKind !== undefined && hatchColor !== undefined;
     // A hatch looks like the casing it replaces, with its overlay on the front (as in game).
-    const casing = isHatch && visual.baseBlockId ? manifest.blocks[visual.baseBlockId] : undefined;
+    const casing = isHatch && visual.baseBlockId ? facesOf(visual.baseBlockId) : undefined;
     const faces =
       casing && !casing.flat && casing.side
-        ? { ...casing, front: undefined }
-        : manifest.blocks[visual.blockId];
+        ? { ...casing, front: undefined, sides: undefined }
+        : facesOf(visual.blockId);
     if (!atlas || !faces || faces.flat || !faces.side) {
       // Flat fallback: hatches take their kind colour (as in SIMPLE view).
       return { type: 'flat', color: isHatch ? hatchColor! : blockInfo(visual.blockId).color };
@@ -253,7 +311,9 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
       type: 'tiles',
       base,
       front: facing && visual.kind === 'controller' ? faces.front : undefined,
+      sides: !facing && visual.kind === 'controller' ? faces.sides : undefined,
       hatch: facing && isHatch ? { kind: visual.hatchKind!, color: hatchColor!.toLowerCase() } : undefined,
+      translucent: faces.translucent,
     };
   }
 
@@ -265,8 +325,10 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
           atlas = pixels;
         },
         (err: unknown) => {
-          // Keep working with flat colours; the view stays usable without the atlas.
-          console.warn('DETAILED view: texture atlas failed to load, using flat colours', err);
+          // Forget the failure so the next load() retries; the caller falls back to flat colours.
+          loading = null;
+          console.warn('DETAILED view: texture atlas failed to load', err);
+          throw err;
         },
       );
       return loading;
@@ -288,6 +350,7 @@ export function createDetailedProvider(options: DetailedProviderOptions = {}): M
       faceMaterials.clear();
       textures.clear();
       visualMaterials.clear();
+      lookFaces.clear();
     },
   };
 }

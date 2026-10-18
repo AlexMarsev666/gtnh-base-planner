@@ -6,7 +6,12 @@
  * Blocks used only by generated catalog entries live in `./blocks.generated.json` (tools/game-dump).
  */
 import generatedBlocks from './blocks.generated.json' with { type: 'json' };
-import { SINGLE_MACHINES, singleMachineBlockId } from './single-machines';
+import {
+  SINGLE_MACHINES,
+  machineLookName,
+  parseMachineLookId,
+  singleMachineBlockId,
+} from './single-machines';
 
 export interface BlockInfo {
   id: string;
@@ -35,6 +40,17 @@ const list: BlockInfo[] = [
   { id: 'gt.casing.steelFirebox', name: 'Steel Firebox Casing', color: '#6e747a' },
   { id: 'gt.casing.robustTungstensteel', name: 'Robust Tungstensteel Machine Casing', color: '#4b5058' },
   { id: 'gt.coil.cupronickel', name: 'Cupronickel Coil Block', color: '#c9844f' },
+  // Heating coils (BlockCasings5; the metas the generated entries do not use)
+  { id: 'gregtech:gt.blockcasings5@1', name: 'Kanthal Coil Block', color: '#828a90' },
+  { id: 'gregtech:gt.blockcasings5@2', name: 'Nichrome Coil Block', color: '#858598' },
+  { id: 'gregtech:gt.blockcasings5@3', name: 'TPV-Alloy Coil Block', color: '#ac2298' },
+  { id: 'gregtech:gt.blockcasings5@4', name: 'HSS-G Coil Block', color: '#6a6b22' },
+  { id: 'gregtech:gt.blockcasings5@6', name: 'Naquadah Alloy Coil Block', color: '#353535' },
+  { id: 'gregtech:gt.blockcasings5@7', name: 'Fluxed Electrum Coil Block', color: '#cabf64' },
+  { id: 'gregtech:gt.blockcasings5@9', name: 'HSS-S Coil Block', color: '#682222' },
+  { id: 'gregtech:gt.blockcasings5@10', name: 'Trinium Coil Block', color: '#b8b8bf' },
+  { id: 'gregtech:gt.blockcasings5@11', name: 'Infinity Coil Block', color: '#b4afaf' },
+  { id: 'gregtech:gt.blockcasings5@13', name: 'Eternal Coil Block', color: '#365066' },
   { id: 'gt.glass.reinforced', name: 'Reinforced Glass', color: '#cfe6ee' },
 
   // Generic controllers and hatches (flat colours; hatches are recoloured by kind in SIMPLE view)
@@ -42,11 +58,13 @@ const list: BlockInfo[] = [
   { id: 'gt.hatch.inputBus', name: 'Input Bus', color: '#5b6168' },
   { id: 'gt.hatch.outputBus', name: 'Output Bus', color: '#5b6168' },
   { id: 'gt.hatch.inputHatch', name: 'Input Hatch', color: '#5b6168' },
+  { id: 'gt.hatch.quadInput', name: 'Quadruple Input Hatch', color: '#5b6168' },
   { id: 'gt.hatch.outputHatch', name: 'Output Hatch', color: '#5b6168' },
   { id: 'gt.hatch.energy', name: 'Energy Hatch', color: '#5b6168' },
   { id: 'gt.hatch.dynamo', name: 'Dynamo Hatch', color: '#5b6168' },
   { id: 'gt.hatch.maintenance', name: 'Maintenance Hatch', color: '#5b6168' },
   { id: 'gt.hatch.muffler', name: 'Muffler Hatch', color: '#5b6168' },
+  { id: 'gt.hatch.dataAccess', name: 'Data Access Hatch', color: '#5b6168' },
 
   // Added by the multiblock catalog (unit 9)
   { id: 'gt.casing.firebricks', name: 'Firebricks', color: '#8e5a3c' },
@@ -115,6 +133,18 @@ export const BLOCKS: Readonly<Record<string, BlockInfo>> = Object.fromEntries(
   [...generated, ...machines, ...list].map((b) => [b.id, b]),
 );
 
+/** Tiered looks resolved so far (only valid ids are kept, a few hundred at most). */
+const lookInfo = new Map<string, BlockInfo>();
+
 export function blockInfo(id: string): BlockInfo {
-  return BLOCKS[id] ?? { id, name: id, color: '#999999' };
+  const known = BLOCKS[id];
+  if (known) return known;
+  // The tiered looks of single-block machines are not listed one by one: their id says what they are.
+  const cached = lookInfo.get(id);
+  if (cached) return cached;
+  const look = parseMachineLookId(id);
+  if (!look) return { id, name: id, color: '#999999' };
+  const info = { id, name: machineLookName(look), color: '#7c848c' };
+  lookInfo.set(id, info);
+  return info;
 }

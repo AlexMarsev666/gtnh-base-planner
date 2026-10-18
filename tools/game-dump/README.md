@@ -7,7 +7,7 @@ the game builds it, including machines whose shape is computed at run time (Larg
 Purification Plant, Nanochip Assembly Complex, Forge of the Gods and its modules, Extreme Industrial Greenhouse,
 YOTTank, the Space Elevator modules, ...).
 
-The catalog follows GT5-Unofficial **5.09.54.133** (GT:NH 2.9.0-beta-3).
+The catalog follows GT5-Unofficial **5.09.54.205** (GT:NH 2.9.0-RC-2).
 
 ## 1. Dump the structures
 
@@ -35,8 +35,8 @@ printf 'server-port=25599\nonline-mode=false\n' > run/server.properties
 cp "$GRADLE_USER_HOME"/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10/unpacked/conf/packaged.srg \
    "$GRADLE_USER_HOME"/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12/{fields,methods}.csv run/conf/
 
-./gradlew runServer -PdatasetOut=<out>/structures -PpackVersion=2.9.0-beta-3 \
-  "-PmodVersions=GT5-Unofficial=5.09.54.133,StructureLib=1.4.42"
+./gradlew runServer -PdatasetOut=<out>/structures -PpackVersion=2.9.0-RC-2 \
+  "-PmodVersions=GT5-Unofficial=5.09.54.205,StructureLib=1.4.45"
 ```
 
 A run takes about ten minutes and dumps 296 controllers. Two fail on client-only classes (the Space Elevator
@@ -48,12 +48,12 @@ ceiling with casing on every side, and the planner needs a controller that looks
 
 ### What `extractor.patch` changes
 
-- GT5-Unofficial `5.09.54.133` instead of the pinned `5.09.54.20`.
+- GT5-Unofficial `5.09.54.205` and StructureLib `1.4.45` instead of the pinned `5.09.54.20` and `1.4.42`.
 - `GTNHExtLib` is left out: Windows Defender quarantines that jar on download. In the pack GTNHLib fetches the
   three libraries it bundles (fastutil, JOML, Brigadier) at run time; the build names them directly.
-- The jvmdowngrader stubs GT5-Unofficial 133 is built against (`2.0.1`, not GTNHLib's `1.3.5`) go on the run
+- The jvmdowngrader stubs GT5-Unofficial 133 and later are built against (`2.0.1`, not GTNHLib's `1.3.5`) go on the run
   class path, and `LaunchClassLoader` loads them untransformed.
-- Placed machines get an owner: GT 133 tracks power failures per owner and throws on removing an ownerless one.
+- Placed machines get an owner: GT 133 and later track power failures per owner and throw on removing an ownerless one.
 - A headless server (a dev-time folder picker then fails instead of hanging), block display names in the
   texture manifest, and the auto-world harness accepts GT:NH's main menu (both for the client run below).
 
@@ -61,7 +61,7 @@ ceiling with casing on every side, and the planner needs a controller that looks
 
 ```sh
 node tools/game-dump/build.mjs --structures <out>/structures/multiblocks --gt5u ../gt5u \
-  --jars <GRADLE_USER_HOME>/caches/modules-2/files-2.1/com.github.GTNewHorizons/GT5-Unofficial/5.09.54.133/*/GT5-Unofficial-5.09.54.133-dev.jar
+  --jars <GRADLE_USER_HOME>/caches/modules-2/files-2.1/com.github.GTNewHorizons/GT5-Unofficial/5.09.54.205/*/GT5-Unofficial-5.09.54.205-dev.jar
 node tools/game-dump/build.mjs ... --write
 npm run atlas
 npm run check && npm test
@@ -90,10 +90,50 @@ With `--write` it replaces:
   "Machine-specific Hatch". A hatch slot or hint with nothing placed and nothing next to it is left out: the
   probe sometimes visits cells outside the structure.
 - An empty cell inside the structure must stay air; the dump cannot tell "air" from "any block" there.
+- A hatch slot with no hint dot and nothing placed on a machine that has hints is a cell the probe visited outside the
+  structure (the Circuit Assembly Line's controller beside it) and is left out.
+- A hint 13 (the air hint) with nothing placed is a `-` cell (must stay air; StructureLib tests `isAir()`), not a hatch
+  cell. Every one counts, and it may extend the box.
+- A tall structure is cut off at the dump's scratch world height (the Exo Foundry lost its top 8 layers). The
+  tooltip's `beginStructureBlock(w, h, d, ...)` / `beginVariableStructureBlock(...)` is compared with the dump's box
+  (a fixed height, or width and depth both ways round); where the dump is smaller, the controller's piece of the
+  structure definition (`tools/gt-source/shape-complete.mjs`) supplies the cells outside the box, each letter taking
+  the dump's own cell of that letter, and the entry's GT shape goes to `src/data/gt-shapes.generated.json` for
+  `src/data/gt-structures.test.ts`. A shape that does not fit the dump fails the run; a machine with no static shape
+  (tier-dependent or computed sizes) is only listed ("dump smaller than the tooltip's fixed size").
 - `*Legacy` controllers (the old versions GT keeps so existing worlds load; they cannot be crafted) are skipped,
   and a machine registered under two ids (the Drone Centre) is listed once.
-- Hatch counts are approximate, as before: energy or dynamo, maintenance and muffler once each when the
-  structure takes them.
+- Variable-size machines: the extractor sweeps the trigger stack 1..16 and keeps one form per distinct set of cells, and the
+  smallest is the entry. `build.mjs` derives `resize` from all the forms ([`resize-derive.mjs`](../gt-source/README.md)):
+  the forms must differ along one axis only, and the repeating slab is the `[from, to)` that `sizedDef` expands to every
+  form cell for cell (a tiered block, like the Assembly Lines' glass, may be another meta of the same block in every
+  form). `min` is the smallest form, `max` the tooltip's `beginVariableStructureBlock` maximum (the sweep stops at 16;
+  the tooltip does not count the controller's column, so the box is shifted by that), `default` is `min`. A later form of
+  a size already seen is the sweep hitting the scratch world's height and is skipped; a last form that is no whole
+  number of slabs and fits the tooltip maximum is the sweep clamped to it and is left out. Where no slab reproduces
+  every form (tiers of one shape, growth on two axes or on both sides of the controller, hatch cells that do not
+  repeat) there is no `resize`; the run lists those entries ("several dumped forms and no resize"). The zone regions
+  (`dot<N>`) of slab cells keep their name in every copy. A hatch kind the tooltip counts as a range (`2-11`) that
+  the slabs account for (the range divides evenly by the number of slab steps and no structure check changed it) gets
+  `requiredHatches.<kind>.perSlab`: the smallest form needs the range's lower end and each added slab raises `min` and
+  `max` by `(b - a) / steps` (one hatch per layer or slice).
+- Hatch counts come from the controller's tooltip (`.addInputHatch("2", "...", 1, 2, 3)` and its siblings, read by
+  [`tools/gt-source/hatch-rules.mjs`](../gt-source/README.md)): `"2"` is min 2 max 2, `"2-11"` min 2 max 11, `"1+"`
+  min 1, `"0+"` min 0; lines of one kind add up. A kind that must have a hatch is on by default
+  (`defaultHatches`). A kind is required only when the tooltip or the structure check says so; the old estimate (energy or
+  dynamo, maintenance and muffler once each when the structure takes them) is used only for a controller whose tooltip
+  lists no hatch at all.
+- Hatch zones: every hatch cell gets `region: "dot<N>"`, N being the hint dot the hologram shows on it (the dump's
+  `hint` value + 1, which is the number the tooltip's lines use). The def's `zones` maps each region to the hatch
+  kinds its cells take that the tooltip lists for that dot, and the tooltip lines for it as the game prints them
+  (`1+ Energy Hatch: Any casing`). Zones add no `regions` requirements to `requiredHatches`.
+- Hand-made entries are never rewritten for this: `build.mjs` writes their zones to
+  `src/data/hatch-zones.generated.json` (`{ <id>: { zones, cells: { "x,y,z": "dot<N>" } } }`, in the entry's own
+  frame: the dump's north-facing frame rotated so north is the entry's `controller.facing`). An entry is left out
+  when the dump's blocks do not sit on its cells or most dump hatch cells are no hatch cell in it, or when the
+  machine has no hint dots (the steam machines).
+- A class GT renamed keeps its entry and id through `RENAMED_CLASSES` in `build.mjs` (`MTESMDProcessorModule` to
+  `MTEPartProcessorModule`, the Part Preparation Apparatus).
 - Hand-made entries always win: a controller class a hand-made entry links to in its `source` is not generated.
 
 The dump settles which way StructureLib's first axis runs: to the **right of a controller seen from its front**,
@@ -127,3 +167,18 @@ had), so a machine the dev server cannot build does not disappear.
 - `jars.mjs` - block sprites read from mod jars.
 - `extractor.patch` - the changes to the extractor, against gtnh-process-line-solver `19deba9`.
 - `textures.generated.json` - generated.
+
+### Hatch kinds from the source
+
+The dump's hatch kinds come from probing StructureLib's `IHatchElement` lists, which misses custom elements (fusion's
+energy injector, steam buses, TecTech multi-amp hatches, `ofHatchAdder(Foo::addClassicToMachineList)`). `build.mjs` adds, to
+every hint cell, the kinds that the structure definition's element for that dot accepts
+([`hatch-elements.mjs`](../gt-source/README.md), mapping table there). The def's notes say how many cells got kinds this
+way. The final report "tooltip kinds no dumped cell accepts" counts the dump and the source together; what stays on it is
+a part the dump does not build (the Cleanroom, which is left out anyway).
+
+A kind that only a chain member naming another hint dot brings (the Dangote Distillus's rings list a muffler adder of dot 3, and
+GT takes a muffler in the top layer only) is added only where the previous generated entry had it on the same cell (by
+position relative to the controller); a new entry gets none. The cells of a repeating slab take the union of the
+elements of their dot that fit the dump's kinds (the Circuit Assembly Line's slices take an input or an output bus, its
+last slice only an output bus).

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FLOOR_BLOCKS } from '../data/floor';
 import type { SiteState } from '../model/site/types';
 import { deflateRaw, PlanFormatError, toBase64Url } from './binary';
 import {
@@ -153,6 +154,16 @@ describe('validateSiteState', () => {
     expect(validateSiteState(data).groups[0].limitsLocked).toBeUndefined();
   });
 
+  it('keeps the floor through JSON and links, and drops a block it does not know', async () => {
+    const floored = { ...sample(), floor: FLOOR_BLOCKS[1] };
+    expect(siteFromJson(siteToJson(floored)).floor).toBe(FLOOR_BLOCKS[1]);
+    expect((await decodeSite(await encodeSite(floored))).floor).toBe(FLOOR_BLOCKS[1]);
+    // No floor by default: nothing is written, so old templates and links encode as before.
+    expect(siteToJson(sample())).not.toContain('floor');
+    for (const bad of ['mc.nope', 7, null, {}])
+      expect('floor' in validateSiteState({ ...sample(), floor: bad })).toBe(false);
+  });
+
   it('round-trips through JSON and links', async () => {
     const s = validateSiteState(sample());
     expect(siteFromJson(siteToJson(s))).toEqual(s);
@@ -174,13 +185,12 @@ describe('malformed site links and files', () => {
     const bomb = toBase64Url(await deflateRaw(new Uint8Array(4 * 1024 * 1024).fill(32), { fallback: true }));
     await expect(decodeSite(bomb, { fallback: true })).rejects.toThrow(/too large/);
     await expect(decodeSite(await link('not a site'))).rejects.toThrow(PlanFormatError);
-    expect(() => siteFromJson('x'.repeat(1024 * 1024 + 1))).toThrow(/too large/);
+    expect(() => siteFromJson('x'.repeat(2 * 1024 * 1024 + 1))).toThrow(/too large/);
   });
 
   it('rejects bad fields with a readable error', () => {
     const cases: [string, (s: SiteState) => void][] = [
       ['rotation', (s) => ((s.groups[0] as { rotation: number }).rotation = 4)],
-      ['unknown multiblock', (s) => (s.groups[0].multiblockId = 'nope')],
       ['script id', (s) => (s.groups[0].multiblockId = '<script>')],
       ['hatch kind', (s) => ((s.groups[0].enabledHatches as string[]) = ['laser'])],
       ['colour', (s) => (s.resources['item:dust'].color = 'red')],

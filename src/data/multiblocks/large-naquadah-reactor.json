@@ -2,7 +2,7 @@
   "id": "large-naquadah-reactor",
   "name": "Large Naquadah Reactor",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeNaquadahReactor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeNaquadahReactor.java",
   "size": [7, 11, 7],
   "layers": [
     ["  A~A  ", " AAAAA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA ", "  AAA  "],
@@ -20,7 +20,8 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings13@15",
-      "hatches": ["fluidIn", "fluidOut", "energy", "dynamo", "maintenance"]
+      "hatches": ["fluidIn", "fluidOut", "energy", "dynamo", "maintenance"],
+      "region": "dot1"
     },
     "B": { "blockId": "GoodGenerator:radiationProtectionSteelFrame@0" },
     "C": { "blockId": "GoodGenerator:MAR_Casing@0" }
@@ -34,8 +35,20 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["fluidIn", "fluidOut"],
-  "requiredHatches": { "dynamo": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 },
+    "dynamo": { "min": 1, "max": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "minCasings": [{ "chars": ["A"], "min": 130 }],
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "dynamo", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "fluidOut", "dynamo", "maintenance"],
+      "text": "1 Dynamo Hatch: Any reactor casing\n1 Maintenance Hatch: Any reactor casing\n1+ Input Hatch: Any reactor casing\n1+ Output Hatch: Any reactor casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTELargeNaquadahReactor (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTELargeNaquadahReactor (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

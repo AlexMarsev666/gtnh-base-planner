@@ -2,7 +2,7 @@
   "id": "component-assembly-line",
   "name": "Component Assembly Line",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/MTEComponentAssemblyLine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEComponentAssemblyLine.java",
   "size": [9, 10, 33],
   "layers": [
     [
@@ -358,18 +358,18 @@
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings8@7" },
-    "B": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["fluidIn"] },
-    "C": { "blockId": "gregtech:gt.blockframes@316", "hatches": ["itemIn"] },
+    "B": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["fluidIn"], "region": "dot2" },
+    "C": { "blockId": "gregtech:gt.blockframes@316", "hatches": ["itemIn"], "region": "dot1" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "gregtech:gt.blockcasings9@0" },
     "F": { "blockId": "gregtech:gt.blockframes@316" },
-    "G": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["itemOut"] },
-    "H": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["itemIn"] },
+    "G": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["itemOut"], "region": "dot5" },
+    "H": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["itemIn"], "region": "dot1" },
     "I": { "blockId": "gregtech:gt.blockcasings2@9" },
     "J": { "blockId": "gregtech:gt.blockcasings2@5" },
-    "K": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["maintenance"] },
+    "K": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["maintenance"], "region": "dot4" },
     "L": { "blockId": "gregtech:gt.blockcasings9@1" },
-    "M": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["energy"] },
+    "M": { "blockId": "gregtech:gt.blockcasings8@7", "hatches": ["energy"], "region": "dot3" },
     "N": { "blockId": "GoodGenerator:componentAssemblylineCasing@0" }
   },
   "controller": { "pos": [4, 7, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32026" },
@@ -381,8 +381,26 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "itemIn": { "min": 1, "max": 8 },
+    "itemOut": { "min": 1 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn"],
+      "text": "1-8 Input Bus: Any casing or frame box at front of conveyor belt"
+    },
+    "dot2": { "kinds": ["fluidIn"], "text": "0+ Input Hatch: Any side bottom edge casing" },
+    "dot3": {
+      "kinds": ["energy"],
+      "text": "1+ Energy Hatch: Any outer iridium casing on the 2nd to top layer"
+    },
+    "dot4": { "kinds": ["maintenance"], "text": "1 Maintenance Hatch: Any casing around controller" },
+    "dot5": { "kinds": ["itemOut"], "text": "1+ Output Bus: Any casing at end of conveyor belt" }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEComponentAssemblyLine (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEComponentAssemblyLine (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

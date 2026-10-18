@@ -2,7 +2,7 @@
   "id": "industrial-autoclave",
   "name": "Industrial Autoclave",
   "tier": "IV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiAutoclave.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMultiAutoclave.java",
   "size": [7, 7, 9],
   "layers": [
     ["A A~A A", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "  AAA  ", "A AAA A"],
@@ -35,6 +35,12 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A"], "min": 128 }],
+  "coils": { "chars": ["F"] },
   "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
   "wallshare": true,
   "notes": "7x7x9. A long pressure vessel of Pressure Containment Casings (at least 128) that take every bus and hatch, with glass ends, heating coils along the top (coil tier sets speed), PTFE frame boxes, and pipe casings inside: fluid pipe casings (bronze shown; tier sets parallels) and item pipe casings (tin shown). GT also needs at least one input and one output of any kind."

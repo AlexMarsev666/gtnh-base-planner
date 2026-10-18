@@ -1,23 +1,39 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { t } from '../i18n/en';
-  import { groupIndexOfUnit, portIndexOfUnit, portUnitId } from '../model/site/ids';
-  import { appMode, flowAnimation, isolate, site, siteGroup, siteNet, sitePort } from '../state/site';
-  import { plan, selectedUnits, viewMode, xray } from '../state/store';
+  import { groupIndexOfUnit, portIndexOfUnit } from '../model/site/ids';
+  import { portIdForUnit, portUnitFor } from './siteSelection';
+  import {
+    appMode,
+    flowAnimation,
+    isolate,
+    site,
+    siteGroup,
+    siteHatch,
+    siteLink,
+    siteLinkDraft,
+    siteNet,
+    sitePort,
+  } from '../state/site';
+  import { plan, selectedHatch, selectedUnits, viewMode, xray } from '../state/store';
+  import type { Vec3 } from '../model/core/types';
   import { selectMultiblock } from './actions';
   import { startSessions } from './appSession';
   import BlocksPanel from './BlocksPanel.svelte';
   import { clearOtherViewWarnings, createBuildWarnings } from './buildWarnings';
   import { watchDrawerInset, type Inset } from './drawerInset';
-  import FlowToggle from './FlowToggle.svelte';
   import Footer from './Footer.svelte';
   import ImportDialog from './ImportDialog.svelte';
   import Legend from './Legend.svelte';
+  import { narrow } from './narrow';
   import Notices from './Notices.svelte';
+  import { notify } from './notices';
   import Picker from './Picker.svelte';
-  import { build } from './pipeline';
+  import { hatchKeyAt, hatchPickHolds, hatchTierRows } from './hatchTierRows';
+  import { build, machineBusy, machineDef } from './pipeline';
   import Scene from './Scene.svelte';
-  import { isTyping, siteKeyAction } from './keys';
+  import SceneToolbar from './SceneToolbar.svelte';
+  import { inTablist, isTyping, siteKeyAction } from './keys';
   import MoveHint from './MoveHint.svelte';
   import Settings from './Settings.svelte';
   import { updateSite, withGroupPatched } from './siteActions';
@@ -35,10 +51,14 @@
   } from './siteEditing';
   import { redoSite, undoSite } from './siteHistory';
   import SiteBar from './SiteBar.svelte';
+  import SiteOutline from './SiteOutline.svelte';
   import { addGroup } from './siteCommands';
+  import { groupHatchAt, groupPickHolds } from './siteInspect';
+  import SiteEmpty from './SiteEmpty.svelte';
   import SiteLegend from './SiteLegend.svelte';
   import SitePanel from './SitePanel.svelte';
-  import { siteBuild, siteScene } from './sitePipeline';
+  import { siteBuildInView, siteSceneInView } from './sitePipeline';
+  import { siteBomTiers } from '../model/site/siteScene';
   import SiteStats from './SiteStats.svelte';
   import StatsLine from './StatsLine.svelte';
   import TopBar from './TopBar.svelte';
@@ -53,8 +73,12 @@
   /** Site view: what the multiblock picker is open for. */
   let sitePicker = $state<'add' | 'change' | null>(null);
 
-  const def = $derived($build.def);
+  const def = $derived($machineDef);
   const siteMode = $derived($appMode === 'site');
+  /** The empty Template shows its start card (it is not covered by the picker or the import dialog). */
+  const emptyShown = $derived(siteMode && !$site.groups.length && !importOpen && !sitePicker);
+  /** The template's bill of materials comes from one build: its scene and the keys of its hatches match. */
+  const siteBom = $derived(siteMode ? $siteBuildInView.build : null);
 
   onMount(startSessions);
 
@@ -69,10 +93,38 @@
   const siteSelected = $derived.by(() => {
     // Only the site view needs the site built.
     if (!siteMode) return [];
-    const pi = $sitePort ? $site.ports.findIndex((p) => p.id === $sitePort) : -1;
-    if (pi >= 0) return [portUnitId(pi)];
-    const g = $siteBuild.build?.groups.find((x) => x.group.id === $siteGroup);
+    const pu = $sitePort ? portUnitFor($siteBuildInView, $sitePort) : null;
+    if (pu !== null) return [pu];
+    const g = $siteBuildInView.build?.groups.find((x) => x.group.id === $siteGroup);
     return g ? g.units.map((u) => u.id) : [];
+  });
+
+  /** Cells of the picked hatch, highlighted in the scene. */
+  const markedCells = $derived.by((): Vec3[] => {
+    if (!siteMode) {
+      const h = $selectedHatch;
+      return h && hatchPickHolds($build.scene?.hatches ?? [], h) ? [h.cell] : [];
+    }
+    const h = $siteHatch;
+    return h && groupPickHolds($siteBuildInView.build?.groups ?? [], h) ? [h.cell] : [];
+  });
+  // A rebuild that no longer has the hatch (another layout, count or machine) drops the pick.
+  $effect(() => {
+    const h = $selectedHatch;
+    if (h && $build.scene && !hatchPickHolds($build.scene.hatches, h)) selectedHatch.set(null);
+  });
+  $effect(() => {
+    const h = $siteHatch;
+    const groups = $siteBuildInView.build?.groups;
+    if (h && groups && !groupPickHolds(groups, h)) siteHatch.set(null);
+  });
+
+  // A removed link (or an undo that takes it away) cannot stay selected.
+  // One that stays follows its resource (an undo can change it).
+  const linkResource = $derived($site.links.find((l) => l.id === $siteLink)?.resource ?? null);
+  $effect(() => {
+    if ($siteLink && linkResource === null) siteLink.set(null);
+    else if (linkResource !== null) isolate.set(linkResource);
   });
 
   function onpick(ids: number[]) {
@@ -80,21 +132,61 @@
       selectedUnits.set(ids);
       return;
     }
-    const pi = ids.length ? portIndexOfUnit(ids[0]) : -1;
-    const g = ids.length && pi < 0 ? $siteBuild.build?.groups[groupIndexOfUnit(ids[0])] : undefined;
+    const portId = ids.length ? portIdForUnit($siteBuildInView, ids[0]) : null;
+    const g =
+      ids.length && portIndexOfUnit(ids[0]) < 0
+        ? $siteBuildInView.build?.groups[groupIndexOfUnit(ids[0])]
+        : undefined;
     // Selecting one clears the other (see `sitePort`); nothing picked clears both.
-    if (pi >= 0 && $site.ports[pi]) sitePort.set($site.ports[pi].id);
+    if (portId !== null) sitePort.set(portId);
     else if (g) siteGroup.set(g.group.id);
     else {
       siteGroup.set(null);
       sitePort.set(null);
+      siteLink.set(null);
+      siteLinkDraft.set(false);
     }
+  }
+
+  /** Called after `onpick` with the cell of the hatch block that was clicked, null for anything else. */
+  function onpickhatch(cell: Vec3 | null) {
+    if (siteMode) {
+      const hit = cell ? groupHatchAt($siteBuildInView.build?.groups ?? [], cell) : null;
+      siteHatch.set(hit && cell ? { ...hit, cell } : null);
+      // A click does not open the panel; it shows the hatch when it is open already.
+      if (hit && !sitePanelOpen)
+        notify(t.hatchSelected(''), 6000, 'hatch', {
+          label: t.site.hatchDetails,
+          run: () => {
+            sitePanelOpen = true;
+            blocksOpen = false;
+          },
+        });
+      return;
+    }
+    const hatches = $build.scene?.hatches ?? [];
+    const key = cell ? hatchKeyAt(hatches, cell) : null;
+    selectedHatch.set(key && cell ? { key, cell } : null);
+    // Settings lists the hatches that have a tier; the others are only highlighted. A click never opens it.
+    const hatch = cell ? hatches.find((h) => h.cell.join() === cell.join()) : undefined;
+    if (key && hatch && !settingsOpen && hatchTierRows(hatches).some((r) => r.key === key))
+      notify(t.hatchSelected(t.hatchKinds[hatch.kind]), 6000, 'hatch', {
+        label: t.hatchSetTier,
+        run: () => {
+          settingsOpen = true;
+          pickerOpen = false;
+          blocksOpen = false;
+        },
+      });
   }
 
   function onpicknet(id: number | null) {
     if (!siteMode) return;
+    // A picked net replaces a selected link (and its isolation, set below).
+    siteLinkDraft.set(false);
+    siteLink.set(null);
     siteNet.set(id);
-    const n = id === null ? undefined : $siteBuild.build?.nets.find((x) => x.id === id);
+    const n = id === null ? undefined : $siteBuildInView.build?.nets.find((x) => x.id === id);
     isolate.set(n?.resource ?? null);
   }
 
@@ -121,6 +213,9 @@
       if (siteMode) {
         if (importOpen) importOpen = false;
         else if (sitePicker) sitePicker = null;
+        else if ($siteHatch) siteHatch.set(null);
+        else if ($siteLinkDraft) siteLinkDraft.set(false);
+        else if ($siteLink) siteLink.set(null);
         else if (sitePanelOpen) sitePanelOpen = false;
         else if (blocksOpen) blocksOpen = false;
         else {
@@ -130,11 +225,12 @@
           isolate.set(null);
         }
       } else if (pickerOpen) pickerOpen = false;
+      else if ($selectedHatch) selectedHatch.set(null);
       else if (settingsOpen) settingsOpen = false;
       else if (blocksOpen) blocksOpen = false;
       return;
     }
-    if (!siteMode || importOpen || sitePicker || isTyping(e)) return;
+    if (!siteMode || importOpen || sitePicker || isTyping(e) || inTablist(e)) return;
     // Site view: undo and redo anything, then move and turn the selected group from the keyboard.
     const action = siteKeyAction(e);
     if (!action) return;
@@ -160,23 +256,27 @@
     if (e.key === 'Shift') shiftHeld.set(false);
   }
 
-  /** Canvas pixels the open drawer covers: the view centres the model in the rest. */
-  let inset = $state<Inset>({ right: 0, bottom: 0 });
+  /** The docked outline: the Template view's groups and links, except on narrow screens. */
+  const outlineDocked = $derived(siteMode && !sitePicker && !$narrow);
+
+  /** Canvas pixels the outline and the open drawer cover: the view centres the model in the rest. */
+  let inset = $state<Inset>({ left: 0, right: 0, bottom: 0, top: 0 });
   $effect(() => {
-    // Re-measure whenever a drawer opens or closes.
+    // Re-measure whenever the outline appears or a drawer opens or closes.
     void sitePanelOpen;
     void settingsOpen;
     void blocksOpen;
     void siteMode;
+    void outlineDocked;
     return watchDrawerInset((next) => (inset = next));
   });
 </script>
 
 <svelte:window {onkeydown} {onkeyup} onblur={() => shiftHeld.set(false)} />
 
-<main>
+<main style:--outline-w={outlineDocked ? '260px' : '0px'} style:--drawer-w="{inset.right}px">
   <Scene
-    scene={siteMode ? $siteScene : $build.scene}
+    scene={siteMode ? $siteSceneInView : $build.scene}
     mode={$viewMode}
     xray={$xray}
     selected={siteMode ? siteSelected : $selectedUnits}
@@ -187,21 +287,27 @@
     {inset}
     {onpick}
     {onpicknet}
+    {onpickhatch}
+    marked={markedCells}
     onfail={() => (rendererFailed = true)}
+    onviewfallback={() => {
+      viewMode.set('simple');
+      notify(t.texturesUnavailable);
+    }}
   />
 
   {#if siteMode}
-    {#if rendererFailed || !$siteScene}
-      <div class="placeholder" data-testid="preview-notice">
+    {#if rendererFailed || (!$siteSceneInView && !emptyShown)}
+      <div class="placeholder" class:aside={emptyShown} data-testid="preview-notice">
         <!-- Before the first build arrives from the worker there is simply nothing to show yet. -->
         <span
-          >{$siteScene
+          >{$siteSceneInView
             ? t.viewUnavailable
-            : $siteBuild.error || $siteBuild.build
+            : $siteBuildInView.error || $siteBuildInView.build
               ? t.previewUnavailable
               : t.site.building}</span
         >
-        {#if $siteBuild.error}<span class="detail">{$siteBuild.error}</span>{/if}
+        {#if $siteBuildInView.error}<span class="detail">{$siteBuildInView.error}</span>{/if}
       </div>
     {/if}
 
@@ -226,8 +332,29 @@
         onclose={() => (sitePicker = null)}
       />
     {:else}
+      {#if outlineDocked}
+        <SiteOutline
+          onpick={(purpose) => {
+            sitePicker = purpose;
+            sitePanelOpen = false;
+          }}
+          onselect={() => {
+            sitePanelOpen = true;
+            blocksOpen = false;
+          }}
+        />
+      {/if}
       <SiteLegend />
-      <FlowToggle />
+      {#if !importOpen}<SceneToolbar view="site" />{/if}
+      {#if emptyShown}
+        <SiteEmpty
+          onadd={() => {
+            sitePicker = 'add';
+            sitePanelOpen = false;
+          }}
+          onimport={() => (importOpen = true)}
+        />
+      {/if}
       <SiteStats
         onproblems={() => {
           blocksOpen = false;
@@ -236,7 +363,11 @@
       />
       {#if ($siteGroup || $sitePort) && !importOpen}<MoveHint port={!!$sitePort} />{/if}
       {#if blocksOpen}
-        <BlocksPanel scene={$siteScene} onclose={() => (blocksOpen = false)} />
+        <BlocksPanel
+          scene={siteBom?.scene ?? null}
+          siteTiers={siteBom ? siteBomTiers(siteBom.groups) : undefined}
+          onclose={() => (blocksOpen = false)}
+        />
       {/if}
       {#if sitePanelOpen}
         <SitePanel
@@ -256,7 +387,14 @@
   {:else}
     {#if !$build.scene || rendererFailed}
       <div class="placeholder" data-testid="preview-notice">
-        <span>{$build.scene ? t.viewUnavailable : t.previewUnavailable}</span>
+        <!-- Before the first build arrives from the worker there is simply nothing to show yet. -->
+        <span
+          >{$build.scene
+            ? t.viewUnavailable
+            : !$build.error && ($machineBusy || !$build.pack)
+              ? t.site.building
+              : t.previewUnavailable}</span
+        >
         {#if $build.error}<span class="detail">{$build.error}</span>{/if}
       </div>
     {/if}
@@ -292,12 +430,13 @@
     {#if pickerOpen}
       <Picker currentId={$plan.multiblockId} {onselect} onclose={() => (pickerOpen = false)} />
     {:else}
+      <SceneToolbar view="machine" />
       <Legend enabled={$plan.enabledHatches} colors={$plan.colors} />
       <StatsLine result={$build} />
     {/if}
 
     {#if blocksOpen && !pickerOpen}
-      <BlocksPanel scene={$build.scene} onclose={() => (blocksOpen = false)} />
+      <BlocksPanel scene={$build.scene} tiers={$plan} onclose={() => (blocksOpen = false)} />
     {/if}
 
     {#if settingsOpen}
@@ -326,6 +465,12 @@
     pointer-events: none;
     padding: 0 var(--gutter);
     text-align: center;
+  }
+  /* Beside the start card: at the top of the free area instead of its centre. */
+  .placeholder.aside {
+    inset: calc(var(--bar-h) + 52px) 0 auto;
+    padding-left: calc(var(--gutter) + var(--outline-w, 0px));
+    padding-right: calc(var(--gutter) + var(--drawer-w, 0px));
   }
   .detail {
     color: var(--muted);

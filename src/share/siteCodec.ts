@@ -1,19 +1,31 @@
-import { getSiteDef, isSingleBlock } from '../data/generic';
+import { coilById } from '../data/coils';
+import { isFloorBlock } from '../data/floor';
+import { PLACEHOLDER_ID, getSiteDef, isSingleBlock } from '../data/generic';
+import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { getSingleMachine } from '../data/single-machines';
 import { effectiveSize } from '../model/resize';
 import {
   iconUrl,
+  ROUTING_STYLES,
+  TRANSFORMER_AMPS,
   type Endpoint,
+  type HatchAssign,
   type ResourceDef,
+  type RoutingDepth,
+  type RoutingStyle,
   type SiteGroup,
   type SiteLink,
   type SitePort,
+  type SiteRouting,
   type SiteState,
+  type TransformerAmps,
 } from '../model/site/types';
 import type { Rotation } from '../model/core/types';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
 import {
-  MAX_PAYLOAD_BYTES,
+  LinkTooLargeError,
+  MAX_LINK_CODE_CHARS,
+  MAX_SITE_JSON_BYTES,
   PlanFormatError,
   deflateRaw,
   fromBase64Url,
@@ -31,8 +43,12 @@ import {
   expectArray,
   expectHatchKind,
   expectInt,
+  expectFlag,
   expectObject,
+  expectTier,
+  expectWallshare,
   field,
+  validateHatchTiers,
 } from './codec';
 
 /**
@@ -57,7 +73,9 @@ export const MAX_RESOURCES = 512;
 const MAX_NAME = 120;
 const MAX_KEY = 160;
 const MAX_SITE_ID = 32;
-const MAX_RATE = 1e12;
+export const MAX_RATE = 1e12;
+/** Most machines a group may record as its source count. */
+export const MAX_MACHINE_COUNT = 1e6;
 /** Names with special meaning on plain objects; never resource keys. */
 const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
@@ -125,15 +143,71 @@ function validateResource(value: unknown, key: string): ResourceDef {
   return res;
 }
 
-function validateGroup(value: unknown, index: number): SiteGroup {
+/** A group whose multiblock id no longer exists, shown as a placeholder. */
+export interface ReplacedGroup {
+  group: string;
+  /** The id that was not found. */
+  id: string;
+}
+
+export interface SiteLoad {
+  site: SiteState;
+  replaced: ReplacedGroup[];
+}
+
+const GROUP_HATCH_TIER_KEY_RE = new RegExp(`^(${HATCH_KINDS.join('|')}):(.+):(\\d{1,4}|shared)$`);
+const ZONE_RE = /^[A-Za-z0-9_-]{1,32}$/;
+
+const NO_RESOURCE_KEY_RE = /^(energy|dynamo|maintenance|muffler):\d{1,4}$/;
+
+/**
+ * `"<kind>:<resource>:<unit index>"` or `"<kind>:<resource>:shared"` (the resource key may hold colons); kinds
+ * without a resource (energy, dynamo, maintenance, muffler) use `"<kind>:<ordinal>"`.
+ */
+function isGroupHatchTierKey(key: string): boolean {
+  if (key.length > MAX_KEY || /[\u0000-\u001f\u007f]/.test(key)) return false;
+  return NO_RESOURCE_KEY_RE.test(key) || GROUP_HATCH_TIER_KEY_RE.test(key);
+}
+
+/** Hatch assignments by resource key; empty entries are dropped, keys come out sorted. */
+function validateAssign(value: unknown, what: string): NonNullable<SiteGroup['assign']> | undefined {
+  if (value === undefined || value === null) return undefined;
+  const obj = expectObject(value, `${what} assignments`);
+  const keys = Object.keys(obj);
+  if (keys.length > MAX_RESOURCES) throw new PlanFormatError(`${what} has too many assignments.`);
+  const out: NonNullable<SiteGroup['assign']> = {};
+  for (const key of keys.sort()) {
+    expectString(key, `${what} assignment key`, MAX_KEY);
+    if (RESERVED_KEYS.has(key)) throw new PlanFormatError(`Assignment key "${key}" is not allowed.`);
+    const entry = expectObject(field(obj, key), `${what} assignment "${key}"`);
+    const assign: HatchAssign = {};
+    const unit = field(entry, 'unit');
+    if (unit === 'all') assign.unit = 'all';
+    else if (unit !== undefined && unit !== null)
+      assign.unit = expectInt(unit, `${what} assignment unit`, 0, MAX_COUNT - 1);
+    const zone = field(entry, 'zone');
+    if (zone !== undefined && zone !== null) {
+      if (typeof zone !== 'string' || !ZONE_RE.test(zone))
+        throw new PlanFormatError(`${what} assignment zone must be 1 to 32 of a-z, 0-9, _ and -.`);
+      assign.zone = zone;
+    }
+    if (assign.unit !== undefined || assign.zone !== undefined) out[key] = assign;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function validateGroup(value: unknown, index: number, replaced: ReplacedGroup[]): SiteGroup {
   const what = `Group ${index + 1}`;
   const obj = expectObject(value, what);
-  const multiblockId = field(obj, 'multiblockId');
-  if (typeof multiblockId !== 'string' || !ID_RE.test(multiblockId) || multiblockId.length > 64) {
+  const rawId = field(obj, 'multiblockId');
+  if (typeof rawId !== 'string' || !ID_RE.test(rawId) || rawId.length > 64) {
     throw new PlanFormatError(`${what} multiblock id is invalid.`);
   }
-  const def = getSiteDef(multiblockId);
-  if (!def) throw new PlanFormatError(`${what}: unknown multiblock "${multiblockId}".`);
+  let multiblockId = resolveMultiblockId(rawId);
+  const found = getSiteDef(multiblockId);
+  // An id the catalog no longer has does not reject the template: the group becomes a placeholder.
+  if (!found) multiblockId = PLACEHOLDER_ID;
+  const def = found ?? getSiteDef(PLACEHOLDER_ID)!;
   const limitsObj = expectObject(field(obj, 'limits'), `${what} limits`);
   const limits: PlanLimits = {
     x: expectLimit(field(limitsObj, 'x'), `${what} limit X`),
@@ -151,7 +225,13 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     origin: expectPair(field(obj, 'origin'), `${what} origin`, -SITE_MAX_SIZE, 2 * SITE_MAX_SIZE),
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
   };
-  const label = optionalString(field(obj, 'label'), `${what} label`, MAX_NAME);
+  let label = optionalString(field(obj, 'label'), `${what} label`, MAX_NAME);
+  if (!found) {
+    replaced.push({ group: group.id, id: rawId });
+    const missing = `Missing: ${rawId}`;
+    label =
+      label !== undefined && `${missing} (${label})`.length <= MAX_NAME ? `${missing} (${label})` : missing;
+  }
   if (label !== undefined) group.label = label;
   const machine = field(obj, 'machine');
   // A look this version does not know (a newer list) is left out rather than refused: it is only cosmetic.
@@ -162,6 +242,42 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     if (e > 0) group.elevation = e;
   }
   if (field(obj, 'limitsLocked') === true) group.limitsLocked = true;
+  const tier = field(obj, 'tier');
+  if (tier !== undefined && tier !== null) group.tier = expectTier(tier, `${what} tier`);
+  const hatchTiers = validateHatchTiers(field(obj, 'hatchTiers'), `${what} hatch tiers`, isGroupHatchTierKey);
+  if (hatchTiers) group.hatchTiers = hatchTiers;
+  const glassTier = field(obj, 'glassTier');
+  if (glassTier !== undefined && glassTier !== null)
+    group.glassTier = expectTier(glassTier, `${what} glass tier`);
+  const coil = field(obj, 'coil');
+  // A coil this version does not know (a newer table) is left out rather than refusing the template.
+  if (typeof coil === 'string' && coilById(coil)) group.coil = coil;
+  if (expectFlag(field(obj, 'mirror'), `${what} mirror`)) group.mirror = true;
+  const wallshare = field(obj, 'wallshare');
+  if (wallshare !== undefined && wallshare !== null) {
+    const mode = expectWallshare(wallshare, `${what} wall sharing`);
+    if (mode !== 'auto') group.wallshare = mode;
+  }
+  if (expectFlag(field(obj, 'shareMaintenance'), `${what} share maintenance`)) group.shareMaintenance = true;
+  if (expectFlag(field(obj, 'shareEnergy'), `${what} share energy`)) group.shareEnergy = true;
+  // Stored only when off (true is the default); anything but a boolean is refused.
+  const quad = field(obj, 'quadFluid');
+  if (quad === false) group.quadFluid = false;
+  else expectFlag(quad, `${what} quadruple input hatches`);
+  const assign = validateAssign(field(obj, 'assign'), what);
+  if (assign) group.assign = assign;
+  // Transformer settings only mean something on a single-block machine; elsewhere the build ignores them.
+  const step = field(obj, 'step');
+  if (step !== undefined && step !== null) {
+    if (step !== 'up' && step !== 'down') throw new PlanFormatError(`${what} step must be up or down.`);
+    group.step = step;
+  }
+  const amps = field(obj, 'amps');
+  if (amps !== undefined && amps !== null) {
+    if (typeof amps !== 'number' || !(TRANSFORMER_AMPS as readonly number[]).includes(amps))
+      throw new PlanFormatError(`${what} amps must be ${TRANSFORMER_AMPS.join(', ')}.`);
+    group.amps = amps as TransformerAmps;
+  }
   const sizeRaw = field(obj, 'size');
   if (sizeRaw !== undefined && sizeRaw !== null) {
     const size = effectiveSize(def, expectInt(sizeRaw, `${what} size`, 1, MAX_SIZE));
@@ -175,7 +291,7 @@ function validateGroup(value: unknown, index: number): SiteGroup {
     };
     const mc = field(s, 'machineCount');
     if (mc !== undefined && mc !== null)
-      source.machineCount = expectNumber(mc, `${what} machine count`, 0, 1e6);
+      source.machineCount = expectNumber(mc, `${what} machine count`, 0, MAX_MACHINE_COUNT);
     const tier = optionalString(field(s, 'tier'), `${what} tier`, 16);
     if (tier !== undefined) source.tier = tier;
     group.source = source;
@@ -241,6 +357,11 @@ function unique<T extends { id: string }>(list: T[], what: string): Set<string> 
  * resource matches its links. Hatch kinds are normalised to `HATCH_KINDS` order, colours to lower case.
  */
 export function validateSiteState(input: unknown): SiteState {
+  return validateSiteStateWithReport(input).site;
+}
+
+/** `validateSiteState`, also naming the groups whose multiblock is gone and that became placeholders. */
+export function validateSiteStateWithReport(input: unknown): SiteLoad {
   const obj = expectObject(input, 'Site');
   if (field(obj, 'kind') !== 'site') throw new PlanFormatError('This is not a site file.');
   const v = field(obj, 'v');
@@ -259,7 +380,10 @@ export function validateSiteState(input: unknown): SiteState {
   // Own keys only: an inherited name such as "toString" is not a resource.
   const hasResource = (k: string) => Object.hasOwn(resources, k);
 
-  const groups = expectArray(field(obj, 'groups'), 'Groups', MAX_GROUPS).map(validateGroup);
+  const replaced: ReplacedGroup[] = [];
+  const groups = expectArray(field(obj, 'groups'), 'Groups', MAX_GROUPS).map((g, i) =>
+    validateGroup(g, i, replaced),
+  );
   const ports = expectArray(field(obj, 'ports'), 'Ports', MAX_PORTS).map(validatePort);
   const links = expectArray(field(obj, 'links'), 'Links', MAX_LINKS).map(validateLink);
   const groupIds = unique(groups, 'Group');
@@ -318,7 +442,34 @@ export function validateSiteState(input: unknown): SiteState {
   };
   const name = optionalString(field(obj, 'name'), 'Site name', MAX_NAME);
   if (name !== undefined) site.name = name;
-  return site;
+  const routing = field(obj, 'routing');
+  if (routing !== undefined && routing !== null) {
+    const r = expectObject(routing, 'Routing');
+    const style = field(r, 'style');
+    if (!(ROUTING_STYLES as readonly unknown[]).includes(style))
+      throw new PlanFormatError('Routing style must be classic or neat.');
+    site.routing = {
+      style: style as RoutingStyle,
+      depth: expectInt(field(r, 'depth'), 'Routing depth', 0, 3) as RoutingDepth,
+    };
+  }
+  // A block this version does not know (a newer list) is left out rather than refusing the template.
+  const floor = field(obj, 'floor');
+  if (isFloorBlock(floor)) site.floor = floor;
+  const seed = field(obj, 'seed');
+  if (seed !== undefined && seed !== null) site.seed = expectInt(seed, 'Seed', 0, MAX_SEED);
+  return { site, replaced };
+}
+
+/** Largest seed: any unsigned 32-bit integer. */
+export const MAX_SEED = 0xffffffff;
+
+/**
+ * Routing in effect: the site's own setting, or - for sites saved before it existed - the classic router
+ * with the depth the browser-wide "connect below" switch gave (one layer when on, none when off).
+ */
+export function effectiveRouting(site: Pick<SiteState, 'routing'>, connectBelow: boolean): SiteRouting {
+  return site.routing ?? { style: 'classic', depth: connectBelow ? 1 : 0 };
 }
 
 export function emptySite(): SiteState {
@@ -347,32 +498,40 @@ export function siteToJson(site: SiteState): string {
   return `${JSON.stringify(validateSiteState(site), null, 2)}\n`;
 }
 
-/** Files and stored copies may be larger than links (the payload cap applies to links only). */
-export const MAX_SITE_FILE_BYTES = 1024 * 1024;
+/** Alias of the one site JSON limit (files, stored copies and decompressed links). */
+export const MAX_SITE_FILE_BYTES = MAX_SITE_JSON_BYTES;
 
 export function siteFromJson(text: string): SiteState {
+  return siteFromJsonWithReport(text).site;
+}
+
+export function siteFromJsonWithReport(text: string): SiteLoad {
   if (typeof text !== 'string') throw new PlanFormatError('Site file is not text.');
-  if (text.length > MAX_SITE_FILE_BYTES) throw new PlanFormatError('Site file is too large.');
+  if (text.length > MAX_SITE_JSON_BYTES) throw new PlanFormatError('Site file is too large.');
   let data: unknown;
   try {
     data = JSON.parse(text);
   } catch {
     throw new PlanFormatError('Site file is not valid JSON.');
   }
-  return validateSiteState(data);
+  return validateSiteStateWithReport(data);
 }
 
 export async function encodeSite(site: SiteState, opts: CompressOptions = {}): Promise<string> {
   const bytes = new TextEncoder().encode(JSON.stringify(validateSiteState(site)));
+  if (bytes.length > MAX_SITE_JSON_BYTES) throw new LinkTooLargeError();
   const code = toBase64Url(await deflateRaw(bytes, opts));
-  if (code.length > MAX_PAYLOAD_BYTES)
-    throw new PlanFormatError('This site is too large for a link. Download JSON instead.');
+  if (code.length > MAX_LINK_CODE_CHARS) throw new LinkTooLargeError();
   return code;
 }
 
 export async function decodeSite(encoded: string, opts: CompressOptions = {}): Promise<SiteState> {
+  return (await decodeSiteWithReport(encoded, opts)).site;
+}
+
+export async function decodeSiteWithReport(encoded: string, opts: CompressOptions = {}): Promise<SiteLoad> {
   if (typeof encoded !== 'string' || encoded.length === 0) throw new PlanFormatError('Site link is empty.');
-  const bytes = await inflateRaw(fromBase64Url(encoded), { ...opts, limit: MAX_PAYLOAD_BYTES });
+  const bytes = await inflateRaw(fromBase64Url(encoded), { ...opts, limit: MAX_SITE_JSON_BYTES });
   let text: string;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
@@ -385,5 +544,5 @@ export async function decodeSite(encoded: string, opts: CompressOptions = {}): P
   } catch {
     throw new PlanFormatError('Site link is damaged (not JSON).');
   }
-  return validateSiteState(data);
+  return validateSiteStateWithReport(data);
 }

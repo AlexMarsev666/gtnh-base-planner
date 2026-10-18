@@ -23,6 +23,18 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encodePng, TILE } from '../../scripts/build-atlas.mjs';
+import { createConstraints, sourceClassOf, withConstraints } from '../gt-source/casing-min.mjs';
+import { elementKinds, kindsForCell } from '../gt-source/hatch-elements.mjs';
+import { createExtras, withExtras } from '../gt-source/hatch-extras.mjs';
+import { dotOfHint, HatchRules, parseCount, ruleLine } from '../gt-source/hatch-rules.mjs';
+import { orientationOf, withVariants } from '../gt-source/orientation.mjs';
+import { deriveResize, withResize } from '../gt-source/resize-derive.mjs';
+import {
+  completeFromShape,
+  controllerPiece,
+  shortAxes,
+  structureSize,
+} from '../gt-source/shape-complete.mjs';
 import { Composer, meanColor, pixelHash } from './compose.mjs';
 import { listJars, TextureJars } from './jars.mjs';
 import { StaticTextures, staticManifest } from './static-textures.mjs';
@@ -32,10 +44,20 @@ const MULTI_DIR = join(ROOT, 'src/data/multiblocks');
 const SRC_DIR = join(ROOT, 'tools/texture-sources');
 const TEXTURES_OUT = join(ROOT, 'tools/game-dump/textures.generated.json');
 const BLOCKS_OUT = join(ROOT, 'src/data/blocks.generated.json');
+const ZONES_OUT = join(ROOT, 'src/data/hatch-zones.generated.json');
+/** GT shapes of the entries the dump cannot give whole (src/data/gt-structures.test.ts checks them). */
+const SHAPES_OUT = join(ROOT, 'src/data/gt-shapes.generated.json');
 /** Faces the old source converter (tools/gt-source) wrote; read once to carry over the entries it still owns. */
 const OLD_TEXTURES = join(ROOT, 'tools/gt-source/textures.generated.json');
-const TAG = '5.09.54.133';
+const TAG = '5.09.54.205';
 const REPO = `https://github.com/GTNewHorizons/GT5-Unofficial/blob/${TAG}/src/main/java/`;
+/**
+ * Controller classes GT renamed since an entry was generated: new outer class name -> the previous one. The entry
+ * keeps its id (and so the plans and links that use it); its `source` moves to the new class.
+ */
+const RENAMED_CLASSES = {
+  MTEPartProcessorModule: 'MTESMDProcessorModule',
+};
 
 /** GT `HatchElement` names → planner hatch kinds. Machine-specific kinds (data, laser, ...) are left out. */
 const HATCH_KIND = {
@@ -64,6 +86,7 @@ const HATCH_ORDER = [
   'maintenance',
   'muffler',
   'steamIn',
+  'dataAccess',
 ];
 const HATCH_BLOCKS = {
   itemIn: 'gt.hatch.inputBus',
@@ -75,6 +98,7 @@ const HATCH_BLOCKS = {
   maintenance: 'gt.hatch.maintenance',
   muffler: 'gt.hatch.muffler',
   steamIn: 'gt.hatch.steamInput',
+  dataAccess: 'gt.hatch.dataAccess',
 };
 /**
  * Legend characters in assignment order. Single UTF-16 units only (the layers are indexed per unit), and never
@@ -88,6 +112,9 @@ const LEGEND_CHARS = [
   ...Array.from({ length: 0x3c9 - 0x3b1 + 1 }, (_, i) => String.fromCharCode(0x3b1 + i)),
   ...Array.from({ length: 0x44f - 0x410 + 1 }, (_, i) => String.fromCharCode(0x410 + i)),
 ];
+
+/** The hologram hint of a cell that must stay air (tools/gt-source/README.md). */
+const AIR_HINT = 13;
 
 const SIDES = ['NORTH', 'SOUTH', 'WEST', 'EAST'];
 const NEIGHBOURS = [
@@ -162,7 +189,11 @@ function readStructures(dir) {
  * One dump document → a MultiblockDef (without catalog ids resolved) plus the blocks it uses.
  * Throws with a reason when the structure cannot be shown.
  */
-export function convertStructure(doc, { id, name }) {
+export function convertStructure(
+  doc,
+  { id, name },
+  tooltip = { rules: [], checks: null, elements: new Map(), structure: null, previous: null },
+) {
   const variant = [...doc.variants].sort((a, b) => a.trigger_stack_size - b.trigger_stack_size)[0];
   const ctrl = doc.controller;
   const ctrlBlock =
@@ -187,8 +218,15 @@ export function convertStructure(doc, { id, name }) {
     else cell(b.d).blockId = blockIdOf(b.block, b.meta);
   }
   const dropped = new Set();
+  const hinted = new Set((variant.hints ?? []).map((h) => vkey(h.d)));
   for (const s of variant.hatch_slots ?? []) {
     if (vkey(s.d) === vkey(ctrlBlock.d)) continue;
+    // The hologram marks every hatch cell of the structure with a hint dot: a slot with no hint and nothing placed is
+    // a cell the hatch probe visited outside the structure (beside the Circuit Assembly Line's controller). Machines
+    // with no hints at all (the steam machines) have no such check.
+    if (hinted.size && !hinted.has(vkey(s.d)) && !cells.has(vkey(s.d))) {
+      continue;
+    }
     const kinds = [];
     for (const k of s.kinds) {
       if (HATCH_KIND[k]) kinds.push(HATCH_KIND[k]);
@@ -198,10 +236,37 @@ export function convertStructure(doc, { id, name }) {
     if (kinds.length) c.hatches = sortKinds([...c.hatches, ...kinds]);
     else if (!c.blockId) c.special = true;
   }
-  // Hint dots with nothing placed: a cell only a machine-specific hatch (data, beamline, ...) may fill.
+  // Hint dots with nothing placed: a cell only a machine-specific hatch (data, beamline, ...) may fill. The
+  // air hint (13) is a cell that must stay empty (`-`, the structure check tests it), not a hatch; every one counts,
+  // and it may extend the box. Of the other empty cells, those the outside reaches are gaps (` `) and enclosed ones stay `-`.
+  const airHints = [];
   for (const h of variant.hints ?? []) {
     const k = vkey(h.d);
-    if (k !== vkey(ctrlBlock.d) && !cells.has(k)) cell(h.d).special = true;
+    if (k === vkey(ctrlBlock.d) || cells.has(k)) continue;
+    if (h.hint === AIR_HINT) airHints.push(h.d);
+    else cell(h.d).special = true;
+  }
+  // The kinds the structure definition's element for each hint dot accepts (the probe misses custom hatch
+  // elements: fusion's energy injector, steam buses, ...) join the dump's.
+  const fromSource = new Set();
+  for (const h of variant.hints ?? []) {
+    const k = vkey(h.d);
+    if (k === vkey(ctrlBlock.d)) continue;
+    const c = cells.get(k); // every hint has a cell by now, except an air hint with nothing placed
+    if (!c) continue;
+    let kinds = sourceKinds(tooltip.elements, tooltip.rules, dotOfHint(h.hint), c.hatches);
+    // A kind only a chain member naming another dot brings (the muffler of the Dangote Distillus's rings, which GT
+    // takes in the top layer only) is added only where the previous entry had it.
+    const alien = foreignKinds(tooltip.elements, dotOfHint(h.hint), c.hatches);
+    if (alien.size) {
+      const had = previousKinds(tooltip.previous, h.d, ctrlBlock.d);
+      kinds = kinds.filter((x) => !alien.has(x) || had.includes(x));
+    }
+    const added = kinds.filter((x) => !c.hatches.includes(x));
+    if (!added.length) continue;
+    c.hatches = sortKinds([...c.hatches, ...added]);
+    c.special = false;
+    fromSource.add(k);
   }
   // A hatch slot or hint with nothing placed and no block or controller next to it is not part of the structure
   // (the hatch probe or the hologram visited a cell outside it, e.g. high above the Solar Factory).
@@ -209,9 +274,8 @@ export function convertStructure(doc, { id, name }) {
     ...[...cells.values()].filter((c) => c.blockId).map((c) => vkey(c.d)),
     vkey(ctrlBlock.d),
   ]);
-  for (const [k, c] of cells) {
-    if (c.blockId) continue;
-    const near = [
+  const nearPlaced = (d) =>
+    [
       ...NEIGHBOURS,
       [1, 1, 0],
       [-1, 1, 0],
@@ -221,27 +285,43 @@ export function convertStructure(doc, { id, name }) {
       [-1, -1, 0],
       [0, -1, 1],
       [0, -1, -1],
-    ].some(([dx, dy, dz]) => placed.has(vkey([c.d[0] + dx, c.d[1] + dy, c.d[2] + dz])));
-    if (!near) cells.delete(k);
-  }
+    ].some(([dx, dy, dz]) => placed.has(vkey([d[0] + dx, d[1] + dy, d[2] + dz])));
+  for (const [k, c] of cells) if (!c.blockId && !nearPlaced(c.d)) cells.delete(k);
+  const airCells = airHints;
+  // Hatch cells carry the hint dot the hologram marks them with (the tooltip's dot is the hint + 1).
+  const hintAt = new Map((variant.hints ?? []).map((h) => [vkey(h.d), h.hint]));
+  for (const [k, c] of cells)
+    if (c.hatches.length && hintAt.has(k)) c.region = `dot${dotOfHint(hintAt.get(k))}`;
   for (const c of cells.values()) {
     if (c.blockId) continue;
     c.blockId = c.hatches.length ? HATCH_BLOCKS[c.hatches[0]] : 'gt.hatch.special';
   }
 
+  // The dump is cut short where the structure is taller than its scratch world: the tooltip's size says so, and the
+  // missing cells come from the structure definition's shape.
+  const { done: completed, warning: sizeWarning } = completeTruncated(
+    cells,
+    ctrlBlock.d,
+    tooltip.structure,
+    ctrl.source_class,
+  );
+  for (const c of completed?.added ?? []) cells.set(vkey(c.d), c);
+
   // Bounding box → local frame (x east, y up, z south, min corner at 0).
-  const all = [...cells.values()].map((c) => c.d).concat([ctrlBlock.d]);
+  const all = [...cells.values()].map((c) => c.d).concat([ctrlBlock.d], airCells);
   const min = [0, 1, 2].map((a) => Math.min(...all.map((p) => p[a])));
   const max = [0, 1, 2].map((a) => Math.max(...all.map((p) => p[a])));
   const size = [0, 1, 2].map((a) => max[a] - min[a] + 1);
   const local = (d) => [d[0] - min[0], d[1] - min[1], d[2] - min[2]];
   const grid = new Map();
   for (const c of cells.values()) grid.set(vkey(local(c.d)), c);
+  const air = new Set(airCells.map((d) => vkey(local(d))));
   const ctrlPos = local(ctrlBlock.d);
   const inBox = (p) => p.every((v, a) => v >= 0 && v < size[a]);
   const occupied = (p) => grid.has(vkey(p)) || vkey(p) === vkey(ctrlPos);
 
-  // Empty cells reachable from outside the box are not part of the structure; enclosed ones must stay air.
+  // Empty cells reachable from outside the box are not part of the structure; enclosed ones must stay air (the
+  // planner's hatch sites count an enclosed pocket as open interior, so a gap there would seal the hatches facing it).
   const outside = new Set([vkey([-1, -1, -1])]);
   const stack = [[-1, -1, -1]];
   while (stack.length) {
@@ -260,13 +340,15 @@ export function convertStructure(doc, { id, name }) {
   const legend = {};
   const charOf = new Map();
   const legendChar = (c) => {
-    const gk = `${c.blockId}|${c.hatches.join(',')}`;
+    const gk = `${c.blockId}|${c.hatches.join(',')}|${c.region ?? ''}`;
     let ch = charOf.get(gk);
     if (ch === undefined) {
       if (charOf.size >= LEGEND_CHARS.length) throw new Error(`more than ${LEGEND_CHARS.length} cell types`);
       ch = LEGEND_CHARS[charOf.size];
       charOf.set(gk, ch);
-      legend[ch] = c.hatches.length ? { blockId: c.blockId, hatches: c.hatches } : { blockId: c.blockId };
+      legend[ch] = c.hatches.length
+        ? { blockId: c.blockId, hatches: c.hatches, ...(c.region ? { region: c.region } : {}) }
+        : { blockId: c.blockId };
     }
     return ch;
   };
@@ -279,7 +361,7 @@ export function convertStructure(doc, { id, name }) {
         const k = vkey([x, y, z]);
         if (k === vkey(ctrlPos)) row += '~';
         else if (grid.has(k)) row += legendChar(grid.get(k));
-        else row += outside.has(k) ? ' ' : '-';
+        else row += outside.has(k) && !air.has(k) ? ' ' : '-';
       }
       rows.push(row);
     }
@@ -294,7 +376,8 @@ export function convertStructure(doc, { id, name }) {
     dirs.find((dir) => facesOpen(layers, size, ctrlPos, dir, false));
   if (!facing) throw new Error('the controller has structure on every side');
 
-  // Hatch kinds: a kind whose cells all face only into the structure cannot be placed by the planner.
+  // Hatch kinds: a kind whose cells all face only into the structure cannot be placed by the planner. The lowest
+  // layer counts as open: its hatches may face down when connections from below are on.
   const reachable = openCells(layers, size, ctrlPos, facing);
   const used = sortKinds(Object.values(legend).flatMap((e) => e.hatches ?? []));
   const sealed = [];
@@ -306,32 +389,76 @@ export function convertStructure(doc, { id, name }) {
       for (let z = 0; z < size[2]; z++)
         for (let x = 0; x < size[0]; x++)
           if (chars.includes(layers[y][z][x]))
-            for (const [dx, dy, dz] of NEIGHBOURS)
-              if (reachable.has(vkey([x + dx, y + dy, z + dz]))) return true;
+            if (y === 0 || NEIGHBOURS.some(([dx, dy, dz]) => reachable.has(vkey([x + dx, y + dy, z + dz]))))
+              return true;
     sealed.push(k);
     return false;
   });
-  const required = {};
-  if (kinds.includes('dynamo')) required.dynamo = { min: 1 };
-  else if (kinds.includes('energy')) required.energy = { min: 1 };
-  if (kinds.includes('maintenance')) required.maintenance = { min: 1, max: 1 };
-  if (kinds.includes('muffler')) required.muffler = { min: 1, max: 1 };
+  const estimate = {};
+  if (kinds.includes('dynamo')) estimate.dynamo = { min: 1 };
+  else if (kinds.includes('energy')) estimate.energy = { min: 1 };
+  if (kinds.includes('maintenance')) estimate.maintenance = { min: 1, max: 1 };
+  if (kinds.includes('muffler')) estimate.muffler = { min: 1, max: 1 };
   const io = ['itemIn', 'itemOut', 'fluidIn', 'fluidOut', 'steamIn'].filter((k) => kinds.includes(k));
   const hasItems = kinds.includes('itemIn') || kinds.includes('itemOut');
+  // The tooltip's counts replace the estimates for every kind it counts; the structure check beats both.
+  const { required, conflicts, noMaintenance } = requirementsOf(
+    kinds,
+    tooltip.rules,
+    tooltip.checks,
+    // The structure-only estimate is for a controller whose tooltip lists no hatch at all: with lines, a kind they do not
+    // name is not required (an allowed dynamo hatch is no requirement).
+    tooltip.rules.length ? {} : estimate,
+  );
+  const requiredSorted = Object.fromEntries(
+    HATCH_ORDER.filter((k) => required[k]).map((k) => [k, required[k]]),
+  );
+  // A kind the machine must have is on in a new plan.
   const defaults = kinds.filter(
     (k) =>
-      ['energy', 'dynamo', 'maintenance', 'muffler', 'itemIn', 'itemOut'].includes(k) ||
-      (['fluidIn', 'fluidOut', 'steamIn'].includes(k) && !hasItems),
+      (['energy', 'dynamo', 'maintenance', 'muffler', 'itemIn', 'itemOut'].includes(k) ||
+        (['fluidIn', 'fluidOut', 'steamIn'].includes(k) && !hasItems) ||
+        required[k]?.min >= 1) &&
+      !(k === 'maintenance' && noMaintenance),
   );
+  // Zones: the kinds each hint dot's cells take, with the tooltip lines naming that dot.
+  const regionKinds = {};
+  for (const e of Object.values(legend))
+    if (e.region)
+      regionKinds[e.region] = sortKinds([
+        ...(regionKinds[e.region] ?? []),
+        ...e.hatches.filter((k) => kinds.includes(k)),
+      ]);
+  const zones = zonesOf(regionKinds, tooltip.rules);
   const names = classNames(ctrl.source_class);
   const notes = [
     sealed.length ? `The structure has no open face for: ${sealed.join(', ')} (left out of the plan).` : '',
+    // A line that limits a part to "the last" slice or the like: the planner allows it on every cell of the dot.
+    ...tooltip.rules
+      .filter(
+        (r) =>
+          /(^|[^a-z])last([^a-z]|$)/i.test(r.text ?? '') &&
+          r.kinds.some((k) => ['itemOut', 'fluidOut'].includes(k)),
+      )
+      .map(
+        (r) => `The tooltip limits it ("${ruleLine(r)}"); the planner allows it on every cell of that dot.`,
+      ),
+    completed
+      ? `The game dump is cut off at its scratch world's height: the ${completed.added.length} cells beyond it come ` +
+        `from the structure definition's shape (GT5-Unofficial ${TAG}).`
+      : '',
+    fromSource.size
+      ? `${fromSource.size} hatch cells also take the kinds their structure element accepts in the source.`
+      : '',
     dropped.size
       ? `Machine-specific hatches (${[...dropped].sort().join(', ')}) are shown as their cells only.`
       : '',
     `Built by the game itself: ${names.inner ?? names.outer} (GT5-Unofficial ${TAG}) placed every block with the` +
-      ` hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and` +
-      ` muffler as the structure allows); check the tooltip in game.`,
+      ` hologram's construct() (tools/game-dump). ` +
+      (tooltip.rules.length
+        ? `Hatch counts and zones follow the controller's tooltip.`
+        : `Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check` +
+          ` the tooltip in game.`),
   ].filter(Boolean);
   const def = {
     id,
@@ -344,14 +471,397 @@ export function convertStructure(doc, { id, name }) {
     controller: { pos: ctrlPos, facing, blockId: blockIdOf(ctrl.registry_name, ctrl.meta) },
     hatchBlocks: Object.fromEntries(used.map((k) => [k, HATCH_BLOCKS[k]])),
     shareableHatches: io,
-    requiredHatches: required,
+    requiredHatches: requiredSorted,
     defaultHatches: defaults,
+    ...(Object.keys(zones).length ? { zones } : {}),
     wallshare: true,
     notes: notes.join(' '),
   };
   const blocks = new Set(Object.values(legend).map((e) => e.blockId));
   blocks.add(def.controller.blockId);
-  return { def, blocks, variant, dropped };
+  const shape = completed
+    ? shapeEntry({ piece: tooltip.structure.piece, ...completed }, layers, local)
+    : null;
+  return { def, blocks, variant, dropped, conflicts, shape, sizeWarning };
+}
+
+/** The tooltip's structure size and the controller's shape from the source (either may be null). */
+function structureOf(chain) {
+  return { size: structureSize(chain), piece: controllerPiece(chain) };
+}
+
+/** The kinds the elements of `dot` that fit what the dump gave a cell (`dumped`) bring only through foreign chain members. */
+function foreignKinds(elements, dot, dumped) {
+  const fits = (elements?.get(dot) ?? []).filter((x) => dumped.every((k) => x.has(k)));
+  const out = new Set();
+  for (const k of new Set(fits.flatMap((x) => [...x])))
+    if (fits.filter((x) => x.has(k)).every((x) => x.foreign?.has(k))) out.add(k);
+  return out;
+}
+
+/** The hatch kinds the previous catalog entry `def` has on the cell at `d` (relative to the controller at `ctrl`). */
+function previousKinds(def, d, ctrl) {
+  if (!def) return [];
+  const [x, y, z] = [0, 1, 2].map((a) => def.controller.pos[a] + d[a] - ctrl[a]);
+  return def.legend[[...(def.layers[y]?.[z] ?? '')][x]]?.hatches ?? [];
+}
+
+/**
+ * The hatch cells of a repeating slab take the kinds of the most general element of their dot: the dump's probe lists
+ * the kinds of one element, and where a terminating piece shares the dot with a wider element (the Circuit Assembly
+ * Line's last slice takes an output bus on dot 2, every other slice an input or output bus) the cells of the slab are
+ * the wide one's. A slab cell takes the union of the elements of its dot that fit its kinds (kinds only a foreign chain
+ * member brings stay out, see `foreignKinds`). A character that also stands outside the slab is split first.
+ */
+function widenSlab(def, tooltip) {
+  const { axis, from, to } = def.resize;
+  const a = 'xyz'.indexOf(axis);
+  const widened = new Map(); // legend char -> kinds
+  for (const [ch, e] of Object.entries(def.legend)) {
+    const dot = Number(/^dot(\d+)$/.exec(e.region ?? '')?.[1]);
+    const sets = tooltip.elements?.get(dot) ?? [];
+    const dumped = e.hatches ?? [];
+    const fits = sets.filter((x) => dumped.every((k) => x.has(k)));
+    if (!dumped.length || fits.length < 2) continue;
+    const alien = foreignKinds(tooltip.elements, dot, dumped);
+    const kinds = sortKinds([...dumped, ...fits.flatMap((x) => [...x]).filter((k) => !alien.has(k))]);
+    if (kinds.length > dumped.length) widened.set(ch, kinds);
+  }
+  if (!widened.size) return def;
+  const legend = { ...def.legend };
+  const spare = LEGEND_CHARS.filter((c) => !(c in legend) && !'~- '.includes(c));
+  const swap = new Map();
+  const where = new Map(); // legend char -> { inside, outside }
+  def.layers.forEach((layer, y) =>
+    layer.forEach((row, z) =>
+      [...row].forEach((ch, x) => {
+        if (!widened.has(ch)) return;
+        const p = [x, y, z][a];
+        const w = where.get(ch) ?? { inside: false, outside: false };
+        if (p >= from && p < to) w.inside = true;
+        else w.outside = true;
+        where.set(ch, w);
+      }),
+    ),
+  );
+  const zones = def.zones && { ...def.zones };
+  for (const [ch, w] of where) {
+    if (!w.inside) continue;
+    const entry = { ...legend[ch], hatches: widened.get(ch) };
+    if (w.outside) {
+      const c = spare.shift();
+      legend[c] = entry;
+      swap.set(ch, c);
+    } else legend[ch] = entry;
+    const zone = zones?.[entry.region];
+    if (zone) zones[entry.region] = { ...zone, kinds: sortKinds([...zone.kinds, ...entry.hatches]) };
+  }
+  const layers = def.layers.map((layer, y) =>
+    layer.map((row, z) =>
+      [...row]
+        .map((ch, x) => (swap.has(ch) && [x, y, z][a] >= from && [x, y, z][a] < to ? swap.get(ch) : ch))
+        .join(''),
+    ),
+  );
+  return { ...def, layers, legend, ...(zones ? { zones } : {}) };
+}
+
+/**
+ * A resizable def whose tooltip counts a hatch kind as a range (`2-11`) that its slabs account for: the range grows by
+ * the same amount with each slab, so the requirement of the smallest form is the range's lower end and each slab adds
+ * `(b - a) / steps` (`perSlab`; the GT check counts one hatch per layer or slice, `sizedDef` states the count at the
+ * chosen size). Only a requirement still the tooltip's own range counts (a structure check that changed it is left),
+ * and only when the range divides evenly by the number of slabs. `log` gets the kinds changed.
+ */
+function withSlabCounts(def, rules, log) {
+  const { from, to, min, max } = def.resize;
+  const steps = (max - min) / (to - from);
+  const required = { ...def.requiredHatches };
+  const changed = [];
+  for (const [k, c] of Object.entries(countsOf(rules, Object.keys(required)))) {
+    const r = required[k];
+    if (!r || c.max === undefined || c.max <= c.min || r.min !== c.min || r.max !== c.max) continue;
+    if ((c.max - c.min) % steps !== 0) continue;
+    required[k] = { min: c.min, max: c.min, perSlab: (c.max - c.min) / steps };
+    changed.push(`${k} ${c.min}-${c.max} (+${required[k].perSlab} per slab)`);
+  }
+  if (!changed.length) return def;
+  log.push(`${def.id}: ${changed.join(', ')}`);
+  return { ...def, requiredHatches: required };
+}
+
+/**
+ * `deriveResize` for a controller the dump holds in several forms: `{ rule, forms, note? }`, `{ why }` when there is no
+ * rule, `{}` for one form. Every form is converted alike, without the previous entry (which holds the smallest form's
+ * cells only), so the forms differ by their size alone.
+ */
+function resizeOf(doc, ids, tooltip) {
+  if (doc.variants.length < 2) return {};
+  const forms = [];
+  const alike = { ...tooltip, previous: null };
+  for (const v of [...doc.variants].sort((a, b) => a.trigger_stack_size - b.trigger_stack_size)) {
+    let def;
+    try {
+      def = convertStructure({ ...doc, variants: [v] }, ids, alike).def;
+    } catch (e) {
+      return { why: `form ${v.trigger_stack_size} cannot be shown: ${e.message}` };
+    }
+    // A later form of a size already seen is the sweep running into the scratch world's height: the first stays.
+    if (!forms.some((x) => x.size.join() === def.size.join())) forms.push(def);
+  }
+  if (forms.length < 2)
+    return { why: 'the forms are all of one size (tiers of one shape)', forms: forms.length };
+  forms.sort((a, b) => a.size.reduce((p, n) => p * n, 1) - b.size.reduce((p, n) => p * n, 1));
+  return { ...deriveResize(forms, tooltip.structure?.size ?? null), forms: forms.length };
+}
+
+/** A dump the tooltip's size says is cut short and the source's shape cannot complete. */
+export class TruncatedDump extends Error {}
+
+/**
+ * Where the dump's bounding box is smaller than the tooltip's fixed size, the controller's source shape completes it:
+ * `{ done }` holds the cells outside the box (`completeFromShape`), `null` when the shape adds nothing (the tooltip
+ * is wrong) or the dump is as big as the tooltip says (or the tooltip has no size). A machine with no static shape
+ * (a size that depends on the tier, a computed structure) cannot be checked further: `{ warning }`. Throws
+ * `TruncatedDump` when the shape does not fit the dump or does not span the size the dump and it give together.
+ */
+function completeTruncated(cells, ctrl, structure, sourceClass) {
+  if (!structure?.size) return {};
+  const all = [...cells.values()].map((c) => c.d).concat([ctrl]);
+  const dump = [0, 1, 2].map(
+    (a) => Math.max(...all.map((p) => p[a])) - Math.min(...all.map((p) => p[a])) + 1,
+  );
+  if (!shortAxes(structure.size, dump).length) return {};
+  const [w, h, d] = structure.size.min;
+  const why = `${sourceClass}: the dump is ${dump.join('x')} but the tooltip says ${w}x${h}x${d}`;
+  if (!structure.piece) return { warning: `${why}; the source has no shape to complete it` };
+  let done;
+  try {
+    done = completeFromShape(cells, ctrl, structure.piece);
+  } catch (e) {
+    throw new TruncatedDump(`${why}, and ${e.message}`);
+  }
+  const rows = structure.piece;
+  const piece = [Math.max(...rows.flatMap((r) => r.map((s) => s.length))), rows.length, rows[0].length];
+  const spanned = [0, 1, 2].map((a) => {
+    const ps = [...cells.values(), ...done.added].map((c) => c.d[a]).concat([ctrl[a]]);
+    return Math.max(...ps) - Math.min(...ps) + 1;
+  });
+  if (spanned.some((v, a) => v !== piece[a]))
+    throw new TruncatedDump(
+      `${why}; completed it is ${spanned.join('x')}, the source shape ${piece.join('x')}`,
+    );
+  return done.added.length ? { done } : {};
+}
+
+/**
+ * The GT shape of a completed entry in the form `src/data/gt-shapes.generated.json` keeps (read by
+ * `src/data/gt-structures.test.ts`): the source's own shape, an empty cell the def keeps as air (hint 13) written `-`, and
+ * each letter's cell as the test's element category.
+ */
+function shapeEntry({ piece, at, letters }, layers, local) {
+  const shape = piece.map((row, l) =>
+    row.map((s, z) =>
+      [...s]
+        .map((ch, a) => {
+          const [x, y, lz] = local(at(a, l, z));
+          return ch === ' ' && layers[y][lz][x] === '-' ? '-' : ch;
+        })
+        .join(''),
+    ),
+  );
+  const el = {};
+  for (const [ch, c] of [...letters].sort(([a], [b]) => (a < b ? -1 : 1)))
+    el[ch] =
+      c.blockId.startsWith('gt.hatch.') && c.hatches.length
+        ? { t: 'hatchOnly', kind: c.hatches[0] }
+        : { t: 'casing', block: c.blockId, hatches: c.hatches };
+  return { transposed: true, shape, el };
+}
+
+/**
+ * The kinds the structure definition's element for hint dot `dot` adds to a cell the dump gave `dumped`. An
+ * element that takes any hatch (`addToMachineList`) accepts more than the machine uses, so where the tooltip has
+ * lines naming the dot, only the kinds they list are added.
+ */
+function sourceKinds(elements, rules, dot, dumped) {
+  const kinds = kindsForCell(elements?.get(dot), dumped);
+  const lines = rules.filter((r) => r.dots.includes(dot));
+  if (!lines.length) return kinds;
+  const named = new Set(lines.flatMap((r) => r.kinds));
+  return kinds.filter((k) => named.has(k) || dumped.includes(k));
+}
+
+/**
+ * Hatch counts from the tooltip lines (`{ min, max? }` per kind): lines for the same kind add up; a line naming
+ * the same dots twice is one (tooltips with variants repeat it); "Input Bus/Hatch" lines count for neither kind
+ * and a count that is not a number or range is skipped.
+ */
+export function countsOf(rules, kinds) {
+  const lines = new Map();
+  for (const r of rules) {
+    const count = r.any ? null : parseCount(r.count);
+    if (!count) continue;
+    for (const k of r.kinds.filter((x) => kinds.includes(x))) {
+      const list = lines.get(k) ?? [];
+      const dots = r.dots.join(',');
+      if (!dots || !list.some((l) => l.dots === dots)) list.push({ dots, count });
+      lines.set(k, list);
+    }
+  }
+  const out = {};
+  for (const [k, list] of lines) {
+    const min = list.reduce((n, l) => n + l.count.min, 0);
+    out[k] = list.every((l) => l.count.max !== undefined)
+      ? { min, max: list.reduce((n, l) => n + l.count.max, 0) }
+      : { min };
+  }
+  return out;
+}
+
+/**
+ * Required hatch counts of a machine: the `estimate` (structure only), replaced per kind by the tooltip's count,
+ * replaced in turn by what the structure check demands (`checks` from `HatchRules.checksOf`). A check gives min,
+ * max or both; the part it leaves open stays as the tooltip had it. "Any input / any output" checks count for a
+ * kind only when the machine has just one kind of that group. Returns the counts, the kinds where a check changed
+ * the tooltip's count (`conflicts`, as text) and whether the class has no maintenance checks at all.
+ */
+export function requirementsOf(kinds, rules, checks, estimate = {}) {
+  const required = { ...estimate };
+  for (const [k, r] of Object.entries(countsOf(rules, kinds)))
+    if (r.min > 0 || r.max !== undefined || required[k]) required[k] = r;
+  const wanted = {};
+  for (const [k, c] of Object.entries(checks?.kinds ?? {})) if (kinds.includes(k)) wanted[k] = { ...c };
+  for (const group of Object.keys(checks?.any ?? {})) {
+    const of = (group === 'input' ? ['itemIn', 'fluidIn'] : ['itemOut', 'fluidOut']).filter((k) =>
+      kinds.includes(k),
+    );
+    if (of.length === 1) wanted[of[0]] = { ...wanted[of[0]], min: Math.max(wanted[of[0]]?.min ?? 0, 1) };
+  }
+  const show = (r) =>
+    r ? (r.max === undefined ? `${r.min}+` : r.min === r.max ? `${r.min}` : `${r.min}-${r.max}`) : 'none';
+  const conflicts = [];
+  for (const [k, c] of Object.entries(wanted)) {
+    const was = required[k];
+    const min = c.min ?? was?.min ?? 0;
+    const max = c.max ?? (was?.max !== undefined && was.max >= min ? was.max : undefined);
+    required[k] = max === undefined ? { min } : { min, max };
+    if (show(was) !== show(required[k])) conflicts.push(`${k} ${show(was)} -> ${show(required[k])}`);
+  }
+  const noMaintenance = !!checks?.noMaintenance;
+  if (noMaintenance && required.maintenance) {
+    conflicts.push(`maintenance ${show(required.maintenance)} -> none`);
+    delete required.maintenance;
+  }
+  return { required, conflicts, noMaintenance };
+}
+
+/**
+ * Zones (`region` → `{ kinds, text? }`) of a machine: `regionKinds` is the kinds the cells of each `dot<N>` region
+ * take; a zone's kinds are those the tooltip lines naming dot N also list (all of them when none match), and its
+ * text is those lines as the game prints them.
+ */
+export function zonesOf(regionKinds, rules) {
+  const zones = {};
+  const byDot = (a, b) => Number(a.slice(3)) - Number(b.slice(3));
+  for (const region of Object.keys(regionKinds).sort(byDot)) {
+    const lines = rules.filter((r) => r.dots.includes(Number(region.slice(3))));
+    const named = new Set(lines.flatMap((r) => r.kinds));
+    let kinds = regionKinds[region].filter((k) => named.has(k));
+    if (!kinds.length) kinds = regionKinds[region];
+    if (!kinds.length) continue;
+    const text = lines.map(ruleLine).join('\n');
+    zones[region] = text ? { kinds, text } : { kinds };
+  }
+  return zones;
+}
+
+/**
+ * Hatch zones of a hand-made entry from the dump of its controller: `{ zones, cells }` with `cells` keyed by the
+ * entry's local `x,y,z`, or `{ why }` when the dump's cells do not sit on the entry's structure. The dump builds
+ * the controller facing north in world axes, so the entry's frame is that rotated until north is the entry's
+ * `controller.facing` (the entry already holds StructureLib's shape mirrored into those axes).
+ */
+export function zonesForHandMade(def, doc, rules, elements = new Map()) {
+  const variant = [...doc.variants].sort((a, b) => a.trigger_stack_size - b.trigger_stack_size)[0];
+  const ctrl = doc.controller;
+  const ctrlBlock =
+    variant.blocks.find(
+      (b) => b.block === ctrl.registry_name && b.meta === ctrl.meta && vkey(b.d) === '0,0,0',
+    ) ?? variant.blocks.find((b) => b.block === ctrl.registry_name && b.meta === ctrl.meta);
+  if (!ctrlBlock) return { why: 'controller block not in the scan' };
+  const turns = { north: 0, east: 1, south: 2, west: 3 }[def.controller.facing];
+  const rot = ([x, y, z]) => {
+    let [rx, rz] = [x, z];
+    for (let i = 0; i < turns; i++) [rx, rz] = [-rz, rx];
+    return [rx, y, rz];
+  };
+  const at = (d) => {
+    const r = rot([d[0] - ctrlBlock.d[0], d[1] - ctrlBlock.d[1], d[2] - ctrlBlock.d[2]]);
+    return [r[0] + def.controller.pos[0], r[1] + def.controller.pos[1], r[2] + def.controller.pos[2]];
+  };
+  const [sx, sy, sz] = def.size;
+  const charAt = ([x, y, z]) =>
+    x >= 0 && x < sx && y >= 0 && y < sy && z >= 0 && z < sz ? ([...def.layers[y][z]][x] ?? ' ') : null;
+
+  // The placed blocks must sit on the entry's structure.
+  const solid = variant.blocks.filter((b) => b !== ctrlBlock);
+  const onStructure = solid.filter((b) => {
+    const ch = charAt(at(b.d));
+    return ch !== null && ch !== ' ' && ch !== '-';
+  }).length;
+  if (!solid.length || onStructure / solid.length < 0.9)
+    return { why: `the dump's blocks match ${onStructure}/${solid.length} of its cells` };
+
+  const hintAt = new Map((variant.hints ?? []).map((h) => [vkey(h.d), h.hint]));
+  const cells = {};
+  const regionKinds = {};
+  let missed = 0;
+  // The dump's kinds of each hint cell, with those the source's element for its dot accepts.
+  const slotAt = new Map((variant.hatch_slots ?? []).map((x) => [vkey(x.d), x]));
+  const hintCells = (variant.hints ?? []).filter((h) => vkey(h.d) !== vkey(ctrlBlock.d));
+  for (const s of hintCells.map((h) => ({ d: h.d, kinds: slotAt.get(vkey(h.d))?.kinds ?? [] }))) {
+    const dumped = sortKinds(s.kinds.map((k) => HATCH_KIND[k]).filter(Boolean));
+    const slotKinds = sortKinds([
+      ...dumped,
+      ...sourceKinds(elements, rules, dotOfHint(hintAt.get(vkey(s.d))), dumped),
+    ]);
+    if (!slotKinds.length) continue;
+    const pos = at(s.d);
+    const entry = def.legend[charAt(pos) ?? ''];
+    // The steam machines' input hatch is the entry's `steamIn`, GT's plain input hatch.
+    const common = slotKinds
+      .map((k) =>
+        entry?.hatches?.includes(k)
+          ? k
+          : k === 'fluidIn' && entry?.hatches?.includes('steamIn')
+            ? 'steamIn'
+            : null,
+      )
+      .filter(Boolean);
+    if (!common.length) {
+      missed++;
+      continue;
+    }
+    const region = `dot${dotOfHint(hintAt.get(vkey(s.d)))}`;
+    cells[pos.join(',')] = region;
+    // The zone's kinds are what the entry's cell takes, not only what the dump's probe reported.
+    regionKinds[region] = sortKinds([...(regionKinds[region] ?? []), ...entry.hatches]);
+  }
+  if (!Object.keys(cells).length) return { why: 'no hatch cell with a hint dot' };
+  // A few dump hatch cells may sit where the entry has a fixed block (the Assembly Line's input buses); more means
+  // the frames do not match.
+  if (missed > Object.keys(cells).length / 3)
+    return {
+      why: `${missed} of ${missed + Object.keys(cells).length} dump hatch cells are no hatch cell in it`,
+    };
+  const sorted = Object.fromEntries(
+    Object.entries(cells).sort(([a], [b]) => {
+      const [p, q] = [a, b].map((k) => k.split(',').map(Number));
+      return p[1] - q[1] || p[2] - q[2] || p[0] - q[0];
+    }),
+  );
+  return { zones: { zones: zonesOf(regionKinds, rules), cells: sorted } };
 }
 
 /** Whether the controller can look `dir`: the cell in front is open, and with `clear` every cell up to the box. */
@@ -578,6 +1088,21 @@ export async function build(opts) {
     return true;
   });
   const jars = new TextureJars(listJars(opts.jars));
+  // Hatch lines of each controller's tooltip (needs the source checkout).
+  const hatchRules = opts.gt5u ? new HatchRules(opts.gt5u) : null;
+  const unparsed = [];
+  const tooltipOf = (doc) => {
+    const cls = doc.controller.source_class;
+    const rules = hatchRules?.rulesOf(cls).rules ?? [];
+    if (hatchRules && !rules.length && !unparsed.includes(doc.controller.display_name))
+      unparsed.push(doc.controller.display_name);
+    return {
+      rules,
+      checks: hatchRules?.checksOf(cls) ?? null,
+      elements: hatchRules ? elementKinds(hatchRules, cls).dots : new Map(),
+      structure: hatchRules ? structureOf(hatchRules.chain(cls)) : null,
+    };
+  };
   let manifest;
   if (opts.textures) manifest = JSON.parse(readFileSync(opts.textures, 'utf8'));
   else {
@@ -598,16 +1123,25 @@ export async function build(opts) {
   const taken = new Set(hand.map((h) => h.id));
   const defs = [];
   const skipped = [];
+  const truncated = [];
+  const resizable = [];
+  const slabCounts = [];
+  const fixedForms = [];
   const covered = [];
   // Several controllers of one class (tiers, nested classes): each claims an old id by name first.
   const claims = new Map();
-  const dumpedClasses = new Set(docs.map((d) => classNames(d.controller.source_class).outer));
+  const dumpedClasses = new Set(
+    docs.flatMap((d) => {
+      const { outer } = classNames(d.controller.source_class);
+      return [outer, RENAMED_CLASSES[outer]].filter(Boolean);
+    }),
+  );
   // Generated entries of classes the dump could not build (their mods are not in the dump's game) stay as they are.
   const retained = generated.filter((g) => !g.cls || !dumpedClasses.has(g.cls));
   for (const r of retained) taken.add(r.id);
   for (const doc of docs) {
     const { outer } = classNames(doc.controller.source_class);
-    const handMade = handByClass.get(outer);
+    const handMade = handByClass.get(outer) ?? handByClass.get(RENAMED_CLASSES[outer]);
     if (handMade) {
       covered.push({
         doc,
@@ -615,7 +1149,9 @@ export async function build(opts) {
       });
       continue;
     }
-    const olds = (oldByClass.get(outer) ?? []).filter((g) => !claims.has(g.id));
+    const olds = (oldByClass.get(outer) ?? oldByClass.get(RENAMED_CLASSES[outer]) ?? []).filter(
+      (g) => !claims.has(g.id),
+    );
     const old =
       olds.find((g) => g.name === doc.controller.display_name) ?? (olds.length === 1 ? olds[0] : null);
     const name = displayName(doc, old?.name);
@@ -624,11 +1160,25 @@ export async function build(opts) {
     if (old) claims.set(old.id, doc);
     taken.add(id);
     try {
-      defs.push({ doc, ...convertStructure(doc, { id, name }) });
+      const tooltip = { ...tooltipOf(doc), previous: old?.def };
+      const conv = convertStructure(doc, { id, name }, tooltip);
+      const resized = resizeOf(doc, { id, name }, tooltip);
+      if (resized.rule) {
+        conv.def = withSlabCounts(
+          widenSlab(withResize(conv.def, resized.rule, LEGEND_CHARS), tooltip),
+          tooltip.rules,
+          slabCounts,
+        );
+        resizable.push({ id, rule: resized.rule, forms: resized.forms, note: resized.note });
+      } else if (resized.why) fixedForms.push(`${id} (${doc.variants.length} forms): ${resized.why}`);
+      defs.push({ doc, ...conv });
     } catch (e) {
-      skipped.push({ name, why: e.message });
+      if (e instanceof TruncatedDump) truncated.push(e.message);
+      else skipped.push({ name, why: e.message });
     }
   }
+  if (truncated.length)
+    throw new Error(['game dump cut short, source shape does not complete it:', ...truncated].join('\n  '));
 
   // --- blocks and faces -------------------------------------------------------------------------------------------
   const faces = {};
@@ -714,6 +1264,7 @@ export async function build(opts) {
     maintenance: /^Maintenance Hatch$/,
     muffler: /^Muffler Hatch \(LV\)$/,
     steamIn: /^Input Hatch \(LV\)$/,
+    dataAccess: /^Data Access Hatch$/,
   };
   const hatchOverlays = {};
   for (const [kind, re] of Object.entries(HATCH_MTE)) {
@@ -743,6 +1294,167 @@ export async function build(opts) {
   log(`new entries (${newIds.length}): ${newIds.join(', ')}`);
   log(`entries gone (${goneIds.length}): ${goneIds.join(', ')}`);
   log(`retained source-converted entries (${retained.length}): ${retained.map((r) => r.id).join(', ')}`);
+  log(`variable size from the dumped forms (${resizable.length}):`);
+  for (const r of resizable)
+    log(
+      `  ${r.id}: ${r.forms} forms, ${r.rule.axis} slab [${r.rule.from}, ${r.rule.to}) sizes ${r.rule.min}..${r.rule.max}` +
+        (r.note ? ` (${r.note})` : ''),
+    );
+  log(`requirements that grow per slab (${slabCounts.length}):`);
+  for (const s of slabCounts) log(`  ${s}`);
+  log(`entries with several dumped forms and no resize (${fixedForms.length}):`);
+  for (const w of fixedForms) log(`  ${w}`);
+  const completedIds = defs.filter((d) => d.shape).map((d) => d.def.id);
+  log(
+    `completed from the source shape, the dump being cut short (${completedIds.length}): ${completedIds.join(', ')}`,
+  );
+  const sizeWarnings = defs.map((d) => d.sizeWarning).filter(Boolean);
+  log(`dump smaller than the tooltip's fixed size, nothing to check it against (${sizeWarnings.length}):`);
+  for (const w of sizeWarnings) log(`  ${w}`);
+
+  // Hand-made entries keep their structure: their hatch zones are listed in a file of their own.
+  const handZones = {};
+  const leftOut = [];
+  // Several entries can share a class (the turbines): an entry uses the dump controller of its own name.
+  for (const h of hand) {
+    const docs = covered.filter((c) => c.hand === h).map((c) => c.doc);
+    const doc =
+      docs.find((d) => d.controller.display_name === h.name) ?? (docs.length === 1 ? docs[0] : null);
+    if (!doc) {
+      leftOut.push(
+        `${h.id} (${docs.length ? 'several dump controllers, none by its name' : 'not in the dump'})`,
+      );
+      continue;
+    }
+    const r = zonesForHandMade(h.def, doc, tooltipOf(doc).rules, tooltipOf(doc).elements);
+    if (r.zones) handZones[h.id] = r.zones;
+    else leftOut.push(`${h.id} (${r.why})`);
+  }
+  log(
+    `hatch zones: generated entries ${defs.filter((d) => d.def.zones).length}/${defs.length}, hand-made ` +
+      `${Object.keys(handZones).length}/${hand.length}`,
+  );
+  log(`hand-made entries without zones (${leftOut.length}): ${leftOut.join('; ')}`);
+  log(`controllers whose tooltip gave no hatch line (${unparsed.length}): ${unparsed.join(', ')}`);
+
+  // The structure check overrides the tooltip's counts.
+  const changed = defs.filter((d) => d.conflicts.length);
+  log(`structure checks changed the tooltip's counts in ${changed.length} generated entries:`);
+  for (const d of changed) log(`  ${d.def.id}: ${d.conflicts.join(', ')}`);
+
+  // Retained source-converted entries get the same rules; their shapes stay. They have no hint dots, so no zones.
+  const retainedDefs = [];
+  for (const r of hatchRules ? retained : []) {
+    const cls = /java\/(.+)\.java$/.exec(r.def.source ?? '')?.[1].replaceAll('/', '.');
+    if (!cls) continue;
+    const { rules } = hatchRules.rulesOf(cls);
+    const kinds = sortKinds(Object.values(r.def.legend).flatMap((e) => e.hatches ?? []));
+    // With tooltip lines the old structure-only estimate is dropped: the tooltip and the check say what is needed.
+    const res = requirementsOf(
+      kinds,
+      rules,
+      hatchRules.checksOf(cls),
+      rules.length ? {} : r.def.requiredHatches,
+    );
+    const family = ['energy', 'dynamo', 'maintenance', 'muffler'];
+    const defaults = sortKinds([
+      ...r.def.defaultHatches.filter((k) => !rules.length || !family.includes(k) || res.required[k]),
+      ...Object.keys(res.required).filter((k) => res.required[k].min >= 1),
+    ]).filter((k) => !(k === 'maintenance' && res.noMaintenance));
+    const def = {
+      ...r.def,
+      requiredHatches: Object.fromEntries(
+        HATCH_ORDER.filter((k) => res.required[k]).map((k) => [k, res.required[k]]),
+      ),
+      defaultHatches: defaults,
+      notes: r.def.notes.replace(
+        /hatch counts are approximate \([^)]*\), so check the tooltip in game\./,
+        "hatch counts follow the controller's tooltip and structure check.",
+      ),
+    };
+    retainedDefs.push(def);
+    log(
+      `  retained ${def.id}: required ${JSON.stringify(r.def.requiredHatches)} -> ${JSON.stringify(def.requiredHatches)}, ` +
+        `defaults ${r.def.defaultHatches.join()} -> ${def.defaultHatches.join()}`,
+    );
+  }
+
+  // Casing minimums and "any input / any output" checks (`minCasings`, `requiredAny`) for the entries written here;
+  // hand-made entries keep theirs (tools/gt-source/casing-min.mjs patches those).
+  if (hatchRules && opts.gt5u) {
+    const constraints = await createConstraints(opts.gt5u, hatchRules);
+    const problems = [];
+    const apply = (def) => {
+      const r = constraints.of(def);
+      if (!r) return def;
+      problems.push(...r.problems);
+      return withConstraints(def, r);
+    };
+    for (const d of defs) d.def = apply(d.def);
+    retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
+    if (problems.length) throw new Error(['casing minimums could not be read:', ...problems].join('\n  '));
+  }
+
+  // Hatch sides, tiered-glass limits and the Data Access Hatch (`allowFaces`, `glassTierLimits`, `dataAccess`)
+  // for the entries written here; hand-made entries keep theirs (tools/gt-source/hatch-extras.mjs patches those).
+  if (hatchRules && opts.gt5u) {
+    const extras = await createExtras(opts.gt5u, hatchRules);
+    const problems = [];
+    const apply = (def) => {
+      const r = extras.of(def);
+      if (!r) return def;
+      problems.push(...r.problems);
+      return withExtras(def, r);
+    };
+    for (const d of defs) d.def = apply(d.def);
+    retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
+    if (problems.length) throw new Error(['hatch extras could not be read:', ...problems].join('\n  '));
+  }
+
+  // The orientations GT allows (`variants`), from the controller's alignment limits, for the entries written here;
+  // hand-made entries keep theirs (tools/gt-source/orientation.mjs patches those).
+  if (hatchRules && opts.gt5u) {
+    const problems = [];
+    const apply = (def) => {
+      const cls = sourceClassOf(def);
+      if (!cls) return def;
+      const r = orientationOf(hatchRules, cls);
+      problems.push(...r.problems);
+      return withVariants(def, r.variants);
+    };
+    for (const d of defs) d.def = apply(d.def);
+    retainedDefs.forEach((def, i) => (retainedDefs[i] = apply(def)));
+    if (problems.length) throw new Error(['orientations could not be read:', ...problems].join('\n  '));
+  }
+
+  // Tooltip lines naming a hatch kind no cell of the dump accepts (a part built only in survival, a hatch the
+  // probe does not know).
+  if (hatchRules) {
+    const lines = [];
+    for (const doc of docs) {
+      const { rules, elements } = tooltipOf(doc);
+      const accepted = new Set();
+      for (const v of doc.variants) {
+        for (const s of v.hatch_slots ?? [])
+          for (const k of s.kinds) if (HATCH_KIND[k]) accepted.add(HATCH_KIND[k]);
+        // Kinds the source's element accepts for a hint dot the dump shows.
+        for (const h of v.hints ?? [])
+          for (const set of elements.get(dotOfHint(h.hint)) ?? []) for (const k of set) accepted.add(k);
+      }
+      const missing = sortKinds(
+        rules
+          .filter((r) => !r.any && r.method !== 'addSteamHatch')
+          .flatMap((r) => r.kinds)
+          .filter((k) => !accepted.has(k)),
+      );
+      if (missing.length)
+        lines.push(
+          `${doc.controller.display_name} (${classNames(doc.controller.source_class).outer}): ${missing.join(', ')}`,
+        );
+    }
+    log(`tooltip kinds no dumped cell accepts (${lines.length}):`);
+    for (const l of lines) log(`  ${l}`);
+  }
 
   if (!opts.write) return { defs, skipped, covered, retained };
 
@@ -750,6 +1462,19 @@ export async function build(opts) {
   for (const g of generated) if (!retained.includes(g)) rmSync(join(MULTI_DIR, `${g.id}.json`));
   for (const { def } of defs)
     await writeFormatted(join(MULTI_DIR, `${def.id}.json`), JSON.stringify(def) + '\n');
+  for (const def of retainedDefs)
+    await writeFormatted(join(MULTI_DIR, `${def.id}.json`), JSON.stringify(def) + '\n');
+  await writeFormatted(
+    ZONES_OUT,
+    JSON.stringify(Object.fromEntries(Object.entries(handZones).sort(([a], [b]) => (a < b ? -1 : 1)))) + '\n',
+  );
+  // The GT shapes of the entries completed from the source (the retained ones keep theirs).
+  const shapes = existsSync(SHAPES_OUT) ? JSON.parse(readFileSync(SHAPES_OUT, 'utf8')) : {};
+  for (const { def, shape } of defs) {
+    if (shape) shapes[def.id] = shape;
+    else delete shapes[def.id];
+  }
+  await writeFormatted(SHAPES_OUT, JSON.stringify(shapes) + '\n');
   // Hand-made entries that still show the generic controller get their machine's own.
   for (const h of hand) {
     const c = handControllers.get(h.id);
@@ -822,7 +1547,7 @@ function writeAttribution(paths, carried) {
     '### Files used by the generated catalog entries',
     '',
     'The face tiles of the generated catalog entries (`tools/texture-sources/DUMP_*.png`, see',
-    '[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.133` jar (the',
+    '[`tools/game-dump/`](tools/game-dump/)) are these block sprites of the GT5-Unofficial `5.09.54.205` jar (the',
     'resources under `src/main/resources/` in the repository), tinted and layered the way the game draws them:',
     '',
     ...paths.map((p) => `- \`src/main/resources/${p}\``),

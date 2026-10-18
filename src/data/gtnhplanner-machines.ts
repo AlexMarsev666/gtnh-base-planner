@@ -166,12 +166,13 @@ export const SOURCE_KINDS: ReadonlySet<string> = new Set([
   'underground_fluid',
 ]);
 
-const byName = new Map<string, string>(catalog.map((d) => [d.name.toLowerCase(), d.id]));
+let byName: Map<string, string> | undefined;
 
 /** Catalog id for a machine name, or undefined. */
 export function multiblockForName(name: string): string | undefined {
   const k = name.trim().toLowerCase();
-  return byName.get(k) ?? MULTIBLOCK_ALIASES[k];
+  byName ??= new Map(catalog.map((d) => [d.name.toLowerCase(), d.id]));
+  return byName.get(k) ?? (Object.hasOwn(MULTIBLOCK_ALIASES, k) ? MULTIBLOCK_ALIASES[k] : undefined);
 }
 
 /**
@@ -183,5 +184,6 @@ export const GT_MACHINE_TYPES: Readonly<Record<string, string>> = gtMachineTypes
 
 /** Catalog id of the only multiblock GT gives this machine type, or undefined. */
 export function multiblockForMachineType(name: string): string | undefined {
-  return GT_MACHINE_TYPES[name.trim().toLowerCase()];
+  const k = name.trim().toLowerCase();
+  return Object.hasOwn(GT_MACHINE_TYPES, k) ? GT_MACHINE_TYPES[k] : undefined;
 }

@@ -13,8 +13,14 @@
     selected: number[];
     onpick: (unitIds: number[]) => void;
     onfail: () => void;
+    /** DETAILED was requested but the textures failed to load, so SIMPLE is drawn. */
+    onviewfallback?: () => void;
     /** Site view: a pipe was clicked (net id), or something else (null). */
     onpicknet?: (netId: number | null) => void;
+    /** A hatch block was clicked (its cell), or something else (null). Called after `onpick`. */
+    onpickhatch?: (cell: Vec3 | null) => void;
+    /** Cells to highlight (the selected hatch). */
+    marked?: readonly Vec3[];
     /** Site view: animate flow arrows. */
     flow?: boolean;
     /** The camera azimuth changed (see `RendererOptions.onView`). */
@@ -25,8 +31,8 @@
     ondrag?: (offset: [number, number] | null) => void;
     /** Aim the camera at this box whenever `seq` changes. */
     frame?: { min: Vec3; max: Vec3; seq: number } | null;
-    /** Canvas pixels covered by a drawer (right) or sheet (bottom). */
-    inset?: { right: number; bottom: number };
+    /** Canvas pixels covered by the outline (left), a drawer (right) or sheet (bottom). */
+    inset?: { left: number; right: number; bottom: number; top: number };
   }
   let {
     scene,
@@ -35,13 +41,16 @@
     selected,
     onpick,
     onfail,
+    onviewfallback,
     onpicknet,
+    onpickhatch,
+    marked = [],
     flow = true,
     onview,
     onmove,
     ondrag,
     frame = null,
-    inset = { right: 0, bottom: 0 },
+    inset = { left: 0, right: 0, bottom: 0, top: 0 },
   }: Props = $props();
 
   const EMPTY_SCENE: SceneModel = {
@@ -72,9 +81,11 @@
       r = createRenderer(canvas, {
         onPick: (ids) => onpick(ids),
         onPickNet: (id) => onpicknet?.(id),
+        onPickHatch: (cell) => onpickhatch?.(cell),
         onView: (theta) => onview?.(theta),
         onMoveSelection: (dx, dz) => onmove?.(dx, dz),
         onDragOffset: (o) => ondrag?.(o),
+        onViewModeFallback: () => onviewfallback?.(),
       });
     } catch (err) {
       warnOnce('createRenderer', err);
@@ -122,6 +133,11 @@
   });
   $effect(() => {
     const r = renderer;
+    const cells = marked;
+    if (r) guard('setMarkedCells', () => r.setMarkedCells(cells));
+  });
+  $effect(() => {
+    const r = renderer;
     const on = flow;
     if (r) guard('setFlowAnimation', () => r.setFlowAnimation(on));
   });
@@ -141,8 +157,8 @@
   });
   $effect(() => {
     const r = renderer;
-    const { right, bottom } = inset;
-    if (r) guard('setInset', () => r.setInset(right, bottom));
+    const { left, right, bottom, top } = inset;
+    if (r) guard('setInset', () => r.setInset(left, right, bottom, top));
   });
 </script>
 

@@ -4,329 +4,376 @@
     "name": "Alloy Smelter",
     "sprite": "basicmachines/alloy_smelter/OVERLAY_FRONT",
     "names": ["alloy smelter"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "amplifabricator",
     "name": "Amplifabricator",
     "sprite": "basicmachines/amplifab/OVERLAY_FRONT",
     "names": ["amplifabricator"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "arc-furnace",
     "name": "Arc Furnace",
     "sprite": "basicmachines/arc_furnace/OVERLAY_FRONT",
     "names": ["arc furnace"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "assembler",
     "name": "Assembler",
     "sprite": "basicmachines/assembler/OVERLAY_FRONT",
     "names": ["assembler"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "autoclave",
     "name": "Autoclave",
     "sprite": "basicmachines/autoclave/OVERLAY_FRONT",
     "names": ["autoclave"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "bender",
     "name": "Bending Machine",
     "sprite": "basicmachines/bender/OVERLAY_FRONT",
     "names": ["bender"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "brewery",
     "name": "Brewery",
     "sprite": "basicmachines/potionbrewer/OVERLAY_FRONT_POTIONBREWER",
     "names": ["brewery"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "canner",
     "name": "Canner",
     "sprite": "basicmachines/canner/OVERLAY_FRONT",
     "names": ["canner"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "centrifuge",
     "name": "Centrifuge",
     "sprite": "basicmachines/centrifuge/OVERLAY_FRONT",
     "names": ["centrifuge"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "chemical-bath",
     "name": "Chemical Bath",
     "sprite": "basicmachines/chemical_bath/OVERLAY_FRONT",
     "names": ["chemical bath"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "chemical-reactor",
     "name": "Chemical Reactor",
     "sprite": "basicmachines/chemical_reactor/OVERLAY_FRONT",
     "names": ["chemical reactor"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "circuit-assembler",
     "name": "Circuit Assembler",
     "sprite": "basicmachines/circuitassembler/OVERLAY_FRONT",
     "names": ["circuit assembler"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "MAX"]
   },
   {
     "id": "compressor",
     "name": "Compressor",
     "sprite": "basicmachines/compressor/OVERLAY_FRONT",
     "names": ["compressor"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "cutting-machine",
     "name": "Cutting Machine",
     "sprite": "basicmachines/cutter/OVERLAY_FRONT",
     "names": ["cutting machine", "slicer"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "distillery",
     "name": "Distillery",
     "sprite": "basicmachines/distillery/OVERLAY_FRONT",
     "names": ["distillery"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "electric-furnace",
     "name": "Electric Furnace",
     "sprite": "basicmachines/electric_furnace/OVERLAY_FRONT",
     "names": ["electric furnace", "furnace"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "electrolyzer",
     "name": "Electrolyzer",
     "sprite": "basicmachines/electrolyzer/OVERLAY_FRONT",
     "names": ["electrolyzer"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "electromagnetic-polarizer",
     "name": "Electromagnetic Polarizer",
     "sprite": "basicmachines/polarizer/OVERLAY_FRONT",
     "names": ["electromagnetic polarizer", "polarizer"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "electromagnetic-separator",
     "name": "Electromagnetic Separator",
     "sprite": "basicmachines/electromagnetic_separator/OVERLAY_FRONT",
     "names": ["electromagnetic separator"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "extractor",
     "name": "Extractor",
     "sprite": "basicmachines/extractor/OVERLAY_FRONT",
     "names": ["extractor"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "extruder",
     "name": "Extruder",
     "sprite": "basicmachines/extruder/OVERLAY_FRONT",
     "names": ["extruder"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "fermenter",
     "name": "Fermenter",
     "sprite": "basicmachines/fermenter/OVERLAY_FRONT",
     "names": ["fermenter"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "fluid-canner",
     "name": "Fluid Canner",
     "sprite": "basicmachines/fluid_canner/OVERLAY_FRONT",
     "names": ["fluid canner"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "fluid-extractor",
     "name": "Fluid Extractor",
     "sprite": "basicmachines/fluid_extractor/OVERLAY_FRONT",
     "names": ["fluid extractor"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "fluid-heater",
     "name": "Fluid Heater",
     "sprite": "basicmachines/fluid_heater/OVERLAY_FRONT",
     "names": ["fluid heater"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "fluid-solidifier",
     "name": "Fluid Solidifier",
     "sprite": "basicmachines/fluid_solidifier/OVERLAY_FRONT",
     "names": ["fluid solidifier"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "forge-hammer",
     "name": "Forge Hammer",
     "sprite": "basicmachines/hammer/OVERLAY_FRONT",
     "names": ["forge hammer"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "forming-press",
     "name": "Forming Press",
     "sprite": "basicmachines/press/OVERLAY_FRONT",
     "names": ["forming press"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "laser-engraver",
     "name": "Laser Engraver",
     "sprite": "basicmachines/laser_engraver/OVERLAY_FRONT",
     "names": ["laser engraver", "precision laser engraver"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "lathe",
     "name": "Lathe",
     "sprite": "basicmachines/lathe/OVERLAY_FRONT",
     "names": ["lathe"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "macerator",
     "name": "Macerator",
     "sprite": "basicmachines/macerator/OVERLAY_FRONT",
     "names": ["macerator"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "mass-fabricator",
     "name": "Mass Fabricator",
     "sprite": "iconsets/OVERLAY_FRONT_MASSFAB",
     "names": ["mass fabricator"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "microwave",
     "name": "Microwave",
     "sprite": "basicmachines/microwave/OVERLAY_FRONT",
     "names": ["microwave"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "mixer",
     "name": "Mixer",
     "sprite": "basicmachines/mixer/OVERLAY_FRONT",
     "names": ["mixer"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "ore-washer",
     "name": "Ore Washing Machine",
     "sprite": "basicmachines/ore_washer/OVERLAY_FRONT",
     "names": ["ore washer", "ore washing machine"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "packager",
     "name": "Packager",
     "sprite": "basicmachines/boxinator/OVERLAY_FRONT_BOXINATOR",
     "names": ["packager"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UV"]
   },
   {
     "id": "plasma-arc-furnace",
     "name": "Plasma Arc Furnace",
     "sprite": "basicmachines/plasma_arc_furnace/OVERLAY_FRONT",
     "names": ["plasma arc furnace"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "printer",
     "name": "Printer",
     "sprite": "basicmachines/printer/OVERLAY_FRONT",
     "names": ["printer"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UV"]
   },
   {
     "id": "pump",
     "name": "Pump",
     "sprite": "basicmachines/pump/OVERLAY_FRONT",
     "names": ["pump"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "HV"]
   },
   {
     "id": "recycler",
     "name": "Recycler",
     "sprite": "basicmachines/recycler/OVERLAY_FRONT",
     "names": ["recycler"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "replicator",
     "name": "Replicator",
     "sprite": "basicmachines/replicator/OVERLAY_FRONT_REPLICATOR",
     "names": ["replicator"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "rock-breaker",
     "name": "Rock Breaker",
     "sprite": "iconsets/OVERLAY_FRONT_ROCK_BREAKER",
     "names": ["rock breaker"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "IV"]
   },
   {
     "id": "scanner",
     "name": "Scanner",
     "sprite": "iconsets/OVERLAY_FRONT_SCANNER",
     "names": ["scanner"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "sifter",
     "name": "Sifter",
     "sprite": "basicmachines/sifter/OVERLAY_FRONT",
     "names": ["sifter"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "thermal-centrifuge",
     "name": "Thermal Centrifuge",
     "sprite": "basicmachines/thermal_centrifuge/OVERLAY_FRONT",
     "names": ["thermal centrifuge"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "unpackager",
     "name": "Unpackager",
     "sprite": "basicmachines/unboxinator/OVERLAY_FRONT",
     "names": ["unpackager"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UV"]
   },
   {
     "id": "wiremill",
     "name": "Wiremill",
     "sprite": "basicmachines/wiremill/OVERLAY_FRONT",
     "names": ["wiremill", "wire mill"],
-    "base": "lv"
+    "base": "lv",
+    "tiers": ["LV", "UMV"]
   },
   {
     "id": "generator",
@@ -339,13 +386,24 @@
       "steam turbine",
       "semifluid generator"
     ],
-    "base": "hv"
+    "base": "hv",
+    "tiers": ["LV", "UHV"]
   },
   {
     "id": "tank",
     "name": "Tank",
     "tile": "OVERLAY_STANK",
     "names": ["tank"],
-    "base": "hv"
+    "base": "hv",
+    "tiers": ["LV", "IV"]
+  },
+  {
+    "id": "transformer",
+    "name": "Transformer",
+    "sprite": "iconsets/OVERLAY_ENERGY_IN_HV",
+    "names": [],
+    "base": "hv",
+    "tiers": ["LV", "MAX"],
+    "transformer": true
   }
 ]

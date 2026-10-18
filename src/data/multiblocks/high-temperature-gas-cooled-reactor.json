@@ -2,7 +2,7 @@
   "id": "high-temperature-gas-cooled-reactor",
   "name": "High Temperature Gas-cooled Reactor",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEHighTempGasCooledReactor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEHighTempGasCooledReactor.java",
   "size": [27, 15, 16],
   "layers": [
     [
@@ -160,7 +160,7 @@
       "                 JJL---LJJ ",
       " DDD     DDD     JL--R--LJ ",
       "D---D   DP-ND   JL-------LJ",
-      "QM--D   DP-ND   JL-R---R-LJ",
+      "SM--D   DP-ND   JL-R---R-LJ",
       "DM--D   DP-ND   JL-------LJ",
       " DDD     DDD     JL--R--LJ ",
       "                 JJL---LJJ ",
@@ -232,7 +232,7 @@
       "                           ",
       "         DDD               ",
       "        DN--D       JJJ    ",
-      "        DN-PGGGGGGG JSJ    ",
+      "        DN-PGGGGGGG JTJ    ",
       "        D--PD       JJJ    ",
       "         DDD               ",
       "                           ",
@@ -268,7 +268,7 @@
       "                           ",
       "          D                ",
       "         DDD               ",
-      "        DODDD              ",
+      "        DUDDD              ",
       "         DDD               ",
       "          D                ",
       "                           ",
@@ -285,17 +285,23 @@
     "F": { "blockId": "gregtech:gt.blockcasings2@6" },
     "G": { "blockId": "gregtech:gt.blockcasings13@2" },
     "H": { "blockId": "gregtech:gt.blockcasings2@10" },
-    "I": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn", "energy", "maintenance"] },
+    "I": {
+      "blockId": "gt.hatch.inputHatch",
+      "hatches": ["fluidIn", "energy", "maintenance"],
+      "region": "dot1"
+    },
     "J": { "blockId": "gregtech:gt.blockcasings13@3" },
-    "K": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"] },
+    "K": { "blockId": "gt.hatch.outputBus", "hatches": ["itemOut"], "region": "dot3" },
     "L": { "blockId": "gregtech:gt.blockcasings13@1" },
     "M": { "blockId": "gregtech:gt.blockcasings2@13" },
     "N": { "blockId": "gregtech:gt.blockcasings2@14" },
-    "O": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"] },
+    "O": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"], "region": "dot7" },
     "P": { "blockId": "gregtech:gt.blockcasings2@15" },
-    "Q": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"] },
+    "Q": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"], "region": "dot5" },
     "R": { "blockId": "gregtech:gt.blockcasings13@4" },
-    "S": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"] }
+    "S": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn"], "region": "dot6" },
+    "T": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"], "region": "dot2" },
+    "U": { "blockId": "gt.hatch.outputHatch", "hatches": ["fluidOut"], "region": "dot4" }
   },
   "controller": { "pos": [11, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@12791" },
   "hatchBlocks": {
@@ -307,8 +313,40 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
+    "fluidIn": { "min": 3 },
+    "fluidOut": { "min": 2 },
+    "energy": { "min": 1, "max": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "energy", "maintenance"],
+      "text": "1 Energy Hatch: Any top pump casing\n1 Maintenance Hatch: Any top pump casing\n3+ Input Hatch: Any top pump casing (helium), bottom of tall tower (coolant), top of short tower (distilled water)"
+    },
+    "dot2": { "kinds": ["itemIn"], "text": "1+ Input Bus: Top of reactor (TRISO Balls)" },
+    "dot3": { "kinds": ["itemOut"], "text": "1+ Output Bus: Bottom of reactor (Burned Out TRISO Balls)" },
+    "dot4": {
+      "kinds": ["fluidOut"],
+      "text": "2+ Output Hatch: Top of tall tower (hot coolant), bottom of short tower (steam)"
+    },
+    "dot5": {
+      "kinds": ["fluidIn"],
+      "text": "3+ Input Hatch: Any top pump casing (helium), bottom of tall tower (coolant), top of short tower (distilled water)"
+    },
+    "dot6": {
+      "kinds": ["fluidIn"],
+      "text": "3+ Input Hatch: Any top pump casing (helium), bottom of tall tower (coolant), top of short tower (distilled water)"
+    },
+    "dot7": {
+      "kinds": ["fluidOut"],
+      "text": "2+ Output Hatch: Top of tall tower (hot coolant), bottom of short tower (steam)"
+    }
+  },
+  "variants": [0],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEHighTempGasCooledReactor (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEHighTempGasCooledReactor (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

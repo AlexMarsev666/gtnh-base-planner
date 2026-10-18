@@ -6,10 +6,17 @@ import {
   type ImportReport,
   type MachineChoice,
 } from '../import/gtnhplanner';
+import { loadCatalog } from '../data/catalog';
 import { createSiteBuilder } from '../model/site/build';
 import type { SiteBuild, SiteBuildOptions } from '../model/site/buildTypes';
-import type { SiteState } from '../model/site/types';
-import { arrangeHere, type Arranged } from './siteArrange';
+import type { SiteRouting, SiteState } from '../model/site/types';
+import {
+  createMachineHandler,
+  type MachineWorkerRequest,
+  type MachineWorkerResponse,
+} from './machineWorkerHandler';
+import { createPipeline } from './pipelineCore';
+import { arrangeHere, type Arranged, type ArrangeProgress } from './siteArrange';
 
 /**
  * Builds sites off the main thread: packing hundreds of units and routing a large template takes seconds,
@@ -19,7 +26,7 @@ import { arrangeHere, type Arranged } from './siteArrange';
 
 export type SiteWorkerRequest =
   | { id: number; type: 'build'; site: SiteState; opts: SiteBuildOptions }
-  | { id: number; type: 'arrange'; site: SiteState; below: boolean; optimize?: boolean }
+  | { id: number; type: 'arrange'; site: SiteState; routing: SiteRouting; optimize?: boolean }
   | {
       id: number;
       type: 'import';
@@ -28,9 +35,15 @@ export type SiteWorkerRequest =
       opts: ImportOptions;
     };
 
-/** `partial`: the groups without pipes, sent first when routing will take a while; the full build follows. */
+/**
+ * `partial`: the groups without pipes, sent first when routing will take a while; the full build follows.
+ * `progress`: how far an arrange / optimise has got (at most ~20 a second); the `arranged` result follows. A
+ * running search cannot hear a cancel message (the worker is busy), so the controller stops it by
+ * terminating the worker instead.
+ */
 export type SiteWorkerResponse =
   | { id: number; build: SiteBuild; partial?: boolean }
+  | { id: number; progress: ArrangeProgress }
   | { id: number; imported: { site: SiteState; report: ImportReport } }
   | { id: number; arranged: Arranged }
   | { id: number; error: string };
@@ -39,17 +52,41 @@ export type SiteWorkerResponse =
 const PROGRESSIVE_TERMINALS = 200;
 
 const buildSite = createSiteBuilder();
+/** Machine builds; the pipelines keep their memos warm across requests (see `createMachineHandler`). */
+const handleMachine = createMachineHandler(createPipeline(), createPipeline());
 
-self.onmessage = (e: MessageEvent<SiteWorkerRequest>) => {
+/** The definitions load as a separate chunk; messages that arrive before that wait for it. */
+const catalogReady = loadCatalog();
+
+const post = (out: SiteWorkerResponse | MachineWorkerResponse) =>
+  (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
+const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+self.onmessage = (e: MessageEvent<SiteWorkerRequest | MachineWorkerRequest>) => {
   const req = e.data;
-  const post = (out: SiteWorkerResponse) => (self as unknown as DedicatedWorkerGlobalScope).postMessage(out);
+  // Every request gets a reply, also when the definitions could not be loaded.
+  catalogReady.then(
+    () => handle(req),
+    (err: unknown) => post({ id: req.id, error: message(err) }),
+  );
+};
+
+function handle(req: SiteWorkerRequest | MachineWorkerRequest): void {
   try {
+    if (req.type === 'machine') {
+      handleMachine(req, post);
+      return;
+    }
     if (req.type === 'import') {
       post({ id: req.id, imported: buildSiteFromGtnh(req.project, req.choices, req.opts, buildSite) });
       return;
     }
     if (req.type === 'arrange') {
-      post({ id: req.id, arranged: arrangeHere(req.site, req.below, buildSite, req.optimize) });
+      const onProgress = (progress: ArrangeProgress) => post({ id: req.id, progress });
+      post({
+        id: req.id,
+        arranged: arrangeHere(req.site, req.routing, buildSite, req.optimize, { onProgress }),
+      });
       return;
     }
     const { id, site, opts } = req;
@@ -63,6 +100,6 @@ self.onmessage = (e: MessageEvent<SiteWorkerRequest>) => {
     }
     post({ id, build: buildSite(site, opts) });
   } catch (err) {
-    post({ id: req.id, error: err instanceof Error ? err.message : String(err) });
+    post({ id: req.id, error: message(err) });
   }
-};
+}

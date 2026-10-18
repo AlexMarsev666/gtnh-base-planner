@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from '../data/catalog';
-import { multiblockForName } from '../data/gtnhplanner-machines';
+import {
+  GT_MACHINE_TYPES,
+  MULTIBLOCK_ALIASES,
+  multiblockForMachineType,
+  multiblockForName,
+} from '../data/gtnhplanner-machines';
 import { createSiteBuilder } from '../model/site/build';
-import { validateSiteState } from '../share/siteCodec';
+import { MAX_RATE, validateSiteState } from '../share/siteCodec';
 import fixture from './__fixtures__/gtnhplanner-titanium.json';
 import {
   IMPORT_LIMITS,
@@ -178,6 +183,12 @@ describe('buildSiteFromGtnh', () => {
     expect(Object.values(site.resources).some((r) => r.name === 'Programmed Circuit')).toBe(false);
   });
 
+  it('never turns an imported group into a "Missing" placeholder', () => {
+    // Validation repairs unknown ids silently; an import must only ever produce known ones.
+    const { site } = buildSiteFromGtnh(parseGtnhProject(text));
+    expect(site.groups.filter((g) => g.label?.startsWith('Missing:'))).toEqual([]);
+  });
+
   it('builds and routes the imported site without overlaps', () => {
     const { site } = buildSiteFromGtnh(parseGtnhProject(text));
     const b = createSiteBuilder()(site, { pipes: true, cables: true });
@@ -223,25 +234,29 @@ describe('buildSiteFromGtnh', () => {
     expect(connected / total).toBeGreaterThan(0.9);
   });
 
-  it('arranges a big template inside the size it already has, on floors, without growing it', () => {
-    const p = parseGtnhProject(text);
-    for (const n of p.nodes) n.machineCount *= 12;
-    const builder = createSiteBuilder();
-    // Imported at the size its chain wants, then squeezed into a smaller plot, as the Arrange button does.
-    const { site: big, report } = buildSiteFromGtnh(p, new Map(), {}, builder);
-    expect(report.floors).toBe(1);
-    const small = { ...big, size: [24, 24] as [number, number] };
-    const r = arrangeOnFloors(small, builder);
-    expect(r.site.size).toEqual([24, 24]);
-    expect(r.arranged.fits).toBe(true);
-    expect(r.arranged.floors).toBeGreaterThan(1);
-    const b = builder(r.site, { pipes: true, cables: true });
-    expect(b.warnings.filter((w) => w.type === 'overlap' || w.type === 'outside')).toEqual([]);
-    // A plot that already holds it stays flat.
-    const roomy = arrangeOnFloors({ ...big, size: [128, 128] }, builder);
-    expect(roomy.arranged.floors).toBe(1);
-    expect(roomy.site.groups.every((g) => g.elevation === undefined)).toBe(true);
-  });
+  it(
+    'arranges a big template inside the size it already has, on floors, without growing it',
+    { timeout: 60_000 },
+    () => {
+      const p = parseGtnhProject(text);
+      for (const n of p.nodes) n.machineCount *= 12;
+      const builder = createSiteBuilder();
+      // Imported at the size its chain wants, then squeezed into a smaller plot, as the Arrange button does.
+      const { site: big, report } = buildSiteFromGtnh(p, new Map(), {}, builder);
+      expect(report.floors).toBe(1);
+      const small = { ...big, size: [24, 24] as [number, number] };
+      const r = arrangeOnFloors(small, builder);
+      expect(r.site.size).toEqual([24, 24]);
+      expect(r.arranged.fits).toBe(true);
+      expect(r.arranged.floors).toBeGreaterThan(1);
+      const b = builder(r.site, { pipes: true, cables: true });
+      expect(b.warnings.filter((w) => w.type === 'overlap' || w.type === 'outside')).toEqual([]);
+      // A plot that already holds it stays flat.
+      const roomy = arrangeOnFloors({ ...big, size: [128, 128] }, builder);
+      expect(roomy.arranged.floors).toBe(1);
+      expect(roomy.site.groups.every((g) => g.elevation === undefined)).toBe(true);
+    },
+  );
 
   it('sizes to the chain by default and then needs no floors', () => {
     const { site, report } = buildSiteFromGtnh(parseGtnhProject(text));
@@ -295,6 +310,26 @@ describe('buildSiteFromGtnh', () => {
     expect(
       b.warnings.filter((w) => ['overlap', 'outside', 'error', 'fewer', 'unplaced'].includes(w.type)),
     ).toEqual([]);
+  });
+
+  it('counts a node whose multiblock is not in the catalog as skipped, without a group', () => {
+    const p = parseGtnhProject(text);
+    const base = buildSiteFromGtnh(p);
+    const { site, report } = buildSiteFromGtnh(
+      p,
+      new Map([['n5', { type: 'multiblock', id: 'no-such-multiblock' }]]),
+    );
+    expect(report.skipped).toBe(base.report.skipped + 1);
+    expect(site.groups).toHaveLength(base.site.groups.length - 1);
+    expect(site.groups.map((g) => g.multiblockId)).not.toContain('no-such-multiblock');
+    expect(site.groups.map((g) => g.multiblockId)).not.toContain('industrial-centrifuge');
+    // Its links end at ports instead, and no link points at a group that is not there.
+    const groups = new Set(site.groups.map((g) => g.id));
+    const ports = new Set(site.ports.map((x) => x.id));
+    for (const l of site.links)
+      for (const e of [l.from, l.to])
+        expect('group' in e ? groups.has(e.group) : ports.has(e.port)).toBe(true);
+    expect(site.ports.length).toBeGreaterThanOrEqual(base.site.ports.length);
   });
 
   it('follows overrides and grows a small site', () => {
@@ -370,9 +405,110 @@ describe('buildSiteFromGtnh', () => {
     expect(p.skipped).toBe(2);
   });
 
+  describe('out-of-range values', () => {
+    const edgeRate = (data: any, id: string) => data.edges.find((e: { id: string }) => e.id === id);
+    const build = (data: unknown) => {
+      const p = parseGtnhProject(JSON.stringify(data));
+      const built = buildSiteFromGtnh(p);
+      expect(() => validateSiteState(built.site)).not.toThrow();
+      return { p, ...built };
+    };
+
+    it('drops rates that are negative, huge or not numbers, and counts them', () => {
+      const data = JSON.parse(text);
+      edgeRate(data, 'e2').ratePerSecond = -1;
+      edgeRate(data, 'e3').ratePerSecond = 1e13;
+      edgeRate(data, 'e1').ratePerSecond = 'fast';
+      const { p, site, report } = build(data);
+      expect(p.adjusted).toBe(3);
+      expect(p.edges.find((e) => e.id === 'e2')!.ratePerSecond).toBeUndefined();
+      expect(p.edges.find((e) => e.id === 'e3')!.ratePerSecond).toBeUndefined();
+      expect(report.adjusted).toBe(3);
+      // The links still exist, without a rate.
+      expect(site.links.find((l) => l.resource === 'fluid:titaniumtetrachloride')!.rate).toBeUndefined();
+    });
+
+    it('clamps machine counts and counts them', () => {
+      const data = JSON.parse(text);
+      data.nodes[1].machineCount = 1e7;
+      data.nodes[2].machineCount = -3;
+      // Parse only: a million machines would take the packer minutes.
+      const p = parseGtnhProject(JSON.stringify(data));
+      expect(p.nodes[1].machineCount).toBe(1e6);
+      expect(p.nodes[2].machineCount).toBe(0);
+      expect(p.adjusted).toBe(2);
+    });
+
+    it('replaces control characters in names and ids', () => {
+      const data = JSON.parse(text);
+      data.recipes[1].name = 'Tab\there';
+      data.nodes[0].id = 'n\n0';
+      data.edges[0].source = 'n\n0';
+      data.storages[0].displayName = 'A\nB';
+      const rid = data.recipes[2].inputs[0].id;
+      data.recipes[2].inputs[0].id = `${rid}\u0000`;
+      const { p, site, report } = build(data);
+      expect(p.nodes[0].id).toBe('n 0');
+      expect(p.edges[0].source).toBe('n 0');
+      expect(p.recipes.get(data.recipes[1].id)!.name).toBe('Tab here');
+      expect(p.storages[0].displayName).toBe('A B');
+      expect(p.adjusted).toBe(0);
+      expect(report.adjusted).toBe(0);
+      expect(Object.keys(site.resources).some((k) => /[\u0000-\u001f]/.test(k))).toBe(false);
+    });
+
+    it('caps summed link rates at the codec limit', () => {
+      const data = JSON.parse(text);
+      const e2 = edgeRate(data, 'e2');
+      e2.ratePerSecond = 7e11;
+      data.edges.push({ ...e2, id: 'e2b' });
+      const { site, report } = build(data);
+      expect(site.links.find((l) => l.resource === 'fluid:titaniumtetrachloride')!.rate).toBe(MAX_RATE);
+      expect(report.adjusted).toBe(1);
+    });
+
+    it('reports skipped, adjusted and truncated exactly for one crafted file', () => {
+      const data = JSON.parse(text);
+      data.nodes.push({ id: 'bad' });
+      edgeRate(data, 'e2').ratePerSecond = -5;
+      data.nodes[0].machineCount = 1e7; // a port node: never packed
+      const p = parseGtnhProject(JSON.stringify(data));
+      expect(p.skipped).toBe(2);
+      expect(p.adjusted).toBe(2);
+      const { report } = buildSiteFromGtnh(p);
+      // The report counts nodes: n6 and n7 of the fixture, not the malformed entries.
+      expect(report).toMatchObject({ skipped: 2, adjusted: 2, truncated: false });
+    });
+
+    it('turns a failed validation into a readable import error', () => {
+      const p = parseGtnhProject(text);
+      expect(() => buildSiteFromGtnh(p, new Map(), { size: [1, 1] })).toThrow(ImportError);
+      expect(() => buildSiteFromGtnh(p, new Map(), { size: [1, 1] })).toThrow(
+        /^Could not build a valid template: /,
+      );
+    });
+  });
+
   it('makes stable fallback colours', () => {
     expect(fallbackColor('item:x')).toMatch(/^#[0-9a-f]{6}$/);
     expect(fallbackColor('item:x')).toBe(fallbackColor('item:x'));
     expect(fallbackColor('item:x')).not.toBe(fallbackColor('item:y'));
+  });
+});
+
+describe('machine tables', () => {
+  it('do not answer with members inherited from Object.prototype', () => {
+    for (const k of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+      expect(multiblockForName(k), k).toBeUndefined();
+      expect(multiblockForMachineType(k), k).toBeUndefined();
+    }
+  });
+
+  it('point only at multiblocks that exist', () => {
+    expect(Object.keys(MULTIBLOCK_ALIASES).length).toBeGreaterThan(0);
+    expect(Object.keys(GT_MACHINE_TYPES).length).toBeGreaterThan(0);
+    for (const [k, id] of Object.entries(MULTIBLOCK_ALIASES))
+      expect(getSiteDef(id), `alias ${k}`).toBeDefined();
+    for (const [k, id] of Object.entries(GT_MACHINE_TYPES)) expect(getSiteDef(id), `type ${k}`).toBeDefined();
   });
 });

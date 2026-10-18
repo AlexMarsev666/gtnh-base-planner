@@ -6,15 +6,26 @@ import type { KindState, Router, Tree } from './types';
  * Negotiated routing of every kind (see `MAX_ROUNDS`). Each round routes the kinds whose network still
  * shares a cell, as if the others were not there but with their cells priced up (`present`), and makes
  * every contested cell dearer for good (`history`). Stops when no cell is shared, after `rounds` rounds,
- * or when the contested count stops falling. If cells are still shared then, the kinds are repaired one
- * by one around the others (`repairRoutes`). Leaves each kind's network in its `tree`.
+ * or when the contested count stops falling. No round after the first starts once `maxPops` cells were
+ * popped. If cells are still shared then, the kinds are repaired one by one around the others
+ * (`repairRoutes`). Leaves each kind's network in its `tree`. Returns whether `maxPops` cut the rounds short.
  */
-export function negotiateRoutes(r: Router, states: readonly KindState[], rounds = MAX_ROUNDS): void {
+export function negotiateRoutes(
+  r: Router,
+  states: readonly KindState[],
+  rounds = MAX_ROUNDS,
+  maxPops = Infinity,
+): boolean {
   let present = PRESENT_START;
   let legal = false;
   let fewest = Infinity;
   let stalled = 0;
-  for (let round = 0; round < rounds && !legal && stalled < MAX_STALLED_ROUNDS; round++) {
+  let round = 0;
+  for (
+    ;
+    round < rounds && !legal && stalled < MAX_STALLED_ROUNDS && (round === 0 || r.heap.pops < maxPops);
+    round++
+  ) {
     for (const s of states) {
       if (round > 0 && !shared(r, s)) continue;
       setUsed(r, s, false);
@@ -35,7 +46,9 @@ export function negotiateRoutes(r: Router, states: readonly KindState[], rounds 
     } else stalled++;
     present *= PRESENT_GROWTH;
   }
+  const capped = !legal && round < rounds && stalled < MAX_STALLED_ROUNDS;
   if (!legal) repairRoutes(r, states);
+  return capped;
 }
 
 /**

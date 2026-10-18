@@ -44,6 +44,25 @@ const COLUMNS = 16;
 /** Client default of `Client.colorModulation.machineMetal` (Dyes.MACHINE_METAL). */
 const MACHINE_METAL = [210, 220, 255];
 
+/** Voltage tiers, lowest first (`TIERS` of src/model/core/types.ts; a test keeps the two equal). */
+export const TIER_NAMES = [
+  'ULV',
+  'LV',
+  'MV',
+  'HV',
+  'EV',
+  'IV',
+  'LuV',
+  'ZPM',
+  'UV',
+  'UHV',
+  'UEV',
+  'UIV',
+  'UMV',
+  'UXV',
+  'MAX',
+];
+
 /**
  * Atlas tiles: name → options. The source is `${ICONSETS}/${name}.png` unless `path` (repo-relative) is given;
  * it is stored as `tools/texture-sources/${name}.png`. `tint` multiplies RGB (the game tints the tiered
@@ -103,6 +122,12 @@ export const HAND_TILES = {
   MACHINE_EV_SIDE: { tint: MACHINE_METAL },
   MACHINE_EV_TOP: { tint: MACHINE_METAL },
   MACHINE_EV_BOTTOM: { tint: MACHINE_METAL },
+  // The hulls above EV, for the tiered looks of single-block machines
+  ...Object.fromEntries(
+    TIER_NAMES.slice(TIER_NAMES.indexOf('EV') + 1).flatMap((t) =>
+      ['SIDE', 'TOP', 'BOTTOM'].map((part) => [`MACHINE_${t}_${part}`, { tint: MACHINE_METAL }]),
+    ),
+  ),
   // Heating coils
   MACHINE_COIL_CUPRONICKEL: {},
   MACHINE_COIL_KANTHAL: {},
@@ -112,6 +137,18 @@ export const HAND_TILES = {
   MACHINE_COIL_HSSS: {},
   MACHINE_COIL_NAQUADAH: {},
   MACHINE_COIL_NAQUADAHALLOY: {},
+  // The other heating coil blocks (BlockCasings5 metas 1-4, 6, 7, 9-11, 13; 0, 5, 8 and 12 come from the dump):
+  // `getIcon` shows the _BACKGROUND icon, the foreground is only the glow of an active coil.
+  MACHINE_COIL_KANTHAL_BACKGROUND: {},
+  MACHINE_COIL_NICHROME_BACKGROUND: {},
+  MACHINE_COIL_TUNGSTENSTEEL_BACKGROUND: {},
+  MACHINE_COIL_HSSG_BACKGROUND: {},
+  MACHINE_COIL_NAQUADAHALLOY_BACKGROUND: {},
+  MACHINE_COIL_ELECTRUMFLUX_BACKGROUND: {},
+  MACHINE_COIL_HSSS_BACKGROUND: {},
+  MACHINE_COIL_TRINIUM_BACKGROUND: {},
+  MACHINE_COIL_INFINITY_BACKGROUND: {},
+  MACHINE_COIL_ETERNAL_BACKGROUND: {},
   // Glass
   REINFORCED_GLASS: {},
   // Steel Frame Box: the generic frame icon tinted with the Steel material colour (0x808080)
@@ -188,6 +225,7 @@ export const HAND_TILES = {
   OVERLAY_ENERGY_OUT_LV: {},
   OVERLAY_MAINTENANCE: {},
   OVERLAY_MUFFLER: {},
+  OVERLAY_DATA_ACCESS: {},
   // Industrial Centrifuge (GT:NH 2.9): GT++ Centrifuge Casing (blockCasingsMisc meta 0), Large Sieve Grate
   // (blockCasings2Misc meta 6) and Eglin Steel frame boxes (frame icon tinted with the Eglin Steel colour).
   MACHINE_CASING_CENTRIFUGE: {
@@ -241,6 +279,16 @@ export const HAND_BLOCK_MAP = {
   },
   'gt.casing.robustTungstensteel': { side: 'MACHINE_CASING_ROBUST_TUNGSTENSTEEL' },
   'gt.coil.cupronickel': { side: 'MACHINE_COIL_CUPRONICKEL' },
+  'gregtech:gt.blockcasings5@1': { side: 'MACHINE_COIL_KANTHAL_BACKGROUND' },
+  'gregtech:gt.blockcasings5@2': { side: 'MACHINE_COIL_NICHROME_BACKGROUND' },
+  'gregtech:gt.blockcasings5@3': { side: 'MACHINE_COIL_TUNGSTENSTEEL_BACKGROUND' },
+  'gregtech:gt.blockcasings5@4': { side: 'MACHINE_COIL_HSSG_BACKGROUND' },
+  'gregtech:gt.blockcasings5@6': { side: 'MACHINE_COIL_NAQUADAHALLOY_BACKGROUND' },
+  'gregtech:gt.blockcasings5@7': { side: 'MACHINE_COIL_ELECTRUMFLUX_BACKGROUND' },
+  'gregtech:gt.blockcasings5@9': { side: 'MACHINE_COIL_HSSS_BACKGROUND' },
+  'gregtech:gt.blockcasings5@10': { side: 'MACHINE_COIL_TRINIUM_BACKGROUND' },
+  'gregtech:gt.blockcasings5@11': { side: 'MACHINE_COIL_INFINITY_BACKGROUND' },
+  'gregtech:gt.blockcasings5@13': { side: 'MACHINE_COIL_ETERNAL_BACKGROUND' },
   'gt.glass.reinforced': { side: 'REINFORCED_GLASS' },
   'gt.casing.firebricks': { side: 'MACHINE_CASING_DENSEBRICKS' },
   'gt.casing.titaniumPipe': { side: 'MACHINE_CASING_PIPE_TITANIUM' },
@@ -312,11 +360,13 @@ export const HAND_BLOCK_MAP = {
   'gt.hatch.inputBus': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.outputBus': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.inputHatch': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
+  'gt.hatch.quadInput': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.outputHatch': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.energy': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.dynamo': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.maintenance': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   'gt.hatch.muffler': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
+  'gt.hatch.dataAccess': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   // Site stand-in for any GT single-block machine: an LV machine hull.
   'site.singleblock': { side: 'MACHINE_LV_SIDE', top: 'MACHINE_LV_TOP', bottom: 'MACHINE_LV_BOTTOM' },
   // Site placeholder for a multiblock that is not transcribed yet: hazard-striped casing.
@@ -369,6 +419,31 @@ for (const m of SINGLE_MACHINES) {
   };
 }
 
+// Tiles of the tiered looks (no blocks: `site.machine.<id>@<tier>` and
+// `site.machine.transformer@<high tier>:<step>:<amps>` are resolved by the renderer, see
+// parseMachineLookId in src/data/single-machines.ts). The hull of every tier is above; a transformer shows
+// the energy hatch overlay of its high side on the front and of its low side on the other faces, in the
+// amperage family (4, 16 Hi-Amp, 64 Power; every family from an LV high side, Hi-Amp below UEV from GT++).
+const TRANSFORMER = SINGLE_MACHINES.find((m) => m.transformer);
+if (TRANSFORMER) {
+  const overlay = (dir, multi, tier) => {
+    HAND_TILES[`SINGLE_TRANSFORMER_${dir}${multi ? `_${multi}A` : ''}_${tier.toUpperCase()}`] = {
+      path: `${ICONSETS}/OVERLAY_ENERGY_${dir}${multi ? `_MULTI_${multi}A` : ''}_${tier}.png`,
+    };
+  };
+  const [from, last] = TRANSFORMER.tiers.map((t) => TIER_NAMES.indexOf(t));
+  // The low side is one tier below: ULV is never a high side.
+  const first = Math.max(from, 1);
+  for (let i = first; i <= last; i++) {
+    for (const amps of [4, 16, 64]) {
+      for (const dir of ['IN', 'OUT']) {
+        overlay(dir, amps === 4 ? 0 : amps / 4, TIER_NAMES[i]);
+        overlay(dir, amps, TIER_NAMES[i - 1]);
+      }
+    }
+  }
+}
+
 const generated = existsSync(TEXTURES_GENERATED)
   ? JSON.parse(readFileSync(TEXTURES_GENERATED, 'utf8'))
   : { tiles: {}, blocks: {} };
@@ -393,6 +468,7 @@ export const HATCH_OVERLAYS = {
   maintenance: ['OVERLAY_MAINTENANCE'],
   muffler: ['OVERLAY_MUFFLER'],
   steamIn: ['OVERLAY_PIPE_IN', 'FLUID_IN_SIGN'],
+  dataAccess: ['OVERLAY_DATA_ACCESS'],
 };
 
 export function tileSourcePath(name) {
@@ -635,8 +711,31 @@ export function readBlockIds(
   return [...[...source.matchAll(/\bid:\s*'([^']+)'/g)].map((m) => m[1]), ...generatedList.map((b) => b.id)];
 }
 
+/** Display names by block id, from the same two sources as `readBlockIds`. */
+export function readBlockNames(
+  source = readFileSync(BLOCKS_TS, 'utf8'),
+  generatedList = existsSync(BLOCKS_GENERATED) ? JSON.parse(readFileSync(BLOCKS_GENERATED, 'utf8')) : [],
+) {
+  const names = new Map(
+    [...source.matchAll(/id:\s*'([^']+)',\s*name:\s*'([^']+)'/g)].map((m) => [m[1], m[2]]),
+  );
+  for (const b of generatedList) names.set(b.id, b.name);
+  return names;
+}
+
+/**
+ * Whether a block is see-through glass in game (drawn in the translucent pass): its registry id or display
+ * name mentions glass (`gt.glass.reinforced`, `bartworks:BW_TieredGlass@n`, `gt.blockglass1@n`,
+ * `gt.blocktintedglass`, "Force Field Glass", ...). Every `gt.blockglass1` meta counts, grate and waveguide
+ * included: the game draws the whole class in the translucent pass. Decided from identity, never from pixels:
+ * casings with a perforated texture must stay opaque.
+ */
+export function isTranslucentBlock(id, name = id) {
+  return /glass|glas/i.test(id) || /glass/i.test(name);
+}
+
 /** Builds the textures.json object. */
-export function buildManifest(rects, atlasSize, blockIds) {
+export function buildManifest(rects, atlasSize, blockIds, names = readBlockNames()) {
   const blocks = {};
   const flat = [];
   for (const id of [...new Set([...blockIds, ...Object.keys(BLOCK_MAP)])].sort()) {
@@ -647,7 +746,7 @@ export function buildManifest(rects, atlasSize, blockIds) {
       continue;
     }
     for (const t of Object.values(faces)) if (!rects[t]) throw new Error(`${id}: unknown tile ${t}`);
-    blocks[id] = { ...faces };
+    blocks[id] = isTranslucentBlock(id, names.get(id)) ? { ...faces, translucent: true } : { ...faces };
   }
   for (const [kind, list] of Object.entries(HATCH_OVERLAYS)) {
     for (const t of list) if (!rects[t]) throw new Error(`hatch ${kind}: unknown tile ${t}`);

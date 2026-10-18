@@ -1,4 +1,4 @@
-import { controllerFacing, rotateDir, step } from '../geometry';
+import { controllerFacing, defOfUnit, rotateDir, step } from '../geometry';
 import type { Dir } from '../core/types';
 import type { HatchKind, MultiblockDef, Unit, UnitCell } from '../multiblock/types';
 import type { HatchPlacement } from '../plan/types';
@@ -10,16 +10,21 @@ import type { Grid, KindState, Router, Terminal } from './types';
 
 /** What routing connects: its terminals, the cells kept free around the build, and cell prices. */
 
-/** Routed hatches per kind, in hatch order, one per cell. */
+/**
+ * Routed hatches per kind, in hatch order, one per cell. Without `below`, a hatch that faces the ground
+ * (`HatchPlacement.fromBelow`) is no terminal: no pipe can reach it, and the layout search must not take it for
+ * a hatch to connect by loosening the layout. Its hint (`groundFace`) says so.
+ */
 export function routedHatchesByKind(
   hatches: readonly HatchPlacement[],
   kinds: readonly RoutedKind[],
+  below = false,
 ): Map<RoutedKind, HatchPlacement[]> {
   const wanted = new Set<HatchKind>(kinds);
   const byKind = new Map<RoutedKind, HatchPlacement[]>();
   const seenCells = new Set<string>();
   for (const h of hatches) {
-    if (!isRoutable(h.kind) || !wanted.has(h.kind)) continue;
+    if (!isRoutable(h.kind) || !wanted.has(h.kind) || (h.fromBelow && !below)) continue;
     const id = `${h.kind}|${h.cell.join()}`;
     if (seenCells.has(id)) continue;
     seenCells.add(id);
@@ -68,7 +73,8 @@ export function blockedSides(
   units.forEach((u, ui) => {
     for (const c of cellsOf[ui]) {
       const kind = hatchAt.get(c.pos.join());
-      const dirs = kind && c.role === 'casing' ? def.legend[c.char]?.disallowFaces?.[kind] : undefined;
+      const dirs =
+        kind && c.role === 'casing' ? defOfUnit(def, u).legend[c.char]?.disallowFaces?.[kind] : undefined;
       if (!kind || !dirs) continue;
       const id = `${kind}|${c.pos.join()}`;
       let set = blocked.get(id);

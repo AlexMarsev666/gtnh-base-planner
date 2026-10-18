@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { catalog } from '../data/catalog';
 import { defaultPlan } from '../state/store';
 import { createPipeline } from '../ui/pipeline';
-import { controllerFacing, key, localCells, rotateDir, step, toWorld } from './geometry';
+import { controllerFacing, defOfUnit, key, localCells, rotateDir, step, toWorld } from './geometry';
 import { PIPE_KINDS } from './routing/kinds';
 import type { MultiblockDef, PlanLimits, Unit } from './multiblock/types';
 
@@ -10,7 +10,7 @@ import type { MultiblockDef, PlanLimits, Unit } from './multiblock/types';
 const handMade = catalog.filter((d) => !d.generated);
 
 /**
- * Game rules checked against GT5-Unofficial 5.09.54.133 (GT:NH 2.9.0-beta-3) on whole plans, pipes included.
+ * Game rules checked against GT5-Unofficial 5.09.54.205 (GT:NH 2.9.0-RC-2) on whole plans, pipes included.
  * See the structure definitions linked from each multiblock's `source`.
  */
 
@@ -30,7 +30,8 @@ function build(id: string, count: number, limits = NO_LIMITS, size?: number) {
 
 /** Legend char of `unit` at a world cell, or undefined. */
 function charAt(def: MultiblockDef, unit: Unit, cell: string): string | undefined {
-  for (const c of localCells(def)) if (key(toWorld(def, unit, c.local)) === cell) return c.char;
+  const d = defOfUnit(def, unit);
+  for (const c of localCells(d)) if (key(toWorld(d, unit, c.local)) === cell) return c.char;
   return undefined;
 }
 
@@ -52,7 +53,7 @@ describe('GT rules', () => {
         // Every layer above the base: the ring copies and the top.
         for (const u of units)
           for (let y = 1; y < height; y++) {
-            const layer = regionAt(u, key(toWorld(def, u, [0, y, 0])));
+            const layer = regionAt(u, key(toWorld(defOfUnit(def, u), u, [0, y, 0])));
             expect(layer, `height ${height} layer ${y}`).toBeDefined();
             expect(
               outs.some((h) => h.unitIds.includes(u.id) && regionAt(u, key(h.cell)) === layer),
@@ -86,8 +87,9 @@ describe('GT rules', () => {
               false,
             );
         for (const u of units) {
-          const ctrl = localCells(def).find((c) => c.role === 'controller')!;
-          const front = key(step(toWorld(def, u, ctrl.local), controllerFacing(def, u)));
+          const d = defOfUnit(def, u);
+          const ctrl = localCells(d).find((c) => c.role === 'controller')!;
+          const front = key(step(toWorld(d, u, ctrl.local), controllerFacing(def, u)));
           expect(pipeCells.has(front), `${def.id} controller of unit ${u.id}`).toBe(false);
           // ...and no hatch faces it either.
           for (const h of scene.hatches)

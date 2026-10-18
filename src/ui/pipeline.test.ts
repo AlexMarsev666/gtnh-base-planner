@@ -1,13 +1,15 @@
+import { get, writable } from 'svelte/store';
 import { describe, expect, it, vi } from 'vitest';
 import { getMultiblock } from '../data/catalog';
 import type { Unit } from '../model/multiblock/types';
 import type { WallStats } from '../model/plan/types';
 import type { SceneModel } from '../model/render/types';
 import type { RouteNet } from '../model/routing/routeNet';
-import { defaultPlan } from '../state/store';
+import type { AppMode } from '../share/sitePersist';
+import { connectBelow, defaultPlan, plan } from '../state/store';
 import { catalog } from '../data/catalog';
 import { dominantBlockId, hatchKindsOf, iconFaces, matchesQuery, shade } from './catalogView';
-import { createPipeline, type PipelineDeps } from './pipeline';
+import { createBuildStore, createPipeline, planBom, type PipelineDeps } from './pipeline';
 import { statsParts } from './statsText';
 
 const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -119,6 +121,68 @@ describe('pipeline', () => {
     );
   });
 
+  it('repacks and replaces hatches when the mirror or wall sharing changes', () => {
+    const deps = fakeDeps();
+    const run = createPipeline(deps);
+    const p = defaultPlan();
+    const base = run(p, false);
+    const packs = () => deps.packUnits.mock.calls.length;
+    expect(packs()).toBe(1);
+    const mirrored = run({ ...p, mirror: true }, false);
+    expect(packs()).toBe(2);
+    expect(mirrored.def).not.toBe(base.def);
+    expect(mirrored.def?.id).toBe(base.def?.id);
+    run({ ...p, mirror: true, wallshare: 'stack' }, false);
+    expect(packs()).toBe(3);
+    // The preference reaches the packer and the looser layouts.
+    expect(deps.packUnits.mock.calls[2]).toEqual([expect.anything(), p.count, p.limits, 'stack']);
+    run({ ...p, mirror: true, wallshare: 'auto' }, false);
+    expect(packs()).toBe(4);
+  });
+
+  it('passes the incoming hatch options on when hatches may face down', () => {
+    const deps = fakeDeps();
+    deps.placeHatches.mockImplementation(((..._a: unknown[]) => ({
+      hatches: [],
+      unplaced: [{ unitId: 0, kind: 'energy' }],
+    })) as never);
+    deps.layoutCandidates.mockImplementation(function* () {} as never);
+    const run = createPipeline(deps);
+    run(defaultPlan(), false, false, true);
+    for (const call of deps.placeHatches.mock.calls as unknown[][])
+      expect(call[4]).toMatchObject({ below: true });
+  });
+
+  it('exposes the hatch capacity and the wall sharing fallback', () => {
+    const deps = fakeDeps();
+    const capacity = [{ needed: 3, available: 2, kind: 'energy', units: 1 }] as never;
+    deps.placeHatches.mockImplementation((() => ({ hatches: [], unplaced: [], capacity })) as never);
+    const fallback = { wanted: 'stack', used: 'auto', reason: 'geometry' } as const;
+    deps.packUnits.mockImplementation(((_d: unknown, count: number) => ({
+      units: [{ id: 0, origin: [0, 0, 0], rotation: 0 }],
+      requested: count,
+      placed: 1,
+      fallback,
+    })) as never);
+    const r = createPipeline(deps)(defaultPlan(), false);
+    expect(r.capacity).toBe(capacity);
+    expect(r.wallshareFallback).toEqual(fallback);
+    expect(createPipeline(fakeDeps())(defaultPlan(), false).capacity).toBeUndefined();
+  });
+
+  it('counts hatches of the machine tier and of tiered single hatches in the bill of materials', () => {
+    const scene = createPipeline()(defaultPlan('electric-blast-furnace'), false).scene!;
+    const tiersOf = (b: ReturnType<typeof planBom>) => b.blocks.filter((r) => r.tier).map((r) => r.tier);
+    expect(tiersOf(planBom(scene, { tier: 'HV' }))).toContain('HV');
+    expect(tiersOf(planBom(scene, { tier: 'HV' }))).not.toContain('EV');
+    // No tier set: untiered, as before.
+    expect(tiersOf(planBom(scene, {}))).toEqual([]);
+    const energy = scene.hatches.findIndex((h) => h.kind === 'energy');
+    expect(energy).toBeGreaterThanOrEqual(0);
+    const some = planBom(scene, { tier: 'HV', hatchTiers: { 'energy:0': 'EV' } });
+    expect(tiersOf(some)).toEqual(expect.arrayContaining(['HV', 'EV']));
+  });
+
   it('loosens the layout when pipes cannot reach every hatch, and routes it once', () => {
     const deps = fakeDeps();
     const wide: Unit[] = [{ id: 0, origin: [0, 0, 0], rotation: 0 }];
@@ -176,6 +240,25 @@ describe('pipeline', () => {
     expect(warn).toHaveBeenCalledWith('resolveRoutedLayout: boom');
   });
 
+  it('reports a hatch above the glass tier, and follows the tier and the glass tier', () => {
+    const run = createPipeline();
+    // The problem types over all units (one each here).
+    const types = (p: ReturnType<typeof defaultPlan>) => [
+      ...new Set(
+        Object.values(run(p, false).validity ?? {})
+          .flat()
+          .map((x) => x.type),
+      ),
+    ];
+    const base = defaultPlan('mega-oil-cracker');
+    expect(types(base)).toEqual([]);
+    // The drawn glass is HV: an EV machine outruns it.
+    expect(types({ ...base, tier: 'EV' })).toEqual(['glassTier']);
+    expect(types({ ...base, tier: 'EV', glassTier: 'EV' })).toEqual([]);
+    expect(types({ ...base, tier: 'HV', hatchTiers: { 'energy:0': 'LuV' } })).toEqual(['glassTier']);
+    expect(types({ ...base, tier: 'HV' })).toEqual([]);
+  });
+
   it('reports an unknown multiblock', () => {
     const r = createPipeline(fakeDeps())({ ...defaultPlan(), multiblockId: 'nope' }, false);
     expect(r.error).toMatch(/nope/);
@@ -186,7 +269,13 @@ describe('stats line', () => {
   it('lists units, blocks, walls, hatches, saved and the selection', () => {
     const r = createPipeline(fakeDeps())(defaultPlan(), false);
     const parts = statsParts(r, [1]);
-    expect(parts.main).toEqual(['2 units', '40 blocks', '1 shared wall', '3 hatches', '9 saved']);
+    expect(parts.main).toEqual([
+      '2 units',
+      '40 blocks',
+      '1 shared wall',
+      '3 hatches',
+      '9 blocks saved by shared walls',
+    ]);
     expect(parts.selected).toBe('Unit 2');
     expect(statsParts(r, []).selected).toBeNull();
     expect(statsParts(r, [0, 1]).selected).toBe('Units 1, 2');
@@ -225,5 +314,35 @@ describe('catalog view', () => {
     expect(matchesQuery(coke, 'steam')).toBe(true);
     expect(matchesQuery(coke, 'zzz')).toBe(false);
     expect(catalog.every((d) => matchesQuery(d, ''))).toBe(true);
+  });
+});
+
+describe('build store', () => {
+  it('computes nothing while the template view is shown, and catches up on return', () => {
+    const deps = fakeDeps();
+    const mode = writable<AppMode>('machine');
+    const store = createBuildStore(createPipeline(deps), mode).build;
+    const stop = store.subscribe(() => {});
+    const before = deps.packUnits.mock.calls.length;
+    expect(before).toBeGreaterThan(0);
+
+    mode.set('site');
+    plan.update((p) => ({ ...p, count: p.count + 1 }));
+    connectBelow.update((b) => !b);
+    expect(deps.packUnits).toHaveBeenCalledTimes(before);
+    expect(deps.placeHatches).toHaveBeenCalledTimes(before);
+
+    mode.set('machine');
+    expect(deps.packUnits.mock.calls.length).toBeGreaterThan(before);
+    expect(get(store).pack?.requested).toBe(get(plan).count);
+    stop();
+  });
+
+  it('has an empty result before the machine view was ever built', () => {
+    const deps = fakeDeps();
+    const store = createBuildStore(createPipeline(deps), writable<AppMode>('site')).build;
+    expect(get(store).scene).toBeNull();
+    expect(get(store).error).toBeNull();
+    expect(deps.packUnits).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
 {
   "id": "implosion-compressor",
   "name": "Implosion Compressor",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEImplosionCompressor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEImplosionCompressor.java",
   "size": [3, 3, 3],
   "layers": [
     ["CCC", "CCC", "CCC"],
@@ -30,7 +30,8 @@
     "maintenance": { "min": 1 },
     "muffler": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["C"], "min": 16 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
   "wallshare": true,
-  "notes": "3x3x3 hollow cube of Solid Steel Machine Casings (at least 16) with the controller in the front centre of the middle layer. Input bus, output bus, energy, maintenance and muffler hatches may replace any casing; no fluid hatches. Sharing: GT5u adds every hatch it finds during the structure check to that controller's lists with no ownership check, so buses in a shared wall serve every controller around them. Energy, maintenance and muffler hatches are not marked shareable: several controllers draining one energy hatch starve each other, maintenance repair flags are cleared by the first controller that reads them, and each machine needs its own muffler."
+  "notes": "3x3x3 hollow cube of Solid Steel Machine Casings (at least 16) with the controller in the front centre of the middle layer. Input bus, output bus, energy, maintenance and muffler hatches may replace any casing; no fluid hatches. Sharing: GT5u adds every hatch it finds during the structure check to that controller's lists with no ownership check, so buses in a shared wall serve every controller around them. Mufflers in a shared wall are shared; energy and maintenance hatches are not unless the Share options ask for it (a shared energy hatch gives each of two machines 1 A, and a shared maintenance hatch is repaired one machine at a time)."
 }

@@ -2,7 +2,7 @@
   "id": "rocketdyne-f-1a-engine",
   "name": "Rocketdyne F-1A Engine",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTELargeRocketEngine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTELargeRocketEngine.java",
   "size": [3, 3, 10],
   "layers": [
     ["AAA", "ABA", "ABA", "ABA", "ABA", "ABA", "ABA", "ABA", "ABA", "AAA"],
@@ -11,10 +11,18 @@
   ],
   "legend": {
     "A": { "blockId": "miscutils:gtplusplus.blockcasings.4@11" },
-    "B": { "blockId": "miscutils:gtplusplus.blockcasings.4@11", "hatches": ["fluidIn", "maintenance"] },
+    "B": {
+      "blockId": "miscutils:gtplusplus.blockcasings.4@11",
+      "hatches": ["fluidIn", "maintenance"],
+      "region": "dot1"
+    },
     "C": { "blockId": "miscutils:gtplusplus.blockcasings.3@1" },
-    "D": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"] },
-    "E": { "blockId": "miscutils:gtplusplus.blockcasings.4@11", "hatches": ["dynamo", "maintenance"] }
+    "D": { "blockId": "gt.hatch.muffler", "hatches": ["muffler"], "region": "dot3" },
+    "E": {
+      "blockId": "miscutils:gtplusplus.blockcasings.4@11",
+      "hatches": ["dynamo", "maintenance"],
+      "region": "dot2"
+    }
   },
   "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@996" },
   "hatchBlocks": {
@@ -25,11 +33,24 @@
   },
   "shareableHatches": ["fluidIn"],
   "requiredHatches": {
+    "fluidIn": { "min": 1 },
     "dynamo": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["B", "E"], "min": 16 }],
   "defaultHatches": ["fluidIn", "dynamo", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "maintenance"],
+      "text": "1+ Air Intake Hatch: Any center casing\n1 Maintenance Hatch: Any center casing\n1+ Input Hatch: Any side or bottom center casing"
+    },
+    "dot2": {
+      "kinds": ["dynamo", "maintenance"],
+      "text": "1+ Air Intake Hatch: Any center casing\n1+ Dynamo Hatch: Any top center casing\n1 Maintenance Hatch: Any center casing"
+    },
+    "dot3": { "kinds": ["muffler"], "text": "1 Muffler Hatch: Back center casing" }
+  },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTELargeRocketEngine (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: MTELargeRocketEngine (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

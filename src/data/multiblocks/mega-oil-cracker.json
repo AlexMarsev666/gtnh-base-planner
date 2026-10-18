@@ -2,7 +2,7 @@
   "id": "mega-oil-cracker",
   "name": "Mega Oil Cracker",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaOilCracker.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEMegaOilCracker.java",
   "size": [13, 8, 9],
   "layers": [
     [
@@ -32,7 +32,7 @@
       "ABCCCCCCCCCBA",
       " CD-D-D-D-DC ",
       " F---------G ",
-      " FD-------DG ",
+      " FD-D-D-D-DG ",
       " F---------G ",
       " CD-D-D-D-DC ",
       "ABCCCCCCCCCBA",
@@ -75,9 +75,9 @@
       " A         A ",
       "ABCCCCCCCCCBA",
       " BCCCCCCCCCB ",
-      " BCCCGGGCCCB ",
-      " BEEEGGGEEEB ",
-      " BCCCGGGCCCB ",
+      " BCCCIIICCCB ",
+      " BEEEIIIEEEB ",
+      " BCCCIIICCCB ",
       " BCCCCCCCCCB ",
       "ABCCCCCCCCCBA",
       " A         A "
@@ -96,13 +96,18 @@
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings4@1" },
-    "B": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["itemIn", "energy", "maintenance"] },
+    "B": {
+      "blockId": "gregtech:gt.blockcasings14@5",
+      "hatches": ["itemIn", "energy", "maintenance"],
+      "region": "dot1"
+    },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "gregtech:gt.blockcasings5@0" },
     "E": { "blockId": "gregtech:gt.sheetmetal@324" },
-    "F": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["fluidOut"] },
-    "G": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["fluidIn"] },
-    "H": { "blockId": "gregtech:gt.blockcasings2@13" }
+    "F": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["fluidOut"], "region": "dot4" },
+    "G": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["fluidIn"], "region": "dot2" },
+    "H": { "blockId": "gregtech:gt.blockcasings2@13" },
+    "I": { "blockId": "gregtech:gt.blockcasings14@5", "hatches": ["fluidIn"], "region": "dot3" }
   },
   "controller": { "pos": [6, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15569" },
   "hatchBlocks": {
@@ -113,8 +118,34 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "energy", "maintenance"],
+  "requiredHatches": {
+    "fluidIn": { "min": 1, "max": 2 },
+    "fluidOut": { "min": 1, "max": 1 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "minCasings": [{ "chars": ["B", "F", "G", "I"], "min": 145 }],
+  "glassTierLimits": { "chars": ["C"], "kinds": ["energy"] },
+  "coils": { "chars": ["D"] },
+  "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "energy", "maintenance"],
+      "text": "1+ Energy Hatch: Any reinforced distillation casing\n1 Maintenance Hatch: Any reinforced distillation casing\n0+ Input Bus: Any reinforced distillation casing"
+    },
+    "dot2": {
+      "kinds": ["fluidIn"],
+      "text": "2 Input Hatch: Any middle casing (cracking fluid), any side casing (hydrocarbon)\n1 Output Hatch: Any side casing opposite the hydrocarbon"
+    },
+    "dot3": {
+      "kinds": ["fluidIn"],
+      "text": "2 Input Hatch: Any middle casing (cracking fluid), any side casing (hydrocarbon)"
+    },
+    "dot4": {
+      "kinds": ["fluidOut"],
+      "text": "2 Input Hatch: Any middle casing (cracking fluid), any side casing (hydrocarbon)\n1 Output Hatch: Any side casing opposite the hydrocarbon"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEMegaOilCracker (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEMegaOilCracker (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

@@ -2,7 +2,7 @@
   "id": "semi-stable-antimatter-stabilization-sequencer",
   "name": "Semi-Stable Antimatter Stabilization Sequencer",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/AntimatterForge.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/AntimatterForge.java",
   "size": [53, 53, 47],
   "layers": [
     [
@@ -2607,16 +2607,24 @@
     "A": { "blockId": "GoodGenerator:magneticFluxCasing@0" },
     "B": { "blockId": "GoodGenerator:gravityStabilizationCasing@0" },
     "C": { "blockId": "GoodGenerator:antimatterContainmentCasing@0" },
-    "D": { "blockId": "GoodGenerator:gravityStabilizationCasing@0", "hatches": ["fluidIn"] },
+    "D": {
+      "blockId": "GoodGenerator:gravityStabilizationCasing@0",
+      "hatches": ["fluidIn"],
+      "region": "dot1"
+    },
     "E": { "blockId": "gt.hatch.special" },
     "F": { "blockId": "GoodGenerator:protomatterActivationCoil@0" },
-    "G": { "blockId": "GoodGenerator:gravityStabilizationCasing@0", "hatches": ["energy"] }
+    "G": { "blockId": "GoodGenerator:gravityStabilizationCasing@0", "hatches": ["energy"], "region": "dot2" }
   },
   "controller": { "pos": [26, 26, 4], "facing": "north", "blockId": "gregtech:gt.blockmachines@32027" },
   "hatchBlocks": { "fluidIn": "gt.hatch.inputHatch", "energy": "gt.hatch.energy" },
   "shareableHatches": ["fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 } },
+  "requiredHatches": { "fluidIn": { "min": 1 }, "energy": { "min": 1 } },
   "defaultHatches": ["fluidIn", "energy"],
+  "zones": {
+    "dot1": { "kinds": ["fluidIn"], "text": "1+ Input Hatch: Top or bottom side of the structure" },
+    "dot2": { "kinds": ["energy"], "text": "1+ Energy Hatch: Back, left, or right side of the structure" }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: AntimatterForge (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: AntimatterForge (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

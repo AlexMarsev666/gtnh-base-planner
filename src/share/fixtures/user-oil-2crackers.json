@@ -1,0 +1,1191 @@
+{
+  "v": 1,
+  "kind": "site",
+  "size": [
+    59,
+    36
+  ],
+  "corridor": 2,
+  "groups": [
+    {
+      "id": "g1",
+      "multiblockId": "distillation-tower",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        27,
+        5
+      ],
+      "rotation": 1,
+      "label": "OIL Дистилятор HV",
+      "tier": "HV",
+      "size": 6
+    },
+    {
+      "id": "g2",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        28,
+        2
+      ],
+      "rotation": 0,
+      "label": "Oil Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g3",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        24,
+        8
+      ],
+      "rotation": 1,
+      "label": "Sulfuric Gas Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g4",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        24,
+        5
+      ],
+      "rotation": 2,
+      "label": "Naphthenic Acid Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g5",
+      "multiblockId": "large-chemical-reactor",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        32,
+        5
+      ],
+      "rotation": 2,
+      "label": "LCR LV",
+      "tier": "LV"
+    },
+    {
+      "id": "g6",
+      "multiblockId": "single-block",
+      "count": 9,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        23,
+        13
+      ],
+      "rotation": 0,
+      "label": "Электролизер HV",
+      "machine": "electrolyzer",
+      "tier": "HV"
+    },
+    {
+      "id": "g7",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        30,
+        16
+      ],
+      "rotation": 2,
+      "label": "Water Source"
+    },
+    {
+      "id": "g8",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        27,
+        10
+      ],
+      "rotation": 1,
+      "label": "Hydrogen Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g9",
+      "multiblockId": "oil-cracking-unit",
+      "count": 2,
+      "limits": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        23,
+        23
+      ],
+      "rotation": 3,
+      "label": "Oil Cracking Unit HV",
+      "tier": "HV",
+      "hatchTiers": {
+        "energy:0": "HV",
+        "fluidIn:fluid:butadiene:0": "HV",
+        "fluidIn:fluid:butene:0": "HV",
+        "fluidIn:fluid:hydrogen:0": "HV",
+        "fluidIn:fluid:light-fuel:0": "HV",
+        "fluidIn:fluid:resource:0": "HV",
+        "fluidIn:fluid:steam:0": "HV",
+        "fluidOut:fluid:light-steam-cracked-napthta:0": "HV"
+      },
+      "wallshare": "separate",
+      "assign": {
+        "fluid:butadiene": {
+          "unit": 0,
+          "zone": "side"
+        },
+        "fluid:butene": {
+          "unit": 1,
+          "zone": "side"
+        },
+        "fluid:hydrogen": {
+          "unit": 0,
+          "zone": "middle"
+        },
+        "fluid:light-fuel": {
+          "unit": 0,
+          "zone": "side"
+        },
+        "fluid:light-hydro-cracked-butadiene": {
+          "unit": 0,
+          "zone": "side"
+        },
+        "fluid:light-steam-cracked-napthta": {
+          "unit": 1,
+          "zone": "side"
+        },
+        "fluid:lightly-hydro-craked-light-fuel": {
+          "unit": 0,
+          "zone": "side"
+        },
+        "fluid:modertely-steam-cracked-butene": {
+          "unit": 1,
+          "zone": "side"
+        },
+        "fluid:resource": {
+          "unit": 1,
+          "zone": "side"
+        },
+        "fluid:steam": {
+          "unit": 1,
+          "zone": "middle"
+        }
+      }
+    },
+    {
+      "id": "g10",
+      "multiblockId": "single-block",
+      "count": 2,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        30,
+        11
+      ],
+      "rotation": 1,
+      "label": "Distillery HV",
+      "machine": "distillery",
+      "tier": "HV"
+    },
+    {
+      "id": "g11",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        33,
+        18
+      ],
+      "rotation": 3,
+      "label": "Steam Source"
+    },
+    {
+      "id": "g12",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        32,
+        2
+      ],
+      "rotation": 3,
+      "label": "Heavy Fuel Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g13",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        35,
+        2
+      ],
+      "rotation": 0,
+      "label": "Hydrogen Sulfide Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g14",
+      "multiblockId": "distillation-tower",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": null,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        38,
+        9
+      ],
+      "rotation": 0,
+      "label": "Distillation Tower MV (Butene)",
+      "tier": "MV",
+      "size": 3
+    },
+    {
+      "id": "g15",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        43,
+        12
+      ],
+      "rotation": 1,
+      "label": "Ethylene Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g16",
+      "multiblockId": "distillation-tower",
+      "count": 2,
+      "limits": {
+        "x": 1,
+        "y": 1,
+        "z": 2
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        38,
+        14
+      ],
+      "rotation": 2,
+      "label": "Distillation Tower MV (Octane)",
+      "tier": "MV",
+      "assign": {
+        "power:eu-2": {
+          "unit": "all"
+        }
+      },
+      "size": 7
+    },
+    {
+      "id": "g17",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        43,
+        15
+      ],
+      "rotation": 2,
+      "label": "Methane Tank"
+    },
+    {
+      "id": "g18",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        42,
+        21
+      ],
+      "rotation": 1,
+      "label": "Octane Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g19",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        47,
+        16
+      ],
+      "rotation": 2,
+      "label": "Butane Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g20",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        43,
+        18
+      ],
+      "rotation": 2,
+      "label": "Propane Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g21",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        36,
+        21
+      ],
+      "rotation": 2,
+      "label": "Ethane Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g22",
+      "multiblockId": "distillation-tower",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [
+        "energy",
+        "maintenance"
+      ],
+      "origin": [
+        43,
+        7
+      ],
+      "rotation": 3,
+      "label": "Distillation Tower MV (Этилен)",
+      "tier": "MV",
+      "size": 4
+    },
+    {
+      "id": "g23",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        46,
+        12
+      ],
+      "rotation": 2,
+      "label": "Propene Tank",
+      "machine": "tank"
+    },
+    {
+      "id": "g24",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        48,
+        6
+      ],
+      "rotation": 1,
+      "label": "Carbone Storage",
+      "machine": "tank"
+    },
+    {
+      "id": "g25",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        39,
+        3
+      ],
+      "rotation": 3,
+      "label": "16A EV-HV Transform",
+      "machine": "transformer",
+      "tier": "EV"
+    },
+    {
+      "id": "g26",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        40,
+        6
+      ],
+      "rotation": 0,
+      "label": "4A HV-MV Transform",
+      "machine": "transformer",
+      "tier": "HV"
+    },
+    {
+      "id": "g27",
+      "multiblockId": "single-block",
+      "count": 1,
+      "limits": {
+        "x": null,
+        "y": 1,
+        "z": null
+      },
+      "enabledHatches": [],
+      "origin": [
+        37,
+        6
+      ],
+      "rotation": 3,
+      "label": "4A MV-LV Transform",
+      "machine": "transformer",
+      "tier": "MV"
+    }
+  ],
+  "links": [
+    {
+      "id": "l1",
+      "from": {
+        "group": "g2"
+      },
+      "to": {
+        "group": "g1"
+      },
+      "resource": "fluid:oil",
+      "rate": 313
+    },
+    {
+      "id": "l2",
+      "from": {
+        "group": "g1"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "fluid:sulfuric-light-fuel",
+      "rate": 312.5
+    },
+    {
+      "id": "l3",
+      "from": {
+        "group": "g1"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "fluid:sulfuric-heavy-fuel",
+      "rate": 93.75
+    },
+    {
+      "id": "l4",
+      "from": {
+        "group": "g1"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "fluid:sulfuric-napthta",
+      "rate": 125
+    },
+    {
+      "id": "l5",
+      "from": {
+        "group": "g1"
+      },
+      "to": {
+        "group": "g3"
+      },
+      "resource": "fluid:sulfuric-gas",
+      "rate": 375
+    },
+    {
+      "id": "l6",
+      "from": {
+        "group": "g1"
+      },
+      "to": {
+        "group": "g4"
+      },
+      "resource": "fluid:naphthenic-acid",
+      "rate": 15.63
+    },
+    {
+      "id": "l7",
+      "from": {
+        "group": "g7"
+      },
+      "to": {
+        "group": "g6"
+      },
+      "resource": "fluid:water",
+      "rate": 352
+    },
+    {
+      "id": "l8",
+      "from": {
+        "group": "g6"
+      },
+      "to": {
+        "group": "g8"
+      },
+      "resource": "fluid:hydrogen",
+      "rate": 704.4
+    },
+    {
+      "id": "l9",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "fluid:hydrogen"
+    },
+    {
+      "id": "l10",
+      "from": {
+        "group": "g9"
+      },
+      "to": {
+        "group": "g10"
+      },
+      "resource": "fluid:light-steam-cracked-napthta",
+      "rate": 450
+    },
+    {
+      "id": "l11",
+      "from": {
+        "group": "g10"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:butadiene",
+      "rate": 67.5
+    },
+    {
+      "id": "l12",
+      "from": {
+        "group": "g11"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:steam",
+      "rate": 420
+    },
+    {
+      "id": "l13",
+      "from": {
+        "group": "g8"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:hydrogen",
+      "rate": 608
+    },
+    {
+      "id": "l14",
+      "from": {
+        "group": "g5"
+      },
+      "to": {
+        "group": "g12"
+      },
+      "resource": "fluid:heaby-fuel",
+      "rate": 93.8
+    },
+    {
+      "id": "l15",
+      "from": {
+        "group": "g5"
+      },
+      "to": {
+        "group": "g13"
+      },
+      "resource": "fluid:hydrogen-sulfide",
+      "rate": 48.2
+    },
+    {
+      "id": "l17",
+      "from": {
+        "group": "g5"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:light-fuel",
+      "rate": 312.5
+    },
+    {
+      "id": "l18",
+      "from": {
+        "group": "g9"
+      },
+      "to": {
+        "group": "g14"
+      },
+      "resource": "fluid:light-hydro-cracked-butadiene",
+      "rate": 67.5
+    },
+    {
+      "id": "l19",
+      "from": {
+        "group": "g14"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:butene",
+      "rate": 45.02
+    },
+    {
+      "id": "l20",
+      "from": {
+        "group": "g14"
+      },
+      "to": {
+        "group": "g15"
+      },
+      "resource": "fluid:resource-2"
+    },
+    {
+      "id": "l21",
+      "from": {
+        "group": "g16"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:resource",
+      "rate": 250
+    },
+    {
+      "id": "l16",
+      "from": {
+        "group": "g5"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "fluid:resource",
+      "rate": 125
+    },
+    {
+      "id": "l22",
+      "from": {
+        "group": "g9"
+      },
+      "to": {
+        "group": "g16"
+      },
+      "resource": "fluid:lightly-hydro-craked-light-fuel",
+      "rate": 312.5
+    },
+    {
+      "id": "l23",
+      "from": {
+        "group": "g16"
+      },
+      "to": {
+        "group": "g17"
+      },
+      "resource": "fluid:methane",
+      "rate": 39.1
+    },
+    {
+      "id": "l24",
+      "from": {
+        "group": "g16"
+      },
+      "to": {
+        "group": "g18"
+      },
+      "resource": "fluid:octane",
+      "rate": 31.3
+    },
+    {
+      "id": "l25",
+      "from": {
+        "group": "g16"
+      },
+      "to": {
+        "group": "g19"
+      },
+      "resource": "fluid:butane",
+      "rate": 46.9
+    },
+    {
+      "id": "l26",
+      "from": {
+        "group": "g16"
+      },
+      "to": {
+        "group": "g20"
+      },
+      "resource": "fluid:propane",
+      "rate": 62.5
+    },
+    {
+      "id": "l27",
+      "from": {
+        "group": "g16"
+      },
+      "to": {
+        "group": "g21"
+      },
+      "resource": "fluid:ethane",
+      "rate": 39.1
+    },
+    {
+      "id": "l28",
+      "from": {
+        "group": "g9"
+      },
+      "to": {
+        "group": "g22"
+      },
+      "resource": "fluid:modertely-steam-cracked-butene",
+      "rate": 54.03
+    },
+    {
+      "id": "l29",
+      "from": {
+        "group": "g22"
+      },
+      "to": {
+        "group": "g15"
+      },
+      "resource": "fluid:resource-2",
+      "rate": 70.24
+    },
+    {
+      "id": "l30",
+      "from": {
+        "group": "g22"
+      },
+      "to": {
+        "group": "g23"
+      },
+      "resource": "fluid:propene",
+      "rate": 10.81
+    },
+    {
+      "id": "l31",
+      "from": {
+        "group": "g22"
+      },
+      "to": {
+        "group": "g17"
+      },
+      "resource": "fluid:methane",
+      "rate": 21.61
+    },
+    {
+      "id": "l32",
+      "from": {
+        "group": "g22"
+      },
+      "to": {
+        "group": "g24"
+      },
+      "resource": "item:carbon-dust",
+      "rate": 0.054
+    },
+    {
+      "id": "l33",
+      "from": {
+        "group": "g25"
+      },
+      "to": {
+        "group": "g1"
+      },
+      "resource": "power:eu",
+      "rate": 1
+    },
+    {
+      "id": "l34",
+      "from": {
+        "group": "g25"
+      },
+      "to": {
+        "group": "g6"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l35",
+      "from": {
+        "group": "g25"
+      },
+      "to": {
+        "group": "g9"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l36",
+      "from": {
+        "group": "g25"
+      },
+      "to": {
+        "group": "g10"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l37",
+      "from": {
+        "group": "g25"
+      },
+      "to": {
+        "group": "g26"
+      },
+      "resource": "power:eu"
+    },
+    {
+      "id": "l38",
+      "from": {
+        "group": "g26"
+      },
+      "to": {
+        "group": "g14"
+      },
+      "resource": "power:eu-2",
+      "rate": 1
+    },
+    {
+      "id": "l39",
+      "from": {
+        "group": "g26"
+      },
+      "to": {
+        "group": "g16"
+      },
+      "resource": "power:eu-2"
+    },
+    {
+      "id": "l40",
+      "from": {
+        "group": "g26"
+      },
+      "to": {
+        "group": "g22"
+      },
+      "resource": "power:eu-2"
+    },
+    {
+      "id": "l41",
+      "from": {
+        "group": "g26"
+      },
+      "to": {
+        "group": "g27"
+      },
+      "resource": "power:eu-2"
+    },
+    {
+      "id": "l42",
+      "from": {
+        "group": "g27"
+      },
+      "to": {
+        "group": "g5"
+      },
+      "resource": "power:eu-3"
+    }
+  ],
+  "ports": [],
+  "resources": {
+    "fluid:butadiene": {
+      "kind": "fluid",
+      "name": "Butadiene",
+      "color": "#eeba2a"
+    },
+    "fluid:butane": {
+      "kind": "fluid",
+      "name": "Butane",
+      "color": "#d13f00"
+    },
+    "fluid:butene": {
+      "kind": "fluid",
+      "name": "Butene",
+      "color": "#af4308"
+    },
+    "fluid:ethane": {
+      "kind": "fluid",
+      "name": "Ethane",
+      "color": "#5c6aa3"
+    },
+    "fluid:heaby-fuel": {
+      "kind": "fluid",
+      "name": "Heaby Fuel",
+      "color": "#f8f9b9"
+    },
+    "fluid:hydrogen": {
+      "kind": "fluid",
+      "name": "Hydrogen",
+      "color": "#8796a6"
+    },
+    "fluid:hydrogen-sulfide": {
+      "kind": "fluid",
+      "name": "Hydrogen Sulfide",
+      "color": "#e97120"
+    },
+    "fluid:light-fuel": {
+      "kind": "fluid",
+      "name": "Light Fuel",
+      "color": "#d4ee2a"
+    },
+    "fluid:light-hydro-cracked-butadiene": {
+      "kind": "fluid",
+      "name": "Light Hydro-Cracked Butadiene",
+      "color": "#ee792b"
+    },
+    "fluid:light-steam-cracked-napthta": {
+      "kind": "fluid",
+      "name": "Light Steam-Cracked Napthta",
+      "color": "#a2c936"
+    },
+    "fluid:lightly-hydro-craked-light-fuel": {
+      "kind": "fluid",
+      "name": "Lightly Hydro-Craked Light Fuel",
+      "color": "#2aeed4"
+    },
+    "fluid:methane": {
+      "kind": "fluid",
+      "name": "Methane",
+      "color": "#ee2ab7"
+    },
+    "fluid:modertely-steam-cracked-butene": {
+      "kind": "fluid",
+      "name": "Modertely Steam-Cracked Butene",
+      "color": "#ee6f2b"
+    },
+    "fluid:naphthenic-acid": {
+      "kind": "fluid",
+      "name": "Naphthenic Acid",
+      "color": "#c2c2c2"
+    },
+    "fluid:octane": {
+      "kind": "fluid",
+      "name": "Octane",
+      "color": "#d6d6d6"
+    },
+    "fluid:oil": {
+      "kind": "fluid",
+      "name": "Oil",
+      "color": "#000000"
+    },
+    "fluid:propane": {
+      "kind": "fluid",
+      "name": "Propane",
+      "color": "#d7ee2b"
+    },
+    "fluid:propene": {
+      "kind": "fluid",
+      "name": "Propene",
+      "color": "#d7ee2b"
+    },
+    "fluid:resource": {
+      "kind": "fluid",
+      "name": "Нафта",
+      "color": "#b0ee2b"
+    },
+    "fluid:resource-2": {
+      "kind": "fluid",
+      "name": "Этилен",
+      "color": "#ffffff"
+    },
+    "fluid:steam": {
+      "kind": "fluid",
+      "name": "Steam",
+      "color": "#707070"
+    },
+    "fluid:sulfuric-gas": {
+      "kind": "fluid",
+      "name": "Sulfuric Gas",
+      "color": "#ffffff"
+    },
+    "fluid:sulfuric-heavy-fuel": {
+      "kind": "fluid",
+      "name": "Sulfuric Heavy Fuel",
+      "color": "#ebec98"
+    },
+    "fluid:sulfuric-light-fuel": {
+      "kind": "fluid",
+      "name": "Sulfuric light fuel",
+      "color": "#a1a30f"
+    },
+    "fluid:sulfuric-napthta": {
+      "kind": "fluid",
+      "name": "Sulfuric Napthta",
+      "color": "#d7ee2b"
+    },
+    "fluid:water": {
+      "kind": "fluid",
+      "name": "water",
+      "color": "#3653ab"
+    },
+    "item:carbon-dust": {
+      "kind": "item",
+      "name": "Carbon Dust",
+      "color": "#363636"
+    },
+    "power:eu": {
+      "kind": "power",
+      "name": "HV",
+      "color": "#e8c547"
+    },
+    "power:eu-2": {
+      "kind": "power",
+      "name": "MV",
+      "color": "#db8000"
+    },
+    "power:eu-3": {
+      "kind": "power",
+      "name": "LV",
+      "color": "#68e845"
+    }
+  },
+  "colors": {},
+  "routing": {
+    "style": "neat",
+    "depth": 1
+  }
+}

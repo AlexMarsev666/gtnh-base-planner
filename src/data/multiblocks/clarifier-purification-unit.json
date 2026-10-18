@@ -2,7 +2,7 @@
   "id": "clarifier-purification-unit",
   "name": "Clarifier Purification Unit",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitClarifier.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/purification/MTEPurificationUnitClarifier.java",
   "size": [11, 4, 11],
   "layers": [
     [
@@ -63,7 +63,8 @@
     "B": { "blockId": "gregtech:gt.blockcasings3@11" },
     "C": {
       "blockId": "gregtech:gt.blockcasings9@5",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+      "region": "dot1"
     },
     "D": { "blockId": "minecraft:water@0" },
     "E": { "blockId": "minecraft:flowing_water@0" },
@@ -79,8 +80,15 @@
     "fluidOut": "gt.hatch.outputHatch"
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
-  "requiredHatches": {},
-  "defaultHatches": ["itemIn", "itemOut"],
+  "requiredHatches": { "itemIn": { "min": 1 }, "fluidIn": { "min": 1 }, "fluidOut": { "min": 1 } },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+      "text": "1+ Input Bus: Any center side casing\n1+ Input Hatch: Any center side casing\n0+ Output Bus: Any center side casing\n1+ Output Hatch: Any center side casing"
+    }
+  },
+  "variants": [0, 1],
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPurificationUnitClarifier (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPurificationUnitClarifier (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

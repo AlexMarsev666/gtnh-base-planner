@@ -2,7 +2,7 @@
   "id": "elemental-duplicator",
   "name": "Elemental Duplicator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEElementalDuplicator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTEElementalDuplicator.java",
   "size": [9, 9, 6],
   "layers": [
     ["   AAA   ", "   ABA   ", "   ACA   ", "   ACA   ", "   ABA   ", "   AAA   "],
@@ -18,7 +18,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.5@3",
-      "hatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"]
+      "hatches": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "miscutils:miscutils.blockcasings@9" },
     "C": { "blockId": "miscutils:gtplusplus.blockspecialcasings.1@13" },
@@ -38,11 +39,20 @@
   },
   "shareableHatches": ["itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {
+    "fluidIn": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
-  "defaultHatches": ["itemOut", "energy", "maintenance", "muffler"],
+  "requiredAny": [{ "kinds": ["itemOut", "fluidOut"], "min": 1 }],
+  "minCasings": [{ "chars": ["A"], "min": 120 }],
+  "defaultHatches": ["itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "text": "1 Data Orb Repository: Any confinement shell\n1+ Energy Hatch: Any confinement shell\n1 Maintenance Hatch: Any confinement shell\n1 Muffler Hatch: Any confinement shell\n1+ Input Hatch: Any confinement shell\n1+ Output Bus/Hatch: Any confinement shell"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEElementalDuplicator (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEElementalDuplicator (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

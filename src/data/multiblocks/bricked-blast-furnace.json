@@ -2,7 +2,7 @@
   "id": "bricked-blast-furnace",
   "name": "Bricked Blast Furnace",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEBrickedBlastFurnace.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEBrickedBlastFurnace.java",
   "size": [3, 4, 3],
   "layers": [
     ["ccc", "ccc", "ccc"],
@@ -15,6 +15,7 @@
   "hatchBlocks": {},
   "shareableHatches": [],
   "defaultHatches": [],
+  "variants": [0],
   "wallshare": true,
   "notes": "3x4x3 of Firebricks (32) with the controller in the front centre of the second layer. The two core blocks may be air or lava; the top centre must be air (chimney). There are no hatches: all input and output goes through the controller GUI, so only the Firebricks walls are shared. GT does not allow the controller to be rotated or flipped (horizontal facing only). The GT tooltip itself notes that GregTech multiblocks may share each of their side walls."
 }

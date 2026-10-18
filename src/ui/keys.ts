@@ -40,6 +40,14 @@ export function isTyping(e: Pick<KeyboardEvent, 'target'>): boolean {
   );
 }
 
+/** Whether a key press goes to a tab list, segmented control, switch, menu or toolbar (they own their keys), not to the view. */
+export function inTablist(e: Pick<KeyboardEvent, 'target'>): boolean {
+  const el = e.target as HTMLElement | null;
+  return !!el?.closest?.(
+    '[role="tablist"], [role="radiogroup"], [role="switch"], [role="menu"], [role="toolbar"]',
+  );
+}
+
 /** What a key does in the site view (see `siteKeyAction`). */
 export type SiteKeyAction =
   | { type: 'undo' }

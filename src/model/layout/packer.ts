@@ -1,11 +1,11 @@
 import { key } from '../geometry';
 import type { MultiblockDef, PlanLimits, Unit } from '../multiblock/types';
-import type { PackResult } from '../plan/types';
-import { cloneResult, defCache, RESULT_CACHE_SIZE } from './cache';
+import type { WallshareMode } from '../plan/types';
+import { cloneResult, defCache, RESULT_CACHE_SIZE, sourceOf } from './cache';
 import { candidates } from './candidates';
 import { modesFor, sanitizeLimits } from './modes';
 import { fitBound, realize, tryPack } from './realize';
-import type { Candidate } from './types';
+import type { Candidate, LayoutResult, WallshareFallback } from './types';
 
 /**
  * UNIT 1 — Layout packing.
@@ -32,7 +32,12 @@ import type { Candidate } from './types';
  * chooses from, then looser ones (gaps between units, walkways) that leave more faces open for hatches.
  * Lazy, so callers can stop at the first layout that suits them. Identical layouts are yielded once.
  */
-export function* layoutCandidates(def: MultiblockDef, count: number, limits: PlanLimits): Generator<Unit[]> {
+export function* layoutCandidates(
+  def: MultiblockDef,
+  count: number,
+  limits: PlanLimits,
+  wallshare?: WallshareMode,
+): Generator<Unit[]> {
   const n = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
   if (n === 0) return;
   const lim = sanitizeLimits(limits);
@@ -42,7 +47,7 @@ export function* layoutCandidates(def: MultiblockDef, count: number, limits: Pla
   // reached after a few tries instead of after every compact lattice shape.
   const groups = new Map<string, Candidate[]>();
   for (const c of candidates(def, modesFor(def, cache), n, lim, true)) {
-    const g = `${c.mode.parity}|${c.mode.spacing.map((s) => `${s.inner}/${s.outer}`).join(',')}`;
+    const g = `${c.mode.parity}|${c.mode.spacing.map((s) => `${s.inner}/${s.outer}`).join(',')}|${c.mode.variants.alt.join('')}`;
     const list = groups.get(g);
     if (list) list.push(c);
     else groups.set(g, [c]);
@@ -52,21 +57,48 @@ export function* layoutCandidates(def: MultiblockDef, count: number, limits: Pla
   const total = lists.reduce((s, l) => s + l.length, 0);
   for (let round = 0; ordered.length < total; round++)
     for (const l of lists) if (round < l.length) ordered.push(l[round]);
+  // A wallshare preference only reorders: layouts of that kind come first, the rest follow in their usual
+  // order so a caller that needs looser layouts (hatches that do not fit) still reaches them.
+  const wanted = n >= 2 && wallshare && wallshare !== 'auto' ? wallshare : null;
+  if (wanted)
+    ordered.splice(
+      0,
+      ordered.length,
+      ...ordered.filter((c) => c.kind === wanted),
+      ...ordered.filter((c) => c.kind !== wanted),
+    );
   for (const c of ordered) {
     const units = realize(def, cache, n, c);
     if (!units) continue;
-    const k = units.map((u) => `${key(u.origin)}/${u.rotation}`).join(';');
+    const k = units.map((u) => `${key(u.origin)}/${u.rotation}/${u.variant ?? 0}`).join(';');
     if (seen.has(k)) continue;
     seen.add(k);
     yield units;
   }
 }
 
-export function packUnits(def: MultiblockDef, count: number, limits: PlanLimits): PackResult {
+/** Which preference a layout from `packUnits` / `layoutCandidates` satisfies; null for foreign layouts. */
+export function layoutWallshare(units: readonly Unit[]): WallshareMode | null {
+  return sourceOf.get(units)?.kind ?? null;
+}
+
+/**
+ * Pack `count` units; with a `wallshare` preference ('auto' or absent = the usual ranking) layouts of that
+ * kind are tried first (see `classifyWallshare` for what each kind means). When none fits, the automatic
+ * result is returned together with `fallback` saying what was used and why. A preference needs at least two
+ * units to mean anything, so smaller counts never report a fallback.
+ */
+export function packUnits(
+  def: MultiblockDef,
+  count: number,
+  limits: PlanLimits,
+  wallshare?: WallshareMode,
+): LayoutResult {
   const requested = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
   const lim = sanitizeLimits(limits);
   const cache = defCache(def);
-  const cacheKey = `${requested}|${lim.x}|${lim.y}|${lim.z}`;
+  const wanted = requested >= 2 && wallshare && wallshare !== 'auto' ? wallshare : null;
+  const cacheKey = `${requested}|${lim.x}|${lim.y}|${lim.z}${wanted ? `|${wanted}` : ''}`;
   const cached = cache.results.get(cacheKey);
   if (cached) {
     // Refresh recency (LRU).
@@ -75,7 +107,11 @@ export function packUnits(def: MultiblockDef, count: number, limits: PlanLimits)
     return cloneResult(cached);
   }
 
-  let units = tryPack(def, cache, requested, lim);
+  // A preference that needs shared walls is hopeless for a multiblock that cannot share them.
+  const hopeless = wanted !== null && wanted !== 'separate' && !def.wallshare;
+  let units = wanted && !hopeless ? tryPack(def, cache, requested, lim, wanted) : null;
+  const honoured = units !== null;
+  units ??= tryPack(def, cache, requested, lim);
   if (!units) {
     // Dropping units from a layout keeps it valid, so feasible counts are (practically) a prefix of 0..n:
     // binary search the largest, then probe upwards in case the lattice family skipped a count.
@@ -99,7 +135,21 @@ export function packUnits(def: MultiblockDef, count: number, limits: PlanLimits)
     units = best;
   }
 
-  const result: PackResult = { units, requested, placed: units.length };
+  const result: LayoutResult = { units, requested, placed: units.length };
+  if (wanted && !honoured) {
+    const unlimited = { x: null, y: null, z: null };
+    const limited = lim.x !== null || lim.y !== null || lim.z !== null;
+    const fallback: WallshareFallback = {
+      wanted,
+      used: layoutWallshare(units) ?? 'auto',
+      reason: hopeless
+        ? 'no-wallshare'
+        : limited && tryPack(def, cache, requested, unlimited, wanted)
+          ? 'limits'
+          : 'geometry',
+    };
+    result.fallback = fallback;
+  }
   if (units.length < requested) {
     // Without limits a single row along a non-facing axis always fits, so a shortfall means the limits.
     const limited = lim.x !== null || lim.y !== null || lim.z !== null;

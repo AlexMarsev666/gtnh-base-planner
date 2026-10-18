@@ -107,17 +107,21 @@ export function findCalls(src, name) {
   return out;
 }
 
-/** The body of the first method called `name` (text between its braces), or null. */
+/**
+ * The body of the first method called `name` (text between its braces), or null. A field initialised by a call
+ * (`private IAlignmentLimits mLimits = getInitialAlignmentLimits();`) is not a method.
+ */
 export function methodBody(src, name) {
   const re = new RegExp(`(?:public|protected|private)[^;{}()]*\\b${name}\\s*\\(`, 'g');
-  const m = re.exec(src);
-  if (!m) return null;
-  const open = src.indexOf('(', m.index + m[0].length - 1);
-  const close = matchClose(src, open);
-  const brace = src.indexOf('{', close);
-  if (brace < 0 || /;/.test(src.slice(close, brace))) return null;
-  const end = matchClose(src, brace);
-  return end < 0 ? null : src.slice(brace + 1, end);
+  for (let m; (m = re.exec(src));) {
+    const open = src.indexOf('(', m.index + m[0].length - 1);
+    const close = matchClose(src, open);
+    const brace = src.indexOf('{', close);
+    if (close < 0 || brace < 0 || /;/.test(src.slice(close, brace))) continue;
+    const end = matchClose(src, brace);
+    return end < 0 ? null : src.slice(brace + 1, end);
+  }
+  return null;
 }
 
 /** Decodes a Java string literal (without concatenation). */

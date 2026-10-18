@@ -21,7 +21,8 @@ export function withPipeFaces(hatches: HatchPlacement[], nets: RouteNet[] | null
     const face = faces.get(`${h.kind}|${h.cell.join()}`);
     if (!face || face === h.face) return h;
     changed = true;
-    return { ...h, face };
+    const { fromBelow: _, ...turned } = h;
+    return { ...turned, face };
   });
   return changed ? out : hatches;
 }

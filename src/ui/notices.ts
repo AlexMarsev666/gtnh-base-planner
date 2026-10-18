@@ -43,9 +43,6 @@ export function clearSlot(slot: string): void {
   notices.update((list) => (list.some((n) => n.slot === slot) ? list.filter((n) => n.slot !== slot) : list));
 }
 
-const warned = new Set<string>();
-
-/** `console.warn` once per distinct message (stubbed modules would otherwise spam the console). */
 /** Past this many characters a share link may be cut by chat apps, mail clients or QR codes. */
 export const LONG_LINK_CHARS = 2000;
 
@@ -54,9 +51,4 @@ export function linkCopiedNotice(url: string): string {
   return url.length > LONG_LINK_CHARS ? t.linkCopiedLong : t.linkCopied;
 }
 
-export function warnOnce(context: string, err: unknown): void {
-  const msg = `${context}: ${err instanceof Error ? err.message : String(err)}`;
-  if (warned.has(msg)) return;
-  warned.add(msg);
-  console.warn(msg);
-}
+export { warnOnce } from './warn';

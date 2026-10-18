@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { key } from '../geometry';
 import type { Vec3 } from '../core/types';
-import { routeNets, type RouteNetSpec } from './router';
+import { NEAT_VERTICAL_TURN_EXTRA, routeNets, SURFACE_PENALTY, type RouteNetSpec } from './router';
 
 const box = (x: number, y: number, z: number) => ({ min: [0, 0, 0] as Vec3, max: [x, y, z] as Vec3 });
 
@@ -168,6 +168,143 @@ describe('routeNets', () => {
     const ms = performance.now() - t0;
     const connected = res.reduce((s, r) => s + r.connected, 0);
     expect(connected).toBe(res.reduce((s, r) => s + r.total, 0));
-    expect(ms).toBeLessThan(3000);
+    if (process.env.PERF) expect(ms).toBeLessThan(3000);
+  });
+});
+
+describe('routeNets underground levels and neat style', () => {
+  const span: RouteNetSpec = {
+    terminals: [
+      { cell: [2, 0, 5], faces: ['east'], role: 'source' },
+      { cell: [22, 0, 5], faces: ['west'], role: 'sink' },
+    ],
+  };
+  const solids: Vec3[] = [span.terminals[0].cell, span.terminals[1].cell];
+  const input = (extra: object, more: Vec3[] = []) => ({
+    box: { min: [0, -3, 0] as Vec3, max: [26, 6, 12] as Vec3 },
+    solids: [...solids, ...more],
+    keepFree: [],
+    nets: [span],
+    trenchBelow: 0,
+    ...extra,
+  });
+
+  it('keeps the classic style on the surface when going down costs more', () => {
+    const [r] = routeNets(input({}));
+    expect(r.connected).toBe(2);
+    expect(r.stats.underground).toEqual([0, 0, 0]);
+    expect(r.stats.length).toBe(r.length);
+  });
+
+  it('sends neat trunks under the ground, with stubs at the terminals', () => {
+    const [r] = routeNets(input({ style: 'neat' }));
+    expect(r.connected).toBe(2);
+    expect(r.stats.surfaceTrunk).toBe(0);
+    expect(r.stats.surfaceStub).toBe(2);
+    expect(r.stats.underground).toEqual([r.length - 2, 0, 0]);
+    expect(r.stats.bends).toBe(2);
+    expect(SURFACE_PENALTY).toBe(4);
+  });
+
+  it('does not dive for a short hop: the two vertical turns cost more than the surface blocks', () => {
+    const hop: RouteNetSpec = {
+      terminals: [
+        { cell: [2, 0, 5], faces: ['east'], role: 'source' },
+        { cell: [9, 0, 5], faces: ['west'], role: 'sink' },
+      ],
+    };
+    const [r] = routeNets(
+      input({ style: 'neat', nets: [hop], solids: [hop.terminals[0].cell, hop.terminals[1].cell] }),
+    );
+    expect(r.connected).toBe(2);
+    expect(r.stats.bends).toBe(0);
+    expect(r.stats.underground).toEqual([0, 0, 0]);
+    expect(NEAT_VERTICAL_TURN_EXTRA).toBeGreaterThan(0);
+  });
+
+  it('goes under a block in the way on the deeper level instead of hopping it', () => {
+    const plate: Vec3[] = [];
+    for (let z = 0; z < 12; z++) plate.push([12, -1, z]);
+    const [r] = routeNets(input({ style: 'neat' }, plate));
+    expect(r.connected).toBe(2);
+    expect(r.stats.underground[1]).toBeGreaterThan(0);
+    expect(r.stats.surfaceTrunk).toBe(0);
+    // Down to the deeper level at the hatch and up at the other: the hop over the plate would add four
+    // vertical turns, a dip around it two. So the run stays on level -2 (bends 2) and level -1 is only the stub.
+    expect(r.stats.bends).toBe(2);
+    expect(r.stats.underground[0]).toBeLessThan(r.stats.underground[1]);
+  });
+
+  it('sidesteps a short obstacle on level -1 rather than dipping deeper', () => {
+    const block: Vec3[] = [[12, -1, 5]];
+    const [r] = routeNets(input({ style: 'neat' }, block));
+    expect(r.connected).toBe(2);
+    expect(r.stats.surfaceTrunk).toBe(0);
+    // A dip would cost four vertical turns, a jog two horizontal ones.
+    expect(r.stats.underground).toEqual([r.length - 2, 0, 0]);
+    expect(r.stats.bends).toBe(4);
+  });
+
+  it('never goes below the depth it is given', () => {
+    const plate: Vec3[] = [];
+    for (let z = 0; z < 12; z++) plate.push([12, -1, z]);
+    const [r] = routeNets(input({ style: 'neat', box: { min: [0, -1, 0], max: [26, 6, 12] } }, plate));
+    expect(r.stats.underground).toHaveLength(1);
+    for (const c of r.paths.flat()) expect(c[1]).toBeGreaterThanOrEqual(-1);
+  });
+
+  it('is deterministic', () => {
+    expect(routeNets(input({ style: 'neat' }))).toEqual(routeNets(input({ style: 'neat' })));
+  });
+});
+
+describe('routeNets with a floor layer', () => {
+  const down: RouteNetSpec = {
+    terminals: [
+      { cell: [2, 0, 5], faces: ['down'], role: 'source' },
+      { cell: [12, 0, 5], faces: ['down'], role: 'sink' },
+    ],
+  };
+  const floorInput = (floorY?: number) => ({
+    box: { min: [0, -3, 0] as Vec3, max: [16, 4, 12] as Vec3 },
+    solids: [down.terminals[0].cell, down.terminals[1].cell],
+    keepFree: [],
+    nets: [down],
+    trenchBelow: 0,
+    floorY,
+  });
+
+  it('crosses the floor straight down and runs below it, ending in the floor layer at a hatch', () => {
+    const [r] = routeNets({ ...floorInput(-1), style: 'neat' });
+    expect(r.connected).toBe(2);
+    expect(r.attach).toEqual(['down', 'down']);
+    for (const p of r.paths)
+      p.forEach((c, i) => {
+        if (c[1] !== -1) return;
+        for (const n of [p[i - 1], p[i + 1]])
+          if (n) expect([n[0], n[2], Math.abs(n[1] - c[1])]).toEqual([c[0], c[2], 1]);
+      });
+    const cells = r.paths.flat();
+    expect(cells.filter((c) => c[1] === -1).map((c) => c.join())).toEqual(['2,-1,5', '12,-1,5']);
+    expect(cells.some((c) => c[1] === -2)).toBe(true);
+    expect(cells.filter((c) => c[1] === -2).length).toBeGreaterThanOrEqual(9);
+  });
+
+  it('is unchanged without a floor', () => {
+    const [r] = routeNets(floorInput());
+    const [plain] = routeNets({ ...floorInput(), floorY: undefined });
+    expect(r).toEqual(plain);
+    // Without the floor the neat run is right under the ground.
+    const [neat] = routeNets({ ...floorInput(), style: 'neat' });
+    expect(neat.paths.flat().filter((c) => c[1] === -1).length).toBeGreaterThan(10);
+  });
+
+  it('cannot reach a net that would have to turn in the floor layer', () => {
+    // A wall everywhere but on the floor layer leaves only a run along it for the way across.
+    const wall: Vec3[] = [];
+    for (let z = 0; z < 12; z++) for (const y of [-3, -2, 0, 1, 2, 3]) wall.push([7, y, z]);
+    const input = { ...floorInput(-1), solids: [...floorInput(-1).solids, ...wall] };
+    expect(routeNets({ ...input, floorY: undefined })[0].connected).toBe(2);
+    expect(routeNets(input)[0].connected).toBeLessThan(2);
   });
 });

@@ -1,7 +1,44 @@
-import type { SiteWarning } from '../model/site/buildTypes';
+import type { SiteNote, SiteWarning } from '../model/site/buildTypes';
 import type { ResourceKind } from '../model/site/types';
 import type { HatchKind } from '../model/multiblock/types';
 import type { IoClass, SortMode } from '../model/bom';
+import type { WallshareFallback } from '../model/layout/types';
+import type { WallshareMode } from '../model/plan/types';
+import type { Dir } from '../model/core/types';
+import type { ValidityProblem } from '../model/validity';
+
+const HATCH_KIND_NAMES: Record<HatchKind, string> = {
+  itemIn: 'Item in',
+  itemOut: 'Item out',
+  fluidIn: 'Fluid in',
+  fluidOut: 'Fluid out',
+  energy: 'Energy',
+  dynamo: 'Dynamo',
+  maintenance: 'Maintenance',
+  muffler: 'Muffler',
+  steamIn: 'Steam in',
+  dataAccess: 'Data access',
+};
+const FACE_NAMES: Record<Dir, string> = {
+  up: 'top',
+  down: 'bottom',
+  north: 'north',
+  south: 'south',
+  east: 'east',
+  west: 'west',
+};
+const WALLSHARE_NAMES: Record<WallshareMode, string> = {
+  auto: 'Auto',
+  side: 'Side walls',
+  stack: 'Stack',
+  back: 'Back walls',
+  separate: 'Separate',
+};
+const WALLSHARE_REASONS: Record<WallshareFallback['reason'], string> = {
+  'no-wallshare': 'this machine cannot share walls',
+  limits: 'limits too tight',
+  geometry: 'no valid layout',
+};
 
 /** All user-visible strings (UNIT 8 owns this file). Use `t.key` in components; never build HTML strings. */
 export const t = {
@@ -12,8 +49,8 @@ export const t = {
 
   // Top bar
   countLabel: 'Number of multiblocks',
-  decrease: 'Fewer multiblocks',
-  increase: 'More multiblocks',
+  countShort: 'Units',
+  sceneToolbar: 'Scene tools',
   minus: '−',
   plus: '+',
   settings: 'Settings',
@@ -29,7 +66,7 @@ export const t = {
   /** Picker tag of catalog entries generated from the game (tools/game-dump) rather than checked by hand. */
   generatedTag: 'From game',
   generatedHint:
-    'Built by the game itself (the hologram projector of GregTech 5.09.54.133) and not checked by hand: hatch counts are estimated, check the tooltip in game.',
+    'Built by the game itself (the hologram projector of GregTech 5.09.54.205) and not checked by hand: hatch counts follow the controller tooltip and structure check; check it in game.',
 
   // Settings drawer
   limits: 'Limits',
@@ -49,21 +86,58 @@ export const t = {
   hatches: 'Hatches',
   hatchColor: (name: string) => `${name} colour`,
   resetColors: 'Reset colours',
-  view: 'View',
+  machine: 'Machine',
+  tier: 'Tier',
+  tierHint: 'Voltage tier of the energy and dynamo hatches.',
+  anyTier: 'Any',
+  defaultTier: 'Default',
+  coil: 'Heating coil',
+  coilHint: 'Tier of the heating coil. Any tier forms the machine as long as all its coils are the same.',
+  coilDrawn: (name: string) => `${name} (drawn)`,
+  mirror: 'Mirror',
+  mirrorHint: 'Build every machine mirrored left to right.',
+  mirrorForbidden: "GT doesn't let this machine be mirrored.",
+  orientation: { 1: 'Mirrored', 2: 'Upside down', 3: 'Mirrored vertically' },
+  flippedUnits: (n: number) => `${n} ${n === 1 ? 'unit' : 'units'} flipped or mirrored`,
+  shareMaintenance: 'Share maintenance',
+  shareMaintenanceHint:
+    'One maintenance hatch in a shared wall serves both machines. A manual repair then fixes only one of them at a time; an auto-maintenance hatch avoids that.',
+  shareEnergy: 'Share energy hatches',
+  shareEnergyHint:
+    'One energy hatch in a shared wall serves two machines (2 A, 1 A each), so their recipes must stay within 1 A.',
+  quadFluid: 'Quadruple input hatches',
+  quadFluidHint: 'Off: one regular input hatch per fluid.',
+  wallshare: 'Shared walls',
+  wallshareHint: 'How machines may touch. A preference: if it cannot be met, another layout is used.',
+  wallshareModes: WALLSHARE_NAMES,
+  wallshareFallback: (wanted: WallshareMode, used: WallshareMode, reason: WallshareFallback['reason']) =>
+    `${WALLSHARE_NAMES[wanted]} is not possible here (${WALLSHARE_REASONS[reason]}): used ${WALLSHARE_NAMES[used]}.`,
+  hatchTiers: 'Hatch tiers',
+  hatchTiersShow: (n: number) => `Set tiers of ${n} ${n === 1 ? 'hatch' : 'hatches'}`,
+  hatchSelected: (kind: string) => (kind ? `Hatch selected: ${kind}` : 'Hatch selected'),
+  hatchSetTier: 'Set tier',
+  hatchTiersHide: 'Hide hatch tiers',
+  hatchTiersSelected: 'Only hatches of the selected machines.',
+  hatchTierName: (kind: string, n: number) => `${kind} ${n}`,
+  hatchTiersReset: 'Hatch tiers were reset because the layout changed.',
+  hatchTiersUnmatched: (n: number) => `${n} hatch ${n === 1 ? "tier doesn't" : "tiers don't"} match a hatch.`,
+  hatchTiersEmpty: 'No hatches to set.',
+  notAllowed: '(not allowed)',
+  resetHatchTiers: 'Reset hatch tiers',
   pipes: 'Pipes',
   cables: 'Cables',
   xray: 'X-ray',
-  on: 'On',
-  off: 'Off',
-  plan: 'Plan',
+  shareMenu: 'Share',
+  shareMenuLabel: 'Share and files',
   shareLink: 'Copy share link',
   linkCopied: 'Link copied.',
   linkCopiedLong:
     'Link copied. It is long: some chat apps cut such links, so send the JSON file if it fails.',
   linkFallback: 'Copy this link:',
   linkFailed: 'Could not create a link.',
+  planTooLargeForLink: 'This plan is too large for a link. Download the JSON file instead.',
   downloadJson: 'Download JSON',
-  uploadJson: 'Open JSON',
+  uploadJson: 'Open JSON…',
   jsonLoaded: 'Plan opened.',
   jsonFailed: (msg: string) => `Could not open file: ${msg}`,
   jsonSaveFailed: 'Could not save file.',
@@ -72,7 +146,7 @@ export const t = {
   resetDone: 'Plan reset.',
   manualNote: 'Manual layout. Changing the count or limits re-packs.',
 
-  below: 'Connect from below',
+  below: 'From below',
   belowHint:
     'Hatches may face down from the lowest layer and pipes may run in a trench one block under the build.',
 
@@ -81,18 +155,21 @@ export const t = {
   blocks: (n: number) => `${n} blocks`,
   sharedWalls: (n: number) => `${n} shared ${n === 1 ? 'wall' : 'walls'}`,
   hatchCount: (n: number) => `${n} ${n === 1 ? 'hatch' : 'hatches'}`,
-  saved: (n: number) => `${n} saved`,
+  saved: (n: number) => `${n} ${n === 1 ? 'block' : 'blocks'} saved by shared walls`,
   conflicts: (n: number) => `${n} ${n === 1 ? 'conflict' : 'conflicts'}`,
   pipeLength: (n: number) => `${n} pipe blocks`,
   /** Footprint measured along an axis in the 3D view. */
   dimension: (axis: string, n: number) => `${axis}  ${n}`,
   cableLength: (n: number) => `${n} cable blocks`,
   /** `nums` are 1-based positions in the unit list. */
+  selectedHow: (nums: number[], how: string) =>
+    `${nums.length === 1 ? `Unit ${nums[0]}` : `Units ${nums.join(', ')}`}, ${how.toLowerCase()}`,
   selected: (nums: number[]) => (nums.length === 1 ? `Unit ${nums[0]}` : `Units ${nums.join(', ')}`),
 
   // Notices
   previewUnavailable: 'Preview unavailable.',
   viewUnavailable: '3D view unavailable.',
+  texturesUnavailable: 'Textures could not be loaded; showing flat colours. Reload the page to try again.',
   placedFewer: (placed: number, requested: number, reason?: 'limits' | 'geometry') =>
     `Placed ${placed} of ${requested}${reason === 'limits' ? ': limits too tight' : reason === 'geometry' ? ': no room' : ''}.`,
   spacedOut: (routed: boolean) =>
@@ -100,7 +177,15 @@ export const t = {
   manyUnits: (n: number) =>
     `${n} units: a build this big can take a few seconds to lay out, pipe and draw, more in DETAILED view.`,
   unplacedHatches: (n: number) => `${n} ${n === 1 ? 'hatch' : 'hatches'} could not be placed.`,
+  hatchesDontFit: (needed: number, fits: number, remove: number, units: number, mandatory: boolean) =>
+    `Hatches don't fit: ${needed} needed, ${fits} fit. Remove ${remove}.` +
+    (mandatory ? ' Even the required hatches do not all fit.' : '') +
+    (units > 1 ? ` (${units} units)` : ''),
   unconnectedPipes: (n: number) => `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected.`,
+  routingTruncated: (n: number) =>
+    `${n} ${n === 1 ? 'hatch is' : 'hatches are'} not connected: routing stopped early because this build is very large.`,
+  pipesRouting: 'Routing pipes…',
+  machineWorkerStopped: 'The background worker stopped; pipes and cables are off until you reload.',
   sharedPrompt: 'Open shared plan? It replaces your current one.',
   sharedOpen: 'Open',
   sharedKeep: 'Keep mine',
@@ -108,13 +193,40 @@ export const t = {
   saveFailed: 'This browser is not saving the plan. Download JSON to keep it.',
   dismiss: 'Dismiss',
 
+  // A stored plan or template that could not be read
+  recovery: {
+    plan: (reason: string) => `Your saved plan could not be read (${reason}). It has not been changed.`,
+    site: (reason: string) => `Your saved template could not be read (${reason}). It has not been changed.`,
+    keptCopy: 'A copy is kept in this browser.',
+    copyFailed: 'A copy could not be kept (browser storage is full or blocked). Download it now.',
+    paused: 'Changes are not saved until you choose.',
+    download: 'Download copy',
+    retry: 'Try again',
+    startNew: 'Start new',
+    replaced: (n: number, kept: boolean) =>
+      `${n} ${n === 1 ? 'machine no longer exists and is' : 'machines no longer exist and are'} shown as ${
+        n === 1 ? 'a placeholder' : 'placeholders'
+      }.${kept ? ' Your original is kept.' : ''}`,
+  },
+
   // Mode switch
   modeMachine: 'Machine',
   modeSite: 'Template',
   modeLabel: 'Planner mode',
 
   site: {
-    panel: 'Template',
+    tooLargeForLink: 'This template is too large for a link. Download the JSON file instead.',
+    panel: 'Inspector',
+    outline: 'Groups and links',
+    tabs: {
+      group: 'Group sections',
+      machine: 'Machine',
+      packing: 'Packing',
+      placement: 'Placement',
+      template: 'Template settings',
+      layout: 'Layout',
+      routing: 'Routing',
+    },
     name: 'Name',
     unnamed: 'Template',
     size: 'Size',
@@ -126,14 +238,23 @@ export const t = {
     arrange: 'Arrange',
     arranged: 'Arranged along the flow.',
     arranging: 'Arranging…',
+    optimizingPhase: 'Optimizing…',
+    arrangeCancel: 'Cancel',
+    arrangeStopped: 'Stopped; the template is unchanged.',
+    neat: 'Neat',
+    neatHint:
+      'Arranges the template and routes neatly, mostly underground (neat routing, at least one layer deep). One undo step takes both back.',
+    arrangeCancelled: (optimize: boolean) =>
+      `Template edited: ${optimize ? 'optimizing' : 'arranging'} stopped.`,
+    arrangeFailed: (msg: string) => `Arranging failed: ${msg}`,
     optimize: 'Optimize',
     optimizeHint:
       'Arrange, then search for a tighter layout with shorter pipes (simulated annealing) and keep it if the router agrees.',
-    optimizing: 'Arranging and optimizing…',
     optimized: (from: number, to: number, reshaped: number) =>
       `Optimized: ${from} → ${to} pipe and cable blocks, tested with the router.` +
       (reshaped > 0 ? ` ${reshaped} ${reshaped === 1 ? 'group' : 'groups'} packed another way.` : ''),
-    optimizedSame: 'Arranged along the flow; nothing tried beat it.',
+    optimizedSame: 'Nothing found that beats the current layout; nothing changed.',
+    optimizeTruncated: '(stopped at the time limit)',
     arrangedFloors: (n: number) => `Arranged along the flow, on ${n} floors.`,
     building: 'Laying out and routing…',
     needs: (w: number, d: number) => `Does not fit: needs ${w} × ${d}.`,
@@ -179,19 +300,33 @@ export const t = {
     rotation: (quarters: number) => `${quarters * 90}°`,
     nudge: 'Move the group',
     nudgeStep: (axis: string, sign: number) => `${sign > 0 ? '+' : '−'}${axis}`,
-    nudgeDir: { up: 'Move away', down: 'Move closer', left: 'Move left', right: 'Move right' },
+    nudgeDir: { up: 'Away', down: 'Toward', left: 'Left', right: 'Right' },
+    nudgeRaise: 'Raise',
+    nudgeLower: 'Lower',
+    nudgeTurn: 'Turn',
     raise: 'Raise one block (PageUp)',
     lower: 'Lower one block (PageDown)',
     placementHint:
-      'Drag the selected group in the view, or use the arrows. PageUp and PageDown raise and lower it. X and Z are its corner in blocks.',
+      'Drag the selected group in the view, or use the buttons or arrow keys: they move it as seen on screen. PageUp and PageDown raise and lower it. X and Z are its corner in blocks.',
     undo: 'Undo',
     redo: 'Redo',
+    undoLabel: 'Undo (Ctrl+Z)',
+    redoLabel: 'Redo (Ctrl+Y)',
     undone: 'Undone.',
     redone: 'Redone.',
     nothingToUndo: 'Nothing to undo.',
     nothingToRedo: 'Nothing to redo.',
-    addLinkOpen: 'Add link…',
+    addLinkOpen: '+ Link',
     addLinkClose: 'Cancel',
+    addMenu: '+ Add',
+    addMenuLabel: 'Add to the template',
+    groupsCount: (n: number) => `Groups · ${n}`,
+    linksCount: (n: number) => `Links · ${n}`,
+    groupErrors: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,
+    linkInspector: 'Link',
+    newLink: 'New link',
+    removeLink: 'Remove link',
+    linkColor: 'Colour',
     pipesWait: 'Pipes follow when you pause',
     hint: {
       title: 'Move the group',
@@ -208,7 +343,25 @@ export const t = {
       remove: 'Remove',
       deselect: 'Deselect',
       camera: 'Arrows follow the camera: ↑ always moves away from you.',
-      open: 'Controls',
+      open: 'All shortcuts',
+      strip: 'Drag to move',
+      stripNudge: 'nudge',
+      stripTurn: 'turn',
+      stripAuto: 'auto place',
+    },
+    empty: {
+      title: 'Start a template',
+      lead: 'Place multiblocks as groups, link them by resources, and the planner routes pipes and cables between them.',
+      add: 'Add a multiblock',
+      addNote: 'Pick from the catalog',
+      current: (name: string, count: number) => `Add ${name} × ${count}`,
+      currentNote: 'The machine open in the Machine view',
+      import: 'Import from GTNH Planner',
+      importNote: 'Turn a production chain into linked groups',
+      also: 'Also:',
+      single: 'single-block machine',
+      placeholder: 'placeholder',
+      openJson: 'open JSON',
     },
     needed: (n: number) => `${n} needed`,
     links: 'Links',
@@ -225,10 +378,74 @@ export const t = {
     outputPort: 'Template output',
     kinds: { item: 'Item', fluid: 'Fluid', power: 'Power' } satisfies Record<ResourceKind, string>,
     problems: 'Problems',
-    flow: 'Flow animation',
-    animation: 'Animation',
+    notes: 'Notes',
+    routing: 'Routing',
+    routingStyle: 'Style',
+    routingStyles: { classic: 'Classic', neat: 'Neat' },
+    routingDepth: 'Depth',
+    routingDepthHint:
+      'The most layers under the ground that pipes and cables may use. 0 keeps them on the ground.',
+    routingDepthUsed: (asked: number, used: number) =>
+      `Depth ${used} is in use: the template is too big to route ${asked} layers under the ground.`,
+    routingLegacy: (depth: number) =>
+      `This template has no routing of its own yet: it uses classic routing, ${depth === 0 ? 'on the ground' : `${depth} layer${depth === 1 ? '' : 's'} under the ground`}, following the From below switch of the machine view. Choosing a style or depth here gives it its own routing.`,
+    useNeat: 'Use neat routing',
+    floor: 'Floor',
+    floorNone: 'None',
+    floorHint:
+      'A layer of blocks the machines stand on, under the ground level. Pipes and cables that go under the ground pass it straight down, leaving a hole; the trench starts below it. With depth 0 nothing goes under the floor.',
+    undergroundView: 'X-ray',
+    undergroundViewHint: 'See through the ground and the machines to the pipes under them.',
+    routeStats: (blocks: number, bends: number, underground: number) =>
+      `${blocks} blocks routed, ${underground} under the ground, ${bends} ${bends === 1 ? 'bend' : 'bends'}.`,
+    routeStatsLevels: (levels: number[]) =>
+      `Under the ground by level: ${levels.map((n, i) => `−${i + 1}: ${n}`).join(', ')}.`,
+    routeStatsSurface: (trunk: number, stubs: number) =>
+      `On the ground: ${trunk} in trunk lines, ${stubs} in hatch stubs.`,
+    tier: 'Tier',
+    tierHint: 'Voltage tier of the energy hatches (a transformer: its high side).',
+    tierAny: 'Any',
+    resources: 'Resources',
+    resourcesHint: 'Where the hatch of each resource goes. Auto spreads them over the units and zones.',
+    unit: 'Unit',
+    zone: 'Zone',
+    auto: 'Auto',
+    allUnits: 'All units',
+    unitN: (n: number) => `Unit ${n}`,
+    unitGone: (n: number) => `Unit ${n} (not in the group)`,
+    noResources: 'No resources yet. Link this group to another, or to a port.',
+    hatchTiers: 'Hatch tiers',
+    pickedHatch: 'Selected hatch',
+    hatchDetails: 'Details',
+    hatchServes: (units: readonly number[]) =>
+      units.length === 0
+        ? 'Serves no unit of the group.'
+        : `Serves ${units.length > 1 ? 'units' : 'unit'} ${units.join(', ')}.`,
+    hatchZone: (name: string, text?: string) => `Zone ${name}${text ? `: ${text}` : ''}`,
+    hatchTierShared: 'shared',
+    hatchTierName: (kind: string, resource: string | undefined, unit: number | 'shared') =>
+      `${kind}${resource ? ` ${resource}` : ''}${unit === 'shared' ? '' : ` · unit ${unit + 1}`}`,
+    machineType: 'Machine type',
+    machineTypeAny: 'Plain machine',
+    machineSearch: 'Search machine types',
+    machineNone: 'No machine type matches.',
+    transformer: 'Transformer',
+    step: 'Direction',
+    stepDown: 'Step down',
+    stepUp: 'Step up',
+    amps: 'Amperage',
+    ampsOption: (amps: number) => `${amps} A`,
+    transformerReset: 'Transformer settings were reset.',
+    ampsInvalid: (tier: string, amps: number) =>
+      `GT has no ${amps} A transformer at ${tier}. Pick another amperage or tier.`,
+    staleAssign: (n: number) =>
+      `${n} ${n === 1 ? 'choice' : 'choices'} for resources this group no longer takes or gives.`,
+    staleAssignClear: 'Clear',
+    flow: 'Flow',
     animationHint: 'Moving flow arrows on pipes and cables',
-    icons: 'Item icons (gtnhplanner.com)',
+    icons: 'Icons',
+    iconsHint: 'Item and fluid icons from gtnhplanner.com',
+    arrangeNoGroups: 'Add a group first',
     opened: 'Template opened.',
     reset: 'Reset template',
     resetDone: 'Template reset.',
@@ -236,6 +453,7 @@ export const t = {
     addedToSite: 'Added to the template.',
     sharedPrompt: 'Open shared template? It replaces your current one.',
     groupCount: (n: number) => `${n} ${n === 1 ? 'group' : 'groups'}`,
+    sharedWalls: (n: number) => `${n} ${n === 1 ? 'block' : 'blocks'} saved by shared walls`,
     connected: (c: number, total: number) => `${c}/${total} connected`,
     ports: 'Ports',
     portIn: 'In',
@@ -266,6 +484,43 @@ export const t = {
           return `${res(w.resource)}: ${w.connected} of ${w.total} connected.`;
         case 'noport':
           return `No room on the edge for port ${w.port}.`;
+        case 'powerTier':
+          return `${name(w.group)}: ${res(w.resource)} carries ${w.expected}, but this machine takes only ${w.got}.`;
+        case 'transformerInvalid':
+          return `${name(w.group)}: GT has no ${w.amps} A transformer at ${w.tier}.`;
+        case 'powerUnknownTier':
+          return `${res(w.resource)}: its voltage is not known, so the transformers on it are not checked.`;
+        case 'assignInactive':
+          return `${name(w.group)}: ${res(w.resource)} is set to unit ${w.unit + 1}, but the group has no such unit.`;
+        case 'zoneKind':
+          return `${name(w.group)}: zone ${w.zone} has no place for ${HATCH_KIND_NAMES[w.kind].toLowerCase()} hatches, so ${res(w.resource)} is placed without it.`;
+        case 'capacity':
+          return `${name(w.group)}: hatches don't fit, ${w.needed} wanted and ${w.fits} fit. Remove ${w.remove}.${w.mandatory ? ' Even the required hatches do not all fit.' : ''}${w.units > 1 ? ` (${w.units} units)` : ''}`;
+        case 'hatch': {
+          const what = HATCH_KIND_NAMES[w.kind].toLowerCase();
+          const where = w.units === 1 ? '1 unit' : `${w.units} units`;
+          const for_ = w.resources.length ? ` for ${w.resources.map(res).join(', ')}` : '';
+          const region = w.region ? ` in ${w.region}` : '';
+          return w.reason === 'required'
+            ? `${name(w.group)}: a required ${what} hatch${region} is missing on ${where}.`
+            : w.reason === 'max'
+              ? `${name(w.group)}: the ${what} hatches are at their maximum; one more${for_} found no room on ${where}.`
+              : w.reason === 'unsupported'
+                ? `${name(w.group)} cannot take a ${what} hatch${for_}.`
+                : w.reason === 'casings'
+                  ? `${name(w.group)}: a ${what} hatch${for_} would leave too few casings on ${where}.`
+                  : `${name(w.group)}: no place for a ${what} hatch${for_}${region} on ${where}.`;
+        }
+      }
+    },
+    note: (n: SiteNote, name: (groupId: string) => string, res: (key: string) => string): string => {
+      switch (n.type) {
+        case 'distributed':
+          return `${name(n.group)}: ${n.resources.map(res).join(', ')} spread over the units, as a full set did not fit on every unit.`;
+        case 'split':
+          return `${name(n.group)}: ${res(n.resource)} could not share one hatch and got ${n.hatches}.`;
+        case 'wallshare':
+          return `${name(n.group)}: ${WALLSHARE_NAMES[n.wanted]} is not possible (${WALLSHARE_REASONS[n.reason]}); used ${WALLSHARE_NAMES[n.used].toLowerCase()}.`;
       }
     },
     problemCount: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,
@@ -296,6 +551,8 @@ export const t = {
       'Keeps this size. What does not fit on the ground is built on floors above it, and big groups stack their machines up.',
     replaces: 'Replaces the current template.',
     skippedEntries: (n: number) => `${n} malformed ${n === 1 ? 'entry was' : 'entries were'} skipped.`,
+    adjustedValues: (n: number) =>
+      `${n} ${n === 1 ? 'value was' : 'values were'} out of range and ${n === 1 ? 'was' : 'were'} adjusted.`,
     done: (groups: number, ports: number, links: number) =>
       `Imported ${groups} groups, ${ports} ports and ${links} links.`,
     aspects: (n: number) => `${n} Thaumcraft ${n === 1 ? 'flow was' : 'flows were'} left out.`,
@@ -332,17 +589,57 @@ export const t = {
     } satisfies Record<IoClass, string>,
   },
 
-  hatchKinds: {
-    itemIn: 'Item in',
-    itemOut: 'Item out',
-    fluidIn: 'Fluid in',
-    fluidOut: 'Fluid out',
-    energy: 'Energy',
-    dynamo: 'Dynamo',
-    maintenance: 'Maintenance',
-    muffler: 'Muffler',
-    steamIn: 'Steam in',
-  } satisfies Record<HatchKind, string>,
+  validity: {
+    title: 'Buildability',
+    forms: 'Will form',
+    wontForm: (n: number) => `Won't form: ${n} ${n === 1 ? 'problem' : 'problems'}`,
+    hints: 'Hints',
+    unit: (n: number) => `Unit ${n}`,
+    /** Per-group badge in the template view. */
+    badge: "Won't form",
+    badgeHint: 'GT would not form this machine as laid out. See Buildability below.',
+    groupProblem: (name: string, n: number) =>
+      `${name}: won't form, ${n} ${n === 1 ? 'problem' : 'problems'} (see its Buildability).`,
+    glass: 'Glass',
+    glassHint: 'Tier of the glass that limits the hatches. GT refuses to form when a hatch is above it.',
+    glassDrawn: (tier: string) => `${tier} (drawn)`,
+    /** What is wrong, without the unit; `casings` names the casing blocks GT counts. */
+    text: (p: ValidityProblem, casings: string): string => {
+      const kind = (k: HatchKind) => HATCH_KIND_NAMES[k].toLowerCase();
+      switch (p.type) {
+        case 'missingEnergy':
+          return p.min > 1 ? `${p.have} of ${p.min} energy hatches` : 'no energy hatch';
+        case 'missingMaintenance':
+          return p.min > 1 ? `${p.have} of ${p.min} maintenance hatches` : 'no maintenance hatch';
+        case 'hatchCount':
+          return p.min !== undefined
+            ? `${p.have} ${kind(p.kind)} ${p.have === 1 ? 'hatch' : 'hatches'}, GT needs ${p.min}`
+            : `${p.have} ${kind(p.kind)} hatches, GT allows ${p.max}`;
+        case 'requiredAny':
+          return `${p.have} of ${p.min} needed hatches (${p.kinds.map(kind).join(' or ')})`;
+        case 'casings':
+          return `${casings} (${p.have} left after hatches, GT needs at least ${p.min})`;
+        case 'forbiddenFace':
+          return `${HATCH_KIND_NAMES[p.kind]} hatch faces ${FACE_NAMES[p.face]}, a side GT's auto-placement doesn't use (hint only; the machine still forms)`;
+        case 'glassTier':
+          return `${kind(p.kind)} hatch ${p.hatchTier} is above the glass (${p.glassTier})`;
+        case 'orientation':
+          return p.variant === 1
+            ? "GT doesn't allow this machine mirrored"
+            : p.variant === 2
+              ? "GT doesn't allow this machine upside down"
+              : "GT doesn't allow this machine flipped vertically";
+        case 'sharedMaintenance':
+          return 'shared maintenance hatch: a manual repair fixes one machine at a time; use an auto-maintenance hatch (hint only; the machine still forms)';
+        case 'groundFace':
+          return `${HATCH_KIND_NAMES[p.kind]} hatch faces the ground: feed it from below (Connect from below / template routing depth) (hint only; the machine still forms)`;
+        case 'sharedEnergy':
+          return 'shared energy hatch: 2 A for both machines, so each recipe must stay within 1 A (hint only; the machine still forms)';
+      }
+    },
+  },
+
+  hatchKinds: HATCH_KIND_NAMES,
 };
 
 export type Strings = typeof t;

@@ -1,7 +1,7 @@
 {
   "id": "dissection-apparatus",
   "name": "Dissection Apparatus",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtractor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialExtractor.java",
   "size": [5, 5, 5],
   "layers": [
     ["CC~CC", "CCCCC", "CCCCC", "CCCCC", "CCCCC"],
@@ -29,7 +29,8 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["C"], "min": 45 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "GT:NH Dissection Apparatus (industrial extractor, class MTEIndustrialExtractor). 5x5x5: a solid Clean Stainless Steel floor and roof joined by four corner pillars (at least 45 casings), around a 3x3x3 core of item pipe casings and glass. The item pipe casings can be any tier (Tin shown) and set the parallels. The glass can be any tiered glass (Reinforced Glass shown). Blank cells are not checked. Input and output buses, energy and maintenance hatches may replace any casing. All four side faces are the same (pillars, floor and roof edges), so units can share side walls. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so buses in a shared wall serve both machines. Energy and maintenance are not marked shareable (energy starvation; maintenance flags are cleared by the first reader)."
+  "notes": "GT:NH Dissection Apparatus (industrial extractor, class MTEIndustrialExtractor). 5x5x5: a solid Clean Stainless Steel floor and roof joined by four corner pillars (at least 45 casings), around a 3x3x3 core of item pipe casings and glass. The item pipe casings can be any tier (Tin shown) and set the parallels. The glass can be any tiered glass (Reinforced Glass shown). Blank cells are not checked. Input and output buses, energy and maintenance hatches may replace any casing. All four side faces are the same (pillars, floor and roof edges), so units can share side walls. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so buses in a shared wall serve both machines. Energy and maintenance hatches are not shared unless the Share options ask for it (a shared energy hatch gives each of two machines 1 A, and a shared maintenance hatch is repaired one machine at a time)."
 }

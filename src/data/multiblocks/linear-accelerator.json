@@ -2,7 +2,7 @@
   "id": "linear-accelerator",
   "name": "Linear Accelerator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhlanth/common/tileentity/MTELINAC.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTELINAC.java",
   "size": [7, 7, 19],
   "layers": [
     [
@@ -70,23 +70,23 @@
     ],
     [
       "ADDIDDA",
-      "ACCICCA",
-      "GEEIEEG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GFEIEFG",
-      "GFHIHFG",
-      "GEEIEEG",
-      "CCCICCC",
+      "ACC-CCA",
+      "GEE-EEG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GFE-EFG",
+      "GFH-HFG",
+      "GEE-EEG",
+      "CCC-CCC",
       "CDDIDDC"
     ],
     [
@@ -155,7 +155,11 @@
   ],
   "legend": {
     "A": { "blockId": "gregtech:gt.blockcasings3@10" },
-    "B": { "blockId": "gtnhlanth:casing.shielded_accelerator@0", "hatches": ["energy", "maintenance"] },
+    "B": {
+      "blockId": "gtnhlanth:casing.shielded_accelerator@0",
+      "hatches": ["energy", "maintenance"],
+      "region": "dot3"
+    },
     "C": { "blockId": "gtnhlanth:casing.shielded_accelerator@0" },
     "D": { "blockId": "bartworks:BW_TieredGlass@0" },
     "E": { "blockId": "gtnhlanth:casing.electrode@0" },
@@ -163,7 +167,7 @@
     "G": { "blockId": "gtnhlanth:tile.casing.shielded_accelerator_glass@0" },
     "H": { "blockId": "gregtech:gt.blockcasings@15" },
     "I": { "blockId": "gt.hatch.special" },
-    "J": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn", "fluidOut"] }
+    "J": { "blockId": "gt.hatch.inputHatch", "hatches": ["fluidIn", "fluidOut"], "region": "dot2" }
   },
   "controller": { "pos": [3, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@10505" },
   "hatchBlocks": {
@@ -173,8 +177,23 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["fluidIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "fluidIn": { "min": 1, "max": 1 },
+    "fluidOut": { "min": 1, "max": 1 },
+    "energy": { "min": 1, "max": 2 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
   "defaultHatches": ["fluidIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot2": {
+      "kinds": ["fluidIn", "fluidOut"],
+      "text": "1 Input Hatch: Top center casing 8th block from front\n1 Output Hatch: Top center casing 8th block from back"
+    },
+    "dot3": {
+      "kinds": ["energy", "maintenance"],
+      "text": "1-2 Energy Hatch: Any bottom edge casing 3-8 blocks from front\n1 Maintenance Hatch: Any bottom edge casing 3-8 blocks from front"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTELINAC (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTELINAC (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

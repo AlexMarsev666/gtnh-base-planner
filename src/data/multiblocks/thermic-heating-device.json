@@ -2,26 +2,27 @@
   "id": "thermic-heating-device",
   "name": "Thermic Heating Device",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIndustrialFluidHeater.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTEIndustrialFluidHeater.java",
   "size": [5, 6, 5],
   "layers": [
     [" AAA ", "AAAAA", "AAAAA", "AAAAA", " AAA "],
-    [" B~B ", "BCCCB", "BCCCB", "BCCCB", " BBB "],
-    [" BBB ", "BCCCB", "BC-CB", "BCCCB", " BBB "],
-    [" BBB ", "BCCCB", "BC-CB", "BCCCB", " BBB "],
-    [" BBB ", "BCCCB", "BCCCB", "BCCCB", " BBB "],
-    [" DDD ", "DDDDD", "DDDDD", "DDDDD", " DDD "]
+    [" B~B ", "B---B", "B---B", "B---B", " BBB "],
+    [" BBB ", "B---B", "B---B", "B---B", " BBB "],
+    [" BBB ", "B---B", "B---B", "B---B", " BBB "],
+    [" BBB ", "B---B", "B---B", "B---B", " BBB "],
+    [" CCC ", "CCCCC", "CCCCC", "CCCCC", " CCC "]
   ],
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.3@2",
-      "hatches": ["itemIn", "fluidIn", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "fluidIn", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "miscutils:gtplusplus.blockcasings.2@11" },
-    "C": { "blockId": "gt.hatch.special" },
-    "D": {
+    "C": {
       "blockId": "miscutils:gtplusplus.blockcasings.3@2",
-      "hatches": ["itemOut", "fluidOut", "energy", "maintenance", "muffler"]
+      "hatches": ["itemOut", "fluidOut", "energy", "maintenance", "muffler"],
+      "region": "dot2"
     }
   },
   "controller": { "pos": [2, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31077" },
@@ -40,7 +41,22 @@
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A", "C"], "min": 34 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "fluidIn", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any top or bottom casing\n1 Maintenance Hatch: Any top or bottom casing\n1 Muffler Hatch: Any top or bottom casing\n1+ Input Bus/Hatch: Any bottom casing"
+    },
+    "dot2": {
+      "kinds": ["itemOut", "fluidOut", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any top or bottom casing\n1 Maintenance Hatch: Any top or bottom casing\n1 Muffler Hatch: Any top or bottom casing\n1+ Output Bus/Hatch: Any top casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialFluidHeater (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialFluidHeater (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

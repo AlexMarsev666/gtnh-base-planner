@@ -2,22 +2,26 @@
   "id": "accelerated-biological-coordinator",
   "name": "Accelerated Biological Coordinator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEBiologicalCoordinationModule.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEBiologicalCoordinationModule.java",
   "size": [7, 8, 7],
   "layers": [
-    [" AAAAA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    ["       ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", "       "],
-    [" AA~AA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    ["  D D  ", " BCECB ", "DC---CD", " E---E ", "DC---CD", " BCECB ", "  D D  "],
-    ["  D D  ", " BCECB ", "DC---CD", " E---E ", "DC---CD", " BCECB ", "  D D  "],
-    ["  D D  ", " BCECB ", "DC---CD", " E---E ", "DC---CD", " BCECB ", "  D D  "],
-    [" BBBBB ", "BBCCCBB", "BCEEECB", "BCEBECB", "BCEEECB", "BBCCCBB", " BBBBB "],
+    [" AAAAA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA "],
+    ["       ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", "       "],
+    [" AA~AA ", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", " AAAAA "],
+    ["  D D  ", " CBEBC ", "DB---BD", " E---E ", "DB---BD", " CBEBC ", "  D D  "],
+    ["  D D  ", " CBEBC ", "DB---BD", " E---E ", "DB---BD", " CBEBC ", "  D D  "],
+    ["  D D  ", " CBEBC ", "DB---BD", " E---E ", "DB---BD", " CBEBC ", "  D D  "],
+    [" CCCCC ", "CCBBBCC", "CBEEEBC", "CBECEBC", "CBEEEBC", "CCBBBCC", " CCCCC "],
     ["       ", "  DDD  ", " D   D ", " D   D ", " D   D ", "  DDD  ", "       "]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings12@1", "hatches": ["itemIn", "fluidIn", "fluidOut"] },
-    "B": { "blockId": "gregtech:gt.blockcasings12@1" },
-    "C": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "A": {
+      "blockId": "gregtech:gt.blockcasings12@1",
+      "hatches": ["itemIn", "fluidIn", "fluidOut"],
+      "region": "dot3"
+    },
+    "B": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "C": { "blockId": "gregtech:gt.blockcasings12@1" },
     "D": { "blockId": "gregtech:gt.blockframes@329" },
     "E": { "blockId": "gregtech:gt.blockglass1@8" }
   },
@@ -28,8 +32,14 @@
     "fluidOut": "gt.hatch.outputHatch"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": {},
-  "defaultHatches": ["itemIn"],
+  "requiredHatches": { "fluidIn": { "min": 1 } },
+  "defaultHatches": ["itemIn", "fluidIn"],
+  "zones": {
+    "dot3": {
+      "kinds": ["fluidIn"],
+      "text": "1+ Input Hatch: Any base mesh casing\n0+ Vacuum Conveyor Input: Any base mesh casing\n0+ Vacuum Conveyor Output: Any base mesh casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEBiologicalCoordinationModule (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEBiologicalCoordinationModule (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

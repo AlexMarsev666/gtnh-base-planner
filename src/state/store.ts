@@ -1,10 +1,12 @@
 import { writable } from 'svelte/store';
-import { DEFAULT_MULTIBLOCK_ID, getMultiblock } from '../data/catalog';
-import type { ViewMode } from '../model/core/types';
+import { catalog, DEFAULT_MULTIBLOCK_ID, getMultiblock } from '../data/catalog';
+import type { Vec3, ViewMode } from '../model/core/types';
 import type { PlanState } from '../model/plan/types';
 
 export function defaultPlan(multiblockId = DEFAULT_MULTIBLOCK_ID): PlanState {
-  const def = getMultiblock(multiblockId);
+  // Without the catalog (the store is created before it has loaded) the hatch list is empty;
+  // `main.ts` sets the real default right after the load.
+  const def = catalog.length > 0 ? getMultiblock(multiblockId) : undefined;
   return {
     v: 1,
     multiblockId,
@@ -45,3 +47,14 @@ connectBelow.subscribe((on) => {
   }
 });
 export const selectedUnits = writable<number[]>([]);
+/**
+ * The hatch picked in the 3D view, by its `planHatchKeys` key and cell: highlighted, and its row in Settings
+ * emphasised. It is dropped once the build has no such hatch at that cell.
+ */
+export const selectedHatch = writable<{ key: string; cell: Vec3 } | null>(null);
+// A key names a hatch of one build only.
+let hatchPlanId = '';
+plan.subscribe((p) => {
+  if (p.multiblockId !== hatchPlanId) selectedHatch.set(null);
+  hatchPlanId = p.multiblockId;
+});

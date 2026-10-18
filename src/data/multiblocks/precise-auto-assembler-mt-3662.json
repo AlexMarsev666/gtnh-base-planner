@@ -2,24 +2,24 @@
   "id": "precise-auto-assembler-mt-3662",
   "name": "Precise Auto-Assembler MT-3662",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/MTEPreciseAssembler.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/MTEPreciseAssembler.java",
   "size": [9, 5, 5],
   "layers": [
     ["AAAA~AAAA", "ABBBBBBBA", "ABBBBBBBA", "ABBBBBBBA", "AAAAAAAAA"],
-    ["C       C", "ADDDDDDDA", "AEEEEEEEA", "ADDDDDDDA", "C       C"],
-    ["C       C", "ADDDDDDDA", "AEEEEEEEA", "ADDDDDDDA", "C       C"],
-    ["C       C", "ADDDDDDDA", "AEEEEEEEA", "ADDDDDDDA", "C       C"],
+    ["C       C", "ADDDDDDDA", "A-------A", "ADDDDDDDA", "C       C"],
+    ["C       C", "ADDDDDDDA", "A-------A", "ADDDDDDDA", "C       C"],
+    ["C       C", "ADDDDDDDA", "A-------A", "ADDDDDDDA", "C       C"],
     ["AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA", "AAAAAAAAA"]
   ],
   "legend": {
     "A": {
       "blockId": "GoodGenerator:impreciseUnitCasing@0",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings@0" },
     "C": { "blockId": "gregtech:gt.blockframes@316" },
-    "D": { "blockId": "bartworks:BW_TieredGlass@0" },
-    "E": { "blockId": "gt.hatch.special" }
+    "D": { "blockId": "bartworks:BW_TieredGlass@0" }
   },
   "controller": { "pos": [4, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32018" },
   "hatchBlocks": {
@@ -32,11 +32,20 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
   "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 42 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any unit casing\n1 Maintenance Hatch: Any unit casing\n1 Muffler Hatch: Any unit casing\n1+ Input Bus: Any unit casing\n0+ Input Hatch: Any unit casing\n1+ Output Bus: Any unit casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPreciseAssembler (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEPreciseAssembler (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

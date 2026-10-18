@@ -1,4 +1,6 @@
+import type { Tier } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
+import type { HatchTiers, WallshareMode } from '../model/plan/types';
 import type { RoutedKind } from '../model/routing/kinds';
 
 /**
@@ -7,12 +9,19 @@ import type { RoutedKind } from '../model/routing/kinds';
  * Adding an input to a stage means adding it here; `pipelineKeys.test.ts` checks each one.
  */
 
-/** Packing: the (sized) multiblock, count, limits, or the manual units in place of a packed layout. */
+/**
+ * Packing: the (sized, maybe mirrored, coloured by its heating coil) multiblock, count, limits and wall sharing preference, or the manual
+ * units in place of a packed layout.
+ */
 export function layoutKey(input: {
   defId: string;
   size: number | undefined;
   count: number;
   limits: PlanLimits;
+  mirror: boolean;
+  /** The heating coil that changes the def's blocks (undefined when the def has none or the plan picks none). */
+  coil: string | undefined;
+  wallshare: WallshareMode | undefined;
   manualUnits: readonly Unit[] | undefined;
 }): string {
   const { limits, manualUnits } = input;
@@ -21,29 +30,55 @@ export function layoutKey(input: {
     input.defId,
     input.size ?? null,
     input.count,
+    input.mirror,
+    input.coil ?? null,
+    input.wallshare ?? 'auto',
     limits.x ?? null,
     limits.y ?? null,
     limits.z ?? null,
-    manualUnits?.map((u) => [u.id, u.origin[0], u.origin[1], u.origin[2], u.rotation]) ?? null,
+    manualUnits?.map((u) => [u.id, u.origin[0], u.origin[1], u.origin[2], u.rotation, u.variant ?? 0]) ??
+      null,
   ]);
 }
 
 /**
  * Hatches (and the layout they may loosen): the layout, enabled hatches in order, the routed kinds when an
- * auto layout is chosen for its pipes (null otherwise), and whether hatches may face down.
+ * auto layout is chosen for its pipes (null otherwise), whether hatches may face down, and whether maintenance
+ * and energy hatches may serve several units.
  */
 export function hatchKey(
   layout: string,
   enabledHatches: readonly HatchKind[],
   routedLayoutKinds: readonly RoutedKind[] | null,
   below: boolean,
+  sharing: { maintenance: boolean; energy: boolean },
 ): string {
-  return JSON.stringify(['hatches', layout, enabledHatches, routedLayoutKinds, below]);
+  return JSON.stringify([
+    'hatches',
+    layout,
+    enabledHatches,
+    routedLayoutKinds,
+    below,
+    sharing.maintenance,
+    sharing.energy,
+  ]);
 }
 
 /** Pipes and cables: the hatches and the kinds switched on. */
 export function pipesKey(hatches: string, kinds: readonly RoutedKind[]): string {
   return JSON.stringify(['pipes', hatches, kinds]);
+}
+
+/**
+ * Validity (what the game's structure check would object to): the pipes, which turn the hatches, and the
+ * tiers the glass check compares (machine tier, hatch tier overrides, glass tier).
+ */
+export function validityKey(
+  pipes: string,
+  tiers: { tier: Tier | undefined; hatchTiers: HatchTiers | undefined; glassTier: Tier | undefined },
+): string {
+  const overrides = Object.entries(tiers.hatchTiers ?? {}).sort(([a], [b]) => (a < b ? -1 : 1));
+  return JSON.stringify(['validity', pipes, tiers.tier ?? null, overrides, tiers.glassTier ?? null]);
 }
 
 /** The scene: the pipes and the colour of every hatch kind. */

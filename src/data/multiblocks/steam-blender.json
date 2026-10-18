@@ -2,7 +2,7 @@
   "id": "steam-blender",
   "name": "Steam Blender",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamMixer.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamMixer.java",
   "size": [5, 4, 5],
   "layers": [
     [" AAA ", "AAAAA", "AAAAA", "AAAAA", " AAA "],
@@ -36,7 +36,12 @@
   },
   "shareableHatches": ["steamIn", "itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "steamIn": { "min": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A"], "min": 25 }],
   "defaultHatches": ["steamIn", "itemIn", "itemOut"],
   "wallshare": true,
-  "notes": "Steam multiblock: runs on steam from steam input hatches, no energy or maintenance hatch. Every tiered part (machine casing, gear box, pipe casing, firebox, frame) must be the same tier: bronze (shown) or steel (Solid Steel Machine Casing and steel parts; high-pressure steam, faster). Buses are steam input/output buses. Steam mixer (Steam Blender), 5x4x5. Hatches and buses (steam, item, input and output hatches) must face north, the same way as the controller (GT allowOnly(NORTH)); the planner only turns them that way. GT needs a steam input hatch and at least one input and one output of any kind. GT still accepts the old 7x6x7 form; this is the current shape. Sharing: every hatch found during the structure check is added to each controller whose structure contains it, so steam hatches and buses in a shared wall serve both machines."
+  "notes": "Steam multiblock: runs on steam from steam input hatches, no energy or maintenance hatch. Every tiered part (machine casing, gear box, pipe casing, firebox, frame) must be the same tier: bronze (shown) or steel (Solid Steel Machine Casing and steel parts; high-pressure steam, faster). Buses are steam input/output buses. Steam mixer (Steam Blender), 5x4x5. Hatches and buses (steam, item, input and output hatches) are turned north, the same way as the controller, by GT (allowOnly(NORTH), an auto-placement hint); the planner only turns them that way. GT needs a steam input hatch and at least one input and one output of any kind. GT still accepts the old 7x6x7 form; this is the current shape. Sharing: every hatch found during the structure check is added to each controller whose structure contains it, so steam hatches and buses in a shared wall serve both machines."
 }

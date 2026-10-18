@@ -1,25 +1,55 @@
 import { t } from '../i18n/en';
-import type { HatchResult, PackResult } from '../model/plan/types';
-import type { RouteNet } from '../model/routing/routeNet';
+import type { CapacityEntry, UnplacedHatch } from '../model/hatches/types';
 import { isSlowBuild } from './fields';
 import { clearSlot, notify } from './notices';
-import type { PipelineResult } from './pipeline';
+import type { BuildResult } from './pipeline';
 
 /** Notice slots of the machine view, and of the template view. */
 const MACHINE_SLOTS = ['pack', 'hatches', 'pipes'];
 const SITE_SLOTS = ['arrange', 'import', 'import-placeholders'];
 
 /**
+ * The one message for hatches that do not fit: the worst overload (most to remove) with the number of units
+ * with any overload, plus the unplaced hatches that capacity does not explain (those with another reason).
+ */
+export function hatchMessages(
+  capacity: readonly CapacityEntry[] | undefined,
+  unplaced: readonly UnplacedHatch[],
+): string[] {
+  const out: string[] = [];
+  if (capacity?.length) {
+    const worst = capacity.reduce((a, b) => (b.remove > a.remove ? b : a));
+    const units = capacity.reduce((n, e) => n + e.unitIds.length, 0);
+    out.push(
+      t.hatchesDontFit(
+        worst.needed,
+        worst.fits,
+        worst.remove,
+        units,
+        capacity.some((e) => e.mandatory),
+      ),
+    );
+  }
+  const other = unplaced.filter((u) => !(capacity?.length && u.reason === 'capacity')).length;
+  if (other) out.push(t.unplacedHatches(other));
+  return out;
+}
+
+/**
  * Tells the user once per new machine result when the model had to compromise: fewer units, a loosened
  * layout, a slow count, unplaced hatches, unconnected pipes. Each warning has its own notice slot, so a
- * fixed problem's stale warning disappears with the next result.
+ * fixed problem's stale warning disappears with the next result. Results from the build worker are new
+ * objects every time, so a result is compared by what it says (a small signature), not by identity; a
+ * result still waiting for its pipes (`pending`) says nothing yet.
  */
-export function createBuildWarnings(): (result: PipelineResult) => void {
-  let lastPack: PackResult | null = null;
-  let lastHatches: HatchResult | null = null;
-  let lastPipes: RouteNet[] | null = null;
-  return ({ def, pack, hatches, pipes, loosened }) => {
-    if (pack !== lastPack) {
+export function createBuildWarnings(): (result: BuildResult) => void {
+  let lastPack: string | undefined;
+  let lastHatches: string | undefined;
+  let lastPipes: string | undefined;
+  return ({ def, pack, hatches, capacity, pipes, loosened, routingTruncated, pending }) => {
+    if (pending) return;
+    const packSig = `${pack?.placed}/${pack?.requested}/${pack?.reason}/${loosened}/${pipes !== null}/${def?.id}/${def?.size.join()}`;
+    if (packSig !== lastPack) {
       if (pack && pack.placed < pack.requested)
         notify(t.placedFewer(pack.placed, pack.requested, pack.reason), 6000, 'pack');
       else if (loosened) notify(t.spacedOut(pipes !== null), 5000, 'pack');
@@ -28,18 +58,22 @@ export function createBuildWarnings(): (result: PipelineResult) => void {
         notify(t.manyUnits(pack.requested), 8000, 'count');
       else clearSlot('count');
     }
-    if (hatches !== lastHatches) {
-      if (hatches?.unplaced.length) notify(t.unplacedHatches(hatches.unplaced.length), 6000, 'hatches');
+    const hatchText = hatchMessages(capacity, hatches?.unplaced ?? []);
+    const hatchSig = `${def?.id}/${hatchText.join(' ')}`;
+    if (hatchSig !== lastHatches) {
+      if (hatchText.length) notify(hatchText.join(' '), 6000, 'hatches');
       else clearSlot('hatches');
     }
-    if (pipes !== lastPipes) {
-      const missing = pipes?.reduce((s, n) => s + (n.total - n.connected), 0) ?? 0;
-      if (missing > 0) notify(t.unconnectedPipes(missing), 6000, 'pipes');
+    const missing = pipes?.reduce((s, n) => s + (n.total - n.connected), 0) ?? 0;
+    const pipeSig = `${missing}/${routingTruncated === true}`;
+    if (pipeSig !== lastPipes) {
+      if (missing > 0 && routingTruncated) notify(t.routingTruncated(missing), 8000, 'pipes');
+      else if (missing > 0) notify(t.unconnectedPipes(missing), 6000, 'pipes');
       else clearSlot('pipes');
     }
-    lastPack = pack;
-    lastHatches = hatches;
-    lastPipes = pipes;
+    lastPack = packSig;
+    lastHatches = hatchSig;
+    lastPipes = pipeSig;
   };
 }
 

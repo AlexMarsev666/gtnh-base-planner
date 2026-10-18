@@ -7,8 +7,9 @@ import { siteResource } from './demand';
 import { IN_KINDS, OUT_KINDS, type SiteHatch } from './group';
 import { endNode } from './ids';
 import type { SiteOccupancy } from './occupancy';
-import { routeNets, type RouteTerminal } from './router';
-import type { ResourceKind, SiteState } from './types';
+import { isTransformer, transformerHatchOnFront } from './power';
+import { MAX_ROUTER_CELLS, routeNets, type RouteTerminal } from './router';
+import type { ResourceKind, SiteRouting, SiteState } from './types';
 
 /** Resource networks of a site: which hatches and ports each link chain connects, and their routes. */
 
@@ -40,14 +41,14 @@ export class UnionFind {
 
 /**
  * One net per chain of links carrying the same resource (joined where they share a group side or a port),
- * with its terminals: the placed ports, and the group hatches that carry the resource on that side. Each
- * hatch belongs to one net at most (`hatchNet`).
+ * with its terminals: the placed ports, and the group hatches that carry the resource on that side. A hatch
+ * belongs to one net per resource it carries (`hatchNet`, in net order).
  */
 export function buildSiteNetworks(
   site: SiteState,
   groups: readonly PlacedGroup[],
   ports: readonly PlacedPort[],
-): { nets: SiteNet[]; hatchNet: Map<SiteHatch, number> } {
+): { nets: SiteNet[]; hatchNet: Map<SiteHatch, number[]> } {
   const groupIndex = new Map(site.groups.map((g, i) => [g.id, i]));
   const portById = new Map(site.ports.map((p) => [p.id, p]));
   const placedPort = new Map(ports.map((p) => [p.port.id, p]));
@@ -65,7 +66,7 @@ export function buildSiteNetworks(
     if (l.rate !== undefined) c.rate = (c.rate ?? 0) + l.rate;
   }
   const nets: SiteNet[] = [];
-  const hatchNet = new Map<SiteHatch, number>();
+  const hatchNet = new Map<SiteHatch, number[]>();
   for (const c of comps.values()) {
     const res = siteResource(site, c.resource);
     const terminals: NetTerminalInfo[] = [];
@@ -85,8 +86,9 @@ export function buildSiteNetworks(
       if (!pg) continue;
       const kinds = side === 'out' ? OUT_KINDS : IN_KINDS;
       for (const h of pg.hatches) {
-        if (h.resource !== c.resource || !kinds.includes(h.kind) || hatchNet.has(h)) continue;
-        hatchNet.set(h, nets.length);
+        if (!(h.resources ?? [h.resource]).includes(c.resource) || !kinds.includes(h.kind)) continue;
+        if (hatchNet.get(h)?.includes(nets.length)) continue;
+        hatchNet.set(h, [...(hatchNet.get(h) ?? []), nets.length]);
         terminals.push({ role: side === 'out' ? 'source' : 'sink', group: id, hatch: h, cell: h.cell });
       }
     }
@@ -104,6 +106,14 @@ export function buildSiteNetworks(
 }
 
 /**
+ * Routing style and underground depth of a build: `routing` when given, else the legacy `below` flag (one
+ * layer under the ground).
+ */
+export function routingOf(opts: { below?: boolean; routing?: SiteRouting }): SiteRouting {
+  return opts.routing ?? { style: 'classic', depth: opts.below ? 1 : 0 };
+}
+
+/**
  * Routes the nets that are switched on (`pipes` for items and fluids, `cables` for power) and sets their
  * `route`. Fronts of hatches no routed net uses stay free (mufflers vent there, maintenance needs the
  * player, an unrouted energy hatch takes its cable there). Afterwards every hatch of a net carries the
@@ -115,13 +125,43 @@ export function routeSiteNetworks(
   groups: PlacedGroup[],
   ports: readonly PlacedPort[],
   nets: readonly SiteNet[],
-  hatchNet: ReadonlyMap<SiteHatch, number>,
+  hatchNet: ReadonlyMap<SiteHatch, readonly number[]>,
   occupancy: SiteOccupancy,
-  opts: { pipes: boolean; cables: boolean; below?: boolean; turnCost?: number },
-): { routed: SiteNet[]; warnings: SiteWarning[] } {
+  opts: {
+    pipes: boolean;
+    cables: boolean;
+    below?: boolean;
+    turnCost?: number;
+    routing?: SiteRouting;
+  },
+): { routed: SiteNet[]; warnings: SiteWarning[]; depthUsed: number } {
   const [w, d] = site.size;
-  const { solids, keepFree } = occupancy;
+  const { depth: wanted, style } = routingOf(opts);
+  const { solids } = occupancy;
+  const routed = nets.filter((n) => (n.kind === 'power' ? opts.cables : opts.pipes));
   const groupIndex = new Map(site.groups.map((g, i) => [g.id, i]));
+  // The cell in front of a controller stays free, except a transformer's front when a routed net has a
+  // terminal there (its input or output hatch sits on the front and takes a cable). `occupancy.keepFree` holds
+  // one cell per unit, in the order of the groups and their units (see analyzeOccupancy), so a unit's entry is
+  // found by position and a neighbour whose front cell coincides stays protected.
+  const open = new Set<string>();
+  for (const n of routed)
+    for (const t of n.terminals) {
+      const pg = t.hatch && groups[groupIndex.get(t.group!)!];
+      if (pg && pg.def && isSingleBlock(pg.def) && isTransformer(pg.group))
+        if (transformerHatchOnFront(pg.group, t.hatch!.kind))
+          open.add(`${t.group}\u0000${t.hatch!.unitIds[0]}`);
+    }
+  const skip = new Set<number>();
+  let at = 0;
+  for (const pg of groups) {
+    if (!pg.def) continue;
+    for (const u of pg.units) {
+      if (open.has(`${pg.group.id}\u0000${u.id}`)) skip.add(at);
+      at++;
+    }
+  }
+  const keepFree = skip.size ? occupancy.keepFree.filter((_, i) => !skip.has(i)) : [...occupancy.keepFree];
   const placedPort = new Map(ports.map((p) => [p.port.id, p]));
   /** Faces a pipe may use for each terminal. */
   const termFaces = (t: NetTerminalInfo): Dir[] => {
@@ -131,15 +171,19 @@ export function routeSiteNetworks(
     const single = pg.def && isSingleBlock(pg.def);
     const unit = single ? pg.units.find((u) => u.id === h.unitIds[0]) : undefined;
     const front = unit && pg.def ? controllerFacing(pg.def, unit) : null;
+    // A transformer takes power on its front and gives it on its other faces (a step-up one the reverse).
+    const onFront = single && isTransformer(pg.group) ? transformerHatchOnFront(pg.group, h.kind) : undefined;
+    if (onFront && front) return [front].filter((f) => !(h.blocked ?? []).includes(f));
     const no = new Set<Dir>([
       ...(h.blocked ?? []),
       ...(front ? [front] : []),
-      ...(front && !opts.below ? ['down' as Dir] : []),
+      ...(front && wanted === 0 ? ['down' as Dir] : []),
     ]);
+    // A hatch several nets end at is entered through its own front only, so the nets share one cell.
+    if ((hatchNet.get(h)?.length ?? 0) > 1 && !no.has(h.face)) return [h.face];
     return [h.face, ...ATTACH_ORDER.filter((f) => f !== h.face)].filter((f) => !no.has(f));
   };
 
-  const routed = nets.filter((n) => (n.kind === 'power' ? opts.cables : opts.pipes));
   const routedHatches = new Set<SiteHatch>();
   for (const n of routed) for (const t of n.terminals) if (t.hatch) routedHatches.add(t.hatch);
   for (const pg of groups) {
@@ -147,11 +191,19 @@ export function routeSiteNetworks(
     for (const h of pg.hatches) if (!routedHatches.has(h)) keepFree.push(step(h.cell, h.face));
   }
   const height = Math.max(4, ...groups.map((g) => g.max[1] + 3));
+  // A floor takes the layer at y = -1 (pipes only cross it), so the trench starts one layer lower; without
+  // depth nothing goes under the ground and the floor stays whole.
+  const floor = site.floor !== undefined && wanted > 0 ? 1 : 0;
+  // Deep trenches enlarge the search grid; use the deepest that still fits (but never less than 1).
+  let depth = wanted;
+  while (depth > 1 && (w + 2) * (d + 2) * (height + depth + floor + 2) > MAX_ROUTER_CELLS) depth--;
   const results = routed.length
     ? routeNets({
-        // One layer under the ground for pipes that come from below.
-        box: { min: [0, opts.below ? -1 : 0, 0], max: [w, height, d] },
-        trenchBelow: opts.below ? 0 : undefined,
+        // Up to `depth` layers under the ground (and under the floor) for pipes that come from below.
+        box: { min: [0, -depth - floor, 0], max: [w, height, d] },
+        trenchBelow: depth > 0 ? 0 : undefined,
+        floorY: floor ? -1 : undefined,
+        style,
         solids,
         keepFree,
         nets: routed.map((n) => ({
@@ -159,12 +211,22 @@ export function routeSiteNetworks(
             cell: t.cell,
             faces: termFaces(t),
             role: t.role,
+            ...(t.hatch && (hatchNet.get(t.hatch)?.length ?? 0) > 1 ? { share: t.cell.join() } : {}),
           })),
         })),
         turnCost: opts.turnCost,
       })
     : [];
   routed.forEach((n, i) => (n.route = results[i]));
+  // Without depth a hatch facing the ground (`SiteHatch.fromBelow`) cannot connect: it shows through its hint
+  // (`groundFace`), not as an unrouted terminal.
+  if (wanted === 0)
+    routed.forEach((n) => {
+      const r = n.route;
+      if (!r) return;
+      const lost = n.terminals.filter((t, ti) => t.hatch?.fromBelow && !r.attach[ti]).length;
+      if (lost > 0) n.route = { ...r, total: r.total - lost };
+    });
 
   // Hatches turn to the side their pipe reaches them from.
   const finalFace = new Map<SiteHatch, Dir>();
@@ -179,7 +241,8 @@ export function routeSiteNetworks(
       const face = finalFace.get(h);
       if (net === undefined && !face) return h;
       const out: SiteHatch = { ...h, face: face ?? h.face };
-      if (net !== undefined) out.net = net;
+      if (face && face !== h.face) delete out.fromBelow;
+      if (net !== undefined) out.net = net[0];
       return out;
     });
   const warnings: SiteWarning[] = [];
@@ -188,5 +251,5 @@ export function routeSiteNetworks(
     if (r.connected < r.total)
       warnings.push({ type: 'unrouted', resource: n.resource, connected: r.connected, total: r.total });
   }
-  return { routed, warnings };
+  return { routed, warnings, depthUsed: depth };
 }

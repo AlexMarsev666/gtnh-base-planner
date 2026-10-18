@@ -2,7 +2,7 @@
   "id": "large-thermal-refinery",
   "name": "Large Thermal Refinery",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialThermalCentrifuge.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialThermalCentrifuge.java",
   "size": [5, 8, 6],
   "layers": [
     [" A~A ", "AAAAA", "AAAAA", "AAAAA", "AAAAA", " AAA "],
@@ -17,7 +17,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.2@0",
-      "hatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings@11" },
     "C": { "blockId": "gregtech:gt.blockcasings5@0" },
@@ -35,11 +36,21 @@
   },
   "shareableHatches": ["itemIn", "itemOut"],
   "requiredHatches": {
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
     "energy": { "min": 1 },
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["A"], "min": 85 }],
+  "coils": { "chars": ["C"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any thermal casing\n1 Maintenance Hatch: Any thermal casing\n1 Muffler Hatch: Any thermal casing\n1+ Input Bus: Any thermal casing\n1+ Output Bus: Any thermal casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialThermalCentrifuge (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialThermalCentrifuge (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

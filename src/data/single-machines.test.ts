@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKS } from './blocks';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { TIERS } from '../model/core/types';
+import { BLOCKS, blockInfo } from './blocks';
 import {
   SINGLE_MACHINES,
   getSingleMachine,
+  hullTiles,
   singleMachineBlockId,
   singleMachineForName,
+  singleMachineTiers,
+  transformerLook,
+  transformerValid,
 } from './single-machines';
 import { catalog } from './catalog';
 import { SINGLE_BLOCK_NAMES, multiblockForName } from './gtnhplanner-machines';
@@ -58,5 +65,105 @@ describe('single-block machine looks', () => {
   it('reads the fuel cells of GT++ by the name the planner gives them', () => {
     expect(multiblockForName('Solid-Oxide Fuel Cell Mk I')).toBe('solid-oxide-fuel-cell-mk-i');
     expect(catalog.some((d) => d.id === 'solid-oxide-fuel-cell-mk-i')).toBe(true);
+  });
+  it('keeps every id of earlier versions, which saved plans and links name', () => {
+    const early =
+      'alloy-smelter amplifabricator arc-furnace assembler autoclave bender brewery canner centrifuge chemical-bath chemical-reactor circuit-assembler compressor cutting-machine distillery electric-furnace electrolyzer electromagnetic-polarizer electromagnetic-separator extractor extruder fermenter fluid-canner fluid-extractor fluid-heater fluid-solidifier forge-hammer forming-press laser-engraver lathe macerator mass-fabricator microwave mixer ore-washer packager plasma-arc-furnace printer pump recycler replicator rock-breaker scanner sifter thermal-centrifuge unpackager wiremill generator tank'.split(
+        ' ',
+      );
+    expect(early).toHaveLength(49);
+    for (const id of early) {
+      expect(getSingleMachine(id), id).toBeDefined();
+      expect(BLOCKS[singleMachineBlockId(id)], id).toBeDefined();
+    }
+  });
+});
+
+describe('single-block machine tiers', () => {
+  it('gives every machine a range of tiers, as GT registers it', () => {
+    for (const m of SINGLE_MACHINES) {
+      const tiers = singleMachineTiers(m.id);
+      expect(tiers.length, m.id).toBeGreaterThan(0);
+      expect(tiers[0], m.id).toBe('LV');
+    }
+    expect(singleMachineTiers('macerator')).toEqual(TIERS.slice(1, 13));
+    expect(singleMachineTiers('circuit-assembler').at(-1)).toBe('MAX');
+    expect(singleMachineTiers('packager').at(-1)).toBe('UV');
+    expect(singleMachineTiers('rock-breaker')).toEqual(['LV', 'MV', 'HV', 'EV', 'IV']);
+    expect(singleMachineTiers('tank').at(-1)).toBe('IV');
+    expect(singleMachineTiers('nope')).toEqual([]);
+  });
+
+  it('has a texture source for every hull tier and every transformer overlay', () => {
+    const sources = join(__dirname, '../../tools/texture-sources');
+    const has = (tile: string) => existsSync(join(sources, tile + '.png'));
+    for (const tier of TIERS)
+      for (const tile of Object.values(hullTiles(tier))) expect(has(tile), tile).toBe(true);
+    for (const tier of singleMachineTiers('transformer'))
+      for (const step of ['up', 'down'] as const) {
+        const look = transformerLook(tier, step);
+        expect(has(look.front), look.front).toBe(true);
+        expect(has(look.sides), look.sides).toBe(true);
+        for (const tile of Object.values(hullTiles(look.hull))) expect(has(tile), tile).toBe(true);
+        for (const amps of [16, 64] as const) {
+          const l = transformerLook(tier, step, amps);
+          expect(has(l.front), l.front).toBe(true);
+          expect(has(l.sides), l.sides).toBe(true);
+        }
+      }
+  });
+
+  it('draws a transformer as MTETransformer does', () => {
+    expect(getSingleMachine('transformer')?.transformer).toBe(true);
+    expect(singleMachineTiers('transformer')).toEqual(TIERS.slice(1));
+    expect(transformerLook('HV', 'down')).toEqual({
+      hull: 'MV',
+      front: 'SINGLE_TRANSFORMER_IN_HV',
+      sides: 'SINGLE_TRANSFORMER_OUT_4A_MV',
+    });
+    expect(transformerLook('LuV', 'up')).toEqual({
+      hull: 'IV',
+      front: 'SINGLE_TRANSFORMER_OUT_LUV',
+      sides: 'SINGLE_TRANSFORMER_IN_4A_IV',
+    });
+    // Hi-Amp: 4A high side, 16A low side. Power: 16A high side, 64A low side.
+    expect(transformerLook('UEV', 'down', 16)).toEqual({
+      hull: 'UHV',
+      front: 'SINGLE_TRANSFORMER_IN_4A_UEV',
+      sides: 'SINGLE_TRANSFORMER_OUT_16A_UHV',
+    });
+    expect(transformerLook('MAX', 'up', 64)).toEqual({
+      hull: 'UXV',
+      front: 'SINGLE_TRANSFORMER_OUT_16A_MAX',
+      sides: 'SINGLE_TRANSFORMER_IN_64A_UXV',
+    });
+  });
+
+  it('allows every transformer family from an LV high side up', () => {
+    expect(transformerValid('LV', 4)).toBe(true);
+    expect(transformerValid('MAX', 64)).toBe(true);
+    // Hi-Amp below UEV comes from GT++ (GregtechHiAmpTransformer), from UEV from GT.
+    expect(transformerValid('LV', 16)).toBe(true);
+    expect(transformerValid('UHV', 16)).toBe(true);
+    expect(transformerValid('UEV', 16)).toBe(true);
+    expect(transformerValid('ULV', 4)).toBe(false);
+    expect(transformerValid('ULV', 16)).toBe(false);
+    expect(transformerValid('MAX', 16)).toBe(true);
+    expect(hullTiles('LuV').side).toBe('MACHINE_LuV_SIDE');
+  });
+});
+
+describe('tiered look ids', () => {
+  it('rest on the untiered block of every machine having a front (the renderer takes it from there)', () => {
+    for (const m of SINGLE_MACHINES)
+      expect(manifest.blocks[singleMachineBlockId(m.id)]?.front, m.id).toBeTruthy();
+  });
+
+  it('are named by rule, with no entry in the block list', () => {
+    expect(BLOCKS['site.machine.macerator@HV']).toBeUndefined();
+    expect(blockInfo('site.machine.macerator@HV').name).toBe('Macerator (HV)');
+    expect(blockInfo('site.machine.transformer@HV:down:4').name).toBe('Transformer HV→MV 4A (step-down)');
+    expect(blockInfo('site.machine.transformer@HV:up:64').name).toBe('Transformer MV→HV 64A (step-up)');
+    expect(blockInfo('site.machine.macerator@UXV').name).toBe('site.machine.macerator@UXV');
   });
 });

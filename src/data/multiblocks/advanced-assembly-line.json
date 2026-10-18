@@ -2,33 +2,71 @@
   "id": "advanced-assembly-line",
   "name": "Advanced Assembly Line",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/ggfab/mte/MTEAdvAssLine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/ggfab/mte/MTEAdvAssLine.java",
   "size": [5, 4, 3],
   "layers": [
     ["AAAAA", "BBBBB", "AAAAA"],
     ["CCCCC", "DDDDD", "CCCCC"],
-    ["EEEE~", "FFFFF", "EEEEE"],
+    ["EEEE~", "FFFFF", "EEEEH"],
     ["     ", "GGGGG", "     "]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings2@0", "hatches": ["fluidIn", "maintenance"] },
-    "B": { "blockId": "gt.hatch.inputBus", "hatches": ["itemIn"] },
+    "A": {
+      "blockId": "gregtech:gt.blockcasings2@0",
+      "hatches": ["itemOut", "fluidIn", "maintenance"],
+      "allowFaces": { "fluidIn": ["down"], "maintenance": ["down"] },
+      "region": "dot1"
+    },
+    "B": {
+      "blockId": "gt.hatch.inputBus",
+      "hatches": ["itemIn"],
+      "allowFaces": { "itemIn": ["down"] },
+      "region": "dot2"
+    },
     "C": { "blockId": "bartworks:BW_TieredGlass@0" },
     "D": { "blockId": "gregtech:gt.blockcasings2@5" },
-    "E": { "blockId": "gregtech:gt.blockcasings3@10" },
+    "E": {
+      "blockId": "gregtech:gt.blockcasings3@10",
+      "hatches": ["dataAccess"],
+      "allowFaces": { "dataAccess": ["north"] }
+    },
+    "H": { "blockId": "gregtech:gt.blockcasings3@10" },
     "F": { "blockId": "gregtech:gt.blockcasings2@9" },
-    "G": { "blockId": "gregtech:gt.blockcasings2@0", "hatches": ["energy"] }
+    "G": {
+      "blockId": "gregtech:gt.blockcasings2@0",
+      "hatches": ["energy"],
+      "allowFaces": { "energy": ["north", "south", "up"] },
+      "region": "dot4"
+    }
   },
   "controller": { "pos": [4, 2, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@13532" },
+  "resize": { "axis": "x", "from": 0, "to": 1, "min": 5, "max": 16, "default": 5, "label": "length" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
+    "itemOut": "gt.hatch.outputBus",
     "fluidIn": "gt.hatch.inputHatch",
     "energy": "gt.hatch.energy",
-    "maintenance": "gt.hatch.maintenance"
+    "maintenance": "gt.hatch.maintenance",
+    "dataAccess": "gt.hatch.dataAccess"
   },
-  "shareableHatches": ["itemIn", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "energy", "maintenance"],
+  "shareableHatches": ["itemIn", "itemOut", "fluidIn"],
+  "requiredHatches": {
+    "itemIn": { "min": 5, "max": 5, "perSlab": 1 },
+    "itemOut": { "min": 1, "max": 1 },
+    "fluidIn": { "min": 1, "max": 4 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 },
+    "dataAccess": { "min": 0, "max": 1 }
+  },
+  "defaultHatches": ["itemIn", "itemOut", "fluidIn", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemOut", "fluidIn", "maintenance"],
+      "text": "1 Maintenance Hatch: Any layer 1 side casing\n1-4 Input Hatch: Any layer 1 side casing\n1 Output Bus: Any layer 1 casing on last slice"
+    },
+    "dot2": { "kinds": ["itemIn"], "text": "5-16 Input Bus: Bottom center of each slice" },
+    "dot4": { "kinds": ["energy"], "text": "1+ Energy Hatch: Any layer 4 casing" }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEAdvAssLine (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "The tooltip limits it (\"1 Output Bus: Any layer 1 casing on last slice\"); the planner allows it on every cell of that dot. 10 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: MTEAdvAssLine (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

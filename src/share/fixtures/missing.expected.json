@@ -1,0 +1,67 @@
+{
+  "site": {
+    "v": 1,
+    "kind": "site",
+    "size": [30, 30],
+    "corridor": 2,
+    "groups": [
+      {
+        "id": "ghost",
+        "multiblockId": "placeholder",
+        "count": 2,
+        "limits": {
+          "x": 1,
+          "y": null,
+          "z": null
+        },
+        "enabledHatches": ["energy", "maintenance"],
+        "origin": [4, 4],
+        "rotation": 1,
+        "label": "Missing: ghost-multiblock (Old machine)"
+      },
+      {
+        "id": "sb",
+        "multiblockId": "single-block",
+        "count": 1,
+        "limits": {
+          "x": null,
+          "y": null,
+          "z": null
+        },
+        "enabledHatches": [],
+        "origin": [14, 4],
+        "rotation": 0,
+        "machine": "assembler"
+      }
+    ],
+    "links": [
+      {
+        "id": "l1",
+        "from": {
+          "group": "ghost"
+        },
+        "to": {
+          "group": "sb"
+        },
+        "resource": "item:plate",
+        "rate": 3
+      }
+    ],
+    "ports": [],
+    "resources": {
+      "item:plate": {
+        "kind": "item",
+        "name": "Plate",
+        "color": "#c0c0c0"
+      }
+    },
+    "colors": {},
+    "name": "Site with a removed multiblock"
+  },
+  "replaced": [
+    {
+      "group": "ghost",
+      "id": "ghost-multiblock"
+    }
+  ]
+}

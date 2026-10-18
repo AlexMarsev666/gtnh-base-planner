@@ -5,6 +5,8 @@
 export class CellHeap {
   items: Int32Array;
   size = 0;
+  /** Cells popped so far: the router's deterministic measure of work. */
+  pops = 0;
 
   constructor(
     private key: Float64Array,
@@ -52,6 +54,7 @@ export class CellHeap {
   /** Removes and returns the cell with the smallest key. */
   pop(): number {
     const { items, pos } = this;
+    this.pops++;
     const top = items[0];
     pos[top] = -1;
     const n = --this.size;

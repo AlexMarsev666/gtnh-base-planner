@@ -2,7 +2,7 @@
   "id": "bose-einstein-condensate-entanglement-apparatus",
   "name": "Bose-Einstein Condensate Entanglement Apparatus",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECGenerator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/bec/MTEBECGenerator.java",
   "size": [19, 19, 34],
   "layers": [
     [
@@ -698,7 +698,11 @@
     "E": { "blockId": "gregtech:gt.blockglass1@9" },
     "F": { "blockId": "gregtech:gt.blockcasings.bec@1" },
     "G": { "blockId": "gregtech:gt.blockcasings.bec@5" },
-    "H": { "blockId": "gregtech:gt.blockcasings.bec@1", "hatches": ["itemIn", "fluidIn", "energy"] }
+    "H": {
+      "blockId": "gregtech:gt.blockcasings.bec@1",
+      "hatches": ["itemIn", "fluidIn", "energy"],
+      "region": "dot1"
+    }
   },
   "controller": { "pos": [9, 9, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15754" },
   "hatchBlocks": {
@@ -707,8 +711,14 @@
     "energy": "gt.hatch.energy"
   },
   "shareableHatches": ["itemIn", "fluidIn"],
-  "requiredHatches": { "energy": { "min": 1 } },
-  "defaultHatches": ["itemIn", "energy"],
+  "requiredHatches": { "fluidIn": { "min": 1 }, "energy": { "min": 1 } },
+  "defaultHatches": ["itemIn", "fluidIn", "energy"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "energy"],
+      "text": "1+ Energy Hatch: Any electromagnetically-isolated casing around controller\n1+ Input Hatch: Any electromagnetically-isolated casing around controller"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEBECGenerator (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEBECGenerator (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

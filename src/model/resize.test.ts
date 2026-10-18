@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { getMultiblock } from '../data/catalog';
 import { validateMultiblockDef } from '../data/validate';
@@ -89,5 +90,60 @@ describe('sizedDef', () => {
       expect(d.requiredHatches?.fluidOut?.regions).toHaveLength(h - 1);
       expect(d.requiredHatches?.fluidOut?.min).toBe(h - 1);
     }
+  });
+});
+
+describe('regions a requirement does not count', () => {
+  it('keep their name in every slab copy (a hatch zone covers them all)', () => {
+    const def: MultiblockDef = { ...line, requiredHatches: { itemOut: { min: 1 } } };
+    const d = sizedDef(def, 6);
+    const regions = [1, 2, 3, 4].map((x) => d.legend[d.layers[0][0][x]].region);
+    expect(regions).toEqual(['slice', 'slice', 'slice', 'slice']);
+    expect(Object.keys(d.legend)).toEqual(Object.keys(def.legend));
+  });
+
+  it('leaves the hand-made resizable entries as they were (counted regions are still numbered)', () => {
+    // sha256 prefix of the JSON of every size of each entry, taken with the numbering of every slab region.
+    const digest = (id: string) => {
+      const d = getMultiblock(id)!;
+      return createHash('sha256')
+        .update(JSON.stringify(resizeSteps(d.resize!).map((n) => sizedDef(d, n))))
+        .digest('hex')
+        .slice(0, 16);
+    };
+    expect(digest('assembly-line')).toBe('af8fad7d74956255');
+    expect(digest('distillation-tower')).toBe('054a1efbe2dbca35');
+  });
+});
+
+describe('requirements with perSlab', () => {
+  const withPerSlab = (): MultiblockDef => ({
+    ...line,
+    requiredHatches: { itemIn: { min: 2, max: 2, perSlab: 1 }, itemOut: { min: 1 } },
+  });
+
+  it('grow by perSlab for every added slab, min and max alike, and the sized def states them plainly', () => {
+    const d = sizedDef(withPerSlab(), 6); // three more slabs
+    expect(d.requiredHatches?.itemIn).toEqual({ min: 5, max: 5 });
+    expect(d.requiredHatches?.itemOut).toEqual({ min: 1 });
+    expect(sizedDef(withPerSlab(), 3)).toEqual(withPerSlab());
+  });
+
+  it('adds to the one per numbered region', () => {
+    const def: MultiblockDef = {
+      ...line,
+      requiredHatches: { itemIn: { min: 1, max: 1, regions: ['slice'], perSlab: 1 } },
+    };
+    const d = sizedDef(def, 5); // two more slabs: regions 1 -> 3, plus two from perSlab
+    expect(d.requiredHatches?.itemIn).toMatchObject({ min: 5, max: 5 });
+    expect(d.requiredHatches?.itemIn?.regions).toHaveLength(3);
+  });
+
+  it('is only valid on a resizable def, and a whole number >= 1', () => {
+    expect(validateMultiblockDef(withPerSlab())).toEqual([]);
+    const fixed = { ...withPerSlab(), resize: undefined };
+    expect(validateMultiblockDef(fixed).join()).toMatch(/perSlab/);
+    const zero = { ...withPerSlab(), requiredHatches: { itemIn: { min: 2, perSlab: 0 } } };
+    expect(validateMultiblockDef(zero).join()).toMatch(/perSlab/);
   });
 });

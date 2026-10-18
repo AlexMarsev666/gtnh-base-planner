@@ -1,6 +1,7 @@
 import type { Dir, HorizontalDir } from '../model/core/types';
 import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
 import { BLOCKS } from './blocks';
+import { isCoilBlock } from './coils';
 
 export const HATCH_KINDS: readonly HatchKind[] = [
   'itemIn',
@@ -12,6 +13,7 @@ export const HATCH_KINDS: readonly HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'dataAccess',
 ];
 
 const HORIZONTAL: readonly HorizontalDir[] = ['north', 'south', 'east', 'west'];
@@ -128,6 +130,17 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
       if (!Array.isArray(dirs) || dirs.some((d) => !DIRS.includes(d)))
         err(`legend "${ch}" disallowFaces.${k} must list directions`);
     }
+    for (const [k, dirs] of Object.entries(entry.allowFaces ?? {})) {
+      if (!isHatchKind(k) || !entry.hatches?.includes(k))
+        err(`legend "${ch}" allowFaces.${k} but the cell does not allow "${k}"`);
+      if (!Array.isArray(dirs) || dirs.length === 0 || dirs.some((d) => !DIRS.includes(d)))
+        err(`legend "${ch}" allowFaces.${k} must list directions`);
+      else {
+        const blocked = (entry.disallowFaces as Record<string, Dir[]> | undefined)?.[k];
+        if (Array.isArray(blocked) && dirs.every((d) => blocked.includes(d)))
+          err(`legend "${ch}" allowFaces.${k} and disallowFaces.${k} leave no side`);
+      }
+    }
     if (entry.region !== undefined) {
       if (typeof entry.region !== 'string' || entry.region === '')
         err(`legend "${ch}" region must be a name`);
@@ -176,6 +189,8 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
     if (!req || !isInt(req.min) || req.min < 0) err(`requiredHatches.${k}.min must be an integer >= 0`);
     if (req?.max !== undefined && (!isInt(req.max) || req.max < (req.min ?? 0)))
       err(`requiredHatches.${k}.max must be an integer >= min`);
+    if (req?.perSlab !== undefined && (!isInt(req.perSlab) || req.perSlab < 1 || def.resize === undefined))
+      err(`requiredHatches.${k}.perSlab must be an integer >= 1 and only on a resizable def`);
     for (const r of req?.regions ?? []) {
       if (!regions.get(r)?.has(k))
         err(`requiredHatches.${k}.regions lists "${r}" but no cell of it allows "${k}"`);
@@ -185,6 +200,106 @@ export function validateMultiblockDef(def: MultiblockDef, fileName?: string): st
     // Only enabled kinds are placed, so a required kind must be enabled by default.
     if (req && req.min >= 1 && !defaults.includes(k))
       err(`requiredHatches.${k}.min >= 1 but "${k}" is not in defaultHatches`);
+  }
+
+  // hatch groups
+  if (def.requiredAny !== undefined && !Array.isArray(def.requiredAny)) err('requiredAny must be an array');
+  for (const [i, group] of (Array.isArray(def.requiredAny) ? def.requiredAny : []).entries()) {
+    const at = `requiredAny[${i}]`;
+    if (!Array.isArray(group?.kinds) || group.kinds.length === 0)
+      err(`${at}.kinds must be a non-empty array`);
+    const seen = new Set<string>();
+    for (const k of Array.isArray(group?.kinds) ? group.kinds : []) {
+      if (!isHatchKind(k)) err(`${at} has invalid hatch kind "${k}"`);
+      else if (!allowed.has(k)) err(`${at} lists "${k}" but no legend cell allows it`);
+      if (seen.has(k)) err(`${at} lists "${k}" twice`);
+      seen.add(k);
+    }
+    if (!isInt(group?.min) || group.min < 1) err(`${at}.min must be an integer >= 1`);
+  }
+
+  // casing minimums
+  if (def.minCasings !== undefined && !Array.isArray(def.minCasings)) err('minCasings must be an array');
+  for (const [i, m] of (Array.isArray(def.minCasings) ? def.minCasings : []).entries()) {
+    const at = `minCasings[${i}]`;
+    const listed = Array.isArray(m?.chars) ? m.chars : [];
+    if (listed.length === 0) err(`${at}.chars must be a non-empty array`);
+    if (new Set(listed).size !== listed.length) err(`${at}.chars lists a character twice`);
+    for (const ch of listed) if (!(ch in legend)) err(`${at}.chars lists "${ch}" which is not a legend key`);
+    if (!isInt(m?.min) || m.min < 1) err(`${at}.min must be an integer >= 1`);
+    if (m?.perSlab !== undefined && (!isInt(m.perSlab) || m.perSlab < 1 || def.resize === undefined))
+      err(`${at}.perSlab must be an integer >= 1 and only on a resizable def`);
+    // The minimum must be reachable: the structure itself holds that many such cells (no hatch in them).
+    const chars = new Set(listed);
+    let cells = 0;
+    for (const layer of Array.isArray(def.layers) ? def.layers : [])
+      for (const row of Array.isArray(layer) ? layer : [])
+        if (typeof row === 'string') for (const ch of row) if (chars.has(ch)) cells++;
+    if (isInt(m?.min) && cells < m.min)
+      err(`${at}.min ${m.min} but the structure has only ${cells} such cells`);
+  }
+
+  // tiered glass
+  const glass = def.glassTierLimits;
+  if (glass !== undefined) {
+    const chars = Array.isArray(glass?.chars) ? glass.chars : [];
+    if (chars.length === 0) err('glassTierLimits.chars must be a non-empty array');
+    if (new Set(chars).size !== chars.length) err('glassTierLimits.chars lists a character twice');
+    for (const ch of chars)
+      if (!(ch in legend)) err(`glassTierLimits.chars lists "${ch}" which is not a legend key`);
+    const kinds = Array.isArray(glass?.kinds) ? glass.kinds : [];
+    if (kinds.length === 0) err('glassTierLimits.kinds must be a non-empty array');
+    if (new Set(kinds).size !== kinds.length) err('glassTierLimits.kinds lists a kind twice');
+    for (const k of kinds) {
+      if (!isHatchKind(k)) err(`glassTierLimits has invalid hatch kind "${k}"`);
+      else if (!allowed.has(k)) err(`glassTierLimits lists "${k}" but no legend cell allows it`);
+    }
+  }
+
+  // heating coil
+  const coils = def.coils;
+  if (coils !== undefined) {
+    const chars = Array.isArray(coils?.chars) ? coils.chars : [];
+    if (chars.length === 0) err('coils.chars must be a non-empty array');
+    if (new Set(chars).size !== chars.length) err('coils.chars lists a character twice');
+    for (const ch of chars) {
+      if (!(ch in legend)) err(`coils.chars lists "${ch}" which is not a legend key`);
+      else if (!isCoilBlock(legend[ch].blockId))
+        err(`coils.chars lists "${ch}" whose block ${legend[ch].blockId} is no heating coil`);
+      else if (legend[ch].hatches?.length) err(`coils.chars lists "${ch}" which takes hatches`);
+    }
+  }
+
+  // orientations
+  if (def.variants !== undefined) {
+    const v = def.variants;
+    if (!Array.isArray(v) || v.length === 0) err('variants must be a non-empty array');
+    else {
+      if (v.some((n) => !isInt(n) || n < 0 || n > 3)) err('variants must list 0, 1, 2 or 3');
+      else {
+        if (new Set(v).size !== v.length) err('variants lists a variant twice');
+        if (v.some((n, i) => i > 0 && n < v[i - 1])) err('variants must be sorted');
+        if (!v.includes(0)) err('variants must include 0, the structure as built');
+        if (v.length === 4) err('variants lists all four variants, which is what an absent field means');
+      }
+    }
+  }
+
+  // zones
+  for (const [region, zone] of Object.entries(def.zones ?? {})) {
+    const cellKinds = regions.get(region);
+    if (!cellKinds) {
+      err(`zones names "${region}" but no legend cell has that region`);
+      continue;
+    }
+    if (!Array.isArray(zone?.kinds) || zone.kinds.length === 0)
+      err(`zones.${region}.kinds must be a non-empty array`);
+    for (const k of Array.isArray(zone?.kinds) ? zone.kinds : []) {
+      if (!isHatchKind(k)) err(`zones.${region} has invalid hatch kind "${k}"`);
+      else if (!cellKinds.has(k)) err(`zones.${region} lists "${k}" but no cell of the region allows it`);
+    }
+    if (zone?.text !== undefined && typeof zone.text !== 'string')
+      err(`zones.${region}.text must be a string`);
   }
 
   if (typeof def.wallshare !== 'boolean') err('wallshare must be a boolean');

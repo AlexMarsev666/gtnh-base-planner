@@ -17,6 +17,7 @@ export const HATCH_PRIORITY: readonly HatchKind[] = [
   'fluidIn',
   'itemOut',
   'fluidOut',
+  'dataAccess',
 ];
 
 /** Preferred output face when a cell has several open ones: sides first, then top, bottom last. */

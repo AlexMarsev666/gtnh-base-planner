@@ -2,7 +2,7 @@
   "id": "extreme-combustion-engine",
   "name": "Extreme Combustion Engine",
   "tier": "IV",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEExtremeCombustionEngine.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEExtremeCombustionEngine.java",
   "size": [10, 5, 5],
   "layers": [
     ["FEEEEFEFEF", "FEEEEFEFEF", "FEEEEFEFEF", "FEEEEFEFEF", "FEEEEFEFEF"],
@@ -36,6 +36,7 @@
     "fluidIn": { "min": 1 },
     "dynamo": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["C"], "min": 30 }],
   "defaultHatches": ["fluidIn", "dynamo", "maintenance", "muffler"],
   "wallshare": true,
   "notes": "GT:NH 2.9 structure: 10 long, 5 high, 5 deep. A 3x3 Robust Tungstensteel block around the controller (at least 30 casings in total) takes the maintenance hatch and muffler; the engine body has Extreme Engine Intake Casings on top (the air above them must stay free), Tungstensteel Turbine Casings that take input hatches (fuel, lubricant, liquid oxygen), Tungstensteel Firebox Casings, a Steel Gear Box shaft ending in the dynamo hatch at the far end, and a PTFE pipe / Chemically Inert floor. PTFE frame boxes stand at the front. The controller sits one block back from the front edge."

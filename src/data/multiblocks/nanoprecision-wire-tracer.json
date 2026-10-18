@@ -2,22 +2,26 @@
   "id": "nanoprecision-wire-tracer",
   "name": "Nanoprecision Wire Tracer",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEWireTracerModule.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/nanochip/modules/MTEWireTracerModule.java",
   "size": [7, 8, 7],
   "layers": [
-    [" AAAAA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    ["       ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", " CCCCC ", "       "],
-    [" AA~AA ", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", "ABBBBBA", " AAAAA "],
-    [" CCBCC ", "CDEEEDC", "CE---EC", "BE-C-EB", "CE---EC", "CDEEEDC", " CCBCC "],
-    ["  CBC  ", " D---D ", "C-----C", "B--C--B", "C-----C", " D---D ", "  CBC  "],
-    ["  CBC  ", " D-B-D ", "C-----C", "BB-F-BB", "C-----C", " D-B-D ", "  CBC  "],
-    ["  CCC  ", " D-E-D ", "C-----C", "CE---EC", "C-----C", " D-E-D ", "  CCC  "],
-    ["       ", " EBBBE ", " BDDDB ", " BDDDB ", " BDDDB ", " EBBBE ", "       "]
+    [" AAAAA ", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", "AAAAAAA", " AAAAA "],
+    ["       ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", " BBBBB ", "       "],
+    [" AA~AA ", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", "ACCCCCA", " AAAAA "],
+    [" BBCBB ", "BDEEEDB", "BE---EB", "CE-B-EC", "BE---EB", "BDEEEDB", " BBCBB "],
+    ["  BCB  ", " D---D ", "B-----B", "C--B--C", "B-----B", " D---D ", "  BCB  "],
+    ["  BCB  ", " D-C-D ", "B-----B", "CC-F-CC", "B-----B", " D-C-D ", "  BCB  "],
+    ["  BBB  ", " D-E-D ", "B-----B", "BE---EB", "B-----B", " D-E-D ", "  BBB  "],
+    ["       ", " ECCCE ", " CDDDC ", " CDDDC ", " CDDDC ", " ECCCE ", "       "]
   ],
   "legend": {
-    "A": { "blockId": "gregtech:gt.blockcasings12@1", "hatches": ["itemIn", "fluidIn", "fluidOut"] },
-    "B": { "blockId": "gregtech:gt.blockcasings12@1" },
-    "C": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "A": {
+      "blockId": "gregtech:gt.blockcasings12@1",
+      "hatches": ["itemIn", "fluidIn", "fluidOut"],
+      "region": "dot3"
+    },
+    "B": { "blockId": "gregtech:gt.blockcasings12@2" },
+    "C": { "blockId": "gregtech:gt.blockcasings12@1" },
     "D": { "blockId": "gregtech:gt.blockglass1@8" },
     "E": { "blockId": "gregtech:gt.blockframes@985" },
     "F": { "blockId": "gregtech:gt.sheetmetal@974" }
@@ -31,6 +35,12 @@
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
   "requiredHatches": {},
   "defaultHatches": ["itemIn"],
+  "zones": {
+    "dot3": {
+      "kinds": ["itemIn", "fluidIn", "fluidOut"],
+      "text": "0+ Vacuum Conveyor Input: Any base mesh casing\n0+ Vacuum Conveyor Output: Any base mesh casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEWireTracerModule (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEWireTracerModule (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

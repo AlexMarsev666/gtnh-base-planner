@@ -1,5 +1,7 @@
 import type { PlanState } from '../model/plan/types';
-import { MAX_PAYLOAD_BYTES, PlanFormatError, encodePlan, decodePlan, validatePlanState } from './codec';
+import { MAX_PLAN_JSON_BYTES } from './binary';
+import { keepBackup } from './backups';
+import { PlanFormatError, encodePlan, decodePlan, validatePlanState } from './codec';
 
 /**
  * UNIT 5 — Persistence.
@@ -19,7 +21,7 @@ export const STORAGE_KEY = 'gtnh-planner:v1';
 export const BACKUP_PREFIX = `${STORAGE_KEY}:backup-`;
 export const HASH_PARAM = 'p';
 
-export type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'key' | 'length'>;
+export type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>;
 export type LocationLike = Pick<Location, 'hash' | 'pathname' | 'search' | 'href'>;
 export interface WindowLike {
   location: LocationLike;
@@ -50,6 +52,8 @@ export interface StoredPlanResult {
   error?: string;
   /** Key the unreadable plan was copied to (absent if the copy failed). */
   backupKey?: string;
+  /** The unreadable stored text (for a download), when `error` is set. */
+  raw?: string;
 }
 
 /**
@@ -72,22 +76,7 @@ export function readStoredPlan(
     return { plan: planFromJson(raw) };
   } catch (err) {
     const error = err instanceof Error ? err.message : 'Unreadable plan.';
-    return { plan: null, error, backupKey: backupRaw(storage, raw, now) };
-  }
-}
-
-/** Copies an unreadable stored plan to a backup key (once per distinct value). */
-function backupRaw(storage: StorageLike, raw: string, now: () => number): string | undefined {
-  try {
-    for (let i = 0; i < storage.length; i++) {
-      const key = storage.key(i);
-      if (key?.startsWith(BACKUP_PREFIX) && storage.getItem(key) === raw) return key;
-    }
-    const key = `${BACKUP_PREFIX}${now()}`;
-    storage.setItem(key, raw);
-    return key;
-  } catch {
-    return undefined;
+    return { plan: null, error, raw, backupKey: keepBackup(storage, STORAGE_KEY, raw, now) };
   }
 }
 
@@ -105,7 +94,10 @@ export function loadStoredPlan(
 export function saveStoredPlan(state: PlanState, storage: StorageLike | null = browserStorage()): boolean {
   if (!storage) return false;
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(validatePlanState(state)));
+    const text = JSON.stringify(validatePlanState(state));
+    // Never write what `planFromJson` would refuse to read back.
+    if (text.length > MAX_PLAN_JSON_BYTES) return false;
+    storage.setItem(STORAGE_KEY, text);
     return true;
   } catch {
     return false;
@@ -184,7 +176,7 @@ export function planToJson(state: PlanState): string {
 
 export function planFromJson(text: string): PlanState {
   if (typeof text !== 'string') throw new PlanFormatError('Plan file is not text.');
-  if (text.length > MAX_PAYLOAD_BYTES) throw new PlanFormatError('Plan file is too large.');
+  if (text.length > MAX_PLAN_JSON_BYTES) throw new PlanFormatError('Plan file is too large.');
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -196,7 +188,7 @@ export function planFromJson(text: string): PlanState {
 
 /** Reads an uploaded plan file (size-checked before reading). */
 export async function readPlanFile(file: Blob): Promise<PlanState> {
-  if (file.size > MAX_PAYLOAD_BYTES) throw new PlanFormatError('Plan file is too large.');
+  if (file.size > MAX_PLAN_JSON_BYTES) throw new PlanFormatError('Plan file is too large.');
   return planFromJson(await file.text());
 }
 

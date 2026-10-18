@@ -2,7 +2,7 @@
   "id": "industrial-arc-furnace",
   "name": "Industrial Arc Furnace",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEIndustrialArcFurnace.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/kubatech/tileentity/gregtech/multiblock/MTEIndustrialArcFurnace.java",
   "size": [17, 11, 19],
   "layers": [
     [
@@ -241,7 +241,8 @@
     "A": { "blockId": "gregtech:gt.blockframes@305" },
     "B": {
       "blockId": "gregtech:gt.blockcasings2@0",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+      "region": "dot1"
     },
     "C": { "blockId": "gregtech:gt.blockcasings2@13" },
     "D": { "blockId": "gregtech:gt.blockcasings5@0" },
@@ -262,7 +263,19 @@
   },
   "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["B"], "min": 10 }],
+  "coils": { "chars": ["D"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance"],
+      "text": "1: Any steel machine casing\n0+: Any steel machine casing\n1+ Energy Hatch: Any steel machine casing\n1 Maintenance Hatch: Any steel machine casing\n1+ Input Bus/Hatch: Any steel machine casing\n1+ Output Bus/Hatch: Any steel machine casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEIndustrialArcFurnace (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEIndustrialArcFurnace (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

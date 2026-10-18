@@ -1,18 +1,21 @@
 import { get, writable } from 'svelte/store';
 import { t } from '../i18n/en';
 import type { PlanState } from '../model/plan/types';
+import { LinkTooLargeError } from '../share/binary';
 import { encodePlan } from '../share/codec';
 import {
   clearHash,
-  loadStoredPlan,
   planFromJson,
   planToJson,
   readHashPlan,
+  readStoredPlan,
   saveStoredPlan,
 } from '../share/persist';
 import { appMode } from '../state/site';
 import { plan, selectedUnits } from '../state/store';
+import { beginHashLink, isLatestHashLink } from './hashLink';
 import { LONG_LINK_CHARS, linkCopiedNotice, notify, warnOnce } from './notices';
+import { holdUnreadable, isHeld, releaseIfBackedUp } from './recovery';
 import { shareApi } from './shareApi';
 
 /** A shared plan from the URL waiting for the user's OPEN / KEEP MINE answer. */
@@ -62,21 +65,41 @@ function applyPlan(next: PlanState): void {
 export async function initSession(): Promise<void> {
   let stored: PlanState | null = null;
   try {
-    stored = loadStoredPlan();
+    const result = readStoredPlan();
+    stored = result.plan;
+    // The unreadable text stays where it is until the user decides (see recovery.ts).
+    if (result.error !== undefined) {
+      holdUnreadable('plan', { error: result.error, raw: result.raw ?? '', backupKey: result.backupKey });
+    }
   } catch (err) {
-    warnOnce('loadStoredPlan', err);
+    warnOnce('readStoredPlan', err);
   }
   if (stored) applyPlan(stored);
+  await openHashPlan(stored);
+}
 
+/**
+ * Open the `#p=` link in the address bar, if there is one, against `stored` (the plan to keep unless the
+ * link is the same plan or there is none: then the user is asked). At startup and when the hash changes.
+ */
+export async function openHashPlan(stored: PlanState | null): Promise<void> {
   // Any `p=` / legacy `plan=` parameter counts as a link attempt worth reporting and clearing.
   const hasHash = /(^#|&)(p|plan)=/.test(location.hash);
+  // A newer link supersedes this one, and the prompt for an older one.
+  const link = hasHash ? beginHashLink() : 0;
+  if (hasHash) pendingShared.set(null);
   let shared: PlanState | null = null;
+  let failure: unknown;
   try {
     shared = await readHashPlan();
   } catch (err) {
-    warnOnce('readHashPlan', err);
+    failure = err;
+  }
+  if (hasHash && !isLatestHashLink(link)) return;
+  if (failure !== undefined) {
+    warnOnce('readHashPlan', failure);
     // The share unit's PlanFormatError carries a readable message; anything else gets the generic one.
-    const readable = err instanceof Error && err.name === 'PlanFormatError' ? err.message : null;
+    const readable = failure instanceof Error && failure.name === 'PlanFormatError' ? failure.message : null;
     if (hasHash) notify(readable ?? t.sharedInvalid, 8000);
   }
   if (!shared) {
@@ -87,8 +110,10 @@ export async function initSession(): Promise<void> {
   // view before its first await, so this (after an await) always comes later.
   appMode.set('machine');
   if (!stored || samePlan(shared, stored)) {
+    releaseIfBackedUp('plan');
     applyPlan(shared);
-    safeClearHash();
+    // Still held: the link is the only copy of this plan outside memory, so a reload must find it.
+    if (!isHeld('plan')) safeClearHash();
   } else {
     pendingShared.set(shared);
   }
@@ -96,7 +121,10 @@ export async function initSession(): Promise<void> {
 
 export function answerShared(open: boolean): void {
   const shared = get(pendingShared);
-  if (open && shared) applyPlan(shared);
+  if (open && shared) {
+    releaseIfBackedUp('plan');
+    applyPlan(shared);
+  }
   pendingShared.set(null);
   safeClearHash();
 }
@@ -109,9 +137,15 @@ export function startAutosave(): () => void {
     if (timer !== undefined) clearTimeout(timer);
     timer = undefined;
     if (!latest) return;
+    // An unreadable stored plan is left alone until the user decides.
+    if (isHeld('plan')) {
+      latest = undefined;
+      return;
+    }
     try {
       // The share unit returns false when storage is full or blocked.
       if ((saveStoredPlan(latest) as unknown) === false) saveFailed();
+      else saveWarned = false;
     } catch (err) {
       warnOnce('saveStoredPlan', err);
     }
@@ -155,6 +189,10 @@ export async function copyShareLink(): Promise<void> {
     url = shareApi.planHashUrl ? await shareApi.planHashUrl(p) : shareUrl(await encodePlan(p));
   } catch (err) {
     warnOnce('encodePlan', err);
+    if (err instanceof LinkTooLargeError) {
+      notify(t.planTooLargeForLink, 0, 'link-too-large', { label: t.downloadJson, run: downloadJson });
+      return;
+    }
     notify(t.linkFailed);
     return;
   }
@@ -192,7 +230,9 @@ export function downloadJson(): void {
 
 export async function openJsonFile(file: File): Promise<void> {
   try {
-    applyPlan(shareApi.readPlanFile ? await shareApi.readPlanFile(file) : planFromJson(await file.text()));
+    const next = shareApi.readPlanFile ? await shareApi.readPlanFile(file) : planFromJson(await file.text());
+    releaseIfBackedUp('plan');
+    applyPlan(next);
     notify(t.jsonLoaded);
   } catch (err) {
     warnOnce('planFromJson', err);

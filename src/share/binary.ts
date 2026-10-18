@@ -1,7 +1,15 @@
 import { Deflate, Inflate } from 'fflate';
 
-/** Hard cap for any untrusted plan payload (encoded text, compressed bytes and decompressed bytes). */
-export const MAX_PAYLOAD_BYTES = 64 * 1024;
+/** Longest link text (the base64url code after `#p=` / `#s=`) that is written or accepted. */
+export const MAX_LINK_CODE_CHARS = 64 * 1024;
+/** Longest decompressed plan JSON in a link. */
+export const MAX_PLAN_LINK_JSON = 64 * 1024;
+/** Longest plan JSON as a file or stored copy (a maximal plan is about 250 KB indented). */
+export const MAX_PLAN_JSON_BYTES = 1024 * 1024;
+/** Longest site JSON as a file, stored copy or decompressed link (a maximal site is about 1.1 MB indented). */
+export const MAX_SITE_JSON_BYTES = 2 * 1024 * 1024;
+/** Kept so imports do not churn; use the specific limit above. */
+export const MAX_PAYLOAD_BYTES = MAX_LINK_CODE_CHARS;
 
 export type Bytes = Uint8Array<ArrayBuffer>;
 
@@ -10,6 +18,13 @@ export class PlanFormatError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'PlanFormatError';
+  }
+}
+
+/** A plan or site that cannot be written as a link the app could open again; offer the JSON file instead. */
+export class LinkTooLargeError extends PlanFormatError {
+  constructor() {
+    super('This is too large for a link. Download JSON instead.');
   }
 }
 
@@ -24,7 +39,7 @@ export function toBase64Url(bytes: Uint8Array): string {
 }
 
 export function fromBase64Url(text: string): Bytes {
-  if (text.length > MAX_PAYLOAD_BYTES) throw new PlanFormatError('Plan link is too long.');
+  if (text.length > MAX_LINK_CODE_CHARS) throw new PlanFormatError('Plan link is too long.');
   if (!BASE64URL_RE.test(text) || text.length % 4 === 1) {
     throw new PlanFormatError('Plan link is damaged (invalid characters).');
   }
@@ -100,7 +115,7 @@ export async function inflateRaw(
   input: Bytes,
   opts: CompressOptions & { limit?: number } = {},
 ): Promise<Bytes> {
-  const limit = opts.limit ?? MAX_PAYLOAD_BYTES;
+  const limit = opts.limit ?? MAX_PLAN_LINK_JSON;
   if (!opts.fallback && hasNativeStreams()) {
     try {
       return await throughStream(new DecompressionStream('deflate-raw'), input, limit);

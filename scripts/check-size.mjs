@@ -8,6 +8,19 @@
 // Raised with the catalog built from the game dump (244 multiblocks, 39 of them new, several huge: Forge of the
 // Gods, Large Hadron Collider, Nanochip Assembly Complex; 619 atlas tiles): site worker 111 KB, atlas 141 KB,
 // dist 3.9 MB.
+//
+// Raised when the machine pipeline moved into the worker (October 2026; it runs in its own Worker instance of
+// the same script, so the routing of a large build no longer blocks the page): site worker 129.5 KB.
+//
+// Raised with GT5-Unofficial 5.09.54.205 (hatch zones and tooltip text in every catalog entry), tiers, mirror,
+// neat routing, transformer looks and template hatch requests (October 2026): main JS 386 KB, site worker 149 KB.
+//
+// Raised with the template and machine settings UI (group resources, machine types, routing, progress and
+// Cancel; October 2026): main JS 394 KB.
+//
+// Lowered when the catalog became its own chunk (October 2026; `catalogData-*.js`, loaded at startup and
+// preloaded from index.html): main JS 345 KB, site worker 90 KB. Both the main build and the worker build
+// emit a copy of the catalog chunk (they are separate Rolldown builds), so its budget counts two copies.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -17,11 +30,12 @@ const dist = process.argv[2] ?? 'dist';
 
 /** [what, file matcher, measure, budget in bytes] */
 const budgets = [
-  ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 380 * KB],
-  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 130 * KB],
-  ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 6 * KB],
+  ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 345 * KB],
+  ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 90 * KB],
+  ['catalog chunks (gzip)', /^assets\/catalogData-.*\.js$/, 'gzip', 215 * KB],
+  ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 8 * KB],
   ['texture atlas', /^textures\/atlas\.png$/, 'raw', 170 * KB],
-  ['whole site', /./, 'raw', 4.75 * 1024 * KB],
+  ['whole site', /./, 'raw', 4.6 * 1024 * KB],
 ];
 
 function files(dir, prefix = '') {

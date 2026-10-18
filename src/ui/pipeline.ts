@@ -1,239 +1,101 @@
-import { derived } from 'svelte/store';
+import { derived, writable, type Readable } from 'svelte/store';
 import { getMultiblock } from '../data/catalog';
-import { DEFAULT_HATCH_COLORS } from '../model/colors';
-import { layoutCandidates, packUnits } from '../model/layout/packer';
-import { loosenings } from '../model/layout/variants';
-import { alongX } from '../model/orient';
-import { resolveLayout, resolveRoutedLayout, type ResolvedLayout } from '../model/plan';
+import { requiredBlocks, type Bom } from '../model/bom';
+import { mirroredDef } from '../model/mirror';
 import { effectiveSize, sizedDef } from '../model/resize';
-import { placeHatches } from '../model/hatches/placement';
-import { withPipeFaces } from '../model/routing/attachments';
-import { CABLE_KINDS, PIPE_KINDS, type RoutedKind } from '../model/routing/kinds';
-import { routePipes } from '../model/routing/router';
-import { buildSceneModel } from '../model/scene';
-import type { HatchKind, MultiblockDef } from '../model/multiblock/types';
-import type { HatchResult, PackResult, PlanState, WallStats } from '../model/plan/types';
+import type { PlanState } from '../model/plan/types';
 import type { SceneModel } from '../model/render/types';
-import type { RouteNet } from '../model/routing/routeNet';
-import { computeWallStats } from '../model/walls';
+import type { MultiblockDef } from '../model/multiblock/types';
+import type { AppMode } from '../share/sitePersist';
+import { appMode } from '../state/site';
 import { connectBelow, plan, showCables, showPipes } from '../state/store';
-import { withBuildDimensions } from './dimensions';
-import { warnOnce } from './notices';
-import { hatchKey, layoutKey, pipesKey, sceneKey } from './pipelineKeys';
+import { createMachineWorkerController, type MachineWorkerController } from './machineWorkerController';
+import { createPipeline, type PipelineResult } from './pipelineCore';
 
-/** The model functions the pipeline calls (injectable for tests). */
-export interface PipelineDeps {
-  getMultiblock: (id: string) => MultiblockDef | undefined;
-  packUnits: typeof packUnits;
-  placeHatches: typeof placeHatches;
-  /** Looser layouts to try when the compact one cannot fit every hatch. */
-  layoutCandidates: typeof layoutCandidates;
-  /** Looser versions of a layout, tried when pipes or cables leave a hatch unconnected. */
-  loosenings: typeof loosenings;
-  computeWallStats: typeof computeWallStats;
-  routePipes: typeof routePipes;
-  buildSceneModel: typeof buildSceneModel;
-}
+export * from './pipelineCore';
 
-export const defaultDeps: PipelineDeps = {
-  getMultiblock,
-  packUnits,
-  placeHatches,
-  layoutCandidates,
-  loosenings,
-  computeWallStats,
-  routePipes,
-  buildSceneModel,
+/** What the machine view shows before it has been built (the template view never builds it). */
+const NOT_BUILT: PipelineResult = {
+  def: undefined,
+  pack: null,
+  loosened: false,
+  hatches: null,
+  stats: null,
+  pipes: null,
+  scene: null,
+  error: null,
 };
 
-export interface PipelineResult {
-  def: MultiblockDef | undefined;
-  pack: PackResult | null;
-  /** True when the layout was loosened (gaps, walkways) so every hatch fits. */
-  loosened: boolean;
-  hatches: HatchResult | null;
-  stats: WallStats | null;
-  /** Pipe and cable networks (whichever are switched on), or null when both are off. */
-  pipes: RouteNet[] | null;
-  scene: SceneModel | null;
-  /** First error thrown by a stage (the stages after it are skipped). */
-  error: string | null;
-}
+/** The build for the current plan, and whether it is still waiting for its pipes and cables. */
+export type BuildResult = PipelineResult & { pending?: boolean };
 
-type Outcome<T> = { ok: true; value: T } | { ok: false; error: string };
-
-/** Single-entry cache: recompute only when the key changes. Errors are cached too (same input, same error). */
-function stage<T>(name: string) {
-  let lastKey: string | undefined;
-  let last: Outcome<T> | undefined;
-  return (key: string, compute: () => T): Outcome<T> => {
-    if (last && key === lastKey) return last;
-    try {
-      last = { ok: true, value: compute() };
-    } catch (err) {
-      warnOnce(name, err);
-      last = { ok: false, error: err instanceof Error ? err.message : String(err) };
-    }
-    lastKey = key;
-    return last;
-  };
-}
-
-export function mergeColors(overrides: PlanState['colors']): Record<HatchKind, string> {
-  return { ...DEFAULT_HATCH_COLORS, ...overrides };
-}
+/** Quick builds do not flash the busy indicator. */
+const BUSY_DELAY_MS = 250;
 
 /**
- * plan → def → units → hatches → stats → pipes → scene, each stage memoised on exactly the inputs it
- * depends on, so changing a colour does not re-pack and a camera move (not an input) recomputes nothing.
+ * The build for the current plan; recomputes only when the plan or the view toggles change. Packing and
+ * routing run in a worker (`machineWorkerController`): the last result stays on screen while a newer one is
+ * computed, and with pipes or cables on the build without them is shown first (`pending`). Without workers
+ * it builds right here. While the template view is shown it keeps the last result and requests nothing (the
+ * machine view is not on screen); coming back to the machine view builds it again.
  */
-export function createPipeline(deps: PipelineDeps = defaultDeps) {
-  const layoutStage = stage<PackResult>('packUnits');
-  const hatchStage = stage<{
-    pack: PackResult;
-    hatches: HatchResult;
-    loosened: boolean;
-    /** Networks already routed while choosing the layout (pipes or cables on, auto layout). */
-    pipes?: RouteNet[];
-  }>('placeHatches');
-  const statsStage = stage<WallStats>('computeWallStats');
-  const pipesStage = stage<RouteNet[] | null>('routePipes');
-  const sceneStage = stage<SceneModel>('buildSceneModel');
-  let lastResultKey: string | undefined;
-  let lastResult: PipelineResult | undefined;
-
-  return function run(p: PlanState, pipesOn: boolean, cablesOn = false, below = false): PipelineResult {
-    // Hatches may face down, and pipes run under the build, when connections from below are allowed.
-    const d: PipelineDeps = below
-      ? { ...deps, placeHatches: (df, u, e, a) => deps.placeHatches(df, u, e, a, { below: true }) }
-      : deps;
-    const raw = deps.getMultiblock(p.multiblockId);
-    const size = raw ? effectiveSize(raw, p.size) : undefined;
-    // A resizable multiblock is built at the plan's height / length.
-    const def = raw ? sizedDef(raw, size) : undefined;
-    const empty: PipelineResult = {
-      def,
-      pack: null,
-      loosened: false,
-      hatches: null,
-      stats: null,
-      pipes: null,
-      scene: null,
-      error: null,
+export function createBuildStore(
+  run: ReturnType<typeof createPipeline> = createPipeline(),
+  mode: Readable<AppMode> = appMode,
+  createController: (
+    events: Parameters<typeof createMachineWorkerController>[0],
+  ) => MachineWorkerController = (events) => createMachineWorkerController(events, { run }),
+) {
+  const result = writable<BuildResult>(NOT_BUILT, () => {
+    const stop = derived([plan, showPipes, showCables, connectBelow, mode], (x) => x).subscribe(
+      ([$plan, $pipes, $cables, $below, $mode]) => {
+        if ($mode === 'machine')
+          controller.submit({ plan: $plan, pipes: $pipes, cables: $cables, below: $below });
+      },
+    );
+    return () => {
+      stop();
+      controller.cancel();
     };
-    if (!def) return { ...empty, error: `Unknown multiblock "${p.multiblockId}"` };
-
-    const kinds: RoutedKind[] = [...(pipesOn ? PIPE_KINDS : []), ...(cablesOn ? CABLE_KINDS : [])];
-    // With pipes or cables on, an auto layout is chosen so that every hatch gets connected.
-    const routedLayout = kinds.length > 0 && !p.manualUnits;
-    const colors = mergeColors(p.colors);
-    const layoutK = layoutKey({
-      defId: def.id,
-      size,
-      count: p.count,
-      limits: p.limits,
-      manualUnits: p.manualUnits,
-    });
-    const hatchK = hatchKey(layoutK, p.enabledHatches, routedLayout ? kinds : null, below);
-    const pipesK = pipesKey(hatchK, kinds);
-    const sceneK = sceneKey(pipesK, colors);
-    if (lastResult && sceneK === lastResultKey) return lastResult;
-
-    const finish = (r: PipelineResult) => {
-      lastResultKey = sceneK;
-      lastResult = r;
-      return r;
-    };
-
-    const pack = layoutStage(layoutK, () => {
-      if (p.manualUnits) {
-        const n = p.manualUnits.length;
-        return { units: p.manualUnits, requested: n, placed: n };
+  });
+  const busy = writable(false);
+  let busyTimer: ReturnType<typeof setTimeout> | undefined;
+  const controller = createController({
+    onResult: (r, { pending }) => result.set(pending ? { ...r, pending: true } : r),
+    onBusy: (on) => {
+      if (on) busyTimer ??= setTimeout(() => busy.set(true), BUSY_DELAY_MS);
+      else {
+        clearTimeout(busyTimer);
+        busyTimer = undefined;
+        busy.set(false);
       }
-      return deps.packUnits(def, p.count, p.limits);
-    });
-    if (!pack.ok) return finish({ ...empty, error: pack.error });
-    const packed = pack.value;
-    // Hatches may loosen the layout (gaps between units) when the compact one leaves no room for them,
-    // and so may pipes and cables when they cannot reach every hatch.
-    const placed = hatchStage(hatchK, () =>
-      p.manualUnits
-        ? {
-            pack: pack.value,
-            hatches: d.placeHatches(def, pack.value.units, p.enabledHatches),
-            loosened: false,
-          }
-        : longSideAlongX(
-            routedLayout ? routedOrPlain() : resolveLayout(def, pack.value, p.enabledHatches, p.limits, d),
-          ),
-    );
-    // Which way the chosen layout runs depends on which candidate first fits every hatch, so counts could
-    // flip it between X and Z; turn it so its long side is always along X (unless the X and Z limits
-    // differ, which turning would break).
-    function longSideAlongX<T extends ResolvedLayout & { pipes?: RouteNet[] }>(r: T): T {
-      if ((p.limits.x ?? null) !== (p.limits.z ?? null)) return r;
-      const out = alongX(def!, { units: r.pack.units, hatches: r.hatches, pipes: r.pipes });
-      if (!out) return r;
-      return { ...r, pack: { ...r.pack, units: out.units }, hatches: out.hatches, pipes: out.pipes };
-    }
-    // A routing failure still renders the build: its error then comes from the pipes stage.
-    function routedOrPlain() {
-      try {
-        return resolveRoutedLayout(def!, packed, p.enabledHatches, p.limits, { kinds, below }, d);
-      } catch (err) {
-        // Routing never fails on purpose, so this is a bug: report it, then fall back.
-        warnOnce('resolveRoutedLayout', err);
-        return resolveLayout(def!, packed, p.enabledHatches, p.limits, d);
-      }
-    }
-    if (!placed.ok) return finish({ ...empty, pack: pack.value, error: placed.error });
-    const units = placed.value.pack.units;
-    const hatchResult = placed.value.hatches;
-    const layout = placed.value.pack;
-    const loosened = placed.value.loosened;
-
-    const stats = statsStage(hatchK, () => deps.computeWallStats(def, units, hatchResult.hatches));
-    if (!stats.ok)
-      return finish({ ...empty, pack: layout, loosened, hatches: hatchResult, error: stats.error });
-
-    // Pipes and cables are optional: a routing failure still renders the build without them.
-    const routed = placed.value.pipes;
-    const pipes = pipesStage(pipesK, () =>
-      kinds.length > 0 ? (routed ?? d.routePipes(def, units, hatchResult.hatches, { kinds, below })) : null,
-    );
-    const pipeNets = pipes.ok ? pipes.value : null;
-
-    // Hatches turn to whichever side their pipe reaches them from.
-    // Width and depth of the whole build are measured beside it.
-    const scene = sceneStage(sceneK, () =>
-      withBuildDimensions(
-        deps.buildSceneModel(
-          def,
-          units,
-          withPipeFaces(hatchResult.hatches, pipeNets),
-          stats.value,
-          pipeNets,
-          colors,
-        ),
-      ),
-    );
-    return finish({
-      def,
-      pack: layout,
-      loosened,
-      hatches: hatchResult,
-      stats: stats.value,
-      pipes: pipeNets,
-      scene: scene.ok ? scene.value : null,
-      error: scene.ok ? (pipes.ok ? null : pipes.error) : scene.error,
-    });
-  };
+    },
+  });
+  return { build: result as Readable<BuildResult>, busy: busy as Readable<boolean> };
 }
 
-const run = createPipeline();
+const machine = createBuildStore();
+export const build = machine.build;
+/** A build has been running for a while for a plan newer than the one shown. */
+export const machineBusy = machine.busy;
 
-/** The derived build for the current plan; recomputes only when the plan or the view toggles change. */
-export const build = derived(
-  [plan, showPipes, showCables, connectBelow],
-  ([$plan, $showPipes, $showCables, $below]) => run($plan, $showPipes, $showCables, $below),
+/** The multiblock of the current plan at its size, known at once (the build itself arrives later). */
+export const machineDef: Readable<MultiblockDef | undefined> = derived(plan, ($plan) => {
+  const raw = getMultiblock($plan.multiblockId);
+  if (!raw) return undefined;
+  const sized = sizedDef(raw, effectiveSize(raw, $plan.size));
+  return $plan.mirror ? mirroredDef(sized) : sized;
+});
+
+/** The bill of materials of a machine build, with the plan's machine and hatch tiers. */
+export function planBom(scene: SceneModel, p: Pick<PlanState, 'tier' | 'hatchTiers'>): Bom {
+  return requiredBlocks(scene, undefined, {
+    machineTier: p.tier,
+    hatchTiers: p.hatchTiers,
+  });
+}
+
+/** The bill of materials of the machine on screen (empty before it is built). */
+export const machineBom: Readable<Bom> = derived([build, plan], ([$build, $plan]) =>
+  $build.scene ? planBom($build.scene, $plan) : { blocks: [], io: [], totalBlocks: 0 },
 );

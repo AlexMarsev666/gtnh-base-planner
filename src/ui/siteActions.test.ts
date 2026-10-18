@@ -128,6 +128,16 @@ describe('site actions', () => {
     expect(withGroupPatched(s, 'g2', { size: 9 })).toBe(s);
   });
 
+  it('stores quadFluid only when off', () => {
+    const s = two();
+    const off = withGroupPatched(s, 'g1', { quadFluid: false });
+    expect(off.groups[0].quadFluid).toBe(false);
+    expect(withGroupPatched(off, 'g1', { quadFluid: false })).toBe(off);
+    const on = withGroupPatched(off, 'g1', { quadFluid: true });
+    expect('quadFluid' in on.groups[0]).toBe(false);
+    expect(on).toEqual(s);
+  });
+
   it('turns both ways', () => {
     let s = two();
     s = withGroupRotated(s, 'g1', -1);

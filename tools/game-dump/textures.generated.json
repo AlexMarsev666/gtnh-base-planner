@@ -1519,10 +1519,10 @@
         "assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_OPTICAL_ORGANIZER.png"
       ]
     },
-    "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_SMD_PROCESSOR": {
+    "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_PART_PROCESSOR": {
       "from": [
         "assets/gregtech/textures/blocks/iconsets/NANOCHIP_MESH_INTERFACE_CASING.png",
-        "assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_SMD_PROCESSOR.png"
+        "assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_PART_PROCESSOR.png"
       ]
     },
     "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_SPLITTER": {
@@ -1793,9 +1793,6 @@
     "DUMP_TFFTSTORAGE_FIELD_BLOCK1": {
       "from": ["assets/kekztech/textures/blocks/TFFTStorageFieldBlock1.png"]
     },
-    "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK": {
-      "from": ["assets/bartworks/textures/blocks/TitaniumReinforcedBoronSilicateGlassBlock.png"]
-    },
     "DUMP_TM_TESLA_BASE_SIDES": {
       "from": ["assets/gregtech/textures/blocks/iconsets/TM_TESLA_BASE_SIDES.png"]
     },
@@ -1875,55 +1872,54 @@
     },
     "EM_CONTROLLER": {
       "path": "src/main/resources/assets/gregtech/textures/blocks/iconsets/EM_CONTROLLER.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "FRAME_NEUTRONIUM": {
       "path": "src/main/resources/assets/gregtech/textures/blocks/materialicons/NONE/frameGt.png",
       "tint": [250, 250, 250],
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "GOODGENERATOR_1": {
       "path": "src/main/resources/assets/goodgenerator/textures/blocks/essentiaCell/1.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "GOODGENERATOR_ESSENTIAFILTERCASING": {
       "path": "src/main/resources/assets/goodgenerator/textures/blocks/essentiaFilterCasing.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "GOODGENERATOR_MAGICCASING": {
       "path": "src/main/resources/assets/goodgenerator/textures/blocks/MagicCasing.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "GTNHINTERGALACTIC_BASECASING": {
       "path": "src/main/resources/assets/gtnhintergalactic/textures/blocks/spaceElevator/BaseCasing.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "GTNHINTERGALACTIC_CABLEPART": {
       "path": "src/main/resources/assets/gtnhintergalactic/textures/blocks/spaceElevator/CablePart.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "GTNHINTERGALACTIC_INTERNALSTRUCTURE": {
       "path": "src/main/resources/assets/gtnhintergalactic/textures/blocks/spaceElevator/InternalStructure.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "LARGEESSENTIASMELTERY_OFF": {
       "path": "src/main/resources/assets/gregtech/textures/blocks/icons/LargeEssentiaSmeltery_Off.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "MACHINE_CASING_MAGICAL": {
       "path": "src/main/resources/assets/gregtech/textures/blocks/iconsets/MACHINE_CASING_MAGICAL.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     },
     "OVERLAY_FRONT_RESEARCH_COMPLETER": {
       "path": "src/main/resources/assets/gregtech/textures/blocks/iconsets/OVERLAY_FRONT_RESEARCH_COMPLETER.png",
-      "ref": "5.09.54.133"
+      "ref": "5.09.54.205"
     }
   },
   "blocks": {
     "bartworks:BW_Machinery_Casings@0": { "side": "DUMP_NICKEL_FERRITE_BLOCKS" },
     "bartworks:BW_Machinery_Casings@1": { "side": "DUMP_TRANSFORMER_COIL" },
     "bartworks:BW_TieredGlass@0": { "side": "DUMP_BORON_SILICATE_GLASS_BLOCK" },
-    "bartworks:BW_TieredGlass@1": { "side": "DUMP_TITANIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK" },
     "bartworks:BW_TieredGlass@3": {
       "side": "DUMP_RHODIUM_PLATED_PALLADIUM_REINFORCED_BORON_SILICATE_GLASS_BLOCK"
     },
@@ -3097,7 +3093,7 @@
     },
     "gregtech:gt.blockmachines@9505": {
       "side": "DUMP_NANOCHIP_MESH_INTERFACE_CASING",
-      "front": "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_SMD_PROCESSOR"
+      "front": "DUMP_NANOCHIP_MESH_INTERFACE_CASING__OVERLAY_FRONT_PART_PROCESSOR"
     },
     "gregtech:gt.blockmachines@9506": {
       "side": "DUMP_NANOCHIP_MESH_INTERFACE_CASING",

@@ -2,6 +2,7 @@
   import { getSiteDef } from '../data/generic';
   import { t } from '../i18n/en';
   import { site, siteGroup, siteNet } from '../state/site';
+  import { splitWarnings } from './siteInspect';
   import { siteBuild, siteBusy } from './sitePipeline';
 
   interface Props {
@@ -15,6 +16,7 @@
     if (!build) return $siteBusy ? [t.site.building] : [];
     const s = build.stats;
     const out = [t.site.groupCount(s.groups), t.units(s.units), t.blocks(s.blocks)];
+    if (s.sharedBlocks) out.push(t.site.sharedWalls(s.sharedBlocks));
     if ($siteBusy) out.unshift(t.site.building);
     // While editing, the pipes wait (and their counts would read 0).
     if ($siteBuild.pending) {
@@ -48,50 +50,68 @@
     return null;
   });
 
-  const problems = $derived(build?.warnings.length ?? 0);
+  const problems = $derived(splitWarnings(build?.warnings ?? []).problems.length);
 </script>
 
 {#if main.length || detail}
   <footer class="stats" data-testid="site-stats">
-    {#each main as part, i (i)}
-      {#if i > 0}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
-      <span>{part}</span>
-    {/each}
-    {#if problems}
-      <span class="dot" aria-hidden="true">{t.separator}</span>
-      <button class="link warn" data-testid="site-problems" onclick={onproblems}
-        >{t.site.problemCount(problems)}</button
-      >
-    {/if}
-    {#if detail}
-      <span class="break" aria-hidden="true"></span>
-      <span class="detail" data-testid="site-detail">{detail}</span>
-    {/if}
+    <div class="box">
+      {#each main as part, i (i)}
+        {#if i > 0}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
+        <span>{part}</span>
+      {/each}
+      {#if problems}
+        <span class="dot" aria-hidden="true">{t.separator}</span>
+        <button class="link warn" data-testid="site-problems" onclick={onproblems}
+          >{t.site.problemCount(problems)}</button
+        >
+      {/if}
+      {#if detail}
+        <span class="break" aria-hidden="true"></span>
+        <span class="detail" data-testid="site-detail">{detail}</span>
+      {/if}
+    </div>
   </footer>
 {/if}
 
 <style>
   .stats {
     position: fixed;
-    left: 160px;
-    right: 240px;
-    bottom: 22px;
+    left: calc(160px + var(--outline-w, 0px));
+    right: 280px;
+    bottom: 30px;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .box {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: baseline;
     gap: 2px 0;
-    z-index: 10;
-    pointer-events: none;
+    padding: 6px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--muted);
+    text-align: center;
   }
   .dot {
-    margin: 0 10px;
+    margin: 0 8px;
     color: var(--faint);
   }
   .warn {
     pointer-events: auto;
     color: var(--text);
     padding: 0;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
   }
   .break {
     flex-basis: 100%;
@@ -99,8 +119,6 @@
   }
   .detail {
     color: var(--text);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
   @media (max-width: 640px) {
     .stats {
@@ -108,6 +126,9 @@
       right: var(--gutter);
       bottom: auto;
       top: calc(var(--bar-h) + 2px);
+      justify-content: flex-start;
+    }
+    .box {
       justify-content: flex-start;
       column-gap: 14px;
     }

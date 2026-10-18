@@ -1,7 +1,9 @@
 import {
   type CellKey,
   controllerFacing,
+  defOfUnit,
   localCells,
+  outsideAllowedFaces,
   packCell,
   rotateDir,
   rotatedSize,
@@ -13,6 +15,7 @@ import type { HatchKind, MultiblockDef, Unit } from '../multiblock/types';
 import { CLEAR_AHEAD, FACE_ORDER, FLOOD_LIMIT } from './constants';
 import { comparePos } from './geometry';
 import type { Site } from './types';
+import { zoneOfCell } from './zones';
 
 /** Discovering every cell a hatch may take, with its open faces, around a set of placed units. */
 
@@ -81,6 +84,10 @@ function outsideCells(b: Box, solid: Uint8Array, ground: number): Uint8Array {
 
 const NO_REGIONS: ReadonlyMap<number, string> = new Map();
 
+const NO_ZONES: ReadonlyMap<number, string> = new Map();
+
+const NO_CHARS: ReadonlyMap<number, string> = new Map();
+
 const NO_BLOCKED: ReadonlyMap<HatchKind, Set<Dir>> = new Map();
 
 /** Per def: the rotated local offset of every structure cell, per rotation. */
@@ -111,6 +118,42 @@ function legendKinds(
   return set;
 }
 
+const NO_KINDS: ReadonlySet<HatchKind> = new Set();
+
+/** Per def: see `groundOnlyKinds`. */
+const groundOnlyCache = new WeakMap<MultiblockDef, ReadonlySet<HatchKind>>();
+
+/**
+ * The kinds the def requires (`requiredHatches` min) of which one unit alone has fewer hatch cells with a free
+ * side than the minimum: the rest of the cells are walled in by the def itself but for the ground (an Advanced
+ * Assembly Line's input buses, a Synchrotron's output hatches), and GT still takes a hatch there. Only these
+ * kinds get fallback sites (`Site.fromBelow`); a def whose cells all have a free side never does, so a
+ * crowded layout is loosened instead of facing its hatches into the ground.
+ */
+function groundOnlyKinds(def: MultiblockDef): ReadonlySet<HatchKind> {
+  let out = groundOnlyCache.get(def);
+  if (out) return out;
+  const cells = localCells(def);
+  const own = new Set(cells.map((c) => c.local.join()));
+  const lowest = Math.min(...cells.map((c) => c.local[1]));
+  const free = new Map<HatchKind, number>();
+  for (const c of cells) {
+    if (c.role !== 'casing' || !c.hatches?.length) continue;
+    const open = FACE_ORDER.some((dir) => {
+      if (dir === 'down' && c.local[1] === lowest) return false;
+      return !own.has(step(c.local, dir).join());
+    });
+    if (open) for (const k of c.hatches) free.set(k, (free.get(k) ?? 0) + 1);
+  }
+  out = new Set(
+    (Object.keys(def.requiredHatches ?? {}) as HatchKind[]).filter(
+      (k) => def.requiredHatches![k]!.min > (free.get(k) ?? 0),
+    ),
+  );
+  groundOnlyCache.set(def, out);
+  return out;
+}
+
 /**
  * All hatch-able structure cells with at least one open face, sorted by position, and a lookup of the
  * open cells around an empty cell (`null` for one outside the build's box, which is always open; cells in
@@ -139,10 +182,11 @@ export function findSites(
     blockId?: string;
     kinds: ReadonlySet<HatchKind>;
     regions: ReadonlyMap<number, string>;
+    zones: ReadonlyMap<number, string>;
     blocked: ReadonlyMap<HatchKind, Set<Dir>>;
+    disfavored: ReadonlyMap<HatchKind, Set<Dir>>;
+    chars: ReadonlyMap<number, string>;
   }
-  const cells = localCells(def);
-  const offsets = rotatedOffsets(def);
   let lo: [number, number, number] = [Infinity, Infinity, Infinity];
   let hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
   for (const u of units) {
@@ -177,7 +221,9 @@ export function findSites(
   const controllerFronts = new Set<CellKey>();
   let ground = Infinity;
   for (const unit of units) {
-    const rotated = offsets[unit.rotation];
+    const ud = defOfUnit(def, unit);
+    const cells = localCells(ud);
+    const rotated = rotatedOffsets(ud)[unit.rotation];
     const [ux, uy, uz] = unit.origin;
     for (let ci = 0; ci < cells.length; ci++) {
       const cell = cells[ci];
@@ -203,9 +249,12 @@ export function findSites(
           ids: [unit.id],
           ok: true,
           blockId: cell.blockId,
-          kinds: legendKinds(def, cell.char, allowed),
+          kinds: legendKinds(ud, cell.char, allowed),
           regions: NO_REGIONS,
+          zones: NO_ZONES,
           blocked: NO_BLOCKED,
+          disfavored: NO_BLOCKED,
+          chars: NO_CHARS,
         };
         byKey.set(k, entry);
       } else {
@@ -214,10 +263,19 @@ export function findSites(
         if ([...entry.kinds].some((kind) => !allowed.includes(kind)))
           entry.kinds = new Set([...entry.kinds].filter((kind) => allowed.includes(kind)));
       }
-      const legend = def.legend[cell.char];
+      if (def.minCasings?.length) {
+        if (entry.chars === NO_CHARS) entry.chars = new Map();
+        (entry.chars as Map<number, string>).set(unit.id, cell.char);
+      }
+      const legend = ud.legend[cell.char];
       if (legend?.region !== undefined) {
         if (entry.regions === NO_REGIONS) entry.regions = new Map();
         (entry.regions as Map<number, string>).set(unit.id, legend.region);
+      }
+      const zone = zoneOfCell(ud, cell.local, cell.char);
+      if (zone !== undefined) {
+        if (entry.zones === NO_ZONES) entry.zones = new Map();
+        (entry.zones as Map<number, string>).set(unit.id, zone);
       }
       if (legend?.disallowFaces) {
         if (entry.blocked === NO_BLOCKED) entry.blocked = new Map();
@@ -228,10 +286,20 @@ export function findSites(
           for (const d of dirs) set.add(rotateDir(d, unit.rotation));
         }
       }
+      if (legend?.allowFaces) {
+        if (entry.disfavored === NO_BLOCKED) entry.disfavored = new Map();
+        const disfavored = entry.disfavored as Map<HatchKind, Set<Dir>>;
+        for (const kind of Object.keys(legend.allowFaces) as HatchKind[]) {
+          let set = disfavored.get(kind);
+          if (!set) disfavored.set(kind, (set = new Set()));
+          for (const d of outsideAllowedFaces(legend, kind)) set.add(rotateDir(d, unit.rotation));
+        }
+      }
     }
   }
 
   // With connections from below, the layer under the build is open too (a trench for the pipes).
+  const lowest = ground;
   if (below) ground -= 1;
   // Solid cells, and which empty ones the outside reaches (the build stands on the ground: nothing opens
   // below its lowest layer, or the layer under it with `below`).
@@ -335,6 +403,36 @@ export function findSites(
     };
   }
 
+  /** The kinds each unit's def has only walled-in cells for (see `groundOnlyKinds`): none with `below`. */
+  const groundOnlyOf = (id: number): ReadonlySet<HatchKind> =>
+    below
+      ? NO_KINDS
+      : groundOnlyKinds(
+          defOfUnit(
+            def,
+            units.find((u) => u.id === id)!,
+          ),
+        );
+  /** Per unit id: the keys of its own structure cells (air included), built when a fallback site needs them. */
+  const ownCells = new Map<number, Set<CellKey>>();
+  /**
+   * Whether every unit on the cell has structure on all four sides and above it: the def itself walls the cell
+   * in, not a neighbouring unit (a layout that can be loosened).
+   */
+  const walledByOwn = (e: Entry): boolean =>
+    e.ids.every((id) => {
+      let own = ownCells.get(id);
+      if (!own) {
+        const unit = units.find((u) => u.id === id)!;
+        const ud = defOfUnit(def, unit);
+        const rotated = rotatedOffsets(ud)[unit.rotation];
+        own = new Set(
+          rotated.map((o) => keyOf([unit.origin[0] + o[0], unit.origin[1] + o[1], unit.origin[2] + o[2]])),
+        );
+        ownCells.set(id, own);
+      }
+      return FACE_ORDER.every((dir) => dir === 'down' || own.has(keyOf(step(e.pos, dir))));
+    });
   const sites: Site[] = [];
   for (const e of byKey.values()) {
     if (!e.ok || e.kinds.size === 0) continue;
@@ -347,16 +445,33 @@ export function findSites(
       const clear = clearAhead(front, fk, order);
       faces.push({ dir, front: fk, rank: (clear ? 0 : FACE_ORDER.length) + order });
     }
+    let fromBelow = false;
+    let kinds = e.kinds;
+    if (faces.length === 0 && !below && e.pos[1] === lowest) {
+      // Walled in by its own def but for the ground: GT still takes a hatch here, facing down (e.g. an Advanced
+      // Assembly Line's input buses). Only for the kinds the def cannot otherwise place enough of.
+      const sets = e.ids.map(groundOnlyOf);
+      kinds = new Set([...e.kinds].filter((k) => sets.every((s) => s.has(k))));
+      if (kinds.size === 0 || !walledByOwn(e)) continue;
+      const front = step(e.pos, 'down');
+      const order = FACE_ORDER.indexOf('down');
+      faces.push({ dir: 'down', front: keyOf(front), rank: FACE_ORDER.length + order });
+      fromBelow = true;
+    }
     if (faces.length === 0) continue;
     faces.sort((a, b) => a.rank - b.rank);
     sites.push({
       pos: e.pos,
       key: e.key,
       unitIds: e.ids.length > 1 ? [...e.ids].sort((a, b) => a - b) : e.ids,
-      kinds: e.kinds,
+      kinds,
       faces,
       regions: e.regions,
+      zones: e.zones,
       blocked: e.blocked,
+      disfavored: e.disfavored,
+      chars: e.chars,
+      ...(fromBelow ? { fromBelow: true as const } : {}),
     });
   }
   return {

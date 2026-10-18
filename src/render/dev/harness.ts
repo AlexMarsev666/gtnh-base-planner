@@ -7,7 +7,7 @@
  * `turn=<n>` (with `def`: pipe bends cost n extra blocks instead of the default; 0 = plain BFS),
  * `theta=<rad>&phi=<rad>` (camera angles; `phi` > 1.57 looks from below).
  */
-import { getMultiblock } from '../../data/catalog';
+import { getMultiblock, loadCatalog } from '../../data/catalog';
 import { DEFAULT_HATCH_COLORS } from '../../model/colors';
 import { buildSceneModel } from '../../model/scene';
 import { defaultPlan } from '../../state/store';
@@ -23,6 +23,8 @@ import { createRenderer, type Renderer, type RendererDebug } from '../renderer';
 export interface Harness {
   ready: boolean;
   picks: number[][];
+  /** Cell of the hatch block under each click (null when it was something else). */
+  hatchPicks: (Vec3 | null)[];
   unitCount: number;
   /** Time the renderer took to build the scene (ms). */
   sceneMs: number;
@@ -148,11 +150,16 @@ function start(): void {
   const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-testid="scene"]');
   if (!canvas) throw new Error('harness: canvas missing');
   const picks: number[][] = [];
+  const hatchPicks: (Vec3 | null)[] = [];
   const renderer = createRenderer(canvas, {
     preserveDrawingBuffer: true,
     onPick: (ids) => {
       picks.push(ids);
       renderer.setSelected(ids);
+    },
+    onPickHatch: (cell) => {
+      hatchPicks.push(cell);
+      renderer.setMarkedCells(cell ? [cell] : []);
     },
   });
   const t0 = performance.now();
@@ -168,6 +175,7 @@ function start(): void {
   const harness: Harness = {
     ready: false,
     picks,
+    hatchPicks,
     unitCount: units,
     sceneMs,
     renderer,
@@ -182,4 +190,4 @@ function start(): void {
   void modeReady.then(() => requestAnimationFrame(() => requestAnimationFrame(() => (harness.ready = true))));
 }
 
-start();
+void loadCatalog().then(start);

@@ -1,7 +1,7 @@
 {
   "id": "big-barrel-brewery",
   "name": "Big Barrel Brewery",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialBrewery.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEIndustrialBrewery.java",
   "size": [3, 5, 3],
   "layers": [
     ["F F", "   ", "F F"],
@@ -35,7 +35,8 @@
     "energy": { "min": 1 },
     "maintenance": { "min": 1 }
   },
+  "minCasings": [{ "chars": ["W"], "min": 14 }],
   "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "GT:NH Big Barrel Brewery (class MTEIndustrialBrewery). A 3x4x3 barrel of Reinforced Wooden Casings (at least 14) on four Steel Frame Box legs, with the controller in the front centre of the third layer from the ground. Glass windows (any tiered glass; Reinforced Glass shown) sit in the side walls and the back. The two interior cells are not checked. Hatches may replace any wooden casing. The left and right faces are identical (casings, glass window, leg), so barrels can share side walls. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so item and fluid IO in a shared wall serves both barrels. Energy and maintenance are not marked shareable (energy starvation; maintenance flags are cleared by the first reader)."
+  "notes": "GT:NH Big Barrel Brewery (class MTEIndustrialBrewery). A 3x4x3 barrel of Reinforced Wooden Casings (at least 14) on four Steel Frame Box legs, with the controller in the front centre of the third layer from the ground. Glass windows (any tiered glass; Reinforced Glass shown) sit in the side walls and the back. The two interior cells are not checked. Hatches may replace any wooden casing. The left and right faces are identical (casings, glass window, leg), so barrels can share side walls. Sharing: GT5u adds every hatch it finds during the structure check to each controller whose structure contains it, so item and fluid IO in a shared wall serves both barrels. Energy and maintenance hatches are not shared unless the Share options ask for it (a shared energy hatch gives each of two machines 1 A, and a shared maintenance hatch is repaired one machine at a time)."
 }

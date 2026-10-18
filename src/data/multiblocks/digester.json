@@ -2,23 +2,23 @@
   "id": "digester",
   "name": "Digester",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhlanth/common/tileentity/MTEDigester.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhlanth/common/tileentity/MTEDigester.java",
   "size": [7, 4, 7],
   "layers": [
     [" AA~AA ", "ABBBBBA", "ABCCCBA", "ABCCCBA", "ABCCCBA", "ABBBBBA", " AAAAA "],
-    [" ADDDA ", "ADEEEDA", "DEEEEED", "DEEEEED", "DEEEEED", "ADEEEDA", " ADDDA "],
-    ["  AAA  ", " AEEEA ", "AEEEEEA", "AEE EEA", "AEEEEEA", " AEEEA ", "  AAA  "],
-    ["       ", " AAAAA ", " AEEEA ", " AE EA ", " AEEEA ", " AAAAA ", "       "]
+    [" ADDDA ", "AD---DA", "D-----D", "D-----D", "D-----D", "AD---DA", " ADDDA "],
+    ["  AAA  ", " A---A ", "A-----A", "A-----A", "A-----A", " A---A ", "  AAA  "],
+    ["       ", " AAAAA ", " A---A ", " A---A ", " A---A ", " AAAAA ", "       "]
   ],
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings4@0",
-      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"]
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": { "blockId": "gregtech:gt.blockcasings@11" },
     "C": { "blockId": "gregtech:gt.blockcasings4@1" },
-    "D": { "blockId": "gregtech:gt.blockcasings5@0" },
-    "E": { "blockId": "gt.hatch.special" }
+    "D": { "blockId": "gregtech:gt.blockcasings5@0" }
   },
   "controller": { "pos": [3, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@10500" },
   "hatchBlocks": {
@@ -36,7 +36,19 @@
     "maintenance": { "min": 1, "max": 1 },
     "muffler": { "min": 1, "max": 1 }
   },
+  "requiredAny": [
+    { "kinds": ["itemIn", "fluidIn"], "min": 1 },
+    { "kinds": ["itemOut", "fluidOut"], "min": 1 }
+  ],
+  "minCasings": [{ "chars": ["A"], "min": 40 }],
+  "coils": { "chars": ["D"] },
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut", "energy", "maintenance", "muffler"],
+      "text": "1+ Energy Hatch: Any tungstensteel casing\n1 Maintenance Hatch: Any tungstensteel casing\n1 Muffler Hatch: Any tungstensteel casing\n1+ Input Bus/Hatch: Any tungstensteel casing\n1+ Output Bus/Hatch: Any tungstensteel casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEDigester (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTEDigester (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

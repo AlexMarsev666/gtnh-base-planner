@@ -1,12 +1,25 @@
+import { coilById } from '../data/coils';
+import { isFloorBlock } from '../data/floor';
 import { getSiteDef, isSingleBlock } from '../data/generic';
 import { getSingleMachine } from '../data/single-machines';
+import { hatchKindsOf } from './catalogView';
 import { fallbackColor } from '../import/gtnhplanner';
 import { IO_KINDS } from '../model/site/group';
-import type { Endpoint, ResourceKind, SiteGroup, SiteState } from '../model/site/types';
+import type {
+  Endpoint,
+  HatchAssign,
+  ResourceKind,
+  SiteGroup,
+  SiteRouting,
+  SiteState,
+  TransformerAmps,
+  TransformerStep,
+} from '../model/site/types';
 import { effectiveSize } from '../model/resize';
-import type { Rotation } from '../model/core/types';
+import type { Rotation, Tier } from '../model/core/types';
+import { isTransformer } from '../model/site/power';
 import type { HatchKind, PlanLimits } from '../model/multiblock/types';
-import type { PlanState } from '../model/plan/types';
+import type { HatchTiers, PlanState, WallshareMode } from '../model/plan/types';
 import {
   MAX_CORRIDOR,
   MAX_GROUPS,
@@ -17,8 +30,9 @@ import {
   SITE_MIN_SIZE,
   emptySite,
 } from '../share/siteCodec';
-import { isolate, site, siteGroup, siteNet } from '../state/site';
+import { isolate, site, siteGroup, siteLink, siteLinkDraft, siteNet } from '../state/site';
 import { clampCount } from './fields';
+import { forgetPipes } from './sitePipeline';
 
 /* Pure site transforms (tested) + thin store wrappers used by the site components. */
 
@@ -111,6 +125,34 @@ export interface GroupPatch {
   label?: string | null;
   /** Hatch kinds the group places besides its link hatches (IO kinds are dropped: links decide those). */
   enabledHatches?: HatchKind[];
+  /** Machine tier (see `SiteGroup.tier`); null clears it. */
+  tier?: Tier | null;
+  /** Tier of single hatches (template keys, see `groupKey`); null or an empty map clears them. */
+  hatchTiers?: HatchTiers | null;
+  /** Glass tier (see `SiteGroup.glassTier`); null clears it. */
+  glassTier?: Tier | null;
+  /** Heating coil, an id of `src/data/coils.ts` (see `SiteGroup.coil`); null clears it. */
+  coil?: string | null;
+  mirror?: boolean;
+  /** Wall sharing preference; `auto` clears it. */
+  wallshare?: WallshareMode;
+  /** Share maintenance / energy hatches between units (see `SiteGroup.shareMaintenance`); false clears it. */
+  shareMaintenance?: boolean;
+  shareEnergy?: boolean;
+  /** Merge fluid inputs into Quadruple Input Hatches (see `SiteGroup.quadFluid`); true clears it. */
+  quadFluid?: boolean;
+  /** Where each resource's hatch goes; null or an empty map clears every choice. */
+  assign?: Record<string, HatchAssign> | null;
+  /** Transformers: direction and low-side amperage (4 clears it). */
+  step?: TransformerStep;
+  amps?: TransformerAmps;
+}
+
+/** A group that is not a transformer has no direction or amperage. */
+function dropTransformerSettings(g: SiteGroup): void {
+  if (isTransformer(g)) return;
+  delete g.step;
+  delete g.amps;
 }
 
 export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): SiteState {
@@ -126,6 +168,18 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
         delete next.size;
         delete next.label;
         delete next.machine;
+        delete next.glassTier;
+        delete next.coil;
+        // The sharing options are hidden on a machine that cannot share walls, so they could not be cleared.
+        if (!def.wallshare) {
+          delete next.shareMaintenance;
+          delete next.shareEnergy;
+        }
+        // Likewise the quadruple-hatch option on a machine without fluid inputs.
+        if (!hatchKindsOf(def).includes('fluidIn')) delete next.quadFluid;
+        // Tier, hatch tiers and assignments stay, whether or not the new machine takes them: the panel shows
+        // what no longer fits. Only a transformer's settings go with the transformer.
+        dropTransformerSettings(next);
       }
     }
     if (patch.count !== undefined) next.count = clampCount(patch.count);
@@ -150,6 +204,52 @@ export function withGroupPatched(s: SiteState, id: string, patch: GroupPatch): S
       const def = getSiteDef(next.multiblockId);
       if (def && isSingleBlock(def)) next.machine = patch.machine;
     }
+    if (patch.machine !== undefined) {
+      // Another machine type keeps the tier (shown as not allowed if it does not exist); only a transformer
+      // has a direction and amperage.
+      dropTransformerSettings(next);
+    }
+    if (patch.tier === null) delete next.tier;
+    else if (patch.tier !== undefined) next.tier = patch.tier;
+    if (patch.glassTier === null) delete next.glassTier;
+    else if (patch.glassTier !== undefined) next.glassTier = patch.glassTier;
+    if (patch.coil === null) delete next.coil;
+    else if (patch.coil !== undefined && coilById(patch.coil)) next.coil = patch.coil;
+    if (patch.hatchTiers !== undefined) {
+      if (patch.hatchTiers && Object.keys(patch.hatchTiers).length) next.hatchTiers = { ...patch.hatchTiers };
+      else delete next.hatchTiers;
+    }
+    // Mirror, wall sharing, shared hatches and quadruple input hatches reshape the build, which moves the hatch tier keys (as in the
+    // machine view): they drop the tiers unless the patch sets new ones.
+    let reshaped = false;
+    if (patch.mirror !== undefined && !!patch.mirror !== !!g.mirror) reshaped = true;
+    if (patch.mirror === false) delete next.mirror;
+    else if (patch.mirror) next.mirror = true;
+    if (patch.wallshare !== undefined && patch.wallshare !== (g.wallshare ?? 'auto')) reshaped = true;
+    if (patch.wallshare === 'auto') delete next.wallshare;
+    else if (patch.wallshare) next.wallshare = patch.wallshare;
+    if (patch.shareMaintenance !== undefined && !!patch.shareMaintenance !== !!g.shareMaintenance)
+      reshaped = true;
+    if (patch.shareMaintenance === false) delete next.shareMaintenance;
+    else if (patch.shareMaintenance) next.shareMaintenance = true;
+    if (patch.shareEnergy !== undefined && !!patch.shareEnergy !== !!g.shareEnergy) reshaped = true;
+    if (patch.shareEnergy === false) delete next.shareEnergy;
+    else if (patch.shareEnergy) next.shareEnergy = true;
+    if (patch.quadFluid !== undefined && patch.quadFluid !== (g.quadFluid ?? true)) reshaped = true;
+    if (patch.quadFluid === false) next.quadFluid = false;
+    else if (patch.quadFluid) delete next.quadFluid;
+    if (reshaped && patch.hatchTiers === undefined) delete next.hatchTiers;
+    if (patch.assign !== undefined) {
+      const kept = Object.entries(patch.assign ?? {}).filter(
+        ([, a]) => a.unit !== undefined || (a.zone !== undefined && a.zone !== ''),
+      );
+      if (kept.length) next.assign = Object.fromEntries(kept);
+      else delete next.assign;
+    }
+    if (patch.step === 'down') delete next.step;
+    else if (patch.step) next.step = patch.step;
+    if (patch.amps === 4) delete next.amps;
+    else if (patch.amps) next.amps = patch.amps;
     if (patch.elevation !== undefined) {
       const e = clampInt(patch.elevation, 0, SITE_MAX_ELEVATION);
       if (e > 0) next.elevation = e;
@@ -367,6 +467,25 @@ export function withCorridor(s: SiteState, n: number): SiteState {
   return corridor === s.corridor ? s : { ...s, corridor };
 }
 
+/** The routing of the template (style and depth); undefined goes back to the old, browser-wide behaviour. */
+export function withRouting(s: SiteState, routing: SiteRouting | undefined): SiteState {
+  if (JSON.stringify(s.routing) === JSON.stringify(routing)) return s;
+  const next = { ...s };
+  if (routing) next.routing = { style: routing.style, depth: routing.depth };
+  else delete next.routing;
+  return next;
+}
+
+/** The floor of the template: one of `FLOOR_BLOCKS`, or undefined for none. */
+export function withFloor(s: SiteState, floor: string | undefined): SiteState {
+  const id = isFloorBlock(floor) ? floor : undefined;
+  if (s.floor === id) return s;
+  const next = { ...s };
+  if (id) next.floor = id;
+  else delete next.floor;
+  return next;
+}
+
 export function withName(s: SiteState, name: string): SiteState {
   const n = name.trim().slice(0, 120);
   const next = { ...s };
@@ -379,12 +498,15 @@ export function withName(s: SiteState, name: string): SiteState {
 
 const clearSelection = () => {
   siteGroup.set(null);
+  siteLink.set(null);
+  siteLinkDraft.set(false);
   siteNet.set(null);
   isolate.set(null);
 };
 
 export function replaceSite(next: SiteState): void {
   clearSelection();
+  forgetPipes();
   site.set(next);
 }
 

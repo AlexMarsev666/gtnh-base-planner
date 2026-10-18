@@ -1,19 +1,32 @@
 <script lang="ts">
   import { t } from '../i18n/en';
-  import { matchesQuery, progress, requiredBlocks, sortBom, tickedLast } from '../model/bom';
+  import { matchesQuery, progress, requiredBlocks, sortBom, tickedLast, type BomTiers } from '../model/bom';
+  import type { PlanState } from '../model/plan/types';
   import type { SceneModel } from '../model/render/types';
   import { checked, clearChecked, cycleSort, sortMode, toggleChecked } from '../state/checklist';
   import { blockIconFaces } from './catalogView';
   import { blockIcon } from './icons';
+  import { planBom } from './pipeline';
 
   interface Props {
     scene: SceneModel | null;
+    /** The machine plan, whose machine and hatch tiers the list shows (the template view passes none). */
+    tiers?: Pick<PlanState, 'tier' | 'hatchTiers'>;
+    /** The template's hatch and machine tiers (see `siteBomTiers`); the machine view passes `tiers`. */
+    siteTiers?: BomTiers;
     onclose: () => void;
   }
-  let { scene, onclose }: Props = $props();
+  let { scene, tiers, siteTiers, onclose }: Props = $props();
 
   const bom = $derived(
-    sortBom(scene ? requiredBlocks(scene) : { blocks: [], io: [], totalBlocks: 0 }, $sortMode),
+    sortBom(
+      scene
+        ? tiers
+          ? planBom(scene, tiers)
+          : requiredBlocks(scene, undefined, siteTiers)
+        : { blocks: [], io: [], totalBlocks: 0 },
+      $sortMode,
+    ),
   );
   const done = $derived(progress(bom, $checked));
   const hasAnything = $derived(bom.blocks.length > 0);
@@ -191,8 +204,6 @@
     margin-top: 28px;
   }
   h2 {
-    font: inherit;
-    color: var(--text);
     margin: 0 0 10px;
   }
   .rows {
@@ -228,14 +239,12 @@
   .name {
     min-width: 0;
     overflow-wrap: anywhere;
-    text-transform: none;
-    letter-spacing: 0.02em;
     color: var(--text);
   }
   /* Ticked rows recede so what is left to gather stands out. */
   .row.done .count,
   .row.done .name {
-    color: var(--faint);
+    color: var(--muted);
     text-decoration: line-through;
   }
   .row.done .cube {
@@ -243,11 +252,15 @@
   }
   .hint {
     margin: 0;
-    color: var(--muted);
-    text-transform: none;
-    letter-spacing: 0.02em;
   }
 
+  /* Below the top bar, so its buttons stay reachable while the drawer is open. */
+  @media (min-width: 761px) {
+    .drawer {
+      top: var(--bar-h);
+      z-index: 28;
+    }
+  }
   @media (max-width: 640px) {
     .drawer {
       top: auto;

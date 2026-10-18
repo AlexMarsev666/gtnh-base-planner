@@ -35,6 +35,9 @@ class FakeStorage implements StorageLike {
     if (this.failWrites) throw new Error('QuotaExceededError');
     this.map.set(k, v);
   }
+  removeItem(k: string): void {
+    this.map.delete(k);
+  }
 }
 
 function fakeWindow(href: string): WindowLike & { calls: string[] } {
@@ -118,7 +121,7 @@ describe('localStorage', () => {
   });
 
   it('backs up non-JSON and wrong-version data', () => {
-    for (const bad of ['not json', '{"v":2}', 'x'.repeat(70_000)]) {
+    for (const bad of ['not json', '{"v":2}', 'x'.repeat(1024 * 1024 + 1)]) {
       const storage = new FakeStorage();
       storage.setItem(STORAGE_KEY, bad);
       expect(loadStoredPlan(storage, () => 1)).toBeNull();
@@ -196,7 +199,7 @@ describe('JSON files', () => {
   it('rejects invalid files', () => {
     expect(() => planFromJson('{')).toThrow(/not valid JSON/);
     expect(() => planFromJson('null')).toThrow();
-    expect(() => planFromJson(' '.repeat(70_000))).toThrow(/too large/);
+    expect(() => planFromJson(' '.repeat(1024 * 1024 + 1))).toThrow(/too large/);
     expect(() =>
       planFromJson(JSON.stringify({ ...sample(), colors: { itemIn: 'javascript:alert(1)' } })),
     ).toThrow(/#rrggbb/);
@@ -204,6 +207,6 @@ describe('JSON files', () => {
 
   it('reads uploaded files and refuses huge ones', async () => {
     expect(await readPlanFile(new Blob([planToJson(sample())]))).toEqual(sample());
-    await expect(readPlanFile(new Blob(['x'.repeat(70_000)]))).rejects.toThrow(/too large/);
+    await expect(readPlanFile(new Blob(['x'.repeat(1024 * 1024 + 1)]))).rejects.toThrow(/too large/);
   });
 });

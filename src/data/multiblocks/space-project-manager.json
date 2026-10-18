@@ -2,7 +2,7 @@
   "id": "space-project-manager",
   "name": "Space Project Manager",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleManager.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtnhintergalactic/tile/multi/elevatormodules/TileEntityModuleManager.java",
   "size": [1, 5, 2],
   "layers": [
     ["A", "A"],
@@ -11,12 +11,29 @@
     ["~", "A"],
     ["A", "A"]
   ],
-  "legend": { "A": { "blockId": "gtnhintergalactic:gt.blockcasingsSE@0" } },
+  "legend": {
+    "A": {
+      "blockId": "gtnhintergalactic:gt.blockcasingsSE@0",
+      "hatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+      "region": "dot1"
+    }
+  },
   "controller": { "pos": [0, 3, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@14012" },
-  "hatchBlocks": {},
-  "shareableHatches": [],
+  "hatchBlocks": {
+    "itemIn": "gt.hatch.inputBus",
+    "itemOut": "gt.hatch.outputBus",
+    "fluidIn": "gt.hatch.inputHatch",
+    "fluidOut": "gt.hatch.outputHatch"
+  },
+  "shareableHatches": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
   "requiredHatches": {},
-  "defaultHatches": [],
+  "defaultHatches": ["itemIn", "itemOut"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "itemOut", "fluidIn", "fluidOut"],
+      "text": "0+ Input Bus/Hatch: Any casing\n0+ Output Bus/Hatch: Any casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: TileEntityModuleManager (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "9 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: TileEntityModuleManager (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

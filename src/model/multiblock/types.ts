@@ -5,9 +5,19 @@ import type { CellRole, Dir, HorizontalDir, Rotation, Vec3 } from '../core/types
 /**
  * Kinds of hatches/buses a multiblock can take. Coke Oven uses one hatch block in 3 modes. `steamIn` is the
  * steam input hatch of steam multiblocks, kept apart from `fluidIn` because both can be on one machine.
+ * `dataAccess` is the Data Access Hatch of the Assembly Lines.
  */
 export type HatchKind =
-  'itemIn' | 'itemOut' | 'fluidIn' | 'fluidOut' | 'energy' | 'dynamo' | 'maintenance' | 'muffler' | 'steamIn';
+  | 'itemIn'
+  | 'itemOut'
+  | 'fluidIn'
+  | 'fluidOut'
+  | 'energy'
+  | 'dynamo'
+  | 'maintenance'
+  | 'muffler'
+  | 'steamIn'
+  | 'dataAccess';
 
 /** One character of a structure drawing. */
 export interface LegendEntry {
@@ -16,10 +26,22 @@ export interface LegendEntry {
   /** Hatch kinds that may replace this block. Omitted = no hatches here. */
   hatches?: HatchKind[];
   /**
-   * Sides (local frame) a hatch of the given kind must not face here, e.g. GT's `disallowOnly(UP, DOWN)`
-   * for Distillation Tower layer outputs.
+   * Sides (local frame) GT's auto-placement never turns a hatch of the given kind to here, e.g.
+   * `disallowOnly(UP, DOWN)` for Distillation Tower layer outputs. A hint of the survival hologram: the structure
+   * check does not enforce it (a hatch facing any side still forms the machine); the planner uses it as the sides
+   * a hatch may be given.
    */
   disallowFaces?: Partial<Record<HatchKind, Dir[]>>;
+  /**
+   * The only sides (local frame) GT's auto-placement turns a hatch of the given kind to here, e.g.
+   * `allowOnly(DOWN)` for the Assembly Line's input hatches or `allowOnly(NORTH)` for its data access hatch (north =
+   * the controller's front in a def whose controller faces north). Like `disallowFaces` it is a hint of the survival
+   * hologram, not a structure-check rule; the planner uses it as the preferred/allowed sides. A kind that is not
+   * listed has no such limit; a side is open when it is in `allowFaces` (if the kind is listed) and not in
+   * `disallowFaces`. Never empty. Read from the structure
+   * definitions by tools/gt-source/hatch-faces.mjs; where `disallowFaces` already says the same it is not repeated.
+   */
+  allowFaces?: Partial<Record<HatchKind, Dir[]>>;
   /** Region this cell belongs to, for `HatchRequirement.regions` (e.g. one per Distillation Tower layer). */
   region?: string;
 }
@@ -32,14 +54,73 @@ export interface HatchRequirement {
    * output hatch on every Distillation Tower layer, or Oil Cracker inputs on a side and in the middle.
    */
   regions?: string[];
+  /**
+   * For a resizable def (see `ResizeRule`): how many more hatches of this kind each repeating slab added by `sizedDef`
+   * needs, an Advanced Assembly Line's input bus per slice. `min` and `max` are those of the stored smallest form;
+   * `sizedDef` states them for its own size (its result has no `perSlab`), growing both by `perSlab` per added slab
+   * (on top of the one per numbered region of `regions`).
+   */
+  perSlab?: number;
+}
+
+/**
+ * A casing minimum (GT `checkCasingMin(errors, counter, min)`): the unit must contain at least `min` cells of
+ * `chars` (legend keys, together), so a hatch standing in such a casing cell does not count. This is how
+ * many casing cells hatches may replace. For a resizable def (see `ResizeRule`) `min` is the minimum of the
+ * stored smallest form and `perSlab` what each repeating slab added by `sizedDef` raises it by, so the minimum at
+ * size `n` is `min + perSlab * (n - resize.min) / (resize.to - resize.from)`; `sizedDef` states it that way (its
+ * result has no `perSlab`).
+ */
+export interface CasingMinimum {
+  /**
+   * Legend keys of this def whose cells GT counts (the cells of the structure elements that bump the counter, so a
+   * plain casing of the same block that GT does not count is not listed).
+   */
+  chars: string[];
+  /** Minimum number of those cells in the smallest form (at least 1). */
+  min: number;
+  /** Added to `min` for each repeating slab of a resizable def (a positive whole number). */
+  perSlab?: number;
+}
+
+/**
+ * The tiered glass limits the hatches of a unit (GT `chainAllGlasses` with the check `glassTier <
+ * hatch.getTierForStructure()`): the energy (or dynamo) hatches may not be of a higher voltage tier than the glass
+ * of the build. The glass tier is the one of the block the player puts in `chars`.
+ */
+export interface GlassTierLimit {
+  /** Legend keys of the tiered glass. */
+  chars: string[];
+  /** Hatch kinds whose tier must not exceed the glass tier. */
+  kinds: HatchKind[];
+}
+
+/**
+ * The heating coil of a structure (GT `ofCoil`): any coil tier forms the machine as long as all its coils are the
+ * same, so the player picks one (`PlanState.coil`) and every cell of `chars` is drawn with it.
+ */
+export interface CoilCells {
+  /** Legend keys of the heating coil; their `blockId` is a coil block of `src/data/coils.ts` (or a stand-in). */
+  chars: string[];
+}
+
+/**
+ * A group of hatch kinds of which a unit needs `min` in total (GT `checkHasAnyInput` / `checkHasAnyOutput`:
+ * any input bus or hatch, any output bus or hatch), whichever the player picks. `kinds` are the kinds some cell of
+ * the def can take. Not stated when `requiredHatches` already demands one of them.
+ */
+export interface HatchGroupRequirement {
+  kinds: HatchKind[];
+  min: number;
 }
 
 /**
  * How a multiblock grows along one local axis (GT `beginVariableStructureBlock`), e.g. Distillation Tower
  * height or Assembly Line length. The JSON holds the smallest form (`size[axis] === min`), with one copy of
  * the repeating slab `[from, to)`; a size of `n` inserts `(n - min) / (to - from)` more copies right after
- * it (see `sizedDef` in `src/model/resize.ts`). A slab cell with a `region` gets a numbered region per copy
- * (`layer` -> `layer1`, `layer2`, ...), and `requiredHatches.*.regions` naming it expand to match.
+ * it (see `sizedDef` in `src/model/resize.ts`). A slab cell whose `region` a `requiredHatches.*.regions` names gets a numbered
+ * region per copy (`layer` -> `layer1`, `layer2`, ...) and those requirements expand to match; any other region (a hatch
+ * zone) keeps its name in every copy.
  */
 export interface ResizeRule {
   axis: 'x' | 'y' | 'z';
@@ -89,8 +170,34 @@ export interface MultiblockDef {
   shareableHatches: HatchKind[];
   /** Required hatch counts per unit (e.g. EBF muffler min 1 max 1). */
   requiredHatches?: Partial<Record<HatchKind, HatchRequirement>>;
+  /**
+   * Hatch groups of which at least `min` hatches in total are needed, e.g. an input bus or an input hatch
+   * (GT `checkHasAnyInput`), where `requiredHatches` cannot name the kind.
+   */
+  requiredAny?: HatchGroupRequirement[];
+  /** Casing minimums the game's structure check demands (see `CasingMinimum`), one per counted casing. */
+  minCasings?: CasingMinimum[];
+  /** Hatch kinds the tier of the tiered glass limits (see `GlassTierLimit`). */
+  glassTierLimits?: GlassTierLimit;
+  /** The legend keys of the heating coil, when the structure takes any coil tier (see `CoilCells`). */
+  coils?: CoilCells;
   /** Hatch kinds enabled by default in a new plan. */
   defaultHatches: HatchKind[];
+  /**
+   * Hatch zones by `LegendEntry.region` (generated entries name them `dot<N>` after the hint dot GT's tooltip
+   * uses): the kinds the zone's cells are meant for and the tooltip lines describing it, as the game prints them.
+   * Informational; it only constrains a plan where a user assigns a zone to a hatch.
+   */
+  zones?: Record<string, { kinds: HatchKind[]; text?: string }>;
+  /**
+   * The orientations GT lets a unit stand in, when not all four (tools/gt-source/orientation.mjs, from the
+   * controller's alignment limits): 0 as in the catalog, 1 mirrored left-right (along local X), 2 upside down (a
+   * roll of 180 degrees about the controller's facing axis, which is mirrored along X and Y), 3 mirrored top-bottom
+   * (along Y). Sorted, always contains 0. Absent: all four (GT's default `!f.isVerticallyFliped()` reaches them
+   * through the roll). A list rather than two flags because GT has sets that are no product: the large turbines
+   * keep their flip but may roll, which allows 0 and 2 only. The controller keeps facing horizontally.
+   */
+  variants?: (0 | 1 | 2 | 3)[];
   /** Whether casings of two units may overlap (shared walls) when the blocks match. */
   wallshare: boolean;
   /** Present when the structure has a variable size (see `ResizeRule`). */
@@ -103,6 +210,12 @@ export interface Unit {
   id: number;
   origin: Vec3;
   rotation: Rotation;
+  /**
+   * Orientation of the unit relative to the def it is given (`orientedDef`): 0 as is, 1 mirrored along X, 2
+   * upside down, 3 mirrored along Y. Absent = 0. A plan or group that is mirrored hands the model the mirrored
+   * def, so `variant` composes on top of the mirror; `variantOfDef` gives the variant of that def.
+   */
+  variant?: 0 | 1 | 2 | 3;
 }
 
 /** A structure cell of a unit in world space. */

@@ -2,7 +2,7 @@
   "id": "solar-tower",
   "name": "Solar Tower",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTESolarTower.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/production/MTESolarTower.java",
   "size": [11, 11, 28],
   "layers": [
     [
@@ -339,7 +339,8 @@
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockspecialcasings.1@6",
-      "hatches": ["fluidIn", "fluidOut", "maintenance"]
+      "hatches": ["fluidIn", "fluidOut", "maintenance"],
+      "region": "dot2"
     },
     "B": { "blockId": "miscutils:gtplusplus.blockspecialcasings.1@6" },
     "C": { "blockId": "miscutils:gtplusplus.blockcasings.2@11" },
@@ -353,8 +354,20 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["fluidIn", "fluidOut"],
-  "requiredHatches": { "maintenance": { "min": 1, "max": 1 } },
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "minCasings": [{ "chars": ["A", "B"], "min": 229 }],
   "defaultHatches": ["fluidIn", "fluidOut", "maintenance"],
+  "zones": {
+    "dot2": {
+      "kinds": ["fluidIn", "fluidOut", "maintenance"],
+      "text": "1 Maintenance Hatch: Any bottom side casing\n1+ Input Hatch: Any bottom side casing\n1+ Output Hatch: Any bottom side casing"
+    }
+  },
+  "variants": [0, 1],
   "wallshare": true,
-  "notes": "Built by the game itself: MTESolarTower (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTESolarTower (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

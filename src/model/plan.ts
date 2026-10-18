@@ -1,26 +1,47 @@
 import { step } from './geometry';
-import type { HatchAvoid } from './hatches/types';
-import { DEFAULT_TURN_COST } from './routing/constants';
-import type { RouteOptions } from './routing/types';
+import { plainOf } from './layout/cache';
+import type { HatchAvoid, HatchRequest, PlaceOptions, PlaceResult } from './hatches/types';
+import { DEFAULT_TURN_COST, MAX_ROUNDS, RESOLVE_POP_BUDGET, ROUTE_POP_CAP } from './routing/constants';
+import type { RouteOptions, WorkBudget } from './routing/types';
 import type { Vec3 } from './core/types';
 import type { HatchKind, MultiblockDef, PlanLimits, Unit } from './multiblock/types';
-import type { HatchPlacement, HatchResult, PackResult } from './plan/types';
+import type { HatchPlacement, PackResult } from './plan/types';
 import type { RouteNet } from './routing/routeNet';
 
 export interface LayoutDeps {
-  placeHatches: (def: MultiblockDef, units: Unit[], enabled: HatchKind[], avoid?: HatchAvoid) => HatchResult;
+  placeHatches: (
+    def: MultiblockDef,
+    units: Unit[],
+    enabled: HatchKind[],
+    avoid?: HatchAvoid,
+    opts?: PlaceOptions,
+  ) => PlaceResult;
   layoutCandidates: (def: MultiblockDef, count: number, limits: PlanLimits) => Iterable<Unit[]>;
 }
 
 export interface ResolvedLayout {
   pack: PackResult;
-  hatches: HatchResult;
+  hatches: PlaceResult;
   /** True when a looser layout than the most compact one was chosen to fit every hatch. */
   loosened: boolean;
 }
 
 /** How many alternative layouts to try before settling for the one with the fewest unplaced hatches. */
 export const MAX_LAYOUT_TRIES = 96;
+
+/** `deps.placeHatches` with an explicit hatch list (see `PlaceOptions.requests`), or the plain call without. */
+function placeWith(
+  deps: LayoutDeps,
+  def: MultiblockDef,
+  units: Unit[],
+  enabled: HatchKind[],
+  requests: readonly HatchRequest[] | undefined,
+  avoid?: HatchAvoid,
+): PlaceResult {
+  if (!requests)
+    return avoid ? deps.placeHatches(def, units, enabled, avoid) : deps.placeHatches(def, units, enabled);
+  return deps.placeHatches(def, units, enabled, avoid, { requests });
+}
 
 /**
  * Pick the most compact layout on which every enabled hatch can be placed.
@@ -29,7 +50,8 @@ export const MAX_LAYOUT_TRIES = 96;
  * for hatches that cannot be shared (energy, maintenance, muffler). Starting from `base` (the compact
  * layout from `packUnits`) this walks `layoutCandidates` best-first and returns the first layout with no
  * unplaced hatches; if none of the first `maxTries` works, the one with the fewest unplaced hatches wins
- * (the earliest, i.e. most compact, on ties). Deterministic.
+ * (the earliest, i.e. most compact, on ties). Deterministic. `requests` places that explicit hatch list
+ * instead of the enabled kinds (`PlaceOptions.requests`).
  */
 export function resolveLayout(
   def: MultiblockDef,
@@ -38,10 +60,17 @@ export function resolveLayout(
   limits: PlanLimits,
   deps: LayoutDeps,
   maxTries = MAX_LAYOUT_TRIES,
+  requests?: readonly HatchRequest[],
 ): ResolvedLayout {
-  const first = deps.placeHatches(def, base.units, enabled);
+  const first = placeWith(deps, def, base.units, enabled, requests);
   if (first.unplaced.length === 0 || base.units.length === 0) {
     return { pack: base, hatches: first, loosened: false };
+  }
+  // A deep or turned layout that cannot hold its hatches gives way to the plain layout it replaced, which is
+  // then resolved as if it had been the base all along.
+  const plain = plainOf.get(base.units);
+  if (plain) {
+    return resolveLayout(def, { ...base, units: plain }, enabled, limits, deps, maxTries, requests);
   }
 
   let best = { units: base.units, hatches: first, layers: layers(base.units) };
@@ -54,7 +83,7 @@ export function resolveLayout(
   for (const units of deps.layoutCandidates(def, base.placed, limits)) {
     if (sameLayout(units, base.units)) continue;
     if (tries++ >= maxTries) break;
-    const hatches = deps.placeHatches(def, units, enabled);
+    const hatches = placeWith(deps, def, units, enabled, requests);
     const h = layers(units);
     // Fewest unplaced hatches first, then the lowest build (tall stacks are awkward in game), then rank.
     const better =
@@ -69,6 +98,8 @@ export function resolveLayout(
   return { pack: loosened ? { ...base, units: best.units } : base, hatches: best.hatches, loosened };
 }
 
+const terminalsOf = (nets: readonly RouteNet[]) => nets.reduce((n, r) => n + r.total, 0);
+
 /** Number of distinct unit heights (stacked layers). */
 function layers(units: Unit[]): number {
   return new Set(units.map((u) => u.origin[1])).size;
@@ -79,6 +110,7 @@ function sameLayout(a: Unit[], b: Unit[]): boolean {
   return a.every(
     (u, i) =>
       u.rotation === b[i].rotation &&
+      (u.variant ?? 0) === (b[i].variant ?? 0) &&
       u.origin[0] === b[i].origin[0] &&
       u.origin[1] === b[i].origin[1] &&
       u.origin[2] === b[i].origin[2],
@@ -99,6 +131,11 @@ export interface RoutedLayoutDeps extends LayoutDeps {
 export interface ResolvedRoutedLayout extends ResolvedLayout {
   /** The pipe and cable networks of the chosen layout. */
   pipes: RouteNet[];
+  /**
+   * True when the work budget (see `RESOLVE_POP_BUDGET`) cut routing short and hatches are left
+   * unconnected that more search might have connected.
+   */
+  truncated: boolean;
 }
 
 /** How many looser layouts to route before settling for the one with the fewest unconnected hatches. */
@@ -115,13 +152,33 @@ export function unconnected(nets: readonly RouteNet[]): number {
   return nets.reduce((n, r) => n + r.total - r.connected, 0);
 }
 
+/** Kinds with at least one unconnected hatch. */
+function kindsUnconnected(nets: readonly RouteNet[]): number {
+  return nets.reduce((n, r) => n + (r.total > r.connected ? 1 : 0), 0);
+}
+
+/**
+ * Whether routing `a` is strictly better than `b`: fewer unconnected hatches, then fewer kinds with any
+ * unconnected hatch, then cheaper networks (`networkCost`). Equal keeps `b`.
+ */
+export function betterRouting(a: readonly RouteNet[], b: readonly RouteNet[]): boolean {
+  return (
+    (unconnected(a) - unconnected(b) ||
+      kindsUnconnected(a) - kindsUnconnected(b) ||
+      networkCost(a) - networkCost(b)) < 0
+  );
+}
+
 /**
  * `resolveLayout`, then make sure every routed hatch gets its pipe or cable: when the chosen layout leaves
  * some hatch unconnected (typically a one-block walkway between rows of units that cannot hold a line per
  * kind), walk its `loosenings` from the most compact and take the first one on which every hatch is
  * placed (no more unplaced than before) and connected. At most `maxTries` looser layouts are routed, the
  * loosest always among them; if none connects everything, the layout with the fewest unplaced, then
- * unconnected hatches wins (the most compact on ties). Deterministic.
+ * unconnected hatches wins (the most compact on ties). All routing shares one work budget
+ * (`RESOLVE_POP_BUDGET`, or `opts.budget`): once a run hit its cap or the budget cannot pay for another
+ * run, the intermediate tries, hatch moves and the full-round reroute are skipped (the loosest layout is
+ * still routed) and the result is `truncated` if hatches stay unconnected. Deterministic.
  */
 export function resolveRoutedLayout(
   def: MultiblockDef,
@@ -131,10 +188,20 @@ export function resolveRoutedLayout(
   opts: RouteOptions,
   deps: RoutedLayoutDeps,
   maxTries = MAX_ROUTED_TRIES,
+  requests?: readonly HatchRequest[],
 ): ResolvedRoutedLayout {
-  const start = resolveLayout(def, base, enabled, limits, deps);
-  const trial = { ...opts, rounds: Math.min(opts.rounds ?? TRIAL_ROUNDS, TRIAL_ROUNDS) };
-  const route = (units: Unit[], hatches: HatchResult) => deps.routePipes(def, units, hatches.hatches, trial);
+  const start = resolveLayout(def, base, enabled, limits, deps, undefined, requests);
+  const budget: WorkBudget = opts.budget ?? { limit: RESOLVE_POP_BUDGET, used: 0 };
+  const trial = { ...opts, budget, rounds: Math.min(opts.rounds ?? TRIAL_ROUNDS, TRIAL_ROUNDS) };
+  // The most pops one routing run took so far: what the next one is expected to cost.
+  let routeCost = 0;
+  let skipped = false;
+  const route = (units: Unit[], hatches: PlaceResult) => {
+    const before = budget.used;
+    const nets = deps.routePipes(def, units, hatches.hatches, trial);
+    routeCost = Math.max(routeCost, budget.used - before);
+    return nets;
+  };
   const first = route(start.pack.units, start.hatches);
   let best = { units: start.pack.units, hatches: start.hatches, pipes: first, missing: unconnected(first) };
   if (best.missing > 0 && maxTries > 0) {
@@ -142,8 +209,13 @@ export function resolveRoutedLayout(
     // The first tries in order, then the loosest (most room for pipes) if it was not reached.
     const tries =
       looser.length <= maxTries ? looser : [...looser.slice(0, maxTries - 1), looser[looser.length - 1]];
-    for (const units of tries) {
-      const hatches = deps.placeHatches(def, units, enabled);
+    for (let t = 0; t < tries.length; t++) {
+      const units = tries[t];
+      if (t < tries.length - 1 && (budget.capped || budget.used + 2 * routeCost > budget.limit)) {
+        skipped = true;
+        continue;
+      }
+      const hatches = placeWith(deps, def, units, enabled, requests);
       if (hatches.unplaced.length > best.hatches.unplaced.length) continue;
       const pipes = route(units, hatches);
       const missing = unconnected(pipes);
@@ -160,7 +232,16 @@ export function resolveRoutedLayout(
     best.hatches,
     best.pipes,
     (h) => route(best.units, h),
-    deps.placeHatches,
+    requests ? (d, u, e, a) => placeWith(deps, d, u, e, requests, a) : deps.placeHatches,
+    // Tightly packed layouts with turned units have long branches everywhere, so moves would go on and on:
+    // two passes are what plain layouts need.
+    best.units.some((u) => u.variant) ? Math.min(2, hatchMoves(terminalsOf(best.pipes))) : undefined,
+    () => {
+      // Asked only while moves remain, so a refusal means the budget cut the moves short.
+      const ok = !budget.capped && budget.used + routeCost <= budget.limit;
+      if (!ok) skipped = true;
+      return ok;
+    },
   );
   if (improved.hatches !== best.hatches)
     best = {
@@ -170,17 +251,22 @@ export function resolveRoutedLayout(
       missing: unconnected(improved.pipes),
     };
   if (best.missing > 0 && trial.rounds !== opts.rounds) {
-    // Nothing fit in the trial rounds: give the best layout the full negotiation.
-    const pipes = deps.routePipes(def, best.units, best.hatches.hatches, opts);
-    const missing = unconnected(pipes);
-    if (missing < best.missing) best = { ...best, pipes, missing };
+    // Nothing fit in the trial rounds: give the best layout the full negotiation, if the budget allows.
+    const fullCost = Math.min(ROUTE_POP_CAP, (routeCost * (opts.rounds ?? MAX_ROUNDS)) / TRIAL_ROUNDS);
+    if (!budget.capped && budget.used + fullCost <= budget.limit) {
+      const pipes = deps.routePipes(def, best.units, best.hatches.hatches, { ...opts, budget });
+      if (betterRouting(pipes, best.pipes)) best = { ...best, pipes, missing: unconnected(pipes) };
+    } else skipped = true;
   }
-  if (best.units === start.pack.units) return { ...start, hatches: best.hatches, pipes: best.pipes };
+  const truncated = best.missing > 0 && (budget.capped === true || skipped);
+  if (best.units === start.pack.units)
+    return { ...start, hatches: best.hatches, pipes: best.pipes, truncated };
   return {
     pack: { ...base, units: best.units },
     hatches: best.hatches,
     loosened: true,
     pipes: best.pipes,
+    truncated,
   };
 }
 
@@ -250,22 +336,24 @@ function longBranches(nets: readonly RouteNet[]): { kind: HatchKind; cell: Vec3;
  * cost: take the hatch with the longest branch, keep its cell free of its kind, place every hatch again
  * and route; keep the change when it places and connects as many hatches and the networks cost less
  * (`networkCost`), else undo it and try the next hatch. At most `maxMoves` tries (by default fewer the
- * more hatches are routed, see `hatchMoves`). Deterministic.
+ * more hatches are routed, see `hatchMoves`), and only while `afford()` says another run is affordable.
+ * Deterministic.
  */
 export function improveHatches(
   def: MultiblockDef,
   units: Unit[],
   enabled: HatchKind[],
-  hatches: HatchResult,
+  hatches: PlaceResult,
   pipes: RouteNet[],
-  route: (hatches: HatchResult) => RouteNet[],
+  route: (hatches: PlaceResult) => RouteNet[],
   place: LayoutDeps['placeHatches'],
   maxMoves = hatchMoves(pipes.reduce((n, r) => n + r.total, 0)),
-): { hatches: HatchResult; pipes: RouteNet[] } {
+  afford: () => boolean = () => true,
+): { hatches: PlaceResult; pipes: RouteNet[] } {
   let best = { hatches, pipes, missing: unconnected(pipes), cost: networkCost(pipes) };
   const avoid = new Map<HatchKind, Set<string>>();
   const tried = new Set<string>();
-  for (let moves = 0; moves < maxMoves;) {
+  for (let moves = 0; moves < maxMoves && afford();) {
     const next = longBranches(best.pipes).find((b) => !tried.has(`${b.kind}|${b.cell.join()}`));
     if (!next) break;
     moves++;

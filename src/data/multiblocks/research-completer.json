@@ -2,7 +2,7 @@
   "id": "research-completer",
   "name": "Research Completer",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTEResearchCompleter.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTEResearchCompleter.java",
   "size": [3, 3, 3],
   "layers": [
     ["ccc", "c c", "ccc"],
@@ -10,19 +10,10 @@
     ["ccc", "c c", "ccc"]
   ],
   "legend": {
-    "c": {
-      "blockId": "gt5u.gtBlockcasings8.8",
-      "hatches": ["itemIn", "itemOut", "energy", "maintenance"]
-    },
-    "g": {
-      "blockId": "ext.blockCosmeticOpaque"
-    }
+    "c": { "blockId": "gt5u.gtBlockcasings8.8", "hatches": ["itemIn", "itemOut", "energy", "maintenance"] },
+    "g": { "blockId": "ext.blockCosmeticOpaque" }
   },
-  "controller": {
-    "pos": [1, 1, 0],
-    "facing": "north",
-    "blockId": "gt5u.controller.researchCompleter"
-  },
+  "controller": { "pos": [1, 1, 0], "facing": "north", "blockId": "gt5u.controller.researchCompleter" },
   "hatchBlocks": {
     "itemIn": "gt.hatch.inputBus",
     "itemOut": "gt.hatch.outputBus",
@@ -31,15 +22,13 @@
   },
   "shareableHatches": ["itemIn", "itemOut"],
   "requiredHatches": {
-    "energy": {
-      "min": 1
-    },
-    "maintenance": {
-      "min": 1,
-      "max": 1
-    }
+    "itemIn": { "min": 1 },
+    "itemOut": { "min": 1 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
   },
+  "minCasings": [{ "chars": ["c"], "min": 9 }],
   "defaultHatches": ["itemIn", "itemOut", "energy", "maintenance"],
   "wallshare": true,
-  "notes": "Generated from MTEResearchCompleter (GT5-Unofficial 5.09.54.133) by tools/gt-source: the structure is copied cell by cell; hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows), so check the tooltip in game. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
+  "notes": "Generated from MTEResearchCompleter (GT5-Unofficial 5.09.54.205) by tools/gt-source: the structure is copied cell by cell; hatch counts follow the controller's tooltip and structure check. Mirrored in X to match the game: StructureLib's first axis points west for a controller facing north."
 }

@@ -2,7 +2,7 @@
   "id": "steam-squasher",
   "name": "Steam Squasher",
   "tier": "Steam",
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamCompressor.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/steam/MTESteamCompressor.java",
   "size": [3, 3, 7],
   "layers": [
     ["CCC", "AAA", "AAA", "AAA", "AAA", "AAA", "AAA"],
@@ -22,6 +22,7 @@
   },
   "shareableHatches": ["steamIn", "itemIn", "itemOut"],
   "requiredHatches": { "steamIn": { "min": 1 }, "itemIn": { "min": 1 }, "itemOut": { "min": 1 } },
+  "minCasings": [{ "chars": ["A"], "min": 14 }],
   "defaultHatches": ["steamIn", "itemIn", "itemOut"],
   "wallshare": true,
   "notes": "Steam multiblock: runs on steam from steam input hatches, no energy or maintenance hatch. Every tiered part (machine casing, gear box, pipe casing, firebox, frame) must be the same tier: bronze (shown) or steel (Solid Steel Machine Casing and steel parts; high-pressure steam, faster). Buses are steam input/output buses. Steam compressor (Steam Squasher), 3x3x7, at least 14 machine casings; the press blocks are Blocks of Iron (bronze tier) or Blocks of Steel (steel tier). GT still accepts the old 3x3x4 hollow form; this is the current shape. Sharing: every hatch found during the structure check is added to each controller whose structure contains it, so steam hatches and buses in a shared wall serve both machines."

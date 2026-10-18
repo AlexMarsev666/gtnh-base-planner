@@ -2,7 +2,7 @@
   "id": "heliothermal-plasma-fabricator",
   "name": "Heliothermal Plasma Fabricator",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEPlasmaModule.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/tectech/thing/metaTileEntity/multi/godforge/MTEPlasmaModule.java",
   "size": [7, 7, 13],
   "layers": [
     [
@@ -21,8 +21,8 @@
       "       "
     ],
     [
-      "  AAA  ",
-      " ABBBA ",
+      "  BBB  ",
+      " ACCCA ",
       "       ",
       "       ",
       "       ",
@@ -36,13 +36,13 @@
       "       "
     ],
     [
-      " AAAAA ",
-      "ABBBBBA",
-      "   C   ",
-      "   C   ",
-      "   C   ",
-      "   C   ",
-      "   C   ",
+      " BBBBB ",
+      "ACCCCCA",
+      "   D   ",
+      "   D   ",
+      "   D   ",
+      "   D   ",
+      "   D   ",
       "       ",
       "       ",
       "       ",
@@ -51,28 +51,28 @@
       "       "
     ],
     [
-      " AA~AA ",
-      "ABBBBBA",
-      "  CDC  ",
-      "  CDC  ",
-      "  CDC  ",
-      "  CDC  ",
-      "  CDC  ",
-      "   E   ",
-      "   E   ",
-      "   E   ",
-      "   E   ",
-      "   E   ",
-      "   F   "
+      " BB~BB ",
+      "ACCCCCA",
+      "  DED  ",
+      "  DED  ",
+      "  DED  ",
+      "  DED  ",
+      "  DED  ",
+      "   F   ",
+      "   F   ",
+      "   F   ",
+      "   F   ",
+      "   F   ",
+      "   G   "
     ],
     [
-      " AAAAA ",
-      "ABBBBBA",
-      "   C   ",
-      "   C   ",
-      "   C   ",
-      "   C   ",
-      "   C   ",
+      " BBBBB ",
+      "ACCCCCA",
+      "   D   ",
+      "   D   ",
+      "   D   ",
+      "   D   ",
+      "   D   ",
       "       ",
       "       ",
       "       ",
@@ -81,8 +81,8 @@
       "       "
     ],
     [
-      "  AAA  ",
-      " ABBBA ",
+      "  BBB  ",
+      " ACCCA ",
       "       ",
       "       ",
       "       ",
@@ -113,17 +113,32 @@
   ],
   "legend": {
     "A": { "blockId": "tectech:gt.godforgecasing@0" },
-    "B": { "blockId": "tectech:gt.godforgecasing@3" },
-    "C": { "blockId": "tectech:gt.godforgecasing@2" },
-    "D": { "blockId": "tectech:gt.godforgecasing@8" },
-    "E": { "blockId": "tectech:gt.godforgecasing@1" },
-    "F": { "blockId": "tectech:gt.godforgecasing@4" }
+    "B": {
+      "blockId": "tectech:gt.godforgecasing@0",
+      "hatches": ["itemIn", "fluidIn", "fluidOut"],
+      "region": "dot1"
+    },
+    "C": { "blockId": "tectech:gt.godforgecasing@3" },
+    "D": { "blockId": "tectech:gt.godforgecasing@2" },
+    "E": { "blockId": "tectech:gt.godforgecasing@8" },
+    "F": { "blockId": "tectech:gt.godforgecasing@1" },
+    "G": { "blockId": "tectech:gt.godforgecasing@4" }
   },
   "controller": { "pos": [3, 3, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@15414" },
-  "hatchBlocks": {},
-  "shareableHatches": [],
+  "hatchBlocks": {
+    "itemIn": "gt.hatch.inputBus",
+    "fluidIn": "gt.hatch.inputHatch",
+    "fluidOut": "gt.hatch.outputHatch"
+  },
+  "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
   "requiredHatches": {},
-  "defaultHatches": [],
+  "defaultHatches": ["itemIn"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "fluidIn", "fluidOut"],
+      "text": "0+ Input Bus: Any front shielding casing\n0+ Input Hatch: Any front shielding casing\n0+ Output Hatch: Any front shielding casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTEPlasmaModule (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "20 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: MTEPlasmaModule (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

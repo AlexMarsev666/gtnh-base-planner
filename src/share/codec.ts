@@ -1,10 +1,14 @@
 import { getMultiblock } from '../data/catalog';
+import { COILS, coilById } from '../data/coils';
+import { resolveMultiblockId } from '../data/multiblock-aliases';
 import { effectiveSize } from '../model/resize';
-import type { Rotation, Vec3 } from '../model/core/types';
+import { TIERS, type Rotation, type Tier, type Vec3 } from '../model/core/types';
 import type { HatchKind, PlanLimits, Unit } from '../model/multiblock/types';
-import type { PlanState } from '../model/plan/types';
+import { WALLSHARE_MODES, type HatchTiers, type PlanState, type WallshareMode } from '../model/plan/types';
 import {
-  MAX_PAYLOAD_BYTES,
+  LinkTooLargeError,
+  MAX_LINK_CODE_CHARS,
+  MAX_PLAN_LINK_JSON,
   PlanFormatError,
   deflateRaw,
   fromBase64Url,
@@ -13,7 +17,7 @@ import {
   type CompressOptions,
 } from './binary';
 
-export { MAX_PAYLOAD_BYTES, PlanFormatError } from './binary';
+export { LinkTooLargeError, MAX_PAYLOAD_BYTES, PlanFormatError } from './binary';
 
 /**
  * UNIT 5 — Share codec.
@@ -35,6 +39,14 @@ export { MAX_PAYLOAD_BYTES, PlanFormatError } from './binary';
  *   i  [id, ...]                manual unit ids; omitted when they are 0, 1, 2, ...
  *   s  size                     height / length of a resizable multiblock; omitted = `resize.default`
  *                               (so a multiblock's `resize.default` must never change)
+ *   t  tier index               index into `TIERS` (append only); omitted = default
+ *   k  { "<key>": tier index }  hatch tier overrides, keys as in `HatchTiers`; omitted when empty
+ *   g  glass tier index         index into `TIERS`; omitted = the multiblock's own glass
+ *   o  coil index               index into `COILS` (append only); omitted = the multiblock's own coil
+ *   f  1                        mirrored; omitted = not mirrored
+ *   w  wallshare index          index into `WALLSHARE_MODES`; omitted = auto
+ *   a  1                        one maintenance hatch may serve several units; omitted = not shared
+ *   e  1                        one energy hatch may serve two units; omitted = not shared
  */
 
 export const PLAN_VERSION = 1;
@@ -45,7 +57,7 @@ export const MAX_LIMIT = MAX_COUNT;
 export const MAX_COORD = 4096;
 export const MAX_UNIT_ID = 1_000_000;
 /** Largest `size` accepted from input; the multiblock's own `resize.max` clamps it further. */
-export const MAX_SIZE = 64;
+export const MAX_SIZE = 256;
 const DEFAULT_COUNT = 4;
 
 /** Stable order of hatch kinds; the index is the bit used in share links. Append only. */
@@ -59,6 +71,7 @@ export const HATCH_KINDS: readonly HatchKind[] = [
   'maintenance',
   'muffler',
   'steamIn',
+  'dataAccess',
 ];
 
 export const ID_RE = /^[a-z0-9_-]+$/;
@@ -112,12 +125,65 @@ export function expectHatchKind(value: unknown, what: string): HatchKind {
   return value as HatchKind;
 }
 
+export function expectTier(value: unknown, what: string): Tier {
+  if (typeof value !== 'string' || !(TIERS as readonly string[]).includes(value)) {
+    throw new PlanFormatError(`${what} is not a known tier.`);
+  }
+  return value as Tier;
+}
+
+export function expectCoil(value: unknown, what: string): string {
+  if (typeof value !== 'string' || !coilById(value)) {
+    throw new PlanFormatError(`${what} is not a known heating coil.`);
+  }
+  return value;
+}
+
+export function expectWallshare(value: unknown, what: string): WallshareMode {
+  if (typeof value !== 'string' || !(WALLSHARE_MODES as readonly string[]).includes(value)) {
+    throw new PlanFormatError(`${what} is not a known wall sharing mode.`);
+  }
+  return value as WallshareMode;
+}
+
+/** `true` stays, `false` and absent mean "off" and are not stored. */
+export function expectFlag(value: unknown, what: string): true | undefined {
+  if (value === undefined || value === null || value === false) return undefined;
+  if (value !== true) throw new PlanFormatError(`${what} must be true or false.`);
+  return true;
+}
+
+const MAX_HATCH_TIERS = 512;
+const PLAN_HATCH_TIER_KEY_RE = new RegExp(`^(${HATCH_KINDS.join('|')}):\\d{1,4}$`);
+
+/**
+ * Hatch tier overrides: an object of `key -> tier`. `keyOk` decides which keys are valid (plans and site
+ * groups use different key shapes). Returns keys in sorted order, or `undefined` when there are none.
+ */
+export function validateHatchTiers(
+  value: unknown,
+  what: string,
+  keyOk: (key: string) => boolean = (k) => PLAN_HATCH_TIER_KEY_RE.test(k),
+): HatchTiers | undefined {
+  if (value === undefined || value === null) return undefined;
+  const obj = expectObject(value, what);
+  const keys = Object.keys(obj);
+  if (keys.length > MAX_HATCH_TIERS) throw new PlanFormatError(`${what} has too many entries.`);
+  const out: HatchTiers = {};
+  for (const key of keys.sort()) {
+    if (!keyOk(key)) throw new PlanFormatError(`${what} has an invalid hatch key "${key.slice(0, 40)}".`);
+    out[key] = expectTier(field(obj, key), `${what} tier for "${key.slice(0, 40)}"`);
+  }
+  return keys.length > 0 ? out : undefined;
+}
+
 function expectMultiblockId(value: unknown): string {
   if (typeof value !== 'string' || value.length > MAX_ID_LENGTH || !ID_RE.test(value)) {
     throw new PlanFormatError('Multiblock id is invalid.');
   }
-  if (!getMultiblock(value)) throw new PlanFormatError(`Unknown multiblock "${value}".`);
-  return value;
+  const id = resolveMultiblockId(value);
+  if (!getMultiblock(id)) throw new PlanFormatError(`Unknown multiblock "${value}".`);
+  return id;
 }
 
 function expectLimit(value: unknown, axis: string): number | null {
@@ -133,17 +199,20 @@ function validateUnit(value: unknown, index: number): Unit {
   const pos = origin.map((c, i) =>
     expectInt(c, `${what} ${'xyz'[i]}`, -MAX_COORD, MAX_COORD),
   ) as unknown as Vec3;
+  const variant = field(obj, 'variant');
+  const v = variant === undefined ? 0 : expectInt(variant, `${what} variant`, 0, 3);
   return {
     id: expectInt(field(obj, 'id'), `${what} id`, 0, MAX_UNIT_ID),
     origin: [pos[0], pos[1], pos[2]],
     rotation: expectInt(field(obj, 'rotation'), `${what} rotation`, 0, 3) as Rotation,
+    ...(v ? { variant: v as Unit['variant'] } : {}),
   };
 }
 
 /**
  * Strict validation of untrusted input (JSON files, links, localStorage):
  * known multiblock id, count 1..MAX_COUNT, integer limits (units per axis) 1..MAX_LIMIT or null, known hatch kinds, `#rrggbb` colours,
- * manual units with integer coordinates within ±512 and rotation 0..3, an integer size 1..64. Throws with a
+ * manual units with integer coordinates within ±512 and rotation 0..3, variant 0..3, an integer size 1..64. Throws with a
  * readable message.
  *
  * Returns a fresh, normalised copy: hatch kinds in `HATCH_KINDS` order, lower-case colours,
@@ -214,6 +283,23 @@ export function validatePlanState(input: unknown): PlanState {
     const size = effectiveSize(getMultiblock(multiblockId)!, expectInt(sizeRaw, 'Size', 1, MAX_SIZE));
     if (size !== undefined) plan.size = size;
   }
+
+  const tier = field(obj, 'tier');
+  if (tier !== undefined && tier !== null) plan.tier = expectTier(tier, 'Tier');
+  const hatchTiers = validateHatchTiers(field(obj, 'hatchTiers'), 'Hatch tiers');
+  if (hatchTiers) plan.hatchTiers = hatchTiers;
+  const glassTier = field(obj, 'glassTier');
+  if (glassTier !== undefined && glassTier !== null) plan.glassTier = expectTier(glassTier, 'Glass tier');
+  const coil = field(obj, 'coil');
+  if (coil !== undefined && coil !== null) plan.coil = expectCoil(coil, 'Coil');
+  if (expectFlag(field(obj, 'mirror'), 'Mirror')) plan.mirror = true;
+  const wallshareRaw = field(obj, 'wallshare');
+  if (wallshareRaw !== undefined && wallshareRaw !== null) {
+    const wallshare = expectWallshare(wallshareRaw, 'Wall sharing');
+    if (wallshare !== 'auto') plan.wallshare = wallshare;
+  }
+  if (expectFlag(field(obj, 'shareMaintenance'), 'Share maintenance')) plan.shareMaintenance = true;
+  if (expectFlag(field(obj, 'shareEnergy'), 'Share energy')) plan.shareEnergy = true;
   return plan;
 }
 
@@ -231,9 +317,35 @@ interface CompactPlan {
   u?: number[];
   i?: number[];
   s?: number;
+  t?: number;
+  k?: Record<string, number>;
+  g?: number;
+  o?: number;
+  f?: 1;
+  w?: number;
+  a?: 1;
+  e?: 1;
 }
 
-const COMPACT_KEYS = new Set(['v', 'm', 'n', 'l', 'h', 'c', 'u', 'i', 's']);
+const COMPACT_KEYS = new Set([
+  'v',
+  'm',
+  'n',
+  'l',
+  'h',
+  'c',
+  'u',
+  'i',
+  's',
+  't',
+  'k',
+  'g',
+  'o',
+  'f',
+  'w',
+  'a',
+  'e',
+]);
 
 function hatchMask(kinds: readonly HatchKind[]): number {
   let mask = 0;
@@ -261,10 +373,28 @@ function toCompact(plan: PlanState): CompactPlan {
   });
   if (hasColors) out.c = colors;
   if (plan.manualUnits && plan.manualUnits.length > 0) {
-    out.u = plan.manualUnits.flatMap((u) => [u.origin[0], u.origin[1], u.origin[2], u.rotation]);
+    // The orientation variant rides in the rotation slot: rotation + 4 * variant (0..15).
+    out.u = plan.manualUnits.flatMap((u) => [
+      u.origin[0],
+      u.origin[1],
+      u.origin[2],
+      u.rotation + 4 * (u.variant ?? 0),
+    ]);
     if (plan.manualUnits.some((u, i) => u.id !== i)) out.i = plan.manualUnits.map((u) => u.id);
   }
   if (plan.size !== undefined) out.s = plan.size;
+  if (plan.tier !== undefined) out.t = TIERS.indexOf(plan.tier);
+  if (plan.hatchTiers) {
+    out.k = {};
+    for (const key of Object.keys(plan.hatchTiers).sort()) out.k[key] = TIERS.indexOf(plan.hatchTiers[key]);
+  }
+  if (plan.glassTier !== undefined) out.g = TIERS.indexOf(plan.glassTier);
+  if (plan.coil !== undefined) out.o = COILS.findIndex((c) => c.id === plan.coil);
+  if (plan.mirror) out.f = 1;
+  if (plan.wallshare !== undefined && plan.wallshare !== 'auto')
+    out.w = WALLSHARE_MODES.indexOf(plan.wallshare);
+  if (plan.shareMaintenance) out.a = 1;
+  if (plan.shareEnergy) out.e = 1;
   return out;
 }
 
@@ -299,7 +429,7 @@ function fromCompact(input: unknown): PlanState {
   if (c !== undefined) {
     const cObj = expectObject(c, 'Colours');
     for (const key of Object.keys(cObj)) {
-      const kind = /^[0-9]$/.test(key) ? HATCH_KINDS[Number(key)] : undefined;
+      const kind = /^(?:[0-9]|[1-9][0-9])$/.test(key) ? HATCH_KINDS[Number(key)] : undefined;
       if (!kind) throw new PlanFormatError('Colour key is not a known hatch kind.');
       const value = field(cObj, key);
       if (typeof value !== 'string' || !/^[0-9a-f]{6}$/i.test(value)) {
@@ -326,16 +456,59 @@ function fromCompact(input: unknown): PlanState {
     const unitCount = flat.length / 4;
     const idList = ids === undefined ? null : expectArray(ids, 'Unit ids', MAX_COUNT);
     if (idList && idList.length !== unitCount) throw new PlanFormatError('Unit ids are damaged.');
-    plan.manualUnits = Array.from({ length: unitCount }, (_, k) => ({
-      id: idList ? idList[k] : k,
-      origin: [flat[4 * k], flat[4 * k + 1], flat[4 * k + 2]],
-      rotation: flat[4 * k + 3],
-    }));
+    plan.manualUnits = Array.from({ length: unitCount }, (_, k) => {
+      const r = expectInt(flat[4 * k + 3], 'Unit rotation', 0, 15);
+      return {
+        id: idList ? idList[k] : k,
+        origin: [flat[4 * k], flat[4 * k + 1], flat[4 * k + 2]],
+        rotation: r % 4,
+        ...(r >= 4 ? { variant: Math.floor(r / 4) } : {}),
+      };
+    });
   } else if (ids !== undefined) {
     throw new PlanFormatError('Unit ids without units.');
   }
   const size = field(obj, 's');
   if (size !== undefined) plan.size = size;
+  const t = field(obj, 't');
+  if (t !== undefined) plan.tier = TIERS[expectInt(t, 'Tier', 0, TIERS.length - 1)];
+  const k = field(obj, 'k');
+  if (k !== undefined) {
+    const kObj = expectObject(k, 'Hatch tiers');
+    const tiers: Record<string, Tier> = {};
+    for (const key of Object.keys(kObj)) {
+      // defineProperty, so a key such as "__proto__" stays an own key and is refused by validation.
+      Object.defineProperty(tiers, key, {
+        value: TIERS[expectInt(field(kObj, key), 'Hatch tier', 0, TIERS.length - 1)],
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    }
+    plan.hatchTiers = tiers;
+  }
+  const g = field(obj, 'g');
+  if (g !== undefined) plan.glassTier = TIERS[expectInt(g, 'Glass tier', 0, TIERS.length - 1)];
+  const o = field(obj, 'o');
+  if (o !== undefined) plan.coil = COILS[expectInt(o, 'Coil', 0, COILS.length - 1)].id;
+  const f = field(obj, 'f');
+  if (f !== undefined) {
+    if (f !== 1) throw new PlanFormatError('Mirror flag is damaged.');
+    plan.mirror = true;
+  }
+  const w = field(obj, 'w');
+  if (w !== undefined)
+    plan.wallshare = WALLSHARE_MODES[expectInt(w, 'Wall sharing', 0, WALLSHARE_MODES.length - 1)];
+  const a = field(obj, 'a');
+  if (a !== undefined) {
+    if (a !== 1) throw new PlanFormatError('Share maintenance flag is damaged.');
+    plan.shareMaintenance = true;
+  }
+  const e = field(obj, 'e');
+  if (e !== undefined) {
+    if (e !== 1) throw new PlanFormatError('Share energy flag is damaged.');
+    plan.shareEnergy = true;
+  }
   return validatePlanState(plan);
 }
 
@@ -362,14 +535,17 @@ export function plansEqual(a: PlanState, b: PlanState): boolean {
 export async function encodePlan(state: PlanState, opts: CompressOptions = {}): Promise<string> {
   const json = JSON.stringify(toCompact(validatePlanState(state)));
   const bytes = new TextEncoder().encode(json);
-  return toBase64Url(await deflateRaw(bytes, opts));
+  if (bytes.length > MAX_PLAN_LINK_JSON) throw new LinkTooLargeError();
+  const code = toBase64Url(await deflateRaw(bytes, opts));
+  if (code.length > MAX_LINK_CODE_CHARS) throw new LinkTooLargeError();
+  return code;
 }
 
 export async function decodePlan(encoded: string, opts: CompressOptions = {}): Promise<PlanState> {
   if (typeof encoded !== 'string') throw new PlanFormatError('Plan link is missing.');
   if (encoded.length === 0) throw new PlanFormatError('Plan link is empty.');
   const compressed = fromBase64Url(encoded);
-  const bytes = await inflateRaw(compressed, { ...opts, limit: MAX_PAYLOAD_BYTES });
+  const bytes = await inflateRaw(compressed, { ...opts, limit: MAX_PLAN_LINK_JSON });
   let text: string;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);

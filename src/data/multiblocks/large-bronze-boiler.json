@@ -2,7 +2,7 @@
   "id": "large-bronze-boiler",
   "name": "Large Bronze Boiler",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeBoilerBronze.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gregtech/common/tileentities/machines/multi/MTELargeBoilerBronze.java",
   "size": [5, 6, 3],
   "layers": [
     ["AAAAA", "AAAAA", "AAAAA"],
@@ -15,11 +15,13 @@
   "legend": {
     "A": {
       "blockId": "gregtech:gt.blockcasings3@13",
-      "hatches": ["itemIn", "fluidIn", "fluidOut", "maintenance", "muffler"]
+      "hatches": ["itemIn", "fluidIn", "fluidOut", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "B": {
       "blockId": "gregtech:gt.blockcasings@10",
-      "hatches": ["itemIn", "fluidIn", "fluidOut", "maintenance", "muffler"]
+      "hatches": ["itemIn", "fluidIn", "fluidOut", "maintenance", "muffler"],
+      "region": "dot1"
     },
     "C": { "blockId": "gregtech:gt.blockcasings2@12" }
   },
@@ -32,8 +34,23 @@
     "muffler": "gt.hatch.muffler"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": { "maintenance": { "min": 1, "max": 1 }, "muffler": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "maintenance", "muffler"],
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 },
+    "muffler": { "min": 1, "max": 1 }
+  },
+  "minCasings": [
+    { "chars": ["B"], "min": 20 },
+    { "chars": ["A"], "min": 5 }
+  ],
+  "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "maintenance", "muffler"],
+  "zones": {
+    "dot1": {
+      "kinds": ["itemIn", "fluidIn", "fluidOut", "maintenance", "muffler"],
+      "text": "1 Maintenance Hatch: Any machine or firebox casing\n1 Muffler Hatch: Any machine or firebox casing\n0+ Input Bus: Any machine or firebox casing\n1+ Input Hatch: Any machine or firebox casing\n1+ Output Hatch: Any machine or firebox casing"
+    }
+  },
   "wallshare": true,
-  "notes": "Built by the game itself: MTELargeBoilerBronze (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Built by the game itself: MTELargeBoilerBronze (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

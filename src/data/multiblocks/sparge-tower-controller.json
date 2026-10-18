@@ -2,25 +2,36 @@
   "id": "sparge-tower-controller",
   "name": "Sparge Tower Controller",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTESpargeTower.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/gtPlusPlus/xmod/gregtech/common/tileentities/machines/multi/processing/MTESpargeTower.java",
   "size": [3, 8, 3],
   "layers": [
     ["A~A", "AAA", "AAA"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
-    ["BBB", "BCB", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
+    ["BBB", "B-B", "BBB"],
     ["BBB", "BBB", "BBB"]
   ],
   "legend": {
     "A": {
       "blockId": "miscutils:gtplusplus.blockcasings.5@4",
-      "hatches": ["itemIn", "fluidIn", "energy", "maintenance"]
+      "hatches": ["itemIn", "fluidIn", "energy", "maintenance"],
+      "allowFaces": {
+        "itemIn": ["north", "south", "east", "west", "down"],
+        "fluidIn": ["north", "south", "east", "west", "down"],
+        "energy": ["north", "south", "east", "west", "down"],
+        "maintenance": ["north", "south", "east", "west", "down"]
+      },
+      "region": "dot1"
     },
-    "B": { "blockId": "miscutils:gtplusplus.blockcasings.5@4", "hatches": ["fluidOut"] },
-    "C": { "blockId": "gt.hatch.special" }
+    "B": {
+      "blockId": "miscutils:gtplusplus.blockcasings.5@4",
+      "hatches": ["fluidOut", "energy", "maintenance"],
+      "allowFaces": { "fluidOut": ["north", "south", "east", "west"] },
+      "region": "dot2"
+    }
   },
   "controller": { "pos": [1, 0, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@31035" },
   "hatchBlocks": {
@@ -31,8 +42,25 @@
     "maintenance": "gt.hatch.maintenance"
   },
   "shareableHatches": ["itemIn", "fluidIn", "fluidOut"],
-  "requiredHatches": { "energy": { "min": 1 }, "maintenance": { "min": 1, "max": 1 } },
-  "defaultHatches": ["itemIn", "energy", "maintenance"],
+  "requiredHatches": {
+    "fluidIn": { "min": 1 },
+    "fluidOut": { "min": 7, "max": 7 },
+    "energy": { "min": 1 },
+    "maintenance": { "min": 1, "max": 1 }
+  },
+  "minCasings": [{ "chars": ["A", "B"], "min": 45 }],
+  "defaultHatches": ["itemIn", "fluidIn", "fluidOut", "energy", "maintenance"],
+  "zones": {
+    "dot1": {
+      "kinds": ["fluidIn", "energy", "maintenance"],
+      "text": "1+ Energy Hatch: Any casing\n1 Maintenance Hatch: Any casing\n1+ Input Hatch: Any bottom casing"
+    },
+    "dot2": {
+      "kinds": ["fluidOut", "energy", "maintenance"],
+      "text": "1+ Energy Hatch: Any casing\n1 Maintenance Hatch: Any casing\n7 Output Hatch: One per layer, except the bottom layer"
+    }
+  },
+  "variants": [0, 1],
   "wallshare": true,
-  "notes": "Built by the game itself: MTESpargeTower (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "57 hatch cells also take the kinds their structure element accepts in the source. Built by the game itself: MTESpargeTower (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

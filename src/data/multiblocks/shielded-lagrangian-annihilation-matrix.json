@@ -2,7 +2,7 @@
   "id": "shielded-lagrangian-annihilation-matrix",
   "name": "Shielded Lagrangian Annihilation Matrix",
   "generated": true,
-  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.133/src/main/java/goodgenerator/blocks/tileEntity/AntimatterGenerator.java",
+  "source": "https://github.com/GTNewHorizons/GT5-Unofficial/blob/5.09.54.205/src/main/java/goodgenerator/blocks/tileEntity/AntimatterGenerator.java",
   "size": [35, 43, 35],
   "layers": [
     [
@@ -1604,14 +1604,15 @@
     "D": { "blockId": "GoodGenerator:antimatterAnnihilationMatrix@0" },
     "E": { "blockId": "bartworks:BW_TieredGlass@8" },
     "F": { "blockId": "GoodGenerator:protomatterActivationCoil@0" },
-    "G": { "blockId": "GoodGenerator:magneticFluxCasing@0", "hatches": ["fluidIn"] },
+    "G": { "blockId": "GoodGenerator:magneticFluxCasing@0", "hatches": ["fluidIn"], "region": "dot1" },
     "H": { "blockId": "gregtech:gt.blockcasings9@1" }
   },
   "controller": { "pos": [17, 1, 0], "facing": "north", "blockId": "gregtech:gt.blockmachines@32028" },
   "hatchBlocks": { "fluidIn": "gt.hatch.inputHatch" },
   "shareableHatches": ["fluidIn"],
-  "requiredHatches": {},
+  "requiredHatches": { "fluidIn": { "min": 1, "max": 2 } },
   "defaultHatches": ["fluidIn"],
+  "zones": { "dot1": { "kinds": ["fluidIn"], "text": "1-2 Input Hatch: Either center side casing" } },
   "wallshare": true,
-  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: AntimatterGenerator (GT5-Unofficial 5.09.54.133) placed every block with the hologram's construct() (tools/game-dump). Hatch counts are approximate (energy or dynamo, maintenance and muffler as the structure allows); check the tooltip in game."
+  "notes": "Machine-specific hatches (LaserSource) are shown as their cells only. Built by the game itself: AntimatterGenerator (GT5-Unofficial 5.09.54.205) placed every block with the hologram's construct() (tools/game-dump). Hatch counts and zones follow the controller's tooltip."
 }

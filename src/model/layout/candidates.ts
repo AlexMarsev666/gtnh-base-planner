@@ -2,6 +2,7 @@ import { key } from '../geometry';
 import type { Vec3 } from '../core/types';
 import type { MultiblockDef, PlanLimits } from '../multiblock/types';
 import { coord, modeCaps } from './modes';
+import type { WallshareMode } from '../plan/types';
 import type { Candidate, Mode, Order, Spacing } from './types';
 
 /** Enumerating and ranking lattice layouts, scored analytically before any cell is checked. */
@@ -109,8 +110,36 @@ function isGap(sp: Spacing, size: number): boolean {
 }
 
 /**
+ * Which wallshare preference a layout satisfies, from the axes along which units share a wall.
+ * The "back" axis is the world axis the controllers face (it depends on the mode's parity), the "side" axis
+ * is the other horizontal one:
+ * - 'side': units share walls only along the side axis (rows next to each other), nowhere else.
+ * - 'back': units share walls only along the facing axis (back to back, walkway on the front side).
+ * - 'stack': units share walls only vertically (layers).
+ * The labels side/back/stack look at shared axes only: horizontal touching without sharing is allowed in them.
+ * - 'separate': no shared walls and no horizontal contact: a gap of at least one block on X and Z wherever
+ *   two units are neighbours (stacked layers may still touch).
+ * - 'auto': anything else (several sharing axes, or touching without sharing).
+ */
+export function classifyWallshare(
+  def: MultiblockDef,
+  mode: Mode,
+  shared: Vec3,
+  touching: Vec3,
+): WallshareMode {
+  const east = def.controller.facing === 'east' || def.controller.facing === 'west';
+  const back = (east ? mode.parity === 0 : mode.parity === 1) ? 0 : 2;
+  const side = back === 0 ? 2 : 0;
+  const axes = [0, 1, 2].filter((a) => shared[a] > 0);
+  if (axes.length === 0) return touching[0] === 0 && touching[2] === 0 ? 'separate' : 'auto';
+  if (axes.length > 1) return 'auto';
+  return axes[0] === 1 ? 'stack' : axes[0] === side ? 'side' : axes[0] === back ? 'back' : 'auto';
+}
+
+/**
  * Ranked candidate layouts. The compact family (used by `packUnits`) has no gaps and uses walkways only
- * along axes with a limit; `spaced` adds gap and walkway layouts everywhere (see `layoutCandidates`).
+ * along axes with a limit; `spaced` adds gap and walkway layouts everywhere (see `layoutCandidates`). Layouts
+ * whose bounding volume is `below` or more are left out.
  */
 export function candidates(
   def: MultiblockDef,
@@ -118,6 +147,8 @@ export function candidates(
   n: number,
   limits: PlanLimits,
   spaced: boolean | 'wide' = false,
+  wallshare?: WallshareMode,
+  below = Infinity,
 ): Candidate[] {
   const out: Candidate[] = [];
   const countsByCaps = new Map<string, Vec3[]>();
@@ -148,12 +179,22 @@ export function candidates(
         if (order === 'zxy' && (counts[0] === 1 || counts[2] === 1)) continue;
         const { pairs, odd, used } = fillStats(n, counts, order);
         const ext = [0, 1, 2].map((a) => coord(spacing[a], used[a] - 1) + size[a]);
+        if (ext[0] * ext[1] * ext[2] >= below) continue;
         let faces = 0;
+        const shared = [0, 0, 0];
+        const touching = [0, 0, 0];
         for (let a = 0; a < 3; a++) {
-          if (!def.wallshare) continue;
-          if (spacing[a].inner === size[a] - 1) faces += odd[a];
-          if (spacing[a].outer === size[a] - 1) faces += pairs[a] - odd[a];
+          // Units overlap where the spacing is below their size: by one block (a shared wall) or deeper.
+          if (spacing[a].inner < size[a]) shared[a] += odd[a];
+          if (spacing[a].outer < size[a]) shared[a] += pairs[a] - odd[a];
+          faces += shared[a];
+          if (spacing[a].inner === size[a]) touching[a] += odd[a];
+          if (spacing[a].outer === size[a]) touching[a] += pairs[a] - odd[a];
         }
+        const sharedV: Vec3 = [shared[0], shared[1], shared[2]];
+        const touchingV: Vec3 = [touching[0], touching[1], touching[2]];
+        const kind = classifyWallshare(def, mode, sharedV, touchingV);
+        if (wallshare && wallshare !== 'auto' && kind !== wallshare) continue;
         out.push({
           mode,
           counts,
@@ -164,6 +205,9 @@ export function candidates(
           area: ext[0] * ext[2],
           squareness: Math.abs(ext[0] - ext[2]),
           seq: seq++,
+          shared: sharedV,
+          touching: touchingV,
+          kind,
         });
       }
     }

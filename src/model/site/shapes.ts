@@ -2,6 +2,8 @@ import { getSiteDef, isSingleBlock } from '../../data/generic';
 import type { PlanLimits } from '../multiblock/types';
 import type { Shape } from './anneal';
 import type { SiteBuilder } from './buildTypes';
+import { lazyFaces } from './groupFaces';
+import { throwIfAborted } from './progress';
 import type { SiteGroup, SiteLink, SiteState } from './types';
 
 /**
@@ -43,6 +45,8 @@ export interface ShapeOptions {
   budgetMs?: number;
   /** Clock for `budgetMs`. Default `performance.now`. */
   now?: () => number;
+  /** Aborting throws `AbortedError`, checked before each group is measured. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -69,6 +73,7 @@ export function groupShapes(
   let unitsBuilt = 0;
   let spent = 0;
   for (const g of order) {
+    throwIfAborted(opts.signal);
     const def = getSiteDef(g.multiblockId)!;
     const seen = new Set([limitsKey(g.limits)]);
     const variants: PlanLimits[] = [];
@@ -125,7 +130,9 @@ function measure(
   );
   const shapeOf = (id: string, limits: PlanLimits): Shape | null => {
     const b = built.get(id);
-    return b ? { limits, size: [b.size[0], b.size[2]], height: b.size[1] } : null;
+    return b
+      ? { limits, size: [b.size[0], b.size[2]], height: b.size[1], ends: b.ends, faces: lazyFaces(b) }
+      : null;
   };
   const sameFoot = (a: Shape, b: Shape) =>
     a.size[0] === b.size[0] && a.size[1] === b.size[1] && a.height === b.height;

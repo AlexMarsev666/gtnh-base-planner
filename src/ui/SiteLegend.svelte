@@ -29,7 +29,6 @@
     {#each entries as e (e.key)}
       <li>
         <button
-          class="link"
           class:active={$isolate === e.key}
           aria-pressed={$isolate === e.key}
           title={e.routed ? t.site.connected(e.connected, e.total) : t.site.kinds[e.res.kind]}
@@ -48,34 +47,50 @@
   .legend {
     position: fixed;
     right: var(--gutter);
-    bottom: 22px;
-    max-height: calc(100vh - var(--bar-h) - 90px);
+    bottom: 30px;
+    max-height: calc(100vh - var(--bar-h) - 100px);
     overflow-y: auto;
     margin: 0;
-    padding: 0;
+    padding: 4px;
     list-style: none;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     gap: 0;
     z-index: 10;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
   }
   button {
+    appearance: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 2px 6px;
-    margin-right: -6px;
-    outline: 1px solid transparent;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 3px 8px;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+  }
+  button:hover {
+    background: var(--surface);
   }
   button.active {
-    outline-color: var(--pick);
-    text-decoration: none;
+    background: var(--surface);
+    outline: 1px solid var(--pick);
+    outline-offset: -1px;
   }
   .name {
-    text-transform: none;
-    letter-spacing: 0.02em;
-    max-width: 200px;
+    max-width: 180px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -21,6 +21,7 @@ export interface Faces {
 export const REPO: string;
 export const ICONSETS: string;
 export const TILE: number;
+export const TIER_NAMES: string[];
 export const TILES: Record<string, TileOptions>;
 export const BLOCK_MAP: Record<string, Faces>;
 export const HATCH_OVERLAYS: Record<string, string[]>;
@@ -34,8 +35,14 @@ export function packAtlas(tiles: Record<string, Uint8Array>): {
   rects: Record<string, [number, number, number, number]>;
 };
 export function readBlockIds(source?: string): string[];
+export function readBlockNames(
+  source?: string,
+  generatedList?: { id: string; name: string }[],
+): Map<string, string>;
+export function isTranslucentBlock(id: string, name?: string): boolean;
 export function buildManifest(
   rects: Record<string, [number, number, number, number]>,
   atlasSize: { width: number; height: number },
   blockIds: string[],
+  names?: Map<string, string>,
 ): { manifest: unknown; flat: string[] };
