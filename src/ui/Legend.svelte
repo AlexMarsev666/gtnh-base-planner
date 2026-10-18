@@ -26,16 +26,25 @@
     position: fixed;
     /* Bottom-right: the renderer draws its axis gizmo bottom-left. */
     right: var(--gutter);
-    bottom: 22px;
+    bottom: 30px;
     margin: 0;
-    padding: 0;
+    padding: 8px 12px;
     list-style: none;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 4px;
     z-index: 10;
     pointer-events: none;
+    max-height: calc(100vh - var(--bar-h) - 90px);
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text);
   }
   li {
     display: flex;
@@ -43,8 +52,8 @@
     gap: 10px;
   }
   i {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     display: block;
   }
   @media (max-width: 640px) {

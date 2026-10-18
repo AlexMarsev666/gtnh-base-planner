@@ -62,7 +62,7 @@ It is a layout tool, not a recipe or production-chain calculator. Structures fol
 - **Textured view**: real GregTech textures, layered and tinted the way the game draws them (glass is
   see-through, a hatch shows the casing it replaces with its own overlay), flat colours when they cannot load,
   with the build's width and depth measured beside it.
-- **Stats line**: units, unique blocks, shared walls, hatches and how many blocks sharing saves.
+- **Stats line**: units, unique blocks, shared walls, hatches and how many blocks the shared walls save.
 - **Save and share**: autosave in the browser, JSON download/upload, and share links.
 - **Templates** (the TEMPLATE view): several groups of multiblocks on a bounded ground area (30 × 30 by default, up to 256 × 256), joined by
   links that each carry one item, fluid or EU. Every group gets the hatches for the resources it takes or gives (see below), pipes are
@@ -126,8 +126,8 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    in its settings (editing them keeps them): Arrange and Optimize never change those. Closing the import dialog
    stops an import in progress.
    Select a group (click it, or pick it in the panel)
-   and drag it in the view, or move it with the arrow keys as seen on screen (Shift: 5 blocks) or the arrows in
-   the panel; PageUp and PageDown raise and lower it (Shift: 5 blocks), R turns it (Shift+R back), F frames it
+   and drag it in the view, or move it with the arrow keys as seen on screen (Shift: 5 blocks) or the Away / Toward / Left / Right
+   buttons of the Placement tab, which move it as seen on screen like the keys (with Raise / Lower and Turn buttons beside them); PageUp and PageDown raise and lower it (Shift: 5 blocks), R turns it (Shift+R back), F frames it
    and Delete removes it. The panel edits the selected group: its label and machine, count, limits and extra
    hatches, and X, Z and height to place it exactly. Template inputs and outputs (the chests, tanks and energy
    blocks on the edge) move the same way: click one, then drag it or use the arrows; A gives it back to

@@ -107,7 +107,8 @@
   }
   .placement {
     display: flex;
-    gap: 16px;
+    flex-direction: column;
+    gap: 12px;
     align-items: flex-start;
   }
   .coords {

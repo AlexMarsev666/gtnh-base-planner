@@ -20,14 +20,16 @@
 
 {#if parts.main.length || parts.selected}
   <footer class="stats" data-testid="stats">
-    {#each parts.main as part, i (i)}
-      {#if i > 0}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
-      <span>{part}</span>
-    {/each}
-    {#if parts.selected}
-      {#if parts.main.length}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
-      <span class="selected" data-testid="selected">{parts.selected}</span>
-    {/if}
+    <div class="box">
+      {#each parts.main as part, i (i)}
+        {#if i > 0}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
+        <span>{part}</span>
+      {/each}
+      {#if parts.selected}
+        {#if parts.main.length}<span class="dot" aria-hidden="true">{t.separator}</span>{/if}
+        <span class="selected" data-testid="selected">{parts.selected}</span>
+      {/if}
+    </div>
   </footer>
 {/if}
 
@@ -37,16 +39,29 @@
     /* Leaves room for the axis gizmo (bottom-left) and the hatch legend (bottom-right). */
     left: 160px;
     right: 160px;
-    bottom: 22px;
+    bottom: 30px;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .box {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 2px 0;
-    z-index: 10;
-    pointer-events: none;
+    padding: 6px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--muted);
+    text-align: center;
   }
   .dot {
-    margin: 0 10px;
+    margin: 0 8px;
     color: var(--faint);
   }
   .selected {
@@ -59,6 +74,9 @@
       right: var(--gutter);
       bottom: auto;
       top: calc(var(--bar-h) + 2px);
+      justify-content: flex-start;
+    }
+    .box {
       justify-content: flex-start;
       column-gap: 14px;
     }

@@ -269,7 +269,13 @@ describe('stats line', () => {
   it('lists units, blocks, walls, hatches, saved and the selection', () => {
     const r = createPipeline(fakeDeps())(defaultPlan(), false);
     const parts = statsParts(r, [1]);
-    expect(parts.main).toEqual(['2 units', '40 blocks', '1 shared wall', '3 hatches', '9 saved']);
+    expect(parts.main).toEqual([
+      '2 units',
+      '40 blocks',
+      '1 shared wall',
+      '3 hatches',
+      '9 blocks saved by shared walls',
+    ]);
     expect(parts.selected).toBe('Unit 2');
     expect(statsParts(r, []).selected).toBeNull();
     expect(statsParts(r, [0, 1]).selected).toBe('Units 1, 2');

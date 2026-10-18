@@ -18,24 +18,26 @@
           {entry.backupKey ? t.recovery.keptCopy : t.recovery.copyFailed}
           {t.recovery.paused}
         </span>
-        <button class="link active" onclick={() => downloadUnreadable(kind)}>{t.recovery.download}</button>
-        <button class="link" onclick={() => retryUnreadable(kind)}>{t.recovery.retry}</button>
-        <button class="link" onclick={() => startNew(kind)}>{t.recovery.startNew}</button>
+        <button class="btn small primary" onclick={() => downloadUnreadable(kind)}
+          >{t.recovery.download}</button
+        >
+        <button class="btn small" onclick={() => retryUnreadable(kind)}>{t.recovery.retry}</button>
+        <button class="btn small" onclick={() => startNew(kind)}>{t.recovery.startNew}</button>
       </p>
     {/if}
   {/each}
   {#if $pendingShared}
     <p class="notice confirm" data-testid="shared-confirm">
       <span>{t.sharedPrompt}</span>
-      <button class="link active" onclick={() => answerShared(true)}>{t.sharedOpen}</button>
-      <button class="link" onclick={() => answerShared(false)}>{t.sharedKeep}</button>
+      <button class="btn small primary" onclick={() => answerShared(true)}>{t.sharedOpen}</button>
+      <button class="btn small" onclick={() => answerShared(false)}>{t.sharedKeep}</button>
     </p>
   {/if}
   {#if $pendingSite}
     <p class="notice confirm" data-testid="shared-site-confirm">
       <span>{t.site.sharedPrompt}</span>
-      <button class="link active" onclick={() => answerSharedSite(true)}>{t.sharedOpen}</button>
-      <button class="link" onclick={() => answerSharedSite(false)}>{t.sharedKeep}</button>
+      <button class="btn small primary" onclick={() => answerSharedSite(true)}>{t.sharedOpen}</button>
+      <button class="btn small" onclick={() => answerSharedSite(false)}>{t.sharedKeep}</button>
     </p>
   {/if}
   {#if $arrangeProgress}
@@ -47,7 +49,8 @@
         value={p.total ? p.done : undefined}
         aria-label={p.phase === 'optimize' ? t.site.optimizingPhase : t.site.arranging}
       ></progress>
-      <button class="link" data-testid="arrange-cancel" onclick={cancelArrange}>{t.site.arrangeCancel}</button
+      <button class="btn small" data-testid="arrange-cancel" onclick={cancelArrange}
+        >{t.site.arrangeCancel}</button
       >
     </p>
   {/if}
@@ -57,14 +60,14 @@
       {#if n.action}
         {@const action = n.action}
         <button
-          class="link active"
+          class="btn small"
           onclick={() => {
             dismissNotice(n.id);
             action.run();
           }}>{action.label}</button
         >
       {/if}
-      <button class="link x" aria-label={t.dismiss} onclick={() => dismissNotice(n.id)}>{t.close}</button>
+      <button class="btn small" aria-label={t.dismiss} onclick={() => dismissNotice(n.id)}>{t.close}</button>
     </p>
   {/each}
 </div>
@@ -74,7 +77,7 @@
     position: fixed;
     left: calc(var(--gutter) + var(--outline-w, 0px));
     right: var(--gutter);
-    bottom: 52px;
+    bottom: 96px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -85,14 +88,20 @@
   }
   .notice {
     margin: 0;
+    max-width: 640px;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: baseline;
-    gap: 4px 16px;
+    align-items: center;
+    gap: 6px 12px;
     color: var(--text);
     background: var(--bg);
-    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
     pointer-events: auto;
     text-align: center;
   }
@@ -101,8 +110,5 @@
     height: 8px;
     align-self: center;
     accent-color: var(--text);
-  }
-  .x {
-    color: var(--muted);
   }
 </style>

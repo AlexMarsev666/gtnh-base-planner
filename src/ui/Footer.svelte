@@ -15,12 +15,14 @@
   .footer {
     position: fixed;
     left: calc(50% + var(--outline-w, 0px) / 2);
-    bottom: 4px;
+    bottom: 6px;
     transform: translateX(-50%);
     display: flex;
     align-items: baseline;
     white-space: nowrap;
-    font-size: 9px;
+    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
     color: var(--muted);
     z-index: 10;
   }

@@ -12,8 +12,8 @@
 
   /**
    * On-screen arrows and turns for the selected group: the arrow keys and R for touch screens, and a
-   * reminder of them for everyone. Arrows move as seen on screen, like the keys, and each says which
-   * axis it changes in the current view. Holding a button repeats.
+   * reminder of them for everyone. Arrows move as seen on screen, like the keys (Away, Toward, Left,
+   * Right), and each shows which axis it changes in the current view. Holding a button repeats.
    */
 
   const cells: (
@@ -77,7 +77,7 @@
       <button
         class="cell"
         type="button"
-        aria-label={`${c.label} (${a.text})`}
+        aria-label={`${t.site.nudge}: ${c.label} (${a.text})`}
         title={`${c.label} (${a.text})`}
         data-testid={`nudge-${c.key}`}
         onpointerdown={(e) => press(e, run)}
@@ -85,7 +85,11 @@
         onpointerleave={stop}
         onpointercancel={stop}
         onclick={(e) => keyClick(e, run)}
-        >{c.glyph}<span class="ax" class:x={a.axis === 'x'} class:z={a.axis === 'z'}>{a.text}</span></button
+        >{c.glyph}<span class="word">{c.label}</span><span
+          class="ax"
+          class:x={a.axis === 'x'}
+          class:z={a.axis === 'z'}>{a.text}</span
+        ></button
       >
     {:else if 'lift' in c}
       {@const dir = c.lift}
@@ -100,7 +104,10 @@
         onpointerup={stop}
         onpointerleave={stop}
         onpointercancel={stop}
-        onclick={(e) => keyClick(e, run)}>{dir > 0 ? '⤒' : '⤓'}<span class="ax y">Y</span></button
+        onclick={(e) => keyClick(e, run)}
+        >{dir > 0 ? '⤒' : '⤓'}<span class="word">{dir > 0 ? t.site.nudgeRaise : t.site.nudgeLower}</span><span
+          class="ax y">Y</span
+        ></button
       >
     {:else}
       {@const dir = c.turn}
@@ -110,7 +117,8 @@
         aria-label={dir > 0 ? t.site.turnRight : t.site.turnLeft}
         title={dir > 0 ? t.site.turnRight : t.site.turnLeft}
         data-testid={dir > 0 ? 'nudge-turn-right' : 'nudge-turn-left'}
-        onclick={() => rotateSelected(dir)}>{dir > 0 ? '⟳' : '⟲'}</button
+        onclick={() => rotateSelected(dir)}
+        >{dir > 0 ? '⟳' : '⟲'}<span class="word">{t.site.nudgeTurn}</span></button
       >
     {/if}
   {/each}
@@ -119,16 +127,18 @@
 <style>
   .pad {
     display: grid;
-    grid-template-columns: repeat(3, 30px);
-    grid-template-rows: repeat(3, 30px);
+    grid-template-columns: repeat(3, 64px);
+    grid-template-rows: repeat(3, 46px);
     gap: 2px;
     flex: none;
   }
   .cell {
     position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 3px;
     appearance: none;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -136,9 +146,10 @@
     padding: 0;
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1;
-    letter-spacing: 0;
+    letter-spacing: normal;
+    text-transform: none;
     cursor: pointer;
     touch-action: none;
     user-select: none;
@@ -153,16 +164,18 @@
   }
   .empty {
     border-color: transparent;
-    font-size: 10px;
+    font-size: 13px;
     color: var(--text);
     cursor: default;
   }
+  .word {
+    font-size: 13px;
+  }
   .ax {
     position: absolute;
-    right: 2px;
-    bottom: 1px;
-    font-size: 8px;
-    letter-spacing: 0;
+    right: 4px;
+    top: 3px;
+    font-size: 10px;
   }
   .ax.x {
     color: var(--axis-x);
