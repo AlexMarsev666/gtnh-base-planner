@@ -33,7 +33,7 @@ const budgets = [
   ['main script (gzip)', /^assets\/main-.*\.js$/, 'gzip', 345 * KB],
   ['site worker (gzip)', /^assets\/siteWorker-.*\.js$/, 'gzip', 90 * KB],
   ['catalog chunks (gzip)', /^assets\/catalogData-.*\.js$/, 'gzip', 215 * KB],
-  ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 6 * KB],
+  ['styles (gzip)', /^assets\/.*\.css$/, 'gzip', 8 * KB],
   ['texture atlas', /^textures\/atlas\.png$/, 'raw', 170 * KB],
   ['whole site', /./, 'raw', 4.6 * 1024 * KB],
 ];

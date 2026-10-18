@@ -178,6 +178,18 @@ test('optimises the template by itself after an import, once it is shown', async
   expect(errors).toEqual([]);
 });
 
+test('an empty template offers a start card that goes away with the first group', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('/');
+  await page.getByTestId('mode-site').click();
+  const card = page.getByTestId('site-empty');
+  await expect(card).toBeVisible();
+  await page.getByTestId('site-empty-current').click();
+  await expect(page.getByTestId('site-stats')).toContainText('1 group');
+  await expect(card).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('builds a site by hand and switches back to the machine view', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/');

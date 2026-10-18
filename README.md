@@ -95,6 +95,10 @@ The planner checks layout rules for the transcribed structure only. It is not a 
    The top bar holds Undo and Redo, IMPORT FROM GTNH PLANNER, BLOCKS and the Share menu (copy share link, download or open
    JSON, reset the template; a reset can be undone). The toolbar over the scene has ARRANGE, OPTIMIZE and NEAT, and the
    view chips Pipes, Cables, Flow (the flow animation), X-ray and Icons (item icons).
+   An empty template shows a Start a template card over the scene: add a multiblock from the catalog, add the machine open in
+   the Machine view, or import from GTNH Planner (also: a single-block machine, a placeholder, or open a JSON file). It goes
+   away with the first group. While a group or port is selected, a one-line strip at the bottom left lists the main keys
+   (drag to move, arrows to nudge, R to turn, or A to auto place a port); its ? button opens the full list of shortcuts.
 2. Import a chain (IMPORT FROM GTNH PLANNER), or build one by hand: + ADD in the outline's Groups heading opens a menu
    (Add multiblock, Add single-block machine, Add placeholder; Escape or a click elsewhere closes it, the arrow keys
    move through it). A group that GT would not form shows a badge with its number of problems. + LINK in the Links

@@ -54,6 +54,7 @@
   import SiteOutline from './SiteOutline.svelte';
   import { addGroup } from './siteCommands';
   import { groupHatchAt, groupPickHolds } from './siteInspect';
+  import SiteEmpty from './SiteEmpty.svelte';
   import SiteLegend from './SiteLegend.svelte';
   import SitePanel from './SitePanel.svelte';
   import { siteBuildInView, siteSceneInView } from './sitePipeline';
@@ -74,6 +75,8 @@
 
   const def = $derived($machineDef);
   const siteMode = $derived($appMode === 'site');
+  /** The empty Template shows its start card (it is not covered by the picker or the import dialog). */
+  const emptyShown = $derived(siteMode && !$site.groups.length && !importOpen && !sitePicker);
   /** The template's bill of materials comes from one build: its scene and the keys of its hatches match. */
   const siteBom = $derived(siteMode ? $siteBuildInView.build : null);
 
@@ -294,8 +297,8 @@
   />
 
   {#if siteMode}
-    {#if rendererFailed || !$siteSceneInView}
-      <div class="placeholder" data-testid="preview-notice">
+    {#if rendererFailed || (!$siteSceneInView && !emptyShown)}
+      <div class="placeholder" class:aside={emptyShown} data-testid="preview-notice">
         <!-- Before the first build arrives from the worker there is simply nothing to show yet. -->
         <span
           >{$siteSceneInView
@@ -343,6 +346,15 @@
       {/if}
       <SiteLegend />
       {#if !importOpen}<SceneToolbar view="site" />{/if}
+      {#if emptyShown}
+        <SiteEmpty
+          onadd={() => {
+            sitePicker = 'add';
+            sitePanelOpen = false;
+          }}
+          onimport={() => (importOpen = true)}
+        />
+      {/if}
       <SiteStats
         onproblems={() => {
           blocksOpen = false;
@@ -453,6 +465,12 @@
     pointer-events: none;
     padding: 0 var(--gutter);
     text-align: center;
+  }
+  /* Beside the start card: at the top of the free area instead of its centre. */
+  .placeholder.aside {
+    inset: calc(var(--bar-h) + 52px) 0 auto;
+    padding-left: calc(var(--gutter) + var(--outline-w, 0px));
+    padding-right: calc(var(--gutter) + var(--drawer-w, 0px));
   }
   .detail {
     color: var(--muted);

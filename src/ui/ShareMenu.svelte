@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t } from '../i18n/en';
   import { resetPlan } from './actions';
+  import JsonFileInput from './JsonFileInput.svelte';
   import MenuButton, { type MenuApi } from './MenuButton.svelte';
   import { notify } from './notices';
   import { copyShareLink, downloadJson, openJsonFile, shareFallback } from './session';
@@ -27,13 +28,7 @@
     if (!fallbackUrl) api.close();
   }
 
-  let fileInput = $state<HTMLInputElement>();
-  function onfile(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (file) void (site ? openSiteFile(file) : openJsonFile(file));
-  }
+  let fileInput = $state<JsonFileInput>();
 
   let confirmReset = $state(false);
   let resetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -99,7 +94,7 @@
     <button class="menu-item" role="menuitem" onclick={() => api.pick(site ? downloadSite : downloadJson)}
       >{t.downloadJson}</button
     >
-    <button class="menu-item" role="menuitem" onclick={() => api.pick(() => fileInput?.click())}
+    <button class="menu-item" role="menuitem" onclick={() => api.pick(() => fileInput?.open())}
       >{t.uploadJson}</button
     >
     <div class="menu-sep" role="separator"></div>
@@ -112,14 +107,9 @@
   {/snippet}
 </MenuButton>
 <!-- Outside the menu, which is gone by the time the file dialog answers. -->
-<input
+<JsonFileInput
   bind:this={fileInput}
-  class="visually-hidden"
-  type="file"
-  accept="application/json,.json"
-  tabindex="-1"
-  aria-hidden="true"
-  onchange={onfile}
+  onfile={(file) => void (site ? openSiteFile(file) : openJsonFile(file))}
 />
 
 <style>
